@@ -179,7 +179,7 @@ export default function App() {
   const [error,     setError]     = useState("");
   const [aError,    setAError]    = useState("");
   const [profile,   setProfile]   = useState(null);
-  const [profForm,  setProfForm]  = useState({username:"",full_name:"",location:"",region:"",currency:"USD",specialises_in:[],avatar_url:"",avatarFile:null,avatarPreview:"",bust:"",waist:"",hips:"",height:"",preferred_size:"",is_tailor:false,tailor_services:[],tailor_price_from:""});
+  const [profForm,  setProfForm]  = useState({username:"",full_name:"",location:"",region:"",currency:"USD",bio:"",specialises_in:[],avatar_url:"",avatarFile:null,avatarPreview:"",bust:"",waist:"",hips:"",height:"",preferred_size:"",is_tailor:false,tailor_services:[],tailor_price_from:"",accepting_clients:true});
   const [profSaving,setProfSaving]= useState(false);
   const [viewedProfile,setViewedProfile]=useState(null);
   const [profileListings,setProfileListings]=useState([]);
@@ -269,7 +269,7 @@ export default function App() {
 
   useEffect(()=>{
     if(user&&token){
-      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||"",is_tailor:p.is_tailor||false,tailor_services:p.tailor_services||[],tailor_price_from:p.tailor_price_from||""});} });
+      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",bio:p.bio||"",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||"",is_tailor:p.is_tailor||false,tailor_services:p.tailor_services||[],tailor_price_from:p.tailor_price_from||"",accepting_clients:p.accepting_clients!==false});} });
       loadConversations();
       db.getFollowing(user.id,token).then(setFollowing);
       db.getNotifications(user.id,token).then(setNotifications);
@@ -423,6 +423,11 @@ export default function App() {
   async function loadTailorMarket(){
     const services=await db.getTailorServices(token);
     setTailorServices(services);
+    // load tailor profiles for the service cards
+    const tailorIds=[...new Set(services.map(s=>s.tailor_id).filter(Boolean))];
+    const profs=[];
+    await Promise.all(tailorIds.map(async id=>{ const p=await db.getProfile(id,token); if(p)profs.push(p); }));
+    setTailorProfiles(profs);
     if(user) {
       const mine=await db.getMyTailorServices(user.id,token);
       setMyTailorServices(mine);
@@ -729,7 +734,7 @@ export default function App() {
     try{
       let avatar_url=profForm.avatar_url||"";
       if(profForm.avatarFile) avatar_url=await uploadImage(profForm.avatarFile,token);
-      const p={id:user.id,username:profForm.username,full_name:profForm.full_name,location:profForm.location,region:profForm.region,currency:profForm.currency,specialises_in:profForm.specialises_in,avatar_url,bust:profForm.bust||null,waist:profForm.waist||null,hips:profForm.hips||null,height:profForm.height||null,preferred_size:profForm.preferred_size||null,is_tailor:profForm.is_tailor,tailor_services:profForm.tailor_services,tailor_price_from:profForm.tailor_price_from||null};
+      const p={id:user.id,username:profForm.username,full_name:profForm.full_name,location:profForm.location,region:profForm.region,currency:profForm.currency,bio:profForm.bio||null,specialises_in:profForm.specialises_in,avatar_url,bust:profForm.bust||null,waist:profForm.waist||null,hips:profForm.hips||null,height:profForm.height||null,preferred_size:profForm.preferred_size||null,is_tailor:profForm.is_tailor,tailor_services:profForm.tailor_services,tailor_price_from:profForm.tailor_price_from||null,accepting_clients:profForm.accepting_clients};
       const [saved]=await db.upsertProfile(p,token);
       setProfile(saved); setProfForm(f=>({...f,avatar_url,avatarFile:null,avatarPreview:avatar_url}));
       flash("✓ Profile saved!");
@@ -1482,6 +1487,7 @@ export default function App() {
               <div style={{display:"flex",flexDirection:"column",gap:14}}>
                 <F l="FULL NAME"><input style={S.inp} placeholder="e.g. Nasreen Ahmed" value={profForm.full_name} onChange={e=>setProfForm(f=>({...f,full_name:e.target.value}))}/></F>
                 <F l="USERNAME"><input style={S.inp} placeholder="e.g. @nasreen.closet" value={profForm.username} onChange={e=>setProfForm(f=>({...f,username:e.target.value}))}/></F>
+                <F l="BIO"><textarea style={{...S.inp,height:80,resize:"vertical",width:"100%"}} placeholder="Tell buyers about yourself — your style, what you sell, your story..." value={profForm.bio} onChange={e=>setProfForm(f=>({...f,bio:e.target.value}))}/></F>
                 <F l="LOCATION"><input style={S.inp} placeholder="e.g. London, UK" value={profForm.location} onChange={e=>setProfForm(f=>({...f,location:e.target.value}))}/></F>
                 <F l="REGION">
                   <select style={S.inp} value={profForm.region} onChange={e=>setProfForm(f=>({...f,region:e.target.value}))}>
@@ -1539,6 +1545,11 @@ export default function App() {
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:8}}>✂️ TAILOR LISTING</div>
               <p style={{fontSize:12,color:"#888",marginBottom:16,lineHeight:1.6}}>List yourself as a tailor or alteration specialist so buyers can find you.</p>
               <Tog on={profForm.is_tailor} onToggle={()=>setProfForm(f=>({...f,is_tailor:!f.is_tailor}))} color="#FF9500" label="LIST ME AS A TAILOR" sub="Show my profile in the tailor directory"/>
+              {profForm.is_tailor&&(
+                <div style={{marginTop:12}}>
+                  <Tog on={profForm.accepting_clients} onToggle={()=>setProfForm(f=>({...f,accepting_clients:!f.accepting_clients}))} color="#34C759" label="ACCEPTING NEW CLIENTS" sub="Turn off if you're fully booked"/>
+                </div>
+              )}
               {profForm.is_tailor&&(
                 <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:12}}>
                   <div>
@@ -1908,113 +1919,174 @@ export default function App() {
 
       {/* ── TAILOR MARKETPLACE ── */}
       {view==="tailors"&&(
-        <main style={S.main}>
-          <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
-          <div style={{marginBottom:32,paddingBottom:24,borderBottom:"3px solid #111",display:"flex",alignItems:"flex-end",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
-            <div>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF9500",marginBottom:6}}>FIND A TAILOR</p>
-              <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:56,fontWeight:900,letterSpacing:-1,lineHeight:1}}>TAILOR<br/>MARKETPLACE ✂️</h2>
-              <p style={{fontSize:14,color:"#888",marginTop:10,maxWidth:500}}>Book trusted South Asian tailors for alterations, custom stitching, embroidery and repairs. Stitch'd takes 10% — tailors keep 90%.</p>
+        <div style={{minHeight:"100vh",background:"#fff"}}>
+          {/* Hero */}
+          <div style={{background:"#111",borderBottom:"3px solid #111",padding:"48px 24px 40px",position:"relative",overflow:"hidden"}}>
+            <div style={{maxWidth:1200,margin:"0 auto",display:"flex",alignItems:"flex-end",justifyContent:"space-between",flexWrap:"wrap",gap:20}}>
+              <div>
+                <button style={{...S.back,color:"#FF9500",marginBottom:16}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF9500",marginBottom:8}}>FIND A TAILOR</p>
+                <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(48px,8vw,100px)",fontWeight:900,color:"#fff",lineHeight:.9,letterSpacing:-2,marginBottom:16}}>TAILOR<br/><span style={{color:"#FF9500"}}>MARKETPLACE</span></h1>
+                <p style={{fontSize:15,color:"#aaa",maxWidth:500,lineHeight:1.7}}>Book trusted South Asian tailors for alterations, custom stitching, embroidery and repairs. Every transaction secured through Stitch'd.</p>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:10,alignItems:"flex-end"}}>
+                <div style={{display:"flex",gap:20,marginBottom:8}}>
+                  {[["✂️","Alterations"],["🧵","Custom Stitching"],["✨","Embroidery"],["🔧","Repairs"]].map(([e,l])=>(
+                    <div key={l} style={{textAlign:"center"}}>
+                      <div style={{fontSize:28,marginBottom:4}}>{e}</div>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#888",letterSpacing:1}}>{l.toUpperCase()}</p>
+                    </div>
+                  ))}
+                </div>
+                {user&&<button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"14px 28px",fontSize:13,letterSpacing:2}} onClick={()=>{setEditingService(null);setTailorServiceForm({title:"",description:"",service_type:"Alterations",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});setShowTailorForm(true);}}>+ LIST MY SERVICE</button>}
+              </div>
             </div>
-            {user&&(
-              <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"12px 24px",fontSize:13,letterSpacing:2}} onClick={()=>{setEditingService(null);setTailorServiceForm({title:"",description:"",service_type:"Alterations",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});setShowTailorForm(true);}}>
-                + LIST MY SERVICE
-              </button>
+          </div>
+
+          <div style={{maxWidth:1200,margin:"0 auto",padding:"32px 16px"}}>
+            {/* Stats bar */}
+            <div style={{display:"flex",gap:3,marginBottom:32,flexWrap:"wrap"}}>
+              {[["✂️",tailorServices.length,"SERVICES LISTED"],["📍",[...new Set(tailorServices.map(s=>s.location).filter(Boolean))].length,"LOCATIONS"],["⭐","10%","PLATFORM FEE"],["🔒","100%","SECURE PAYMENTS"]].map(([e,n,l])=>(
+                <div key={l} style={{flex:"1 1 120px",background:"#fafafa",border:"2px solid #111",padding:"16px 20px",display:"flex",alignItems:"center",gap:12}}>
+                  <span style={{fontSize:24}}>{e}</span>
+                  <div>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#FF9500",lineHeight:1}}>{n}</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:2,color:"#bbb"}}>{l}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* My services */}
+            {user&&myTailorServices.length>0&&(
+              <div style={{marginBottom:40}}>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#FF9500",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:16}}>MY LISTED SERVICES</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {myTailorServices.map(s=>(
+                    <div key={s.id} style={{border:"2px solid #FF9500",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap",background:"#fffbf5"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:14}}>
+                        <div style={{width:48,height:48,background:"#FF9500",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>✂️</div>
+                        <div>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,marginBottom:2}}>{s.title}</p>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#FF9500",letterSpacing:1}}>{s.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency)}{s.price_from}{s.turnaround_days?` · ${s.turnaround_days} DAYS`:""}</p>
+                        </div>
+                      </div>
+                      <div style={{display:"flex",gap:8}}>
+                        <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",fontSize:11,padding:"8px 14px"}} onClick={()=>{setEditingService(s);setTailorServiceForm({title:s.title,description:s.description||"",service_type:s.service_type||"Alterations",price_from:s.price_from||"",price_to:s.price_to||"",turnaround_days:s.turnaround_days||"",location:s.location||"",images:[],imagePreviews:s.images||[]});setShowTailorForm(true);}}>EDIT</button>
+                        <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"8px 14px"}} onClick={()=>deleteTailorService(s.id)}>DELETE</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Search + filters */}
+            <div style={{display:"flex",gap:10,marginBottom:24,flexWrap:"wrap",alignItems:"stretch"}}>
+              <div style={{flex:1,minWidth:200,display:"flex",alignItems:"center",border:"2px solid #111",background:"#fff"}}>
+                <span style={{padding:"0 12px",fontSize:14,color:"#bbb"}}>🔍</span>
+                <input style={{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,padding:"12px 0",background:"transparent"}} placeholder="SEARCH TAILORS, LOCATION, SERVICE..." value={tailorSearch} onChange={e=>setTailorSearch(e.target.value)}/>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:28}}>
+              {["All","Alterations","Taking In","Letting Out","Hemming","Blouse Stitching","Full Stitching","Custom Stitching","Embroidery","Repairs","Custom Orders"].map(t=>(
+                <button key={t} className="fpill" style={{...S.pill,...(tailorTypeFilter===t?{...S.pillOn,background:"#FF9500",borderColor:"#FF9500"}:{})}} onClick={()=>setTailorTypeFilter(t)}>{t}</button>
+              ))}
+            </div>
+
+            {/* Services grid */}
+            {tailorServices.length===0?(
+              <div style={{textAlign:"center",padding:"80px 20px",border:"3px dashed #e0e0e0"}}>
+                <p style={{fontSize:64,marginBottom:16}}>✂️</p>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:900,marginBottom:8}}>NO TAILORS YET.</p>
+                <p style={{color:"#888",marginBottom:24,fontSize:15}}>Be the first to list your tailoring services on Stitch'd!</p>
+                {user&&<button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"14px 32px",fontSize:14,letterSpacing:2}} onClick={()=>setShowTailorForm(true)}>LIST MY SERVICE →</button>}
+              </div>
+            ):(
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:3}}>
+                {tailorServices.filter(s=>{
+                  const q=tailorSearch.toLowerCase();
+                  const matchSearch=!q||s.title?.toLowerCase().includes(q)||s.description?.toLowerCase().includes(q)||s.location?.toLowerCase().includes(q);
+                  const matchType=tailorTypeFilter==="All"||s.service_type===tailorTypeFilter;
+                  return matchSearch&&matchType;
+                }).map((s,idx)=>{
+                  const accent=CARD_COLORS[idx%CARD_COLORS.length];
+                  const tailorProf=tailorProfiles.find(p=>p.id===s.tailor_id);
+                  return(
+                    <div key={s.id} style={{background:"#fff",border:"3px solid #111",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+                      {/* Cover image */}
+                      <div style={{height:200,background:s.images?.[0]?"#000":accent,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",position:"relative"}}>
+                        {s.images?.[0]?<img src={s.images[0]} alt={s.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:72}}>✂️</span>}
+                        <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.7))"}}/>
+                        <div style={{position:"absolute",top:12,left:12,background:accent,color:"#fff",padding:"4px 12px",fontSize:10,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif"}}>{s.service_type?.toUpperCase()}</div>
+                        {s.location&&<div style={{position:"absolute",bottom:12,left:12,color:"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1}}>📍 {s.location}</div>}
+                        {s.turnaround_days&&<div style={{position:"absolute",bottom:12,right:12,background:"rgba(0,0,0,0.6)",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif"}}>⏱ {s.turnaround_days} DAYS</div>}
+                      </div>
+
+                      {/* Tailor profile strip */}
+                      {tailorProf&&(
+                        <div style={{padding:"12px 16px",borderBottom:"2px solid #f0f0f0",display:"flex",alignItems:"center",gap:12,background:"#fafafa"}}>
+                          <div style={{width:36,height:36,borderRadius:"50%",border:"2px solid #111",overflow:"hidden",flexShrink:0,background:accent,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                            {tailorProf.avatar_url?<img src={tailorProf.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#fff"}}>{(tailorProf.full_name||tailorProf.username||"T")[0].toUpperCase()}</span>}
+                          </div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:900,color:"#111"}}>{tailorProf.full_name||tailorProf.username||"Tailor"}</p>
+                            {tailorProf.bio&&<p style={{fontSize:11,color:"#888",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{tailorProf.bio}</p>}
+                          </div>
+                          {tailorProf.verified&&<span style={S.verifiedBadge}>✓</span>}
+                        </div>
+                      )}
+
+                      {/* Service info */}
+                      <div style={{padding:"16px 18px",flex:1,display:"flex",flexDirection:"column"}}>
+                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,marginBottom:6,color:"#111",lineHeight:1.1}}>{s.title}</p>
+                        {s.description&&<p style={{fontSize:13,color:"#666",marginBottom:12,lineHeight:1.5,flex:1}}>{s.description.slice(0,120)}{s.description.length>120?"...":""}</p>}
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"2px solid #f5f5f5",paddingTop:12,marginTop:"auto"}}>
+                          <div>
+                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,color:accent}}>From {currencySymbol(profile?.currency||"GBP")}{s.price_from}</span>
+                            {s.price_to&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",marginLeft:4}}>— {currencySymbol(profile?.currency||"GBP")}{s.price_to}</span>}
+                          </div>
+                          <button className="hbtn" style={{...S.hBtn,background:accent,border:"none",padding:"10px 20px",fontSize:12,letterSpacing:1}} onClick={()=>{setSelectedService(s);setShowBookingForm(true);}}>BOOK →</button>
+                        </div>
+                      </div>
+                      <div style={{height:4,background:accent,width:"100%"}}/>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
 
-          {/* My services if tailor */}
-          {user&&myTailorServices.length>0&&(
-            <div style={{marginBottom:40}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#FF9500",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:16}}>MY LISTED SERVICES</div>
-              <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                {myTailorServices.map(s=>(
-                  <div key={s.id} style={{border:"2px solid #FF9500",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
-                    <div>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,marginBottom:4}}>{s.title}</p>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#FF9500",letterSpacing:1}}>{s.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency)}{s.price_from}{s.price_to?` — ${currencySymbol(profile?.currency)}${s.price_to}`:""}{s.turnaround_days?` · ${s.turnaround_days} DAYS`:""}</p>
-                    </div>
-                    <div style={{display:"flex",gap:8}}>
-                      <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",fontSize:11,padding:"8px 14px"}} onClick={()=>{setEditingService(s);setTailorServiceForm({title:s.title,description:s.description||"",service_type:s.service_type||"Alterations",price_from:s.price_from||"",price_to:s.price_to||"",turnaround_days:s.turnaround_days||"",location:s.location||"",images:[],imagePreviews:s.images||[]});setShowTailorForm(true);}}>EDIT</button>
-                      <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"8px 14px"}} onClick={()=>deleteTailorService(s.id)}>DELETE</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Search + filters */}
-          <div style={{display:"flex",gap:10,marginBottom:20,flexWrap:"wrap",alignItems:"center"}}>
-            <input style={{...S.inp,flex:1,minWidth:200}} placeholder="Search services..." value={tailorSearch} onChange={e=>setTailorSearch(e.target.value)}/>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              {["All","Alterations","Custom Stitching","Embroidery","Repairs","Taking In","Hemming","Blouse Stitching","Custom Orders"].map(t=>(
-                <button key={t} className="fpill" style={{...S.pill,...(tailorTypeFilter===t?S.pillOn:{})}} onClick={()=>setTailorTypeFilter(t)}>{t}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Services grid */}
-          {tailorServices.length===0?(
-            <div style={{textAlign:"center",padding:"60px 20px"}}>
-              <p style={{fontSize:48,marginBottom:12}}>✂️</p>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NO TAILORS YET.</p>
-              <p style={{color:"#888",marginBottom:20}}>Be the first to list your tailoring services!</p>
-              {user&&<button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"12px 24px"}} onClick={()=>setShowTailorForm(true)}>LIST MY SERVICE →</button>}
-            </div>
-          ):(
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:3}}>
-              {tailorServices.filter(s=>{
-                const matchSearch=!tailorSearch||s.title?.toLowerCase().includes(tailorSearch.toLowerCase())||s.description?.toLowerCase().includes(tailorSearch.toLowerCase())||s.location?.toLowerCase().includes(tailorSearch.toLowerCase());
-                const matchType=tailorTypeFilter==="All"||s.service_type===tailorTypeFilter;
-                return matchSearch&&matchType;
-              }).map((s,idx)=>{
-                const accent=CARD_COLORS[idx%CARD_COLORS.length];
-                return(
-                  <div key={s.id} style={{...S.card,borderColor:accent,cursor:"pointer"}} onClick={()=>{setSelectedService(s);setShowBookingForm(true);}}>
-                    <div style={{height:180,background:s.images?.[0]?"#000":accent,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",position:"relative"}}>
-                      {s.images?.[0]?<img src={s.images[0]} alt={s.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:60}}>✂️</span>}
-                      <div style={{position:"absolute",top:12,left:12,background:"rgba(0,0,0,0.6)",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif"}}>{s.service_type?.toUpperCase()}</div>
-                    </div>
-                    <div style={S.cardBody}>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,marginBottom:6,color:"#111"}}>{s.title}</p>
-                      {s.location&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",letterSpacing:1,marginBottom:6}}>📍 {s.location}</p>}
-                      {s.description&&<p style={{fontSize:13,color:"#666",marginBottom:10,lineHeight:1.5}}>{s.description.slice(0,100)}{s.description.length>100?"...":""}</p>}
-                      {s.turnaround_days&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",letterSpacing:1,marginBottom:8}}>⏱ {s.turnaround_days} DAY TURNAROUND</p>}
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"2px solid #f5f5f5",paddingTop:12}}>
-                        <div>
-                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:accent}}>From {currencySymbol(profile?.currency||"GBP")}{s.price_from}</span>
-                          {s.price_to&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",marginLeft:4}}>— {currencySymbol(profile?.currency||"GBP")}{s.price_to}</span>}
-                        </div>
-                        <button className="hbtn" style={{...S.hBtn,background:accent,border:"none",padding:"8px 16px",fontSize:11,letterSpacing:1}}>BOOK →</button>
-                      </div>
-                    </div>
-                    <div style={{...S.accentBar,background:accent}}/>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Booking form modal */}
+          {/* Booking modal */}
           {showBookingForm&&selectedService&&(
             <div style={S.modalOverlay} onClick={()=>setShowBookingForm(false)}>
               <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
-                  <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>✂️ BOOK THIS SERVICE</h3>
+                  <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>✂️ BOOK SERVICE</h3>
                   <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowBookingForm(false)}>✕</button>
                 </div>
-                <div style={{background:"#fafafa",border:"2px solid #f0f0f0",padding:"16px",marginBottom:20}}>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,marginBottom:4}}>{selectedService.title}</p>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#FF9500",letterSpacing:1}}>{selectedService.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency||"GBP")}{selectedService.price_from}</p>
-                  {selectedService.turnaround_days&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",marginTop:4}}>⏱ {selectedService.turnaround_days} day turnaround</p>}
+                <div style={{background:"#fafafa",border:"2px solid #f0f0f0",padding:"16px",marginBottom:20,display:"flex",gap:14,alignItems:"flex-start"}}>
+                  {selectedService.images?.[0]&&<img src={selectedService.images[0]} alt="" style={{width:64,height:64,objectFit:"cover",border:"2px solid #111",flexShrink:0}}/>}
+                  <div>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,marginBottom:4}}>{selectedService.title}</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#FF9500",letterSpacing:1}}>{selectedService.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency||"GBP")}{selectedService.price_from}</p>
+                    {selectedService.location&&<p style={{fontSize:12,color:"#888",marginTop:4}}>📍 {selectedService.location}</p>}
+                    {selectedService.turnaround_days&&<p style={{fontSize:12,color:"#888"}}>⏱ {selectedService.turnaround_days} day turnaround</p>}
+                  </div>
                 </div>
                 <div style={{marginBottom:20,padding:"14px 16px",background:"#fff8f0",border:"1.5px solid #FF950055"}}>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#FF9500",marginBottom:6}}>HOW IT WORKS</p>
-                  <p style={{fontSize:13,color:"#666",lineHeight:1.6}}>1. Send your booking request with notes<br/>2. Tailor will respond via Stitch'd messages<br/>3. Agree on final price and details<br/>4. Pay securely through Stitch'd (10% fee applies)<br/>5. Tailor completes your order 🩷</p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#FF9500",marginBottom:8}}>HOW IT WORKS</p>
+                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    {["Send booking request with your notes","Tailor responds via Stitch'd messages","Agree on final price and details","Pay securely through Stitch'd (10% fee)","Tailor completes your order 🩷"].map((s,i)=>(
+                      <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,color:"#FF9500",flexShrink:0}}>{i+1}.</span>
+                        <span style={{fontSize:13,color:"#666"}}>{s}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <F l="NOTES FOR TAILOR (measurements, requirements, etc.)">
-                  <textarea style={{...S.inp,height:100,resize:"vertical",width:"100%"}} placeholder="e.g. I need a blouse taken in by 2 inches at the waist. My measurements are bust 34, waist 28, hips 36..." value={bookingNotes} onChange={e=>setBookingNotes(e.target.value)}/>
+                <F l="NOTES FOR TAILOR (measurements, requirements, fabric, etc.)">
+                  <textarea style={{...S.inp,height:110,resize:"vertical",width:"100%"}} placeholder="e.g. I need a lehenga blouse taken in by 2 inches at the waist. My measurements: bust 34, waist 28, hips 36. Fabric is heavy silk..." value={bookingNotes} onChange={e=>setBookingNotes(e.target.value)}/>
                 </F>
                 <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",width:"100%",padding:"16px",fontSize:15,letterSpacing:3,marginTop:16}} onClick={()=>bookTailor(selectedService)}>
                   SEND BOOKING REQUEST →
@@ -2027,38 +2099,56 @@ export default function App() {
           {/* Add/Edit service form modal */}
           {showTailorForm&&(
             <div style={S.modalOverlay} onClick={()=>setShowTailorForm(false)}>
-              <div style={{...S.modalBox,maxWidth:560}} onClick={e=>e.stopPropagation()}>
+              <div style={{...S.modalBox,maxWidth:580}} onClick={e=>e.stopPropagation()}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
-                  <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>{editingService?"EDIT SERVICE":"LIST YOUR SERVICE"}</h3>
+                  <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>{editingService?"EDIT SERVICE":"LIST YOUR SERVICE ✂️"}</h3>
                   <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowTailorForm(false)}>✕</button>
                 </div>
+
+                {/* Profile reminder */}
+                {!profile?.avatar_url&&(
+                  <div style={{background:"#fff8f0",border:"1.5px solid #FF950055",padding:"12px 16px",marginBottom:20,display:"flex",gap:10,alignItems:"center"}}>
+                    <span style={{fontSize:20}}>💡</span>
+                    <div>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1,color:"#FF9500",marginBottom:2}}>ADD A PROFILE PHOTO</p>
+                      <p style={{fontSize:12,color:"#888"}}>Buyers trust tailors with a photo. <span style={{color:"#FF1493",cursor:"pointer",fontWeight:700}} onClick={()=>{setShowTailorForm(false);setView("editprofile");}}>Update your profile →</span></p>
+                    </div>
+                  </div>
+                )}
+
                 <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                  <F l="SERVICE TITLE *"><input style={S.inp} placeholder="e.g. Bridal Blouse Stitching" value={tailorServiceForm.title} onChange={e=>setTailorServiceForm(f=>({...f,title:e.target.value}))}/></F>
+                  <F l="SERVICE TITLE *"><input style={S.inp} placeholder="e.g. Bridal Lehenga Alterations" value={tailorServiceForm.title} onChange={e=>setTailorServiceForm(f=>({...f,title:e.target.value}))}/></F>
                   <F l="SERVICE TYPE">
                     <select style={S.inp} value={tailorServiceForm.service_type} onChange={e=>setTailorServiceForm(f=>({...f,service_type:e.target.value}))}>
                       {["Alterations","Taking In","Letting Out","Hemming","Blouse Stitching","Full Stitching","Custom Stitching","Embroidery","Repairs","Custom Orders"].map(t=><option key={t}>{t}</option>)}
                     </select>
                   </F>
+                  <F l="DESCRIPTION (your experience, specialties, what's included)">
+                    <textarea style={{...S.inp,height:90,resize:"vertical",width:"100%"}} placeholder="e.g. 10+ years experience stitching bridal wear. Specialise in heavy fabrics — silk, banarsi, velvet. All work done by hand..." value={tailorServiceForm.description} onChange={e=>setTailorServiceForm(f=>({...f,description:e.target.value}))}/>
+                  </F>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                     <F l="PRICE FROM *"><input style={S.inp} type="number" placeholder="e.g. 15" value={tailorServiceForm.price_from} onChange={e=>setTailorServiceForm(f=>({...f,price_from:e.target.value}))}/></F>
-                    <F l="PRICE TO"><input style={S.inp} type="number" placeholder="e.g. 50" value={tailorServiceForm.price_to} onChange={e=>setTailorServiceForm(f=>({...f,price_to:e.target.value}))}/></F>
+                    <F l="PRICE TO (optional)"><input style={S.inp} type="number" placeholder="e.g. 80" value={tailorServiceForm.price_to} onChange={e=>setTailorServiceForm(f=>({...f,price_to:e.target.value}))}/></F>
                   </div>
-                  <F l="TURNAROUND (DAYS)"><input style={S.inp} type="number" placeholder="e.g. 7" value={tailorServiceForm.turnaround_days} onChange={e=>setTailorServiceForm(f=>({...f,turnaround_days:e.target.value}))}/></F>
-                  <F l="LOCATION"><input style={S.inp} placeholder="e.g. East London, UK" value={tailorServiceForm.location} onChange={e=>setTailorServiceForm(f=>({...f,location:e.target.value}))}/></F>
-                  <F l="DESCRIPTION"><textarea style={{...S.inp,height:80,resize:"vertical",width:"100%"}} placeholder="Tell buyers about your experience, specialties, what's included..." value={tailorServiceForm.description} onChange={e=>setTailorServiceForm(f=>({...f,description:e.target.value}))}/></F>
-                  <F l="PHOTOS (UP TO 3)">
+                  <F l="TURNAROUND TIME (DAYS)"><input style={S.inp} type="number" placeholder="e.g. 7" value={tailorServiceForm.turnaround_days} onChange={e=>setTailorServiceForm(f=>({...f,turnaround_days:e.target.value}))}/></F>
+                  <F l="YOUR LOCATION"><input style={S.inp} placeholder="e.g. East London, UK" value={tailorServiceForm.location} onChange={e=>setTailorServiceForm(f=>({...f,location:e.target.value}))}/></F>
+                  <F l="PHOTOS OF YOUR WORK (UP TO 3)">
                     <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                       {(tailorServiceForm.imagePreviews||[]).map((src,i)=>(
-                        <div key={i} style={{width:80,height:80,border:"2px solid #e0e0e0",overflow:"hidden",position:"relative"}}>
+                        <div key={i} style={{width:90,height:90,border:"2px solid #e0e0e0",overflow:"hidden",position:"relative"}}>
                           <img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                           <button type="button" style={{...S.removeImg}} onClick={()=>setTailorServiceForm(f=>({...f,images:f.images.filter((_,j)=>j!==i),imagePreviews:f.imagePreviews.filter((_,j)=>j!==i)}))}>✕</button>
                         </div>
                       ))}
                       {(tailorServiceForm.imagePreviews||[]).length<3&&(
-                        <div style={{width:80,height:80,border:"3px dashed #e0e0e0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:24}} onClick={()=>document.getElementById("tailor-img-input").click()}>+</div>
+                        <div style={{width:90,height:90,border:"3px dashed #e0e0e0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexDirection:"column",gap:4}} onClick={()=>document.getElementById("tailor-img-input").click()}>
+                          <span style={{fontSize:24}}>📸</span>
+                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,color:"#bbb",letterSpacing:1}}>ADD PHOTO</span>
+                        </div>
                       )}
                     </div>
                     <input id="tailor-img-input" type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{const files=Array.from(e.target.files).slice(0,3-(tailorServiceForm.imagePreviews||[]).length);const previews=files.map(f=>URL.createObjectURL(f));setTailorServiceForm(f=>({...f,images:[...(f.images||[]),...files],imagePreviews:[...(f.imagePreviews||[]),...previews]}));}}/>
+                    <p style={{fontSize:11,color:"#bbb",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,marginTop:6}}>SHOW OFF YOUR BEST WORK — BEFORE/AFTER PHOTOS WORK GREAT</p>
                   </F>
                 </div>
                 <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",width:"100%",padding:"16px",fontSize:15,letterSpacing:3,marginTop:20,opacity:(!tailorServiceForm.title||!tailorServiceForm.price_from)?0.4:1}} onClick={saveTailorService} disabled={!tailorServiceForm.title||!tailorServiceForm.price_from}>
@@ -2067,6 +2157,122 @@ export default function App() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+            {/* ── MEASURING GUIDE ── */}
+      {view==="measuring"&&(
+        <main style={{...S.main,maxWidth:800}}>
+          <button style={S.back} onClick={()=>setView(prevView||"shop")}>← BACK</button>
+          <div style={{marginBottom:36,paddingBottom:24,borderBottom:"3px solid #111"}}>
+            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>YOUR COMPLETE GUIDE</p>
+            <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:56,fontWeight:900,letterSpacing:-1,lineHeight:1,marginBottom:12}}>HOW TO<br/><span style={{color:"#FF1493"}}>MEASURE.</span></h1>
+            <p style={{fontSize:15,color:"#666",lineHeight:1.7,maxWidth:560}}>Accurate measurements mean happier buyers and fewer returns. Use a soft measuring tape and measure over fitted underwear for best results.</p>
+          </div>
+
+          {[
+            {
+              key:"bust", label:"BUST", color:"#FF1493", emoji:"📏",
+              svg:(
+                <svg viewBox="0 0 200 160" style={{width:"100%",maxWidth:220}}>
+                  <ellipse cx="100" cy="80" rx="60" ry="75" fill="#FFF0F8" stroke="#FF1493" strokeWidth="2"/>
+                  <ellipse cx="100" cy="80" rx="45" ry="55" fill="none" stroke="#FF149366" strokeWidth="1.5" strokeDasharray="4,3"/>
+                  <line x1="40" y1="72" x2="160" y2="72" stroke="#FF1493" strokeWidth="2.5"/>
+                  <path d="M40,72 L44,68 M40,72 L44,76" stroke="#FF1493" strokeWidth="2"/>
+                  <path d="M160,72 L156,68 M160,72 L156,76" stroke="#FF1493" strokeWidth="2"/>
+                  <rect x="70" y="60" width="60" height="20" rx="3" fill="#FF1493"/>
+                  <text x="100" y="74" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="bold" fontFamily="Arial">BUST</text>
+                  <text x="100" y="140" textAnchor="middle" fill="#FF1493" fontSize="9" fontFamily="Arial">Measure around the fullest part</text>
+                </svg>
+              ),
+              steps:["Wear a well-fitted bra or stand naturally","Wrap the tape around the fullest part of your chest","Keep the tape parallel to the floor","Don't pull too tight — you should be able to breathe"]
+            },
+            {
+              key:"waist", label:"WAIST", color:"#FF9500", emoji:"📏",
+              svg:(
+                <svg viewBox="0 0 200 160" style={{width:"100%",maxWidth:220}}>
+                  <path d="M60,20 Q50,80 55,140 L145,140 Q150,80 140,20 Z" fill="#FFF8F0" stroke="#FF9500" strokeWidth="2"/>
+                  <line x1="45" y1="80" x2="155" y2="80" stroke="#FF9500" strokeWidth="2.5"/>
+                  <path d="M45,80 L49,76 M45,80 L49,84" stroke="#FF9500" strokeWidth="2"/>
+                  <path d="M155,80 L151,76 M155,80 L151,84" stroke="#FF9500" strokeWidth="2"/>
+                  <rect x="68" y="68" width="64" height="20" rx="3" fill="#FF9500"/>
+                  <text x="100" y="82" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="bold" fontFamily="Arial">WAIST</text>
+                  <text x="100" y="155" textAnchor="middle" fill="#FF9500" fontSize="9" fontFamily="Arial">Measure at the narrowest point</text>
+                </svg>
+              ),
+              steps:["Find your natural waist — the narrowest point of your torso","Usually about 1 inch above your belly button","Keep the tape snug but not tight","Exhale normally before measuring"]
+            },
+            {
+              key:"hips", label:"HIPS", color:"#BF5AF2", emoji:"📏",
+              svg:(
+                <svg viewBox="0 0 200 160" style={{width:"100%",maxWidth:220}}>
+                  <path d="M55,20 Q30,80 40,140 L160,140 Q170,80 145,20 Z" fill="#F8F0FF" stroke="#BF5AF2" strokeWidth="2"/>
+                  <line x1="35" y1="100" x2="165" y2="100" stroke="#BF5AF2" strokeWidth="2.5"/>
+                  <path d="M35,100 L39,96 M35,100 L39,104" stroke="#BF5AF2" strokeWidth="2"/>
+                  <path d="M165,100 L161,96 M165,100 L161,104" stroke="#BF5AF2" strokeWidth="2"/>
+                  <rect x="68" y="88" width="64" height="20" rx="3" fill="#BF5AF2"/>
+                  <text x="100" y="102" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="bold" fontFamily="Arial">HIPS</text>
+                  <text x="100" y="155" textAnchor="middle" fill="#BF5AF2" fontSize="9" fontFamily="Arial">Measure around the fullest part</text>
+                </svg>
+              ),
+              steps:["Stand with feet together","Find the fullest part of your hips and bottom","Usually 7–9 inches below your natural waist","Wrap the tape around keeping it parallel to the floor"]
+            },
+            {
+              key:"length", label:"LENGTH", color:"#007AFF", emoji:"📏",
+              svg:(
+                <svg viewBox="0 0 200 160" style={{width:"100%",maxWidth:220}}>
+                  <rect x="80" y="10" width="40" height="140" rx="4" fill="#F0F8FF" stroke="#007AFF" strokeWidth="2"/>
+                  <line x1="100" y1="10" x2="100" y2="150" stroke="#007AFF" strokeWidth="2.5"/>
+                  <path d="M100,10 L96,14 M100,10 L104,14" stroke="#007AFF" strokeWidth="2"/>
+                  <path d="M100,150 L96,146 M100,150 L104,146" stroke="#007AFF" strokeWidth="2"/>
+                  {[30,50,70,90,110,130].map(y=><line key={y} x1="92" y1={y} x2="108" y2={y} stroke="#007AFF" strokeWidth="1" opacity="0.4"/>)}
+                  <rect x="70" y="75" width="60" height="20" rx="3" fill="#007AFF"/>
+                  <text x="100" y="89" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="bold" fontFamily="Arial">LENGTH</text>
+                  <text x="100" y="158" textAnchor="middle" fill="#007AFF" fontSize="9" fontFamily="Arial">Shoulder to hem</text>
+                </svg>
+              ),
+              steps:["Measure from the highest point of the shoulder","Run the tape down to the hem of the garment","For sarees measure the full length of the fabric","For salwar kameez measure the kameez top separately from the trouser"]
+            },
+          ].map(({key,label,color,svg,steps})=>(
+            <div key={key} style={{marginBottom:40,padding:"28px",border:`3px solid ${color}`,background:"#fff"}}>
+              <div style={{display:"flex",gap:28,flexWrap:"wrap",alignItems:"flex-start"}}>
+                <div style={{flex:"0 0 180px",display:"flex",alignItems:"center",justifyContent:"center",background:"#fafafa",border:`2px solid ${color}33`,padding:"20px",minHeight:160}}>
+                  {svg}
+                </div>
+                <div style={{flex:1,minWidth:200}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+                    <div style={{width:4,height:32,background:color}}/>
+                    <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:900,color}}>{label}</h3>
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    {steps.map((step,i)=>(
+                      <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:900,color,flexShrink:0,width:20}}>{i+1}.</span>
+                        <span style={{fontSize:14,color:"#555",lineHeight:1.6}}>{step}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Tips box */}
+          <div style={{background:"#111",color:"#fff",padding:"28px",border:"3px solid #111",marginBottom:32}}>
+            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#FF1493",marginBottom:12}}>💡 PRO TIPS</p>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {["Always measure over the clothes you'd wear underneath the garment","Round up to the nearest half inch for comfort","For South Asian wear, add 1–2 inches to your actual measurements for ease","List all measurements you have — the more detail, the more buyers will trust your listing","If you have spare fabric that allows letting out, always mention it!"].map((t,i)=>(
+                <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+                  <span style={{color:"#FF1493",fontWeight:900,flexShrink:0}}>✦</span>
+                  <span style={{fontSize:14,color:"#ccc",lineHeight:1.6}}>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",padding:"16px 32px",fontSize:15,letterSpacing:3,width:"100%"}} onClick={()=>{ setPrevView("measuring"); setView(user?"add":"auth"); }}>
+            LIST A PIECE NOW →
+          </button>
         </main>
       )}
 
@@ -2279,6 +2485,35 @@ export default function App() {
 
               {sel.description&&<p style={S.detailDesc}>{sel.description}</p>}
 
+              {/* Postage options on detail page */}
+              {((sel.postage_options||[]).length>0||sel.accepts_collection)&&(
+                <div style={S.dBlock}>
+                  <p style={{...S.dBlockTitle,borderColor:"#007AFF",color:"#007AFF"}}>📦 POSTAGE OPTIONS</p>
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {(sel.postage_options||[]).map(p=>(
+                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#fafafa",border:"1.5px solid #f0f0f0"}}>
+                        <span style={{fontSize:18}}>{p.emoji}</span>
+                        <div style={{flex:1}}>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800}}>{p.name}</p>
+                          <p style={{fontSize:12,color:"#888"}}>{p.selectedPrice?.label}</p>
+                        </div>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#007AFF"}}>£{p.selectedPrice?.price}</span>
+                      </div>
+                    ))}
+                    {sel.accepts_collection&&(
+                      <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#f0fff4",border:"1.5px solid #34C75944"}}>
+                        <span style={{fontSize:18}}>🤝</span>
+                        <div style={{flex:1}}>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800}}>Collection in Person</p>
+                          <p style={{fontSize:12,color:"#888"}}>Arrange with seller directly</p>
+                        </div>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#34C759"}}>FREE</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {sel.whatsapp&&!sel.sold&&<a className="hbtn" href={waLink(sel.whatsapp,sel.name,sel.price)} target="_blank" rel="noreferrer" style={{...S.waCta,background:"#25D366",display:"inline-flex",alignItems:"center",gap:10,textDecoration:"none"}}>💬 WHATSAPP SELLER</a>}
               {!isOwner(sel)&&!sel.sold&&<button className="hbtn" style={{...S.waCta,background:"#FF1493",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:10,marginLeft:sel.whatsapp?10:0}} onClick={()=>startConversation(sel)}>✉️ MESSAGE SELLER</button>}
               {!isOwner(sel)&&!sel.sold&&(
@@ -2482,6 +2717,10 @@ export default function App() {
             </Sec>
 
             {form.listing_type==="Clothing"&&<Sec label="MEASUREMENTS (INCHES)">
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                <p style={{fontSize:12,color:"#888"}}>Need help? Use a soft measuring tape.</p>
+                <button type="button" style={{background:"none",border:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:1,color:"#FF1493",cursor:"pointer",padding:0}} onClick={()=>{setPrevView(view);setView("measuring");}}>📏 HOW TO MEASURE →</button>
+              </div>
               <div style={S.fg4}>{[["bust","BUST"],["waist","WAIST"],["hips","HIPS"],["length","LENGTH"]].map(([k,l])=><F key={k} l={l}><input style={S.inp} placeholder="e.g. 34" value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}/></F>)}</div>
               <div style={{marginTop:12}}><F l="NOTES"><input style={S.inp} placeholder="e.g. stitched for 5'4, blouse included" value={form.measurement_notes} onChange={e=>setForm(f=>({...f,measurement_notes:e.target.value}))}/></F></div>
               <div style={S.toggleStack}>
@@ -2743,5 +2982,6 @@ const S={
   offerCard:{background:"#fff",padding:"14px 16px",borderRadius:0},
   offerStatusBadge:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:1.5,color:"#fff",padding:"2px 8px",borderRadius:0},
 };
+
 
 
