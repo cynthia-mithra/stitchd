@@ -162,7 +162,7 @@ export default function App() {
   const [error,     setError]     = useState("");
   const [aError,    setAError]    = useState("");
   const [profile,   setProfile]   = useState(null);
-  const [profForm,  setProfForm]  = useState({username:"",full_name:"",location:"",region:"",currency:"USD",specialises_in:[],avatar_url:"",avatarFile:null,avatarPreview:""});
+  const [profForm,  setProfForm]  = useState({username:"",full_name:"",location:"",region:"",currency:"USD",specialises_in:[],avatar_url:"",avatarFile:null,avatarPreview:"",bust:"",waist:"",hips:"",height:"",preferred_size:"",is_tailor:false,tailor_services:[],tailor_price_from:""});
   const [profSaving,setProfSaving]= useState(false);
   const [viewedProfile,setViewedProfile]=useState(null);
   const [profileListings,setProfileListings]=useState([]);
@@ -196,6 +196,9 @@ export default function App() {
   const [bundleForm,     setBundleForm]     = useState({name:"",description:"",discount_percent:0,selectedListings:[]});
   // listing type filter
   const [typeFilter,     setTypeFilter]     = useState("All");
+  const [showSizeMatch,  setShowSizeMatch]  = useState(false);
+  const [showTailorDir,  setShowTailorDir]  = useState(false);
+  const [tailorProfiles, setTailorProfiles] = useState([]);
   // follows & feed
   const [following,      setFollowing]      = useState([]); // array of {follower_id, following_id}
   const [feedItems,      setFeedItems]      = useState([]);
@@ -235,7 +238,7 @@ export default function App() {
 
   useEffect(()=>{
     if(user&&token){
-      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||""});} });
+      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||"",is_tailor:p.is_tailor||false,tailor_services:p.tailor_services||[],tailor_price_from:p.tailor_price_from||""});} });
       loadConversations();
       db.getFollowing(user.id,token).then(setFollowing);
       db.getNotifications(user.id,token).then(setNotifications);
@@ -255,9 +258,10 @@ export default function App() {
     const matchMin  = minPrice===""||i.price>=parseFloat(minPrice);
     const matchMax  = maxPrice===""||i.price<=parseFloat(maxPrice);
     const matchType = typeFilter==="All"||(typeFilter==="Jewellery"?JEWELLERY_CATS.includes(i.category):(typeFilter==="Clothing"?CATEGORIES.includes(i.category):true));
+    const matchFit  = !showSizeMatch||fitsMe(i)===true;
     const q=search.toLowerCase();
     const matchSearch=!q||i.name?.toLowerCase().includes(q)||i.description?.toLowerCase().includes(q)||i.fabric?.toLowerCase().includes(q)||i.category?.toLowerCase().includes(q)||i.origin?.toLowerCase().includes(q)||i.material?.toLowerCase().includes(q);
-    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType;
+    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit;
   }),[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter]);
 
   function flash(m){ setToast(m); setTimeout(()=>setToast(""),3500); }
@@ -365,7 +369,29 @@ export default function App() {
   }
 
   // ── FOLLOWS & FEED ──
-  const unreadNotifs = notifications.filter(n=>!n.read).length;
+  const getSellerTier = (p) => {
+    if(!p) return null;
+    if(p.verified) return {label:"✓ VERIFIED",color:"#34C759"};
+    if(p.seller_tier==="top") return {label:"⭐ TOP SELLER",color:"#FF9500"};
+    if(p.seller_tier==="trusted") return {label:"👍 TRUSTED",color:"#007AFF"};
+    return null;
+  };
+
+  async function loadTailors(){
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_tailor=eq.true`,{headers:hdrs(token)});
+    if(r.ok) setTailorProfiles(await r.json());
+  }
+
+  // size match — does a listing fit the buyer's measurements?
+  function fitsMe(item){
+    if(!profile?.bust&&!profile?.waist&&!profile?.hips) return null; // no measurements saved
+    if(!item.bust&&!item.waist&&!item.hips) return null; // listing has no measurements
+    let fits=true;
+    if(profile?.bust&&item.bust&&Math.abs(parseFloat(item.bust)-parseFloat(profile.bust))>2) fits=false;
+    if(profile?.waist&&item.waist&&Math.abs(parseFloat(item.waist)-parseFloat(profile.waist))>2) fits=false;
+    if(profile?.hips&&item.hips&&Math.abs(parseFloat(item.hips)-parseFloat(profile.hips))>2) fits=false;
+    return fits;
+  }
 
   async function notify(userId,type,title,body,linkId=null){
     if(!userId||userId===user?.id) return;
@@ -611,7 +637,7 @@ export default function App() {
     try{
       let avatar_url=profForm.avatar_url||"";
       if(profForm.avatarFile) avatar_url=await uploadImage(profForm.avatarFile,token);
-      const p={id:user.id,username:profForm.username,full_name:profForm.full_name,location:profForm.location,region:profForm.region,currency:profForm.currency,specialises_in:profForm.specialises_in,avatar_url};
+      const p={id:user.id,username:profForm.username,full_name:profForm.full_name,location:profForm.location,region:profForm.region,currency:profForm.currency,specialises_in:profForm.specialises_in,avatar_url,bust:profForm.bust||null,waist:profForm.waist||null,hips:profForm.hips||null,height:profForm.height||null,preferred_size:profForm.preferred_size||null,is_tailor:profForm.is_tailor,tailor_services:profForm.tailor_services,tailor_price_from:profForm.tailor_price_from||null};
       const [saved]=await db.upsertProfile(p,token);
       setProfile(saved); setProfForm(f=>({...f,avatar_url,avatarFile:null,avatarPreview:avatar_url}));
       flash("✓ Profile saved!");
@@ -951,6 +977,46 @@ export default function App() {
               onClick={submitReport} disabled={!reportReason}>
               SUBMIT REPORT →
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAILOR DIRECTORY MODAL ── */}
+      {showTailorDir&&(
+        <div style={S.modalOverlay} onClick={()=>setShowTailorDir(false)}>
+          <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
+              <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>✂️ TAILOR DIRECTORY</h3>
+              <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowTailorDir(false)}>✕</button>
+            </div>
+            <p style={{fontSize:13,color:"#888",marginBottom:20,lineHeight:1.6}}>Find trusted tailors and alteration specialists in the Stitch'd community who can help alter your piece to fit perfectly.</p>
+            {tailorProfiles.length===0?(
+              <div style={{textAlign:"center",padding:"32px 0"}}>
+                <p style={{fontSize:32,marginBottom:8}}>✂️</p>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,color:"#bbb",letterSpacing:1}}>NO TAILORS LISTED YET</p>
+                <p style={{fontSize:12,color:"#bbb",marginTop:8}}>Sellers can list themselves as tailors in their profile settings.</p>
+              </div>
+            ):(
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                {tailorProfiles.map(t=>(
+                  <div key={t.id} style={{border:"2px solid #f0f0f0",padding:"16px",display:"flex",gap:16,alignItems:"flex-start",cursor:"pointer"}} onClick={()=>{setShowTailorDir(false);openProfile(t.id);}}>
+                    <div style={{...S.profileAvatarWrap,width:50,height:50,flexShrink:0}}>
+                      {t.avatar_url?<img src={t.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<div style={{...S.profileAvatar,fontSize:22}}>{(t.full_name||t.username||"T")[0].toUpperCase()}</div>}
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900}}>{t.full_name||t.username||"Tailor"}</p>
+                        {t.verified&&<span style={S.verifiedBadge}>✓ VERIFIED</span>}
+                      </div>
+                      {t.location&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",letterSpacing:1,marginBottom:6}}>📍 {t.location}</p>}
+                      {(t.tailor_services||[]).length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>{t.tailor_services.map(s=><span key={s} style={{background:"#f5f5f5",padding:"2px 8px",fontSize:10,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1}}>{s.toUpperCase()}</span>)}</div>}
+                      {t.tailor_price_from&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#FF1493"}}>From {currencySymbol(t.currency)}{t.tailor_price_from}</p>}
+                    </div>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#FF1493",fontWeight:700}}>VIEW →</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1314,7 +1380,43 @@ export default function App() {
               {profSaving?"SAVING...":"SAVE PROFILE →"}
             </button>
 
-            {/* 2FA Section */}
+            {/* My Measurements */}
+            <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #007AFF",paddingLeft:12,marginBottom:8}}>📐 MY MEASUREMENTS</div>
+              <p style={{fontSize:12,color:"#888",marginBottom:16,lineHeight:1.6}}>Save your measurements to see "FITS YOU" badges on listings that match your size.</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+                {[["bust","BUST (inches)"],["waist","WAIST (inches)"],["hips","HIPS (inches)"],["height","HEIGHT (cm)"]].map(([k,l])=>(
+                  <F key={k} l={l}><input style={S.inp} type="number" placeholder="e.g. 34" value={profForm[k]} onChange={e=>setProfForm(f=>({...f,[k]:e.target.value}))}/></F>
+                ))}
+              </div>
+              <F l="PREFERRED SIZE">
+                <select style={S.inp} value={profForm.preferred_size} onChange={e=>setProfForm(f=>({...f,preferred_size:e.target.value}))}>
+                  <option value="">Select...</option>
+                  {SIZES.map(s=><option key={s}>{s}</option>)}
+                </select>
+              </F>
+            </div>
+
+            {/* Tailor Directory */}
+            <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:8}}>✂️ TAILOR LISTING</div>
+              <p style={{fontSize:12,color:"#888",marginBottom:16,lineHeight:1.6}}>List yourself as a tailor or alteration specialist so buyers can find you.</p>
+              <Tog on={profForm.is_tailor} onToggle={()=>setProfForm(f=>({...f,is_tailor:!f.is_tailor}))} color="#FF9500" label="LIST ME AS A TAILOR" sub="Show my profile in the tailor directory"/>
+              {profForm.is_tailor&&(
+                <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:12}}>
+                  <div>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:10}}>SERVICES OFFERED</p>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                      {["Alterations","Taking In","Letting Out","Hemming","Blouse Stitching","Full Stitching","Embroidery","Repairs","Custom Orders"].map(s=>{
+                        const on=(profForm.tailor_services||[]).includes(s);
+                        return<button key={s} type="button" className="hbtn" style={{...S.hBtn,background:on?"#FF9500":"#fff",color:on?"#fff":"#111",border:`2px solid ${on?"#FF9500":"#111"}`,padding:"6px 14px",fontSize:11,letterSpacing:1}} onClick={()=>setProfForm(f=>({...f,tailor_services:on?f.tailor_services.filter(x=>x!==s):[...f.tailor_services,s]}))}>{s.toUpperCase()}</button>;
+                      })}
+                    </div>
+                  </div>
+                  <F l="STARTING PRICE"><input style={S.inp} type="number" placeholder="e.g. 15" value={profForm.tailor_price_from} onChange={e=>setProfForm(f=>({...f,tailor_price_from:e.target.value}))}/></F>
+                </div>
+              )}
+            </div>
             <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20}}>🔐 TWO-FACTOR AUTHENTICATION</div>
               {twoFAStep==="enroll"&&twoFAData?(
@@ -1378,7 +1480,11 @@ export default function App() {
             {/* Info */}
             <div style={{flex:1}}>
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:4}}>SELLER PROFILE</p>
-              <h2 style={S.profileName}>{viewedProfile.full_name||viewedProfile.username||"Seller"} {viewedProfile.verified&&<span style={S.verifiedBadge}>✓ VERIFIED</span>}</h2>
+              <h2 style={S.profileName}>
+                {viewedProfile.full_name||viewedProfile.username||"Seller"}
+                {viewedProfile.verified&&<span style={S.verifiedBadge}>✓ VERIFIED</span>}
+                {!viewedProfile.verified&&getSellerTier(viewedProfile)&&<span style={{...S.verifiedBadge,background:getSellerTier(viewedProfile).color}}>{getSellerTier(viewedProfile).label}</span>}
+              </h2>
               {viewedProfile.username&&viewedProfile.full_name&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#bbb",marginBottom:8}}>{viewedProfile.username}</p>}
               {viewedProfile.location&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:4}}>📍 {viewedProfile.location}</p>}
               {viewedProfile.region&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:10}}>🌍 {viewedProfile.region} {viewedProfile.currency&&viewedProfile.currency!=="USD"?`· ${viewedProfile.currency}`:""}</p>}
@@ -1695,6 +1801,12 @@ export default function App() {
               <button className="hbtn" style={{...S.hBtn,background:showFilters?"#FF1493":"#fff",color:showFilters?"#fff":"#111",border:"none",borderLeft:"2px solid #111",borderRadius:0,padding:"0 28px",height:"100%",fontSize:13,flexShrink:0,letterSpacing:2,minWidth:120}} onClick={()=>setShowFilters(f=>!f)}>
                 FILTERS {hasFilters?"●":""}
               </button>
+              {user&&profile?.bust&&<button className="hbtn" style={{...S.hBtn,background:showSizeMatch?"#34C759":"#fff",color:showSizeMatch?"#fff":"#111",border:"none",borderLeft:"2px solid #111",borderRadius:0,padding:"0 20px",height:"100%",fontSize:11,flexShrink:0,letterSpacing:1.5,minWidth:100}} onClick={()=>setShowSizeMatch(f=>!f)}>
+                📐 MY FIT
+              </button>}
+              <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"none",borderLeft:"2px solid #111",borderRadius:0,padding:"0 20px",height:"100%",fontSize:11,flexShrink:0,letterSpacing:1.5}} onClick={()=>{loadTailors();setShowTailorDir(true);}}>
+                ✂️ TAILORS
+              </button>
             </div>
             {showFilters&&(
               <div style={S.filterPanel}>
@@ -1744,6 +1856,7 @@ export default function App() {
                         {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                         {item.payment_status==="paid"&&!item.sold&&<div style={{...S.reservedBadge,background:"#34C759"}}>PAID</div>}
                         {item.reserved&&!item.sold&&<div style={S.reservedBadge}>RESERVED</div>}
+                        {fitsMe(item)===true&&<div style={S.fitsBadge}>📐 FITS YOU</div>}
                         <button style={{...S.heartBtn,background:wishlist.includes(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}>{wishlist.includes(item.id)?"❤️":"🤍"}</button>
                         <div style={S.cardOrigin}>{item.origin?.toUpperCase()}</div>
                         <div style={S.cardOccDots}>{(item.occasions||[]).slice(0,4).map(o=><div key={o} style={{...S.occDot,background:"rgba(255,255,255,0.9)"}} title={o}/>)}</div>
@@ -1835,7 +1948,11 @@ export default function App() {
               <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:20,flexWrap:"wrap"}}>
                 {sel.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#bbb",letterSpacing:1}}>👁 {sel.views} VIEWS</span>}
                 {reviews.length>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#FF9500",letterSpacing:1}}>⭐ {(reviews.reduce((a,r)=>a+r.rating,0)/reviews.length).toFixed(1)} ({reviews.length} reviews)</span>}
-                {sel.user_id&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:selColor,letterSpacing:1,cursor:"pointer",textDecoration:"underline"}} onClick={()=>openProfile(sel.user_id)}>VIEW SELLER {viewedProfile?.verified?"✓ VERIFIED":""} →</span>}
+                {sel.user_id&&(
+                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:selColor,letterSpacing:1,cursor:"pointer",textDecoration:"underline"}} onClick={()=>openProfile(sel.user_id)}>
+                    VIEW SELLER {viewedProfile&&getSellerTier(viewedProfile)?getSellerTier(viewedProfile).label:""} →
+                  </span>
+                )}
               </div>
 
               {(sel.occasions||[]).length>0&&(
@@ -1947,7 +2064,34 @@ export default function App() {
             </div>
           )}
 
-          {/* RECENTLY VIEWED */}
+          {/* COMPLETE THE LOOK — show matching jewellery for clothing items */}
+          {sel&&sel.listing_type!=="Jewellery"&&(()=>{
+            const matchingJewellery=items.filter(i=>i.listing_type==="Jewellery"&&!i.sold&&i.id!==sel.id&&(i.user_id===sel.user_id||(i.occasions||[]).some(o=>(sel.occasions||[]).includes(o)))).slice(0,4);
+            if(!matchingJewellery.length) return null;
+            return(
+              <div style={{marginTop:48}}>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #BF5AF2",paddingLeft:12,marginBottom:20}}>💎 COMPLETE THE LOOK</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:3}}>
+                  {matchingJewellery.map((item,idx)=>{
+                    const accent=CARD_COLORS[idx%CARD_COLORS.length];
+                    return(
+                      <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
+                        <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden",height:160}}>
+                          {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:56}}>{item.emoji||catEmoji(item.category)}</span>}
+                        </div>
+                        <div style={{...S.cardBody,padding:"12px 14px 10px"}}>
+                          <p style={{...S.cardCatLabel,color:accent,marginBottom:2}}>{item.category?.toUpperCase()} · {item.material?.toUpperCase()}</p>
+                          <p style={{...S.cardName,fontSize:16,marginBottom:8}}>{item.name}</p>
+                          <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent,fontSize:20}}>{currencySymbol(item.currency)}{item.price}</span></div>
+                        </div>
+                        <div style={{...S.accentBar,background:accent}}/>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
           {recentItems.length>0&&(
             <div style={{marginTop:48}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:20}}>RECENTLY VIEWED</div>
@@ -2234,6 +2378,7 @@ const S={
   modalOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:24},
   modalBox:{background:"#fff",border:"3px solid #111",padding:32,maxWidth:640,width:"100%",maxHeight:"85vh",overflowY:"auto"},
   verifiedBadge:{background:"#34C759",color:"#fff",fontSize:11,fontWeight:800,letterSpacing:1,padding:"2px 8px",fontFamily:"'Barlow Condensed',sans-serif",verticalAlign:"middle",marginLeft:8},
+  fitsBadge:{position:"absolute",bottom:10,left:10,background:"#34C759",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3},
   reviewCard:{background:"#fafafa",border:"1.5px solid #f0f0f0",padding:"14px 16px"},
   // messaging
   msgLayout:{display:"flex",border:"3px solid #111",height:"70vh",overflow:"hidden"},
@@ -2251,3 +2396,4 @@ const S={
   offerCard:{background:"#fff",padding:"14px 16px",borderRadius:0},
   offerStatusBadge:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:1.5,color:"#fff",padding:"2px 8px",borderRadius:0},
 };
+
