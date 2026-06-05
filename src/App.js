@@ -115,6 +115,15 @@ const db = {
   async updateConversation(id,patch,t){ await fetch(`${SUPABASE_URL}/rest/v1/conversations?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify(patch)}); },
   async markMessagesRead(convId,uid,t){ await fetch(`${SUPABASE_URL}/rest/v1/messages?conversation_id=eq.${convId}&sender_id=neq.${uid}&read=eq.false`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({read:true})}); },
   async countUnread(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/messages?read=eq.false&select=id,conversation_id,conversations!inner(buyer_id,seller_id)`,{headers:{...hdrs(t),"Accept":"application/json"}}); if(!r.ok)return 0; const d=await r.json(); return d.filter(m=>m.sender_id!==uid).length; },
+  // tailor marketplace
+  async getTailorServices(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_services?active=eq.true&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async getMyTailorServices(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_services?tailor_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async insertTailorService(s,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_services`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(s)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  async updateTailorService(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_services?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  async deleteTailorService(id,t){ await fetch(`${SUPABASE_URL}/rest/v1/tailor_services?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); },
+  async createTailorBooking(b,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_bookings`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
+  async getMyTailorBookings(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_bookings?or=(tailor_id.eq.${uid},buyer_id.eq.${uid})&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async updateTailorBooking(id,patch,t){ await fetch(`${SUPABASE_URL}/rest/v1/tailor_bookings?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify(patch)}); },
 };
 
 const CATEGORIES   = ["Saree","Salwar Kameez","Lehenga","Sherwani","Kurta","Co-ord Set","Dupatta","Accessories","Other"];
@@ -199,6 +208,19 @@ export default function App() {
   const [showSizeMatch,  setShowSizeMatch]  = useState(false);
   const [showTailorDir,  setShowTailorDir]  = useState(false);
   const [tailorProfiles, setTailorProfiles] = useState([]);
+  // tailor marketplace
+  const [tailorServices,    setTailorServices]    = useState([]);
+  const [myTailorServices,  setMyTailorServices]  = useState([]);
+  const [tailorBookings,    setTailorBookings]    = useState([]);
+  const [showTailorMarket,  setShowTailorMarket]  = useState(false);
+  const [selectedService,   setSelectedService]   = useState(null);
+  const [tailorServiceForm, setTailorServiceForm] = useState({title:"",description:"",service_type:"Alterations",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});
+  const [showTailorForm,    setShowTailorForm]    = useState(false);
+  const [editingService,    setEditingService]    = useState(null);
+  const [tailorSearch,      setTailorSearch]      = useState("");
+  const [tailorTypeFilter,  setTailorTypeFilter]  = useState("All");
+  const [bookingNotes,      setBookingNotes]      = useState("");
+  const [showBookingForm,   setShowBookingForm]   = useState(false);
   // follows & feed
   const [following,      setFollowing]      = useState([]); // array of {follower_id, following_id}
   const [feedItems,      setFeedItems]      = useState([]);
@@ -387,6 +409,60 @@ export default function App() {
   async function loadTailors(){
     const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_tailor=eq.true`,{headers:hdrs(token)});
     if(r.ok) setTailorProfiles(await r.json());
+  }
+
+  async function loadTailorMarket(){
+    const services=await db.getTailorServices(token);
+    setTailorServices(services);
+    if(user) {
+      const mine=await db.getMyTailorServices(user.id,token);
+      setMyTailorServices(mine);
+      const bookings=await db.getMyTailorBookings(user.id,token);
+      setTailorBookings(bookings);
+    }
+  }
+
+  async function saveTailorService(){
+    if(!tailorServiceForm.title||!tailorServiceForm.price_from){flash("Add a title and starting price.");return;}
+    try{
+      const imageUrls=await Promise.all((tailorServiceForm.images||[]).map(f=>uploadImage(f,token)));
+      const payload={tailor_id:user.id,title:tailorServiceForm.title,description:tailorServiceForm.description,service_type:tailorServiceForm.service_type,price_from:parseFloat(tailorServiceForm.price_from),price_to:tailorServiceForm.price_to?parseFloat(tailorServiceForm.price_to):null,turnaround_days:tailorServiceForm.turnaround_days?parseInt(tailorServiceForm.turnaround_days):null,location:tailorServiceForm.location,images:imageUrls,active:true};
+      if(editingService){
+        await db.updateTailorService(editingService.id,payload,token);
+        flash("✓ Service updated!");
+      } else {
+        await db.insertTailorService(payload,token);
+        flash("🩷 Service listed!");
+      }
+      setShowTailorForm(false);
+      setEditingService(null);
+      setTailorServiceForm({title:"",description:"",service_type:"Alterations",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});
+      await loadTailorMarket();
+    }catch(e){flash("Failed to save service.");}
+  }
+
+  async function deleteTailorService(id){
+    try{await db.deleteTailorService(id,token);setMyTailorServices(p=>p.filter(s=>s.id!==id));flash("Service deleted.");}
+    catch(e){flash("Failed to delete.");}
+  }
+
+  async function bookTailor(service){
+    if(!user){setAuthMode("login");setView("auth");return;}
+    if(service.tailor_id===user.id){flash("You can't book yourself!");return;}
+    try{
+      const booking=await db.createTailorBooking({service_id:service.id,tailor_id:service.tailor_id,buyer_id:user.id,status:"pending",price:service.price_from,notes:bookingNotes,payment_status:"unpaid"},token);
+      // start conversation with tailor
+      let conv=await db.findConversation(user.id,service.tailor_id,null,token);
+      if(!conv) conv=await db.createConversation({listing_id:null,buyer_id:user.id,seller_id:service.tailor_id,last_message:`Booking request: ${service.title}`,last_message_at:new Date().toISOString()},token);
+      await db.sendMessage({conversation_id:conv.id,sender_id:user.id,content:`✂️ BOOKING REQUEST\n\nService: ${service.title}\nStarting from: ${currencySymbol(profile?.currency)}${service.price_from}\nTurnaround: ${service.turnaround_days?`${service.turnaround_days} days`:"TBC"}\n\nNotes: ${bookingNotes||"No notes added"}`,message_type:"text"},token);
+      await notify(service.tailor_id,"booking",`✂️ New booking request!`,`${profile?.username||"Someone"} wants to book "${service.title}"`,conv.id);
+      setShowBookingForm(false);
+      setBookingNotes("");
+      setSelectedService(null);
+      flash("🎉 Booking request sent! Check your messages.");
+      await loadConversations();
+      setView("messages");
+    }catch(e){flash("Failed to send booking.");}
   }
 
   // size match — does a listing fit the buyer's measurements?
@@ -1776,6 +1852,170 @@ export default function App() {
         </main>
       )}
 
+      {/* ── TAILOR MARKETPLACE ── */}
+      {view==="tailors"&&(
+        <main style={S.main}>
+          <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
+          <div style={{marginBottom:32,paddingBottom:24,borderBottom:"3px solid #111",display:"flex",alignItems:"flex-end",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
+            <div>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF9500",marginBottom:6}}>FIND A TAILOR</p>
+              <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:56,fontWeight:900,letterSpacing:-1,lineHeight:1}}>TAILOR<br/>MARKETPLACE ✂️</h2>
+              <p style={{fontSize:14,color:"#888",marginTop:10,maxWidth:500}}>Book trusted South Asian tailors for alterations, custom stitching, embroidery and repairs. Stitch'd takes 10% — tailors keep 90%.</p>
+            </div>
+            {user&&(
+              <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"12px 24px",fontSize:13,letterSpacing:2}} onClick={()=>{setEditingService(null);setTailorServiceForm({title:"",description:"",service_type:"Alterations",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});setShowTailorForm(true);}}>
+                + LIST MY SERVICE
+              </button>
+            )}
+          </div>
+
+          {/* My services if tailor */}
+          {user&&myTailorServices.length>0&&(
+            <div style={{marginBottom:40}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#FF9500",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:16}}>MY LISTED SERVICES</div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {myTailorServices.map(s=>(
+                  <div key={s.id} style={{border:"2px solid #FF9500",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
+                    <div>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,marginBottom:4}}>{s.title}</p>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#FF9500",letterSpacing:1}}>{s.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency)}{s.price_from}{s.price_to?` — ${currencySymbol(profile?.currency)}${s.price_to}`:""}{s.turnaround_days?` · ${s.turnaround_days} DAYS`:""}</p>
+                    </div>
+                    <div style={{display:"flex",gap:8}}>
+                      <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",fontSize:11,padding:"8px 14px"}} onClick={()=>{setEditingService(s);setTailorServiceForm({title:s.title,description:s.description||"",service_type:s.service_type||"Alterations",price_from:s.price_from||"",price_to:s.price_to||"",turnaround_days:s.turnaround_days||"",location:s.location||"",images:[],imagePreviews:s.images||[]});setShowTailorForm(true);}}>EDIT</button>
+                      <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"8px 14px"}} onClick={()=>deleteTailorService(s.id)}>DELETE</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Search + filters */}
+          <div style={{display:"flex",gap:10,marginBottom:20,flexWrap:"wrap",alignItems:"center"}}>
+            <input style={{...S.inp,flex:1,minWidth:200}} placeholder="Search services..." value={tailorSearch} onChange={e=>setTailorSearch(e.target.value)}/>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {["All","Alterations","Custom Stitching","Embroidery","Repairs","Taking In","Hemming","Blouse Stitching","Custom Orders"].map(t=>(
+                <button key={t} className="fpill" style={{...S.pill,...(tailorTypeFilter===t?S.pillOn:{})}} onClick={()=>setTailorTypeFilter(t)}>{t}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Services grid */}
+          {tailorServices.length===0?(
+            <div style={{textAlign:"center",padding:"60px 20px"}}>
+              <p style={{fontSize:48,marginBottom:12}}>✂️</p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NO TAILORS YET.</p>
+              <p style={{color:"#888",marginBottom:20}}>Be the first to list your tailoring services!</p>
+              {user&&<button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"12px 24px"}} onClick={()=>setShowTailorForm(true)}>LIST MY SERVICE →</button>}
+            </div>
+          ):(
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:3}}>
+              {tailorServices.filter(s=>{
+                const matchSearch=!tailorSearch||s.title?.toLowerCase().includes(tailorSearch.toLowerCase())||s.description?.toLowerCase().includes(tailorSearch.toLowerCase())||s.location?.toLowerCase().includes(tailorSearch.toLowerCase());
+                const matchType=tailorTypeFilter==="All"||s.service_type===tailorTypeFilter;
+                return matchSearch&&matchType;
+              }).map((s,idx)=>{
+                const accent=CARD_COLORS[idx%CARD_COLORS.length];
+                return(
+                  <div key={s.id} style={{...S.card,borderColor:accent,cursor:"pointer"}} onClick={()=>{setSelectedService(s);setShowBookingForm(true);}}>
+                    <div style={{height:180,background:s.images?.[0]?"#000":accent,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",position:"relative"}}>
+                      {s.images?.[0]?<img src={s.images[0]} alt={s.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:60}}>✂️</span>}
+                      <div style={{position:"absolute",top:12,left:12,background:"rgba(0,0,0,0.6)",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif"}}>{s.service_type?.toUpperCase()}</div>
+                    </div>
+                    <div style={S.cardBody}>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,marginBottom:6,color:"#111"}}>{s.title}</p>
+                      {s.location&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",letterSpacing:1,marginBottom:6}}>📍 {s.location}</p>}
+                      {s.description&&<p style={{fontSize:13,color:"#666",marginBottom:10,lineHeight:1.5}}>{s.description.slice(0,100)}{s.description.length>100?"...":""}</p>}
+                      {s.turnaround_days&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",letterSpacing:1,marginBottom:8}}>⏱ {s.turnaround_days} DAY TURNAROUND</p>}
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"2px solid #f5f5f5",paddingTop:12}}>
+                        <div>
+                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:accent}}>From {currencySymbol(profile?.currency||"GBP")}{s.price_from}</span>
+                          {s.price_to&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",marginLeft:4}}>— {currencySymbol(profile?.currency||"GBP")}{s.price_to}</span>}
+                        </div>
+                        <button className="hbtn" style={{...S.hBtn,background:accent,border:"none",padding:"8px 16px",fontSize:11,letterSpacing:1}}>BOOK →</button>
+                      </div>
+                    </div>
+                    <div style={{...S.accentBar,background:accent}}/>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Booking form modal */}
+          {showBookingForm&&selectedService&&(
+            <div style={S.modalOverlay} onClick={()=>setShowBookingForm(false)}>
+              <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
+                  <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>✂️ BOOK THIS SERVICE</h3>
+                  <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowBookingForm(false)}>✕</button>
+                </div>
+                <div style={{background:"#fafafa",border:"2px solid #f0f0f0",padding:"16px",marginBottom:20}}>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,marginBottom:4}}>{selectedService.title}</p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#FF9500",letterSpacing:1}}>{selectedService.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency||"GBP")}{selectedService.price_from}</p>
+                  {selectedService.turnaround_days&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",marginTop:4}}>⏱ {selectedService.turnaround_days} day turnaround</p>}
+                </div>
+                <div style={{marginBottom:20,padding:"14px 16px",background:"#fff8f0",border:"1.5px solid #FF950055"}}>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#FF9500",marginBottom:6}}>HOW IT WORKS</p>
+                  <p style={{fontSize:13,color:"#666",lineHeight:1.6}}>1. Send your booking request with notes<br/>2. Tailor will respond via Stitch'd messages<br/>3. Agree on final price and details<br/>4. Pay securely through Stitch'd (10% fee applies)<br/>5. Tailor completes your order 🩷</p>
+                </div>
+                <F l="NOTES FOR TAILOR (measurements, requirements, etc.)">
+                  <textarea style={{...S.inp,height:100,resize:"vertical",width:"100%"}} placeholder="e.g. I need a blouse taken in by 2 inches at the waist. My measurements are bust 34, waist 28, hips 36..." value={bookingNotes} onChange={e=>setBookingNotes(e.target.value)}/>
+                </F>
+                <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",width:"100%",padding:"16px",fontSize:15,letterSpacing:3,marginTop:16}} onClick={()=>bookTailor(selectedService)}>
+                  SEND BOOKING REQUEST →
+                </button>
+                <p style={{fontSize:11,color:"#bbb",textAlign:"center",marginTop:10}}>🔒 Payment handled securely through Stitch'd · 10% platform fee</p>
+              </div>
+            </div>
+          )}
+
+          {/* Add/Edit service form modal */}
+          {showTailorForm&&(
+            <div style={S.modalOverlay} onClick={()=>setShowTailorForm(false)}>
+              <div style={{...S.modalBox,maxWidth:560}} onClick={e=>e.stopPropagation()}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
+                  <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>{editingService?"EDIT SERVICE":"LIST YOUR SERVICE"}</h3>
+                  <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowTailorForm(false)}>✕</button>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                  <F l="SERVICE TITLE *"><input style={S.inp} placeholder="e.g. Bridal Blouse Stitching" value={tailorServiceForm.title} onChange={e=>setTailorServiceForm(f=>({...f,title:e.target.value}))}/></F>
+                  <F l="SERVICE TYPE">
+                    <select style={S.inp} value={tailorServiceForm.service_type} onChange={e=>setTailorServiceForm(f=>({...f,service_type:e.target.value}))}>
+                      {["Alterations","Taking In","Letting Out","Hemming","Blouse Stitching","Full Stitching","Custom Stitching","Embroidery","Repairs","Custom Orders"].map(t=><option key={t}>{t}</option>)}
+                    </select>
+                  </F>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                    <F l="PRICE FROM *"><input style={S.inp} type="number" placeholder="e.g. 15" value={tailorServiceForm.price_from} onChange={e=>setTailorServiceForm(f=>({...f,price_from:e.target.value}))}/></F>
+                    <F l="PRICE TO"><input style={S.inp} type="number" placeholder="e.g. 50" value={tailorServiceForm.price_to} onChange={e=>setTailorServiceForm(f=>({...f,price_to:e.target.value}))}/></F>
+                  </div>
+                  <F l="TURNAROUND (DAYS)"><input style={S.inp} type="number" placeholder="e.g. 7" value={tailorServiceForm.turnaround_days} onChange={e=>setTailorServiceForm(f=>({...f,turnaround_days:e.target.value}))}/></F>
+                  <F l="LOCATION"><input style={S.inp} placeholder="e.g. East London, UK" value={tailorServiceForm.location} onChange={e=>setTailorServiceForm(f=>({...f,location:e.target.value}))}/></F>
+                  <F l="DESCRIPTION"><textarea style={{...S.inp,height:80,resize:"vertical",width:"100%"}} placeholder="Tell buyers about your experience, specialties, what's included..." value={tailorServiceForm.description} onChange={e=>setTailorServiceForm(f=>({...f,description:e.target.value}))}/></F>
+                  <F l="PHOTOS (UP TO 3)">
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      {(tailorServiceForm.imagePreviews||[]).map((src,i)=>(
+                        <div key={i} style={{width:80,height:80,border:"2px solid #e0e0e0",overflow:"hidden",position:"relative"}}>
+                          <img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                          <button type="button" style={{...S.removeImg}} onClick={()=>setTailorServiceForm(f=>({...f,images:f.images.filter((_,j)=>j!==i),imagePreviews:f.imagePreviews.filter((_,j)=>j!==i)}))}>✕</button>
+                        </div>
+                      ))}
+                      {(tailorServiceForm.imagePreviews||[]).length<3&&(
+                        <div style={{width:80,height:80,border:"3px dashed #e0e0e0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:24}} onClick={()=>document.getElementById("tailor-img-input").click()}>+</div>
+                      )}
+                    </div>
+                    <input id="tailor-img-input" type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>{const files=Array.from(e.target.files).slice(0,3-(tailorServiceForm.imagePreviews||[]).length);const previews=files.map(f=>URL.createObjectURL(f));setTailorServiceForm(f=>({...f,images:[...(f.images||[]),...files],imagePreviews:[...(f.imagePreviews||[]),...previews]}));}}/>
+                  </F>
+                </div>
+                <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",width:"100%",padding:"16px",fontSize:15,letterSpacing:3,marginTop:20,opacity:(!tailorServiceForm.title||!tailorServiceForm.price_from)?0.4:1}} onClick={saveTailorService} disabled={!tailorServiceForm.title||!tailorServiceForm.price_from}>
+                  {editingService?"SAVE CHANGES →":"LIST SERVICE →"}
+                </button>
+              </div>
+            </div>
+          )}
+        </main>
+      )}
+
       {view==="shop"&&(
         <>
           <section style={S.hero}>
@@ -1811,7 +2051,7 @@ export default function App() {
               {user&&profile?.bust&&<button className="hbtn" style={{...S.filterBtn,background:showSizeMatch?"#34C759":"#fff",color:showSizeMatch?"#fff":"#111"}} onClick={()=>setShowSizeMatch(f=>!f)}>
                 📐 FIT
               </button>}
-              <button className="hbtn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailors();setShowTailorDir(true);}}>
+              <button className="hbtn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailorMarket();setView("tailors");}}>
                 ✂️ TAILORS
               </button>
             </div>
