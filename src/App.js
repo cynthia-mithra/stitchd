@@ -247,9 +247,14 @@ export default function App() {
 
   async function fetchItems(){
     setLoading(true); setError("");
-    try{ setItems(await db.getAll(token)); }
-    catch(e){ setError(`Error: ${e.message}`); }
-    finally{ setLoading(false); }
+    try{
+      const data = await db.getAll(token);
+      setItems(data);
+    }catch(e){
+      // if JWT expired try without token (public listings)
+      try{ setItems(await db.getAll(null)); }
+      catch(e2){ setError(`Error: ${e2.message}`); }
+    }finally{ setLoading(false); }
   }
 
   const visible = useMemo(()=>items.filter(i=>{
@@ -1800,13 +1805,13 @@ export default function App() {
                 <input style={S.searchInput} placeholder="SEARCH SAREES, SILK, WEDDING..." value={search} onChange={e=>setSearch(e.target.value)}/>
                 {search&&<button style={S.searchClear} onClick={()=>setSearch("")}>✕</button>}
               </div>
-              <button className="hbtn" style={{...S.hBtn,background:showFilters?"#FF1493":"#fff",color:showFilters?"#fff":"#111",border:"none",borderLeft:"2px solid #111",borderRadius:0,padding:"0 28px",height:"100%",fontSize:13,flexShrink:0,letterSpacing:2,minWidth:120}} onClick={()=>setShowFilters(f=>!f)}>
+              <button className="hbtn" style={{...S.filterBtn,background:showFilters?"#FF1493":"#fff",color:showFilters?"#fff":"#111"}} onClick={()=>setShowFilters(f=>!f)}>
                 FILTERS {hasFilters?"●":""}
               </button>
-              {user&&profile?.bust&&<button className="hbtn" style={{...S.hBtn,background:showSizeMatch?"#34C759":"#fff",color:showSizeMatch?"#fff":"#111",border:"none",borderLeft:"2px solid #111",borderRadius:0,padding:"0 20px",height:"100%",fontSize:11,flexShrink:0,letterSpacing:1.5,minWidth:100}} onClick={()=>setShowSizeMatch(f=>!f)}>
-                📐 MY FIT
+              {user&&profile?.bust&&<button className="hbtn" style={{...S.filterBtn,background:showSizeMatch?"#34C759":"#fff",color:showSizeMatch?"#fff":"#111"}} onClick={()=>setShowSizeMatch(f=>!f)}>
+                📐 FIT
               </button>}
-              <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"none",borderLeft:"2px solid #111",borderRadius:0,padding:"0 20px",height:"100%",fontSize:11,flexShrink:0,letterSpacing:1.5}} onClick={()=>{loadTailors();setShowTailorDir(true);}}>
+              <button className="hbtn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailors();setShowTailorDir(true);}}>
                 ✂️ TAILORS
               </button>
             </div>
@@ -1835,7 +1840,7 @@ export default function App() {
               {Array(8).fill(0).map((_,i)=>(
                 <div key={i} style={{...S.card,borderColor:"#f0f0f0"}}>
                   <div style={{height:200,background:"linear-gradient(90deg,#f5f5f5 25%,#ececec 50%,#f5f5f5 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s infinite"}}/>
-                  <div style={{padding:"16px 18px"}}>
+                  <div style={{padding:"16px 18px",background:"#fff"}}>
                     <div style={{height:10,background:"#f0f0f0",borderRadius:2,marginBottom:8,width:"40%"}}/>
                     <div style={{height:16,background:"#f0f0f0",borderRadius:2,marginBottom:8,width:"80%"}}/>
                     <div style={{height:12,background:"#f0f0f0",borderRadius:2,marginBottom:12,width:"60%"}}/>
@@ -2228,56 +2233,66 @@ const CSS=`
   .avatar-wrap:hover .avatar-overlay{opacity:1 !important;}
   ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#eee;border-radius:2px}
   ::selection{background:#FF149333}
+  @media(max-width:600px){
+    .hero-left{padding:28px 20px !important;flex:1 1 100% !important;border-right:none !important;border-bottom:3px solid #111;}
+    .hero-right{display:none !important;}
+    .detail-wrap{flex-direction:column !important;}
+    .detail-img{border-right:none !important;border-bottom:3px solid #111;}
+    .msg-layout{flex-direction:column !important;height:auto !important;}
+    .msg-sidebar{width:100% !important;border-right:none !important;border-bottom:3px solid #111;}
+    .dash-grid{grid-template-columns:1fr !important;}
+  }
 `;
 
 const S={
   root:{minHeight:"100vh",background:"#fff",color:"#111",fontFamily:"'Barlow',sans-serif"},
   header:{background:"#fff",borderBottom:"3px solid #111",position:"sticky",top:0,zIndex:200},
-  hWrap:{maxWidth:"100%",padding:"0 16px",display:"flex",alignItems:"stretch",height:60},
-  logoWrap:{display:"flex",alignItems:"center",gap:2,cursor:"pointer",paddingRight:16,borderRight:"2px solid #111",flexShrink:0},
-  logoText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,letterSpacing:2},
-  logoTM:{fontSize:12,color:"#FF1493",alignSelf:"flex-start",marginTop:8},
-  hMid:{flex:1,overflow:"hidden",display:"flex",alignItems:"center",paddingLeft:16},
+  hWrap:{maxWidth:"100%",padding:"0 10px",display:"flex",alignItems:"stretch",height:52,overflowX:"auto",WebkitOverflowScrolling:"touch"},
+  logoWrap:{display:"flex",alignItems:"center",gap:2,cursor:"pointer",paddingRight:10,borderRight:"2px solid #111",flexShrink:0},
+  logoText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2},
+  logoTM:{fontSize:10,color:"#FF1493",alignSelf:"flex-start",marginTop:6},
+  hMid:{flex:1,overflow:"hidden",display:"flex",alignItems:"center",paddingLeft:10,minWidth:0},
   marqueeTrack:{overflow:"hidden",width:"100%"},
-  marqueeInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:2,color:"#bbb",animation:"marquee 30s linear infinite"},
-  hRight:{display:"flex",alignItems:"center",gap:8,paddingLeft:16,borderLeft:"2px solid #111",flexShrink:0},
-  hLive:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:2,color:"#FF1493"},
-  hBtn:{background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"7px 14px",fontSize:11,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2},
+  marqueeInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:2,color:"#bbb",animation:"marquee 30s linear infinite"},
+  hRight:{display:"flex",alignItems:"center",gap:5,paddingLeft:10,borderLeft:"2px solid #111",flexShrink:0},
+  hLive:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1,color:"#FF1493",whiteSpace:"nowrap"},
+  hBtn:{background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"5px 8px",fontSize:9,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,whiteSpace:"nowrap"},
   ticker:{background:"#FF1493",overflow:"hidden",borderBottom:"2px solid #111",height:36,display:"flex",alignItems:"center"},
   tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2.5,color:"#fff",animation:"ticker 22s linear infinite",paddingLeft:"100%"},
   toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"12px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,zIndex:999,borderRadius:0,whiteSpace:"nowrap",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"},
-  hero:{borderBottom:"3px solid #111",display:"flex",minHeight:"88vh",overflow:"hidden"},
-  heroLeft:{flex:"0 0 55%",padding:"72px 56px",borderRight:"3px solid #111",display:"flex",flexDirection:"column",justifyContent:"center"},
+  hero:{borderBottom:"3px solid #111",display:"flex",minHeight:"80vh",overflow:"hidden",flexWrap:"wrap"},
+  heroLeft:{flex:"0 0 55%",minWidth:280,padding:"40px 32px",borderRight:"3px solid #111",display:"flex",flexDirection:"column",justifyContent:"center"},
   heroTag:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:20},
   heroH:{display:"flex",flexDirection:"column",marginBottom:28},
-  heroLine1:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(80px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#111"},
-  heroLine2:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(80px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#FF1493"},
-  heroLine3:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(80px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#fff",WebkitTextStroke:"3px #111"},
+  heroLine1:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#111"},
+  heroLine2:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#FF1493"},
+  heroLine3:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#fff",WebkitTextStroke:"2px #111"},
   heroSub:{fontSize:16,color:"#555",lineHeight:1.7,maxWidth:440,marginBottom:36},
   heroCtas:{display:"flex",gap:14,flexWrap:"wrap"},
   heroBtnPrimary:{background:"#FF1493",color:"#fff",border:"2px solid #FF1493",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
   heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
   heroRight:{flex:1,position:"relative",background:"#fafafa"},
   heroBubble:{position:"absolute",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"3px solid #111",animation:"floatbob 4s ease-in-out infinite"},
-  searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"sticky",top:60,zIndex:100},
-  searchInner:{display:"flex",alignItems:"stretch",borderBottom:"1px solid #f0f0f0"},
-  searchBox:{flex:1,display:"flex",alignItems:"center",borderRight:"2px solid #111",minWidth:0},
-  searchIcon:{padding:"0 16px",fontSize:16,color:"#bbb",flexShrink:0},
-  searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:1.5,color:"#111",padding:"16px 0",background:"transparent",minWidth:0},
-  searchClear:{background:"none",border:"none",padding:"0 16px",cursor:"pointer",fontSize:14,color:"#bbb",fontWeight:700,flexShrink:0},
-  filterPanel:{padding:"20px 24px",borderTop:"1px solid #f0f0f0",display:"flex",flexDirection:"column",gap:20},
+  searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"sticky",top:52,zIndex:100},
+  searchInner:{display:"flex",alignItems:"stretch",height:48},
+  searchBox:{flex:1,display:"flex",alignItems:"stretch",minWidth:0},
+  searchIcon:{padding:"0 10px",fontSize:14,color:"#bbb",flexShrink:0,display:"flex",alignItems:"center"},
+  searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#111",padding:"0",background:"transparent",minWidth:0},
+  searchClear:{background:"none",border:"none",padding:"0 10px",cursor:"pointer",fontSize:12,color:"#bbb",fontWeight:700,flexShrink:0,display:"flex",alignItems:"center"},
+  filterPanel:{padding:"16px 16px",borderTop:"1px solid #f0f0f0",display:"flex",flexDirection:"column",gap:16},
+  filterBtn:{background:"#fff",border:"none",borderLeft:"1px solid #e0e0e0",borderRadius:0,padding:"0 14px",height:48,minHeight:48,fontSize:11,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
   filterGroup:{display:"flex",flexDirection:"column",gap:10},
   filterLabel:{fontSize:10,fontWeight:900,letterSpacing:3,color:"#999",fontFamily:"'Barlow Condensed',sans-serif"},
   filterPills:{display:"flex",flexWrap:"wrap",gap:6},
   pill:{background:"#fff",border:"1.5px solid #e0e0e0",padding:"6px 14px",fontSize:11,cursor:"pointer",color:"#888",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1.5,whiteSpace:"nowrap",borderRadius:0,flexShrink:0},
   pillOn:{background:"#111",border:"1.5px solid #111",color:"#fff"},
-  gridWrap:{padding:"40px 24px",maxWidth:1300,margin:"0 auto"},
+  gridWrap:{padding:"20px 10px",maxWidth:1300,margin:"0 auto",background:"#fff"},
   loadingWrap:{display:"flex",flexDirection:"column",alignItems:"center",padding:"80px 0",gap:16},
   spinner:{width:36,height:36,border:"4px solid #f0f0f0",borderTop:"4px solid #FF1493",borderRadius:"50%",animation:"spin 0.8s linear infinite"},
   loadingText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:3,color:"#bbb"},
   errorBanner:{background:"#fff0f0",border:"2px solid #FF1493",padding:"16px 24px",marginBottom:24,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1,display:"flex",alignItems:"center",gap:16},
   retryBtn:{background:"#FF1493",color:"#fff",border:"none",padding:"6px 16px",fontSize:12,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2},
-  grid:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))",gap:3},
+  grid:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:3},
   card:{background:"#fff",border:"3px solid #111",overflow:"hidden",cursor:"pointer",borderRadius:0,position:"relative"},
   cardTop:{height:200,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"},
   cardEmoji:{fontSize:80,filter:"drop-shadow(0 6px 16px rgba(0,0,0,0.2))",position:"relative",zIndex:2},
@@ -2302,15 +2317,15 @@ const S={
   waSmall:{color:"#fff",padding:"6px 12px",fontSize:15,textDecoration:"none",display:"flex",alignItems:"center",fontWeight:700},
   accentBar:{height:4,width:"100%"},
   empty:{gridColumn:"1/-1",textAlign:"center",padding:"80px 20px"},
-  main:{maxWidth:1200,margin:"0 auto",padding:"40px 24px"},
+  main:{maxWidth:1200,margin:"0 auto",padding:"20px 12px"},
   back:{background:"none",border:"none",color:"#999",fontSize:12,cursor:"pointer",marginBottom:32,padding:0,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase"},
   detailWrap:{display:"flex",flexWrap:"wrap",gap:0,border:"3px solid #111"},
-  detailImgWrap:{flex:"0 0 340px",display:"flex",flexDirection:"column",borderRight:"3px solid #111"},
+  detailImgWrap:{flex:"0 0 300px",minWidth:"min(300px,100%)",display:"flex",flexDirection:"column",borderRight:"3px solid #111"},
   detailPanel:{flex:1,minHeight:320,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"},
   thumbRow:{display:"flex",gap:0,borderTop:"2px solid #111",overflowX:"auto"},
   thumb:{width:70,height:70,flexShrink:0,cursor:"pointer",border:"2px solid transparent",overflow:"hidden",transition:"border-color .15s"},
   imgNav:{position:"absolute",top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",color:"#fff",border:"none",width:36,height:36,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,fontWeight:900},
-  detailInfo:{flex:1,minWidth:280,padding:40},
+  detailInfo:{flex:1,minWidth:"min(280px,100%)",padding:"20px 16px"},
   detailName:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:44,fontWeight:900,color:"#111",lineHeight:1,marginBottom:10,letterSpacing:-1},
   detailPrice:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:56,fontWeight:900,marginBottom:16,letterSpacing:-2},
   dBlock:{marginBottom:24,paddingBottom:24,borderBottom:"1px solid #f0f0f0"},
