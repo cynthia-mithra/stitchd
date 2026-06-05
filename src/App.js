@@ -377,6 +377,8 @@ export default function App() {
     return null;
   };
 
+  const unreadNotifs = notifications.filter(n=>!n.read).length;
+
   async function loadTailors(){
     const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_tailor=eq.true`,{headers:hdrs(token)});
     if(r.ok) setTailorProfiles(await r.json());
