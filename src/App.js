@@ -138,7 +138,15 @@ const OCCASIONS  = ["Wedding","Eid","Diwali","Mehndi","Nikah","Sangeet","Navratr
 const SIZES      = ["XS","S","M","L","XL","XXL","Free Size","Custom Stitched"];
 const OCC_COLOR  = {Wedding:"#FF1493",Eid:"#34C759",Diwali:"#FF9500",Mehndi:"#30D158",Nikah:"#007AFF",Sangeet:"#FF2D55",Navratri:"#FF6B00",Puja:"#FF1493",Party:"#BF5AF2",Casual:"#8E8E93",Graduation:"#0A84FF",Other:"#636366"};
 const CARD_COLORS= ["#FF1493","#FF9500","#34C759","#007AFF","#BF5AF2","#FF2D55","#FF6B00","#0A84FF"];
-const EMPTY_FORM = {name:"",price:"",condition:"Like New",listing_type:"Clothing",category:"Saree",origin:"Indian",fabric:"Silk",material:"",size:"Free Size",occasions:[],bust:"",waist:"",hips:"",length:"",measurement_notes:"",can_take_in:false,spare_fabric:false,whatsapp:"",description:"",imageFiles:[],imagePreviews:[]};
+const EMPTY_FORM = {name:"",price:"",condition:"Like New",listing_type:"Clothing",category:"Saree",origin:"Indian",fabric:"Silk",material:"",size:"Free Size",occasions:[],bust:"",waist:"",hips:"",length:"",measurement_notes:"",can_take_in:false,spare_fabric:false,whatsapp:"",description:"",imageFiles:[],imagePreviews:[],postage_options:[],accepts_collection:false};
+
+const POSTAGE_OPTIONS = [
+  {id:"evri",name:"Evri",emoji:"📦",prices:[{label:"Small parcel (up to 2kg)",price:3.99},{label:"Medium parcel (up to 5kg)",price:5.49},{label:"Large parcel (up to 15kg)",price:7.49}]},
+  {id:"royal_mail",name:"Royal Mail",emoji:"📮",prices:[{label:"Tracked 48 (up to 2kg)",price:3.35},{label:"Tracked 24 (up to 2kg)",price:4.35},{label:"Special Delivery",price:7.85}]},
+  {id:"inpost",name:"InPost",emoji:"🟡",prices:[{label:"Locker to Locker (up to 25kg)",price:2.99},{label:"Locker to Door (up to 25kg)",price:3.99}]},
+  {id:"hermes",name:"Hermes",emoji:"🚚",prices:[{label:"Small parcel (up to 2kg)",price:3.49},{label:"Medium parcel (up to 5kg)",price:5.49}]},
+  {id:"dpd",name:"DPD",emoji:"📬",prices:[{label:"Next day delivery",price:4.99},{label:"Two day delivery",price:3.99}]},
+];
 
 const catEmoji = c=>({"Saree":"🥻","Salwar Kameez":"👘","Lehenga":"👗","Sherwani":"🧥","Kurta":"👕","Co-ord Set":"✨","Dupatta":"🧣","Accessories":"💍","Necklace":"📿","Earrings":"✨","Maang Tikka":"👑","Jhumka":"🔮","Bangles":"💛","Bracelet":"📿","Ring":"💍","Nose Ring":"✦","Anklet":"🦶","Haar":"📿","Choker":"📿","Full Set":"👑","Other Jewellery":"💎","Other":"🛍️"}[c]||"💎");
 const waLink   = (n,name,price)=>`https://wa.me/${n.replace(/\D/g,"")}?text=${encodeURIComponent(`Hi! I saw "${name}" ($${price}) on Stitch'd — still available?`)}`;
@@ -232,7 +240,8 @@ export default function App() {
   // payments
   const [showPayment,    setShowPayment]    = useState(false);
   const [paymentListing, setPaymentListing] = useState(null);
-  const [paymentStep,    setPaymentStep]    = useState("summary"); // summary | card | success // All | Clothing | Jewellery
+  const [paymentStep,    setPaymentStep]    = useState("summary");
+  const [selectedPostage,setSelectedPostage]= useState(null);
 
   const token = session?.access_token;
   const user  = session?.user;
@@ -746,7 +755,7 @@ export default function App() {
     try{
       const urls=await Promise.all(form.imageFiles.map(f=>uploadImage(f,token)));
       const image_url=urls[0]||"";
-      const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,whatsapp:form.whatsapp,description:form.description,emoji:catEmoji(form.category),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD"};
+      const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,whatsapp:form.whatsapp,description:form.description,emoji:catEmoji(form.category),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
       const [created]=await db.insert(payload,token);
       setItems(p=>[created,...p]); setForm(EMPTY_FORM); flash("🩷 Listed!"); setView("shop");
       // notify followers about new listing
@@ -763,7 +772,7 @@ export default function App() {
       const existingUrls=(sel.images||[]).filter((_,i)=>form.imagePreviews[i]&&!form.imageFiles[i]);
       const allUrls=[...existingUrls,...newUrls];
       const image_url=allUrls[0]||sel.image_url||"";
-      const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,whatsapp:form.whatsapp,description:form.description,emoji:catEmoji(form.category),image_url,images:allUrls};
+      const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,whatsapp:form.whatsapp,description:form.description,emoji:catEmoji(form.category),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
       const [updated]=await db.update(sel.id,patch,token);
       setItems(p=>p.map(i=>i.id===sel.id?updated:i)); setSel(updated); flash("✓ Updated!"); setView("detail");
       // notify wishlisters if price dropped
@@ -779,7 +788,7 @@ export default function App() {
   }
 
   function openEdit(item){
-    setForm({name:item.name||"",price:item.price||"",condition:item.condition||"Like New",listing_type:item.listing_type||"Clothing",category:item.category||"Saree",origin:item.origin||"Indian",fabric:item.fabric||"Silk",material:item.material||"",size:item.size||"Free Size",occasions:item.occasions||[],bust:item.bust||"",waist:item.waist||"",hips:item.hips||"",length:item.length||"",measurement_notes:item.measurement_notes||"",can_take_in:item.can_take_in||false,spare_fabric:item.spare_fabric||false,whatsapp:item.whatsapp||"",description:item.description||"",imageFiles:[],imagePreviews:item.images||[item.image_url].filter(Boolean)});
+    setForm({name:item.name||"",price:item.price||"",condition:item.condition||"Like New",listing_type:item.listing_type||"Clothing",category:item.category||"Saree",origin:item.origin||"Indian",fabric:item.fabric||"Silk",material:item.material||"",size:item.size||"Free Size",occasions:item.occasions||[],bust:item.bust||"",waist:item.waist||"",hips:item.hips||"",length:item.length||"",measurement_notes:item.measurement_notes||"",can_take_in:item.can_take_in||false,spare_fabric:item.spare_fabric||false,whatsapp:item.whatsapp||"",description:item.description||"",imageFiles:[],imagePreviews:item.images||[item.image_url].filter(Boolean),postage_options:item.postage_options||[],accepts_collection:item.accepts_collection||false});
     setView("edit");
   }
 
@@ -889,6 +898,8 @@ export default function App() {
       {showPayment&&paymentListing&&(()=>{
         const {amount,fee,sellerGets}=buildPaymentSummary(paymentListing);
         const sym=currencySymbol(paymentListing.currency);
+        const postageAmount=selectedPostage?selectedPostage.selectedPrice?.price||0:0;
+        const totalAmount=parseFloat((amount+postageAmount).toFixed(2));
         return(
           <div style={S.modalOverlay} onClick={()=>setShowPayment(false)}>
             <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
@@ -918,6 +929,41 @@ export default function App() {
                     </div>
                   </div>
 
+                  {/* Postage options */}
+                  {((paymentListing.postage_options||[]).length>0||paymentListing.accepts_collection)&&(
+                    <div style={{marginBottom:24}}>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12}}>📦 CHOOSE DELIVERY</p>
+                      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                        {(paymentListing.postage_options||[]).map(p=>(
+                          <div key={p.id} style={{border:`2px solid ${selectedPostage?.id===p.id?"#FF1493":"#e0e0e0"}`,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}} onClick={()=>setSelectedPostage(p)}>
+                            <span style={{fontSize:20}}>{p.emoji}</span>
+                            <div style={{flex:1}}>
+                              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800}}>{p.name}</p>
+                              <p style={{fontSize:12,color:"#888"}}>{p.selectedPrice?.label}</p>
+                            </div>
+                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#FF1493"}}>+{sym}{p.selectedPrice?.price}</span>
+                            <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${selectedPostage?.id===p.id?"#FF1493":"#ccc"}`,background:selectedPostage?.id===p.id?"#FF1493":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              {selectedPostage?.id===p.id&&<span style={{color:"#fff",fontSize:10,fontWeight:900}}>✓</span>}
+                            </div>
+                          </div>
+                        ))}
+                        {paymentListing.accepts_collection&&(
+                          <div style={{border:`2px solid ${selectedPostage?.id==="collection"?"#34C759":"#e0e0e0"}`,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}} onClick={()=>setSelectedPostage({id:"collection",name:"Collection in person",emoji:"🤝",selectedPrice:{price:0,label:"Free"}})}>
+                            <span style={{fontSize:20}}>🤝</span>
+                            <div style={{flex:1}}>
+                              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800}}>Collection in Person</p>
+                              <p style={{fontSize:12,color:"#888"}}>Arrange with seller directly</p>
+                            </div>
+                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#34C759"}}>FREE</span>
+                            <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${selectedPostage?.id==="collection"?"#34C759":"#ccc"}`,background:selectedPostage?.id==="collection"?"#34C759":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              {selectedPostage?.id==="collection"&&<span style={{color:"#fff",fontSize:10,fontWeight:900}}>✓</span>}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Fee breakdown */}
                   <div style={{marginBottom:24,padding:"14px 16px",background:"#fff8f0",border:"1.5px solid #FF950055"}}>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#FF9500",marginBottom:10}}>PRICE BREAKDOWN</p>
@@ -925,13 +971,21 @@ export default function App() {
                       <span style={{fontSize:13,color:"#555"}}>Item price</span>
                       <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700}}>{sym}{amount}</span>
                     </div>
+                    {selectedPostage&&postageAmount>0&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                      <span style={{fontSize:13,color:"#555"}}>{selectedPostage.emoji} {selectedPostage.name}</span>
+                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700}}>{sym}{postageAmount}</span>
+                    </div>}
                     <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
                       <span style={{fontSize:13,color:"#555"}}>Stitch'd fee (5%)</span>
                       <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#FF9500"}}>{sym}{fee}</span>
                     </div>
-                    <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #f0d0b0"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #f0d0b0",marginBottom:6}}>
                       <span style={{fontSize:13,color:"#555"}}>Seller receives</span>
                       <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#34C759"}}>{sym}{sellerGets}</span>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"2px solid #111"}}>
+                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:900,color:"#111"}}>TOTAL</span>
+                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:"#111"}}>{sym}{totalAmount}</span>
                     </div>
                   </div>
 
@@ -2231,7 +2285,7 @@ export default function App() {
                 <div style={{marginTop:16,marginBottom:8}}>
                   <button className="hbtn"
                     style={{...S.hBtn,background:"#111",border:"none",padding:"16px 32px",fontSize:16,letterSpacing:2,width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:12}}
-                    onClick={()=>{ if(!user){setAuthMode("login");setView("auth");return;} setPaymentListing(sel); setPaymentStep("summary"); setShowPayment(true); }}>
+                    onClick={()=>{ if(!user){setAuthMode("login");setView("auth");return;} setPaymentListing(sel); setPaymentStep("summary"); setSelectedPostage(null); setShowPayment(true); }}>
                     💳 BUY NOW · {currencySymbol(sel.currency)}{sel.price}
                   </button>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1.5,textAlign:"center",marginTop:8}}>🔒 SECURE CHECKOUT · 5% PLATFORM FEE APPLIES</p>
@@ -2435,6 +2489,42 @@ export default function App() {
                 <Tog on={form.spare_fabric} onToggle={()=>setForm(f=>({...f,spare_fabric:!f.spare_fabric}))} color="#FF9500" label="SPARE FABRIC INCLUDED (CAN LET OUT)" sub="Extra fabric allows making it bigger"/>
               </div>
             </Sec>}
+
+            <Sec label="📦 POSTAGE & DELIVERY">
+              <p style={{fontSize:12,color:"#888",marginBottom:16,lineHeight:1.6}}>Select which carriers you'll use. Buyers choose at checkout and the cost is added to their total.</p>
+              <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
+                {POSTAGE_OPTIONS.map(carrier=>{
+                  const selected=(form.postage_options||[]).find(p=>p.id===carrier.id);
+                  return(
+                    <div key={carrier.id} style={{border:`2px solid ${selected?"#FF1493":"#e0e0e0"}`,padding:"12px 16px",transition:"border-color .15s"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:selected?10:0,cursor:"pointer"}} onClick={()=>{
+                        const existing=(form.postage_options||[]).find(p=>p.id===carrier.id);
+                        if(existing){
+                          setForm(f=>({...f,postage_options:(f.postage_options||[]).filter(p=>p.id!==carrier.id)}));
+                        } else {
+                          setForm(f=>({...f,postage_options:[...(f.postage_options||[]),{id:carrier.id,name:carrier.name,emoji:carrier.emoji,selectedPrice:carrier.prices[0]}]}));
+                        }
+                      }}>
+                        <span style={{fontSize:20}}>{carrier.emoji}</span>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,flex:1}}>{carrier.name}</span>
+                        <div style={{width:22,height:22,borderRadius:"50%",border:`2px solid ${selected?"#FF1493":"#ccc"}`,background:selected?"#FF1493":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          {selected&&<span style={{color:"#fff",fontSize:12,fontWeight:900}}>✓</span>}
+                        </div>
+                      </div>
+                      {selected&&(
+                        <select style={{...S.inp,fontSize:13}} value={selected.selectedPrice?.label} onChange={e=>{
+                          const price=carrier.prices.find(p=>p.label===e.target.value);
+                          setForm(f=>({...f,postage_options:(f.postage_options||[]).map(p=>p.id===carrier.id?{...p,selectedPrice:price}:p)}));
+                        }}>
+                          {carrier.prices.map(p=><option key={p.label} value={p.label}>{p.label} — £{p.price}</option>)}
+                        </select>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <Tog on={form.accepts_collection} onToggle={()=>setForm(f=>({...f,accepts_collection:!f.accepts_collection}))} color="#34C759" label="ACCEPT COLLECTION IN PERSON" sub="Buyer can collect for free"/>
+            </Sec>
 
             <Sec label="DESCRIBE IT">
               <textarea style={{...S.inp,height:110,resize:"vertical",width:"100%"}} placeholder="Fabric feel, embroidery, wear history, any flaws…" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}/>
@@ -2653,4 +2743,5 @@ const S={
   offerCard:{background:"#fff",padding:"14px 16px",borderRadius:0},
   offerStatusBadge:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:1.5,color:"#fff",padding:"2px 8px",borderRadius:0},
 };
+
 
