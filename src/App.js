@@ -501,6 +501,8 @@ export default function App() {
   }
 
   function applySearch(q){ setSearch(q); setShowSuggestions(false); setSearchSuggestions([]); }
+
+  async function loadOrders(){
     if(!user||!token) return;
     setOrdersLoading(true);
     const orders=await db.getMyOrders(user.id,token);
