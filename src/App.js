@@ -135,7 +135,7 @@ const LISTING_TYPES= ["Clothing","Jewellery","Shoes"];
 const JEWELLERY_MATERIALS=["Gold Plated","Silver Plated","Kundan","Polki","Meenakari","Pearl","Oxidised","Jadau","Stone","Artificial","Other"];
 const ORIGINS      = ["Indian","Pakistani","Bangladeshi","Sri Lankan","Nepali","Other"];
 const FABRICS      = ["Silk","Cotton","Chiffon","Georgette","Velvet","Brocade","Lawn","Net","Organza","Linen","Other"];
-const CONDITIONS = ["Like New","Excellent","Good","Fair"];
+const CONDITIONS = ["Brand New (with tags)","Brand New (without tags)","Like New","Excellent","Good","Fair","For Parts/Repair"];
 const OCCASIONS  = ["Wedding","Eid","Diwali","Mehndi","Nikah","Sangeet","Navratri","Puja","Party","Casual","Graduation","Other"];
 const SIZES      = ["XS","S","M","L","XL","XXL","Free Size","Custom Stitched"];
 const OCC_COLOR  = {Wedding:"#FF1493",Eid:"#34C759",Diwali:"#FF9500",Mehndi:"#30D158",Nikah:"#007AFF",Sangeet:"#FF2D55",Navratri:"#FF6B00",Puja:"#FF1493",Party:"#BF5AF2",Casual:"#8E8E93",Graduation:"#0A84FF",Other:"#636366"};
@@ -150,7 +150,7 @@ const POSTAGE_OPTIONS = [
   {id:"dpd",name:"DPD",emoji:"📬",prices:[{label:"Next day delivery",price:4.99},{label:"Two day delivery",price:3.99}]},
 ];
 
-const catEmoji = c=>({"Saree":"🥻","Salwar Kameez":"👘","Lehenga":"👗","Sherwani":"🧥","Kurta":"👕","Co-ord Set":"✨","Dupatta":"🧣","Accessories":"💍","Necklace":"📿","Earrings":"✨","Maang Tikka":"👑","Jhumka":"🔮","Bangles":"💛","Bracelet":"📿","Ring":"💍","Nose Ring":"✦","Anklet":"🦶","Haar":"📿","Choker":"📿","Full Set":"👑","Other Jewellery":"💎","Heels":"👠","Flats":"🥿","Sandals":"👡","Juttis":"✨","Khussa":"✨","Boots":"👢","Trainers":"👟","Wedges":"👠","Platforms":"👠","Other Shoes":"👟","Other":"🛍️"}[c]||"💎");
+const catEmoji = c=>({"Saree":"🥻","Salwar Kameez":"👘","Lehenga":"👗","Sherwani":"🧥","Kurta":"👕","Co-ord Set":"✨","Dupatta":"🧣","Accessories":"💍","Necklace":"📿","Earrings":"✨","Maang Tikka":"👑","Jhumka":"🔮","Bangles":"💛","Bracelet":"📿","Ring":"💍","Nose Ring":"✦","Anklet":"🦶","Haar":"📿","Choker":"📿","Full Set":"👑","Other Jewellery":"💎","Heels":"👠","Flats":"🥿","Sandals":"👡","Juttis":"✨","Khussa":"✨","Boots":"👢","Trainers":"👟","Wedges":"👠","Platforms":"👠","Other Shoes":"👠","Other":"🛍️"}[c]||"💎");
 const waLink   = (n,name,price)=>`https://wa.me/${n.replace(/\D/g,"")}?text=${encodeURIComponent(`Hi! I saw "${name}" ($${price}) on Stitch'd — still available?`)}`;
 const currencySymbol = c=>({USD:"$",GBP:"£",EUR:"€",CAD:"CA$",AUD:"A$",AED:"AED ",PKR:"₨",INR:"₹",BDT:"৳"}[c]||"$");
 
@@ -1929,12 +1929,12 @@ export default function App() {
       {view==="tailors"&&(
         <div style={{minHeight:"100vh",background:"#fff"}}>
           {/* Hero */}
-          <div style={{background:"#134E4A",borderBottom:"3px solid #111",padding:"48px 24px 40px",position:"relative",overflow:"hidden"}}>
+          <div style={{background:"#004D40",borderBottom:"3px solid #111",padding:"48px 24px 40px",position:"relative",overflow:"hidden"}}>
             <div style={{maxWidth:1200,margin:"0 auto",display:"flex",alignItems:"flex-end",justifyContent:"space-between",flexWrap:"wrap",gap:20}}>
               <div>
-                <button style={{...S.back,color:"#0D9488",marginBottom:16}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
-                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#0D9488",marginBottom:8}}>FIND A TAILOR</p>
-                <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(48px,8vw,100px)",fontWeight:900,color:"#fff",lineHeight:.9,letterSpacing:-2,marginBottom:16}}>TAILOR<br/><span style={{color:"#0D9488"}}>MARKETPLACE</span></h1>
+                <button style={{...S.back,color:"#00BFA5",marginBottom:16}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#00BFA5",marginBottom:8}}>FIND A TAILOR</p>
+                <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(48px,8vw,100px)",fontWeight:900,color:"#fff",lineHeight:.9,letterSpacing:-2,marginBottom:16}}>TAILOR<br/><span style={{color:"#00BFA5"}}>MARKETPLACE</span></h1>
                 <p style={{fontSize:15,color:"#aaa",maxWidth:500,lineHeight:1.7}}>Book trusted South Asian tailors for alterations, custom stitching, embroidery and repairs. Every transaction secured through Stitch'd.</p>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:10,alignItems:"flex-end"}}>
@@ -1946,7 +1946,7 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-                {user&&<button className="hbtn" style={{...S.hBtn,background:"#0D9488",border:"none",padding:"14px 28px",fontSize:13,letterSpacing:2}} onClick={()=>{setEditingService(null);setTailorServiceForm({title:"",description:"",service_type:"Alterations",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});setShowTailorForm(true);}}>+ LIST MY SERVICE</button>}
+                {user&&<button className="hbtn" style={{...S.hBtn,background:"#00BFA5",border:"none",padding:"14px 28px",fontSize:13,letterSpacing:2}} onClick={()=>{setEditingService(null);setTailorServiceForm({title:"",description:"",service_type:"Alterations",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});setShowTailorForm(true);}}>+ LIST MY SERVICE</button>}
               </div>
             </div>
           </div>
@@ -1958,7 +1958,7 @@ export default function App() {
                 <div key={l} style={{flex:"1 1 120px",background:"#fafafa",border:"2px solid #111",padding:"16px 20px",display:"flex",alignItems:"center",gap:12}}>
                   <span style={{fontSize:24}}>{e}</span>
                   <div>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#0D9488",lineHeight:1}}>{n}</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#00BFA5",lineHeight:1}}>{n}</p>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:2,color:"#bbb"}}>{l}</p>
                   </div>
                 </div>
@@ -1968,19 +1968,19 @@ export default function App() {
             {/* My services */}
             {user&&myTailorServices.length>0&&(
               <div style={{marginBottom:40}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#0D9488",borderLeft:"4px solid #0D9488",paddingLeft:12,marginBottom:16}}>MY LISTED SERVICES</div>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#00BFA5",borderLeft:"4px solid #00BFA5",paddingLeft:12,marginBottom:16}}>MY LISTED SERVICES</div>
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   {myTailorServices.map(s=>(
-                    <div key={s.id} style={{border:"2px solid #0D9488",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap",background:"#fffbf5"}}>
+                    <div key={s.id} style={{border:"2px solid #00BFA5",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap",background:"#fffbf5"}}>
                       <div style={{display:"flex",alignItems:"center",gap:14}}>
-                        <div style={{width:48,height:48,background:"#0D9488",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>✂️</div>
+                        <div style={{width:48,height:48,background:"#00BFA5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>✂️</div>
                         <div>
                           <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,marginBottom:2}}>{s.title}</p>
-                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#0D9488",letterSpacing:1}}>{s.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency)}{s.price_from}{s.turnaround_days?` · ${s.turnaround_days} DAYS`:""}</p>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#00BFA5",letterSpacing:1}}>{s.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency)}{s.price_from}{s.turnaround_days?` · ${s.turnaround_days} DAYS`:""}</p>
                         </div>
                       </div>
                       <div style={{display:"flex",gap:8}}>
-                        <button className="hbtn" style={{...S.hBtn,background:"#0D9488",border:"none",fontSize:11,padding:"8px 14px"}} onClick={()=>{setEditingService(s);setTailorServiceForm({title:s.title,description:s.description||"",service_type:s.service_type||"Alterations",price_from:s.price_from||"",price_to:s.price_to||"",turnaround_days:s.turnaround_days||"",location:s.location||"",images:[],imagePreviews:s.images||[]});setShowTailorForm(true);}}>EDIT</button>
+                        <button className="hbtn" style={{...S.hBtn,background:"#00BFA5",border:"none",fontSize:11,padding:"8px 14px"}} onClick={()=>{setEditingService(s);setTailorServiceForm({title:s.title,description:s.description||"",service_type:s.service_type||"Alterations",price_from:s.price_from||"",price_to:s.price_to||"",turnaround_days:s.turnaround_days||"",location:s.location||"",images:[],imagePreviews:s.images||[]});setShowTailorForm(true);}}>EDIT</button>
                         <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"8px 14px"}} onClick={()=>deleteTailorService(s.id)}>DELETE</button>
                       </div>
                     </div>
@@ -1998,7 +1998,7 @@ export default function App() {
             </div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:28}}>
               {["All","Alterations","Taking In","Letting Out","Hemming","Blouse Stitching","Full Stitching","Custom Stitching","Embroidery","Repairs","Custom Orders"].map(t=>(
-                <button key={t} className="fpill" style={{...S.pill,...(tailorTypeFilter===t?{...S.pillOn,background:"#0D9488",borderColor:"#0D9488"}:{})}} onClick={()=>setTailorTypeFilter(t)}>{t}</button>
+                <button key={t} className="fpill" style={{...S.pill,...(tailorTypeFilter===t?{...S.pillOn,background:"#00BFA5",borderColor:"#00BFA5"}:{})}} onClick={()=>setTailorTypeFilter(t)}>{t}</button>
               ))}
             </div>
 
@@ -2008,7 +2008,7 @@ export default function App() {
                 <p style={{fontSize:64,marginBottom:16}}>✂️</p>
                 <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:900,marginBottom:8}}>NO TAILORS YET.</p>
                 <p style={{color:"#888",marginBottom:24,fontSize:15}}>Be the first to list your tailoring services on Stitch'd!</p>
-                {user&&<button className="hbtn" style={{...S.hBtn,background:"#0D9488",border:"none",padding:"14px 32px",fontSize:14,letterSpacing:2}} onClick={()=>setShowTailorForm(true)}>LIST MY SERVICE →</button>}
+                {user&&<button className="hbtn" style={{...S.hBtn,background:"#00BFA5",border:"none",padding:"14px 32px",fontSize:14,letterSpacing:2}} onClick={()=>setShowTailorForm(true)}>LIST MY SERVICE →</button>}
               </div>
             ):(
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:3}}>
@@ -2077,17 +2077,17 @@ export default function App() {
                   {selectedService.images?.[0]&&<img src={selectedService.images[0]} alt="" style={{width:64,height:64,objectFit:"cover",border:"2px solid #111",flexShrink:0}}/>}
                   <div>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,marginBottom:4}}>{selectedService.title}</p>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#0D9488",letterSpacing:1}}>{selectedService.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency||"GBP")}{selectedService.price_from}</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#00BFA5",letterSpacing:1}}>{selectedService.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency||"GBP")}{selectedService.price_from}</p>
                     {selectedService.location&&<p style={{fontSize:12,color:"#888",marginTop:4}}>📍 {selectedService.location}</p>}
                     {selectedService.turnaround_days&&<p style={{fontSize:12,color:"#888"}}>⏱ {selectedService.turnaround_days} day turnaround</p>}
                   </div>
                 </div>
-                <div style={{marginBottom:20,padding:"14px 16px",background:"#fff8f0",border:"1.5px solid #0D948855"}}>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#0D9488",marginBottom:8}}>HOW IT WORKS</p>
+                <div style={{marginBottom:20,padding:"14px 16px",background:"#fff8f0",border:"1.5px solid #00BFA555"}}>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#00BFA5",marginBottom:8}}>HOW IT WORKS</p>
                   <div style={{display:"flex",flexDirection:"column",gap:6}}>
                     {["Send booking request with your notes","Tailor responds via Stitch'd messages","Agree on final price and details","Pay securely through Stitch'd (10% fee)","Tailor completes your order 🩷"].map((s,i)=>(
                       <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,color:"#0D9488",flexShrink:0}}>{i+1}.</span>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,color:"#00BFA5",flexShrink:0}}>{i+1}.</span>
                         <span style={{fontSize:13,color:"#666"}}>{s}</span>
                       </div>
                     ))}
@@ -2096,7 +2096,7 @@ export default function App() {
                 <F l="NOTES FOR TAILOR (measurements, requirements, fabric, etc.)">
                   <textarea style={{...S.inp,height:110,resize:"vertical",width:"100%"}} placeholder="e.g. I need a lehenga blouse taken in by 2 inches at the waist. My measurements: bust 34, waist 28, hips 36. Fabric is heavy silk..." value={bookingNotes} onChange={e=>setBookingNotes(e.target.value)}/>
                 </F>
-                <button className="hbtn" style={{...S.hBtn,background:"#0D9488",border:"none",width:"100%",padding:"16px",fontSize:15,letterSpacing:3,marginTop:16}} onClick={()=>bookTailor(selectedService)}>
+                <button className="hbtn" style={{...S.hBtn,background:"#00BFA5",border:"none",width:"100%",padding:"16px",fontSize:15,letterSpacing:3,marginTop:16}} onClick={()=>bookTailor(selectedService)}>
                   SEND BOOKING REQUEST →
                 </button>
                 <p style={{fontSize:11,color:"#bbb",textAlign:"center",marginTop:10}}>🔒 Payment handled securely through Stitch'd · 10% platform fee</p>
@@ -2115,10 +2115,10 @@ export default function App() {
 
                 {/* Profile reminder */}
                 {!profile?.avatar_url&&(
-                  <div style={{background:"#fff8f0",border:"1.5px solid #0D948855",padding:"12px 16px",marginBottom:20,display:"flex",gap:10,alignItems:"center"}}>
+                  <div style={{background:"#fff8f0",border:"1.5px solid #00BFA555",padding:"12px 16px",marginBottom:20,display:"flex",gap:10,alignItems:"center"}}>
                     <span style={{fontSize:20}}>💡</span>
                     <div>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1,color:"#0D9488",marginBottom:2}}>ADD A PROFILE PHOTO</p>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1,color:"#00BFA5",marginBottom:2}}>ADD A PROFILE PHOTO</p>
                       <p style={{fontSize:12,color:"#888"}}>Buyers trust tailors with a photo. <span style={{color:"#FF1493",cursor:"pointer",fontWeight:700}} onClick={()=>{setShowTailorForm(false);setView("editprofile");}}>Update your profile →</span></p>
                     </div>
                   </div>
@@ -2159,7 +2159,7 @@ export default function App() {
                     <p style={{fontSize:11,color:"#bbb",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,marginTop:6}}>SHOW OFF YOUR BEST WORK — BEFORE/AFTER PHOTOS WORK GREAT</p>
                   </F>
                 </div>
-                <button className="hbtn" style={{...S.hBtn,background:"#0D9488",border:"none",width:"100%",padding:"16px",fontSize:15,letterSpacing:3,marginTop:20,opacity:(!tailorServiceForm.title||!tailorServiceForm.price_from)?0.4:1}} onClick={saveTailorService} disabled={!tailorServiceForm.title||!tailorServiceForm.price_from}>
+                <button className="hbtn" style={{...S.hBtn,background:"#00BFA5",border:"none",width:"100%",padding:"16px",fontSize:15,letterSpacing:3,marginTop:20,opacity:(!tailorServiceForm.title||!tailorServiceForm.price_from)?0.4:1}} onClick={saveTailorService} disabled={!tailorServiceForm.title||!tailorServiceForm.price_from}>
                   {editingService?"SAVE CHANGES →":"LIST SERVICE →"}
                 </button>
               </div>
@@ -2757,7 +2757,7 @@ export default function App() {
                       <button key={t} type="button" className="hbtn"
                         style={{...S.hBtn,flex:1,background:form.listing_type===t?"#FF1493":"#fff",color:form.listing_type===t?"#fff":"#111",border:"2px solid #111",borderRadius:0,padding:"10px"}}
                         onClick={()=>setForm(f=>({...f,listing_type:t,category:t==="Jewellery"?"Necklace":t==="Shoes"?"Heels":"Saree"}))}>
-                        {t==="Clothing"?"👗 CLOTHING":t==="Jewellery"?"💎 JEWELLERY":"👟 SHOES"}
+                        {t==="Clothing"?"👗 CLOTHING":t==="Jewellery"?"💎 JEWELLERY":"👠 SHOES"}
                       </button>
                     ))}
                   </div>
