@@ -2045,20 +2045,20 @@ export default function App() {
       {view==="tailors"&&(
         <div style={{minHeight:"100vh",background:"#fff"}}>
           {/* Hero */}
-          <div style={{background:"#00695C",borderBottom:"3px solid #111",padding:"48px 24px 40px",position:"relative",overflow:"hidden"}}>
+          <div style={{background:"#E0FAF7",borderBottom:"3px solid #111",padding:"48px 24px 40px",position:"relative",overflow:"hidden"}}>
             <div style={{maxWidth:1200,margin:"0 auto",display:"flex",alignItems:"flex-end",justifyContent:"space-between",flexWrap:"wrap",gap:20}}>
               <div>
                 <button style={{...S.back,color:"#00E5CC",marginBottom:16}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
                 <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#00E5CC",marginBottom:8}}>FIND A TAILOR</p>
-                <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(48px,8vw,100px)",fontWeight:900,color:"#fff",lineHeight:.9,letterSpacing:-2,marginBottom:16}}>TAILOR<br/><span style={{color:"#00E5CC"}}>MARKETPLACE</span></h1>
-                <p style={{fontSize:15,color:"#aaa",maxWidth:500,lineHeight:1.7}}>Book trusted South Asian tailors for alterations, custom stitching, embroidery and repairs. Every transaction secured through Stitch'd.</p>
+                <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(48px,8vw,100px)",fontWeight:900,color:"#111",lineHeight:.9,letterSpacing:-2,marginBottom:16}}>TAILOR<br/><span style={{color:"#00E5CC"}}>MARKETPLACE</span></h1>
+                <p style={{fontSize:15,color:"#555",maxWidth:500,lineHeight:1.7}}>Book trusted South Asian tailors for alterations, custom stitching, embroidery and repairs. Every transaction secured through Stitch'd.</p>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:10,alignItems:"flex-end"}}>
                 <div style={{display:"flex",gap:20,marginBottom:8}}>
                   {[["✂️","Alterations"],["🧵","Custom Stitching"],["✨","Embroidery"],["🔧","Repairs"]].map(([e,l])=>(
                     <div key={l} style={{textAlign:"center"}}>
                       <div style={{fontSize:28,marginBottom:4}}>{e}</div>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#888",letterSpacing:1}}>{l.toUpperCase()}</p>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#00897B",letterSpacing:1}}>{l.toUpperCase()}</p>
                     </div>
                   ))}
                 </div>
