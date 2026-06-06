@@ -117,6 +117,9 @@ const db = {
   async countUnread(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/messages?read=eq.false&select=id,conversation_id,conversations!inner(buyer_id,seller_id)`,{headers:{...hdrs(t),"Accept":"application/json"}}); if(!r.ok)return 0; const d=await r.json(); return d.filter(m=>m.sender_id!==uid).length; },
   // orders
   async createOrder(order,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(order)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
+  async getSavedSearches(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/saved_searches?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async saveSearch(s,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/saved_searches`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(s)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  async deleteSavedSearch(id,t){ await fetch(`${SUPABASE_URL}/rest/v1/saved_searches?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); },
   async getMyOrders(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders?or=(buyer_id.eq.${uid},seller_id.eq.${uid})&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async updateOrder(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async getNewListings(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?sold=eq.false&order=created_at.desc&limit=12`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
@@ -193,6 +196,10 @@ export default function App() {
   const [viewedProfile,setViewedProfile]=useState(null);
   const [profileListings,setProfileListings]=useState([]);
   const [search,    setSearch]    = useState("");
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions,   setShowSuggestions]   = useState(false);
+  const [savedSearches,     setSavedSearches]     = useState([]);
+  const [showSavedSearches, setShowSavedSearches] = useState(false);
   const [catFilter, setCatFilter] = useState("All");
   const [sizeFilter,setSizeFilter]= useState("All");
   const [minPrice,  setMinPrice]  = useState("");
@@ -222,6 +229,7 @@ export default function App() {
   const [bundleForm,     setBundleForm]     = useState({name:"",description:"",discount_percent:0,selectedListings:[]});
   // listing type filter
   const [typeFilter,     setTypeFilter]     = useState("All");
+  const [condFilter,     setCondFilter]     = useState("All");
   const [showSizeMatch,  setShowSizeMatch]  = useState(false);
   const [showTailorDir,  setShowTailorDir]  = useState(false);
   const [tailorProfiles, setTailorProfiles] = useState([]);
@@ -296,6 +304,7 @@ export default function App() {
       loadConversations();
       db.getFollowing(user.id,token).then(setFollowing);
       db.getNotifications(user.id,token).then(setNotifications);
+      loadSavedSearches();
     }
   },[user,token]);
 
@@ -317,10 +326,11 @@ export default function App() {
     const matchMin  = minPrice===""||i.price>=parseFloat(minPrice);
     const matchMax  = maxPrice===""||i.price<=parseFloat(maxPrice);
     const matchType = typeFilter==="All"||(typeFilter==="Jewellery"?JEWELLERY_CATS.includes(i.category):typeFilter==="Shoes"?SHOE_CATS.includes(i.category):(typeFilter==="Clothing"?CATEGORIES.includes(i.category):true));
+    const matchCond = condFilter==="All"||i.condition===condFilter;
     const matchFit  = !showSizeMatch||fitsMe(i)===true;
     const q=search.toLowerCase();
     const matchSearch=!q||i.name?.toLowerCase().includes(q)||i.description?.toLowerCase().includes(q)||i.fabric?.toLowerCase().includes(q)||i.category?.toLowerCase().includes(q)||i.origin?.toLowerCase().includes(q)||i.material?.toLowerCase().includes(q);
-    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit;
+    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond;
   }),[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter]);
 
   function flash(m){ setToast(m); setTimeout(()=>setToast(""),3500); }
@@ -359,8 +369,8 @@ export default function App() {
     return ()=>clearInterval(interval);
   },[user,token]);
   function togOcc(o){ setForm(f=>({...f,occasions:f.occasions.includes(o)?f.occasions.filter(x=>x!==o):[...f.occasions,o]})); }
-  function clearFilters(){ setSearch(""); setCatFilter("All"); setSizeFilter("All"); setMinPrice(""); setMaxPrice(""); setTypeFilter("All"); }
-  const hasFilters = search||catFilter!=="All"||sizeFilter!=="All"||minPrice||maxPrice||typeFilter!=="All";
+  function clearFilters(){ setSearch(""); setCatFilter("All"); setSizeFilter("All"); setMinPrice(""); setMaxPrice(""); setTypeFilter("All"); setCondFilter("All"); }
+  const hasFilters = search||catFilter!=="All"||sizeFilter!=="All"||minPrice||maxPrice||typeFilter!=="All"||condFilter!=="All";
 
   function toggleWishlist(id){
     setWishlist(prev=>{
@@ -438,7 +448,59 @@ export default function App() {
 
   const unreadNotifs = notifications.filter(n=>!n.read).length;
 
-  async function loadOrders(){
+  // generate search suggestions from existing items
+  function getSuggestions(q){
+    if(!q||q.length<2) return [];
+    const lower=q.toLowerCase();
+    const matches=new Set();
+    items.forEach(i=>{
+      if(i.name?.toLowerCase().includes(lower)) matches.add(i.name);
+      if(i.category?.toLowerCase().includes(lower)) matches.add(i.category);
+      if(i.fabric?.toLowerCase().includes(lower)) matches.add(i.fabric);
+      if(i.origin?.toLowerCase().includes(lower)) matches.add(i.origin);
+      if(i.material?.toLowerCase().includes(lower)) matches.add(i.material);
+    });
+    // also add category/occasion suggestions
+    [...ALL_CATEGORIES,...OCCASIONS,...ORIGINS,...FABRICS].forEach(s=>{
+      if(s.toLowerCase().includes(lower)) matches.add(s);
+    });
+    return [...matches].slice(0,6);
+  }
+
+  function handleSearchInput(val){
+    setSearch(val);
+    if(val.length>=2){
+      setSearchSuggestions(getSuggestions(val));
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+      setSearchSuggestions([]);
+    }
+  }
+
+  async function loadSavedSearches(){
+    if(!user||!token) return;
+    const searches=await db.getSavedSearches(user.id,token);
+    setSavedSearches(searches);
+  }
+
+  async function saveCurrentSearch(){
+    if(!search.trim()||!user){ flash("Sign in to save searches!"); return; }
+    try{
+      await db.saveSearch({user_id:user.id,query:search,filters:{catFilter,sizeFilter,minPrice,maxPrice,typeFilter}},token);
+      await loadSavedSearches();
+      flash("🔔 Search saved! We'll notify you of new matches.");
+    }catch(e){ flash("Failed to save search."); }
+  }
+
+  async function deleteSavedSearch(id){
+    try{
+      await db.deleteSavedSearch(id,token);
+      setSavedSearches(p=>p.filter(s=>s.id!==id));
+    }catch(e){ flash("Failed to delete."); }
+  }
+
+  function applySearch(q){ setSearch(q); setShowSuggestions(false); setSearchSuggestions([]); }
     if(!user||!token) return;
     setOrdersLoading(true);
     const orders=await db.getMyOrders(user.id,token);
@@ -2569,8 +2631,14 @@ export default function App() {
             <div style={S.searchInner}>
               <div style={S.searchBox}>
                 <span style={S.searchIcon}>🔍</span>
-                <input style={S.searchInput} placeholder="SEARCH SAREES, SILK, WEDDING..." value={search} onChange={e=>setSearch(e.target.value)}/>
-                {search&&<button style={S.searchClear} onClick={()=>setSearch("")}>✕</button>}
+                <input style={S.searchInput} placeholder="SEARCH SAREES, SILK, WEDDING..."
+                  value={search}
+                  onChange={e=>handleSearchInput(e.target.value)}
+                  onFocus={()=>{ if(search.length>=2) setShowSuggestions(true); if(user&&savedSearches.length>0&&!search) setShowSavedSearches(true); }}
+                  onBlur={()=>setTimeout(()=>{ setShowSuggestions(false); setShowSavedSearches(false); },200)}
+                />
+                {search&&<button style={S.searchClear} onClick={()=>{setSearch("");setShowSuggestions(false);}}>✕</button>}
+                {search&&user&&<button style={{...S.searchClear,color:"#FF1493",fontSize:10,fontWeight:800,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,whiteSpace:"nowrap",paddingRight:12}} onClick={saveCurrentSearch}>🔔 SAVE</button>}
               </div>
               <button className="hbtn" style={{...S.filterBtn,background:showFilters?"#FF1493":"#fff",color:showFilters?"#fff":"#111"}} onClick={()=>setShowFilters(f=>!f)}>
                 FILTERS {hasFilters?"●":""}
@@ -2582,9 +2650,33 @@ export default function App() {
                 ✂️ TAILORS
               </button>
             </div>
+            {/* Search suggestions dropdown */}
+            {(showSuggestions&&searchSuggestions.length>0)||(showSavedSearches&&savedSearches.length>0)?(
+              <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
+                {showSavedSearches&&savedSearches.length>0&&!search&&(
+                  <>
+                    <div style={{padding:"8px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:900,letterSpacing:2,color:"#bbb",borderBottom:"1px solid #f0f0f0"}}>SAVED SEARCHES</div>
+                    {savedSearches.map(s=>(
+                      <div key={s.id} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderBottom:"1px solid #f5f5f5",cursor:"pointer",gap:10}} >
+                        <span style={{fontSize:14}}>🔔</span>
+                        <span style={{flex:1,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#111"}} onClick={()=>applySearch(s.query)}>{s.query}</span>
+                        <button style={{background:"none",border:"none",color:"#bbb",cursor:"pointer",fontSize:12,fontWeight:900,padding:"2px 6px"}} onClick={()=>deleteSavedSearch(s.id)}>✕</button>
+                      </div>
+                    ))}
+                  </>
+                )}
+                {showSuggestions&&searchSuggestions.map((s,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderBottom:"1px solid #f5f5f5",cursor:"pointer",gap:10}} onMouseDown={()=>applySearch(s)}>
+                    <span style={{fontSize:14,color:"#bbb"}}>🔍</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#111"}}>{s}</span>
+                  </div>
+                ))}
+              </div>
+            ):null}
             {showFilters&&(
               <div style={S.filterPanel}>
                 <div style={S.filterGroup}><div style={S.filterLabel}>TYPE</div><div style={S.filterPills}>{["All","Clothing","Jewellery","Shoes"].map(t=><button key={t} className="fpill" onClick={()=>setTypeFilter(t)} style={{...S.pill,...(typeFilter===t?S.pillOn:{})}}>{t==="All"?"All":t==="Clothing"?"👗 Clothing":t==="Jewellery"?"💎 Jewellery":"👟 Shoes"}</button>)}</div></div>
+                <div style={S.filterGroup}><div style={S.filterLabel}>CONDITION</div><div style={S.filterPills}>{["All",...CONDITIONS].map(c=><button key={c} className="fpill" onClick={()=>setCondFilter(c)} style={{...S.pill,...(condFilter===c?S.pillOn:{})}}>{c}</button>)}</div></div>
                 <div style={S.filterGroup}><div style={S.filterLabel}>CATEGORY</div><div style={S.filterPills}>{["All",...(typeFilter==="Jewellery"?JEWELLERY_CATS:typeFilter==="Shoes"?SHOE_CATS:typeFilter==="Clothing"?CATEGORIES:ALL_CATEGORIES)].map(c=><button key={c} className="fpill" onClick={()=>setCatFilter(c)} style={{...S.pill,...(catFilter===c?S.pillOn:{})}}>{c}</button>)}</div></div>
                 <div style={S.filterGroup}><div style={S.filterLabel}>SIZE</div><div style={S.filterPills}>{["All",...SIZES].map(sz=><button key={sz} className="fpill" onClick={()=>setSizeFilter(sz)} style={{...S.pill,...(sizeFilter===sz?S.pillOn:{})}}>{sz}</button>)}</div></div>
                 <div style={S.filterGroup}>
@@ -3175,7 +3267,7 @@ const S={
   heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
   heroRight:{flex:1,position:"relative",background:"#fafafa"},
   heroBubble:{position:"absolute",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"3px solid #111",animation:"floatbob 4s ease-in-out infinite"},
-  searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"sticky",top:52,zIndex:100},
+  searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"sticky",top:52,zIndex:100,isolation:"isolate"},
   searchInner:{display:"flex",alignItems:"stretch",height:48},
   searchBox:{flex:1,display:"flex",alignItems:"stretch",minWidth:0},
   searchIcon:{padding:"0 10px",fontSize:14,color:"#bbb",flexShrink:0,display:"flex",alignItems:"center"},
