@@ -934,40 +934,46 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Postage options */}
-                  {((paymentListing.postage_options||[]).length>0||paymentListing.accepts_collection)&&(
-                    <div style={{marginBottom:24}}>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12}}>📦 CHOOSE DELIVERY</p>
-                      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                        {(paymentListing.postage_options||[]).map(p=>(
-                          <div key={p.id} style={{border:`2px solid ${selectedPostage?.id===p.id?"#FF1493":"#e0e0e0"}`,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}} onClick={()=>setSelectedPostage(p)}>
-                            <span style={{fontSize:20}}>{p.emoji}</span>
-                            <div style={{flex:1}}>
-                              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800}}>{p.name}</p>
-                              <p style={{fontSize:12,color:"#888"}}>{p.selectedPrice?.label}</p>
-                            </div>
-                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#FF1493"}}>+{sym}{p.selectedPrice?.price}</span>
-                            <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${selectedPostage?.id===p.id?"#FF1493":"#ccc"}`,background:selectedPostage?.id===p.id?"#FF1493":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                              {selectedPostage?.id===p.id&&<span style={{color:"#fff",fontSize:10,fontWeight:900}}>✓</span>}
-                            </div>
+                  {/* Postage options — buyer chooses */}
+                  <div style={{marginBottom:24}}>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12}}>📦 CHOOSE YOUR DELIVERY</p>
+                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                      {POSTAGE_OPTIONS.map(carrier=>(
+                        <div key={carrier.id}>
+                          {carrier.prices.map(price=>{
+                            const optId=`${carrier.id}_${price.label}`;
+                            const isSelected=selectedPostage?.optId===optId;
+                            return(
+                              <div key={optId} style={{border:`2px solid ${isSelected?"#FF1493":"#e0e0e0"}`,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:4,background:isSelected?"#fff8fc":"#fff"}} onClick={()=>setSelectedPostage({...carrier,selectedPrice:price,optId})}>
+                                <span style={{fontSize:20}}>{carrier.emoji}</span>
+                                <div style={{flex:1}}>
+                                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#111"}}>{carrier.name}</p>
+                                  <p style={{fontSize:12,color:"#888"}}>{price.label}</p>
+                                </div>
+                                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#FF1493"}}>+£{price.price}</span>
+                                <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${isSelected?"#FF1493":"#ccc"}`,background:isSelected?"#FF1493":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                  {isSelected&&<span style={{color:"#fff",fontSize:10,fontWeight:900}}>✓</span>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                      {paymentListing.accepts_collection&&(
+                        <div style={{border:`2px solid ${selectedPostage?.id==="collection"?"#34C759":"#e0e0e0"}`,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,background:selectedPostage?.id==="collection"?"#f0fff4":"#fff"}} onClick={()=>setSelectedPostage({id:"collection",name:"Collection in Person",emoji:"🤝",selectedPrice:{price:0,label:"Arrange with seller"},optId:"collection"})}>
+                          <span style={{fontSize:20}}>🤝</span>
+                          <div style={{flex:1}}>
+                            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800}}>Collection in Person</p>
+                            <p style={{fontSize:12,color:"#888"}}>Arrange with seller directly</p>
                           </div>
-                        ))}
-                        {paymentListing.accepts_collection&&(
-                          <div style={{border:`2px solid ${selectedPostage?.id==="collection"?"#34C759":"#e0e0e0"}`,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12}} onClick={()=>setSelectedPostage({id:"collection",name:"Collection in person",emoji:"🤝",selectedPrice:{price:0,label:"Free"}})}>
-                            <span style={{fontSize:20}}>🤝</span>
-                            <div style={{flex:1}}>
-                              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800}}>Collection in Person</p>
-                              <p style={{fontSize:12,color:"#888"}}>Arrange with seller directly</p>
-                            </div>
-                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#34C759"}}>FREE</span>
-                            <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${selectedPostage?.id==="collection"?"#34C759":"#ccc"}`,background:selectedPostage?.id==="collection"?"#34C759":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                              {selectedPostage?.id==="collection"&&<span style={{color:"#fff",fontSize:10,fontWeight:900}}>✓</span>}
-                            </div>
+                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#34C759"}}>FREE</span>
+                          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${selectedPostage?.id==="collection"?"#34C759":"#ccc"}`,background:selectedPostage?.id==="collection"?"#34C759":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            {selectedPostage?.id==="collection"&&<span style={{color:"#fff",fontSize:10,fontWeight:900}}>✓</span>}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
 
                   {/* Fee breakdown */}
                   <div style={{marginBottom:24,padding:"14px 16px",background:"#fff8f0",border:"1.5px solid #FF950055"}}>
@@ -1921,12 +1927,12 @@ export default function App() {
       {view==="tailors"&&(
         <div style={{minHeight:"100vh",background:"#fff"}}>
           {/* Hero */}
-          <div style={{background:"#111",borderBottom:"3px solid #111",padding:"48px 24px 40px",position:"relative",overflow:"hidden"}}>
+          <div style={{background:"#0E4C6E",borderBottom:"3px solid #111",padding:"48px 24px 40px",position:"relative",overflow:"hidden"}}>
             <div style={{maxWidth:1200,margin:"0 auto",display:"flex",alignItems:"flex-end",justifyContent:"space-between",flexWrap:"wrap",gap:20}}>
               <div>
-                <button style={{...S.back,color:"#FF9500",marginBottom:16}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
-                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF9500",marginBottom:8}}>FIND A TAILOR</p>
-                <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(48px,8vw,100px)",fontWeight:900,color:"#fff",lineHeight:.9,letterSpacing:-2,marginBottom:16}}>TAILOR<br/><span style={{color:"#FF9500"}}>MARKETPLACE</span></h1>
+                <button style={{...S.back,color:"#0891B2",marginBottom:16}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#0891B2",marginBottom:8}}>FIND A TAILOR</p>
+                <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(48px,8vw,100px)",fontWeight:900,color:"#fff",lineHeight:.9,letterSpacing:-2,marginBottom:16}}>TAILOR<br/><span style={{color:"#0891B2"}}>MARKETPLACE</span></h1>
                 <p style={{fontSize:15,color:"#aaa",maxWidth:500,lineHeight:1.7}}>Book trusted South Asian tailors for alterations, custom stitching, embroidery and repairs. Every transaction secured through Stitch'd.</p>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:10,alignItems:"flex-end"}}>
@@ -1938,7 +1944,7 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-                {user&&<button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"14px 28px",fontSize:13,letterSpacing:2}} onClick={()=>{setEditingService(null);setTailorServiceForm({title:"",description:"",service_type:"Alterations",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});setShowTailorForm(true);}}>+ LIST MY SERVICE</button>}
+                {user&&<button className="hbtn" style={{...S.hBtn,background:"#0891B2",border:"none",padding:"14px 28px",fontSize:13,letterSpacing:2}} onClick={()=>{setEditingService(null);setTailorServiceForm({title:"",description:"",service_type:"Alterations",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});setShowTailorForm(true);}}>+ LIST MY SERVICE</button>}
               </div>
             </div>
           </div>
@@ -1950,7 +1956,7 @@ export default function App() {
                 <div key={l} style={{flex:"1 1 120px",background:"#fafafa",border:"2px solid #111",padding:"16px 20px",display:"flex",alignItems:"center",gap:12}}>
                   <span style={{fontSize:24}}>{e}</span>
                   <div>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#FF9500",lineHeight:1}}>{n}</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#0891B2",lineHeight:1}}>{n}</p>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:2,color:"#bbb"}}>{l}</p>
                   </div>
                 </div>
@@ -1960,19 +1966,19 @@ export default function App() {
             {/* My services */}
             {user&&myTailorServices.length>0&&(
               <div style={{marginBottom:40}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#FF9500",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:16}}>MY LISTED SERVICES</div>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#0891B2",borderLeft:"4px solid #0891B2",paddingLeft:12,marginBottom:16}}>MY LISTED SERVICES</div>
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   {myTailorServices.map(s=>(
-                    <div key={s.id} style={{border:"2px solid #FF9500",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap",background:"#fffbf5"}}>
+                    <div key={s.id} style={{border:"2px solid #0891B2",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap",background:"#fffbf5"}}>
                       <div style={{display:"flex",alignItems:"center",gap:14}}>
-                        <div style={{width:48,height:48,background:"#FF9500",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>✂️</div>
+                        <div style={{width:48,height:48,background:"#0891B2",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>✂️</div>
                         <div>
                           <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,marginBottom:2}}>{s.title}</p>
-                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#FF9500",letterSpacing:1}}>{s.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency)}{s.price_from}{s.turnaround_days?` · ${s.turnaround_days} DAYS`:""}</p>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#0891B2",letterSpacing:1}}>{s.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency)}{s.price_from}{s.turnaround_days?` · ${s.turnaround_days} DAYS`:""}</p>
                         </div>
                       </div>
                       <div style={{display:"flex",gap:8}}>
-                        <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",fontSize:11,padding:"8px 14px"}} onClick={()=>{setEditingService(s);setTailorServiceForm({title:s.title,description:s.description||"",service_type:s.service_type||"Alterations",price_from:s.price_from||"",price_to:s.price_to||"",turnaround_days:s.turnaround_days||"",location:s.location||"",images:[],imagePreviews:s.images||[]});setShowTailorForm(true);}}>EDIT</button>
+                        <button className="hbtn" style={{...S.hBtn,background:"#0891B2",border:"none",fontSize:11,padding:"8px 14px"}} onClick={()=>{setEditingService(s);setTailorServiceForm({title:s.title,description:s.description||"",service_type:s.service_type||"Alterations",price_from:s.price_from||"",price_to:s.price_to||"",turnaround_days:s.turnaround_days||"",location:s.location||"",images:[],imagePreviews:s.images||[]});setShowTailorForm(true);}}>EDIT</button>
                         <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"8px 14px"}} onClick={()=>deleteTailorService(s.id)}>DELETE</button>
                       </div>
                     </div>
@@ -1990,7 +1996,7 @@ export default function App() {
             </div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:28}}>
               {["All","Alterations","Taking In","Letting Out","Hemming","Blouse Stitching","Full Stitching","Custom Stitching","Embroidery","Repairs","Custom Orders"].map(t=>(
-                <button key={t} className="fpill" style={{...S.pill,...(tailorTypeFilter===t?{...S.pillOn,background:"#FF9500",borderColor:"#FF9500"}:{})}} onClick={()=>setTailorTypeFilter(t)}>{t}</button>
+                <button key={t} className="fpill" style={{...S.pill,...(tailorTypeFilter===t?{...S.pillOn,background:"#0891B2",borderColor:"#0891B2"}:{})}} onClick={()=>setTailorTypeFilter(t)}>{t}</button>
               ))}
             </div>
 
@@ -2000,7 +2006,7 @@ export default function App() {
                 <p style={{fontSize:64,marginBottom:16}}>✂️</p>
                 <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:900,marginBottom:8}}>NO TAILORS YET.</p>
                 <p style={{color:"#888",marginBottom:24,fontSize:15}}>Be the first to list your tailoring services on Stitch'd!</p>
-                {user&&<button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"14px 32px",fontSize:14,letterSpacing:2}} onClick={()=>setShowTailorForm(true)}>LIST MY SERVICE →</button>}
+                {user&&<button className="hbtn" style={{...S.hBtn,background:"#0891B2",border:"none",padding:"14px 32px",fontSize:14,letterSpacing:2}} onClick={()=>setShowTailorForm(true)}>LIST MY SERVICE →</button>}
               </div>
             ):(
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:3}}>
@@ -2069,17 +2075,17 @@ export default function App() {
                   {selectedService.images?.[0]&&<img src={selectedService.images[0]} alt="" style={{width:64,height:64,objectFit:"cover",border:"2px solid #111",flexShrink:0}}/>}
                   <div>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,marginBottom:4}}>{selectedService.title}</p>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#FF9500",letterSpacing:1}}>{selectedService.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency||"GBP")}{selectedService.price_from}</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#0891B2",letterSpacing:1}}>{selectedService.service_type?.toUpperCase()} · FROM {currencySymbol(profile?.currency||"GBP")}{selectedService.price_from}</p>
                     {selectedService.location&&<p style={{fontSize:12,color:"#888",marginTop:4}}>📍 {selectedService.location}</p>}
                     {selectedService.turnaround_days&&<p style={{fontSize:12,color:"#888"}}>⏱ {selectedService.turnaround_days} day turnaround</p>}
                   </div>
                 </div>
-                <div style={{marginBottom:20,padding:"14px 16px",background:"#fff8f0",border:"1.5px solid #FF950055"}}>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#FF9500",marginBottom:8}}>HOW IT WORKS</p>
+                <div style={{marginBottom:20,padding:"14px 16px",background:"#fff8f0",border:"1.5px solid #0891B255"}}>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#0891B2",marginBottom:8}}>HOW IT WORKS</p>
                   <div style={{display:"flex",flexDirection:"column",gap:6}}>
                     {["Send booking request with your notes","Tailor responds via Stitch'd messages","Agree on final price and details","Pay securely through Stitch'd (10% fee)","Tailor completes your order 🩷"].map((s,i)=>(
                       <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,color:"#FF9500",flexShrink:0}}>{i+1}.</span>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,color:"#0891B2",flexShrink:0}}>{i+1}.</span>
                         <span style={{fontSize:13,color:"#666"}}>{s}</span>
                       </div>
                     ))}
@@ -2088,7 +2094,7 @@ export default function App() {
                 <F l="NOTES FOR TAILOR (measurements, requirements, fabric, etc.)">
                   <textarea style={{...S.inp,height:110,resize:"vertical",width:"100%"}} placeholder="e.g. I need a lehenga blouse taken in by 2 inches at the waist. My measurements: bust 34, waist 28, hips 36. Fabric is heavy silk..." value={bookingNotes} onChange={e=>setBookingNotes(e.target.value)}/>
                 </F>
-                <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",width:"100%",padding:"16px",fontSize:15,letterSpacing:3,marginTop:16}} onClick={()=>bookTailor(selectedService)}>
+                <button className="hbtn" style={{...S.hBtn,background:"#0891B2",border:"none",width:"100%",padding:"16px",fontSize:15,letterSpacing:3,marginTop:16}} onClick={()=>bookTailor(selectedService)}>
                   SEND BOOKING REQUEST →
                 </button>
                 <p style={{fontSize:11,color:"#bbb",textAlign:"center",marginTop:10}}>🔒 Payment handled securely through Stitch'd · 10% platform fee</p>
@@ -2107,10 +2113,10 @@ export default function App() {
 
                 {/* Profile reminder */}
                 {!profile?.avatar_url&&(
-                  <div style={{background:"#fff8f0",border:"1.5px solid #FF950055",padding:"12px 16px",marginBottom:20,display:"flex",gap:10,alignItems:"center"}}>
+                  <div style={{background:"#fff8f0",border:"1.5px solid #0891B255",padding:"12px 16px",marginBottom:20,display:"flex",gap:10,alignItems:"center"}}>
                     <span style={{fontSize:20}}>💡</span>
                     <div>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1,color:"#FF9500",marginBottom:2}}>ADD A PROFILE PHOTO</p>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1,color:"#0891B2",marginBottom:2}}>ADD A PROFILE PHOTO</p>
                       <p style={{fontSize:12,color:"#888"}}>Buyers trust tailors with a photo. <span style={{color:"#FF1493",cursor:"pointer",fontWeight:700}} onClick={()=>{setShowTailorForm(false);setView("editprofile");}}>Update your profile →</span></p>
                     </div>
                   </div>
@@ -2151,7 +2157,7 @@ export default function App() {
                     <p style={{fontSize:11,color:"#bbb",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,marginTop:6}}>SHOW OFF YOUR BEST WORK — BEFORE/AFTER PHOTOS WORK GREAT</p>
                   </F>
                 </div>
-                <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",width:"100%",padding:"16px",fontSize:15,letterSpacing:3,marginTop:20,opacity:(!tailorServiceForm.title||!tailorServiceForm.price_from)?0.4:1}} onClick={saveTailorService} disabled={!tailorServiceForm.title||!tailorServiceForm.price_from}>
+                <button className="hbtn" style={{...S.hBtn,background:"#0891B2",border:"none",width:"100%",padding:"16px",fontSize:15,letterSpacing:3,marginTop:20,opacity:(!tailorServiceForm.title||!tailorServiceForm.price_from)?0.4:1}} onClick={saveTailorService} disabled={!tailorServiceForm.title||!tailorServiceForm.price_from}>
                   {editingService?"SAVE CHANGES →":"LIST SERVICE →"}
                 </button>
               </div>
@@ -2162,121 +2168,179 @@ export default function App() {
 
             {/* ── MEASURING GUIDE ── */}
       {view==="measuring"&&(
-        <main style={{...S.main,maxWidth:800}}>
+        <main style={{...S.main,maxWidth:900}}>
           <button style={S.back} onClick={()=>setView(prevView||"shop")}>← BACK</button>
           <div style={{marginBottom:36,paddingBottom:24,borderBottom:"3px solid #111"}}>
             <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>YOUR COMPLETE GUIDE</p>
             <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:56,fontWeight:900,letterSpacing:-1,lineHeight:1,marginBottom:12}}>HOW TO<br/><span style={{color:"#FF1493"}}>MEASURE.</span></h1>
-            <p style={{fontSize:15,color:"#666",lineHeight:1.7,maxWidth:560}}>Accurate measurements mean happier buyers and fewer returns. Use a soft measuring tape and measure over fitted underwear for best results.</p>
+            <p style={{fontSize:15,color:"#666",lineHeight:1.7,maxWidth:560}}>Accurate measurements mean happier buyers and fewer returns. Use a soft measuring tape, stand straight and measure over fitted underwear or a thin layer.</p>
           </div>
 
-          {[
-            {
-              key:"bust", label:"BUST", color:"#FF1493", emoji:"📏",
-              svg:(
-                <svg viewBox="0 0 200 160" style={{width:"100%",maxWidth:220}}>
-                  <ellipse cx="100" cy="80" rx="60" ry="75" fill="#FFF0F8" stroke="#FF1493" strokeWidth="2"/>
-                  <ellipse cx="100" cy="80" rx="45" ry="55" fill="none" stroke="#FF149366" strokeWidth="1.5" strokeDasharray="4,3"/>
-                  <line x1="40" y1="72" x2="160" y2="72" stroke="#FF1493" strokeWidth="2.5"/>
-                  <path d="M40,72 L44,68 M40,72 L44,76" stroke="#FF1493" strokeWidth="2"/>
-                  <path d="M160,72 L156,68 M160,72 L156,76" stroke="#FF1493" strokeWidth="2"/>
-                  <rect x="70" y="60" width="60" height="20" rx="3" fill="#FF1493"/>
-                  <text x="100" y="74" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="bold" fontFamily="Arial">BUST</text>
-                  <text x="100" y="140" textAnchor="middle" fill="#FF1493" fontSize="9" fontFamily="Arial">Measure around the fullest part</text>
-                </svg>
-              ),
-              steps:["Wear a well-fitted bra or stand naturally","Wrap the tape around the fullest part of your chest","Keep the tape parallel to the floor","Don't pull too tight — you should be able to breathe"]
-            },
-            {
-              key:"waist", label:"WAIST", color:"#FF9500", emoji:"📏",
-              svg:(
-                <svg viewBox="0 0 200 160" style={{width:"100%",maxWidth:220}}>
-                  <path d="M60,20 Q50,80 55,140 L145,140 Q150,80 140,20 Z" fill="#FFF8F0" stroke="#FF9500" strokeWidth="2"/>
-                  <line x1="45" y1="80" x2="155" y2="80" stroke="#FF9500" strokeWidth="2.5"/>
-                  <path d="M45,80 L49,76 M45,80 L49,84" stroke="#FF9500" strokeWidth="2"/>
-                  <path d="M155,80 L151,76 M155,80 L151,84" stroke="#FF9500" strokeWidth="2"/>
-                  <rect x="68" y="68" width="64" height="20" rx="3" fill="#FF9500"/>
-                  <text x="100" y="82" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="bold" fontFamily="Arial">WAIST</text>
-                  <text x="100" y="155" textAnchor="middle" fill="#FF9500" fontSize="9" fontFamily="Arial">Measure at the narrowest point</text>
-                </svg>
-              ),
-              steps:["Find your natural waist — the narrowest point of your torso","Usually about 1 inch above your belly button","Keep the tape snug but not tight","Exhale normally before measuring"]
-            },
-            {
-              key:"hips", label:"HIPS", color:"#BF5AF2", emoji:"📏",
-              svg:(
-                <svg viewBox="0 0 200 160" style={{width:"100%",maxWidth:220}}>
-                  <path d="M55,20 Q30,80 40,140 L160,140 Q170,80 145,20 Z" fill="#F8F0FF" stroke="#BF5AF2" strokeWidth="2"/>
-                  <line x1="35" y1="100" x2="165" y2="100" stroke="#BF5AF2" strokeWidth="2.5"/>
-                  <path d="M35,100 L39,96 M35,100 L39,104" stroke="#BF5AF2" strokeWidth="2"/>
-                  <path d="M165,100 L161,96 M165,100 L161,104" stroke="#BF5AF2" strokeWidth="2"/>
-                  <rect x="68" y="88" width="64" height="20" rx="3" fill="#BF5AF2"/>
-                  <text x="100" y="102" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="bold" fontFamily="Arial">HIPS</text>
-                  <text x="100" y="155" textAnchor="middle" fill="#BF5AF2" fontSize="9" fontFamily="Arial">Measure around the fullest part</text>
-                </svg>
-              ),
-              steps:["Stand with feet together","Find the fullest part of your hips and bottom","Usually 7–9 inches below your natural waist","Wrap the tape around keeping it parallel to the floor"]
-            },
-            {
-              key:"length", label:"LENGTH", color:"#007AFF", emoji:"📏",
-              svg:(
-                <svg viewBox="0 0 200 160" style={{width:"100%",maxWidth:220}}>
-                  <rect x="80" y="10" width="40" height="140" rx="4" fill="#F0F8FF" stroke="#007AFF" strokeWidth="2"/>
-                  <line x1="100" y1="10" x2="100" y2="150" stroke="#007AFF" strokeWidth="2.5"/>
-                  <path d="M100,10 L96,14 M100,10 L104,14" stroke="#007AFF" strokeWidth="2"/>
-                  <path d="M100,150 L96,146 M100,150 L104,146" stroke="#007AFF" strokeWidth="2"/>
-                  {[30,50,70,90,110,130].map(y=><line key={y} x1="92" y1={y} x2="108" y2={y} stroke="#007AFF" strokeWidth="1" opacity="0.4"/>)}
-                  <rect x="70" y="75" width="60" height="20" rx="3" fill="#007AFF"/>
-                  <text x="100" y="89" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="bold" fontFamily="Arial">LENGTH</text>
-                  <text x="100" y="158" textAnchor="middle" fill="#007AFF" fontSize="9" fontFamily="Arial">Shoulder to hem</text>
-                </svg>
-              ),
-              steps:["Measure from the highest point of the shoulder","Run the tape down to the hem of the garment","For sarees measure the full length of the fabric","For salwar kameez measure the kameez top separately from the trouser"]
-            },
-          ].map(({key,label,color,svg,steps})=>(
-            <div key={key} style={{marginBottom:40,padding:"28px",border:`3px solid ${color}`,background:"#fff"}}>
-              <div style={{display:"flex",gap:28,flexWrap:"wrap",alignItems:"flex-start"}}>
-                <div style={{flex:"0 0 180px",display:"flex",alignItems:"center",justifyContent:"center",background:"#fafafa",border:`2px solid ${color}33`,padding:"20px",minHeight:160}}>
-                  {svg}
-                </div>
-                <div style={{flex:1,minWidth:200}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-                    <div style={{width:4,height:32,background:color}}/>
-                    <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:900,color}}>{label}</h3>
+          {/* Body diagram + measurements */}
+          <div style={{display:"flex",gap:32,flexWrap:"wrap",marginBottom:48}}>
+            {/* SVG body diagram */}
+            <div style={{flex:"0 0 280px",position:"sticky",top:80,alignSelf:"flex-start"}}>
+              <svg viewBox="0 0 280 520" style={{width:"100%",maxWidth:280}} xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="140" cy="52" rx="32" ry="38" fill="#FFE4EF" stroke="#111" strokeWidth="2"/>
+                <rect x="126" y="86" width="28" height="18" fill="#FFE4EF" stroke="#111" strokeWidth="2"/>
+                <path d="M60,104 Q80,96 126,104 L130,130 L80,134 Q60,132 55,120 Z" fill="#FFE4EF" stroke="#111" strokeWidth="2"/>
+                <path d="M220,104 Q200,96 154,104 L150,130 L200,134 Q220,132 225,120 Z" fill="#FFE4EF" stroke="#111" strokeWidth="2"/>
+                <path d="M80,134 Q70,160 72,200 Q74,240 78,270 L202,270 Q206,240 208,200 Q210,160 200,134 Z" fill="#FFE4EF" stroke="#111" strokeWidth="2"/>
+                <path d="M55,120 Q44,150 46,200 Q47,220 54,230 Q60,238 68,230 Q76,222 74,200 Q72,160 80,134 Z" fill="#FFE4EF" stroke="#111" strokeWidth="2"/>
+                <path d="M225,120 Q236,150 234,200 Q233,220 226,230 Q220,238 212,230 Q204,222 206,200 Q208,160 200,134 Z" fill="#FFE4EF" stroke="#111" strokeWidth="2"/>
+                <path d="M78,270 Q72,290 70,320 L88,320 L100,460 L180,460 L192,320 L210,320 Q208,290 202,270 Z" fill="#FFE4EF" stroke="#111" strokeWidth="2"/>
+                <ellipse cx="110" cy="468" rx="18" ry="8" fill="#FFE4EF" stroke="#111" strokeWidth="2"/>
+                <ellipse cx="170" cy="468" rx="18" ry="8" fill="#FFE4EF" stroke="#111" strokeWidth="2"/>
+                <line x1="58" y1="152" x2="222" y2="152" stroke="#FF1493" strokeWidth="2" strokeDasharray="5,3"/>
+                <circle cx="50" cy="152" r="10" fill="#FF1493"/>
+                <text x="50" y="156" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="bold">B</text>
+                <line x1="62" y1="168" x2="218" y2="168" stroke="#FF2D55" strokeWidth="1.5" strokeDasharray="4,3"/>
+                <circle cx="54" cy="168" r="9" fill="#FF2D55"/>
+                <text x="54" y="172" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="bold">UB</text>
+                <line x1="62" y1="104" x2="218" y2="104" stroke="#007AFF" strokeWidth="2" strokeDasharray="5,3"/>
+                <circle cx="54" cy="104" r="9" fill="#007AFF"/>
+                <text x="54" y="108" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="bold">SH</text>
+                <line x1="60" y1="210" x2="220" y2="210" stroke="#FF9500" strokeWidth="2" strokeDasharray="5,3"/>
+                <circle cx="52" cy="210" r="10" fill="#FF9500"/>
+                <text x="52" y="214" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="bold">W</text>
+                <line x1="58" y1="238" x2="222" y2="238" stroke="#FF6B00" strokeWidth="1.5" strokeDasharray="4,3"/>
+                <circle cx="50" cy="238" r="9" fill="#FF6B00"/>
+                <text x="50" y="242" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="bold">HH</text>
+                <line x1="55" y1="262" x2="225" y2="262" stroke="#BF5AF2" strokeWidth="2" strokeDasharray="5,3"/>
+                <circle cx="47" cy="262" r="10" fill="#BF5AF2"/>
+                <text x="47" y="266" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="bold">H</text>
+                <line x1="240" y1="104" x2="240" y2="460" stroke="#34C759" strokeWidth="2"/>
+                <path d="M236,108 L240,100 L244,108" fill="#34C759"/>
+                <path d="M236,456 L240,464 L244,456" fill="#34C759"/>
+                <text x="258" y="290" fill="#34C759" fontSize="9" fontWeight="bold" transform="rotate(90,258,290)">LENGTH</text>
+                <line x1="46" y1="120" x2="46" y2="228" stroke="#8E8E93" strokeWidth="1.5"/>
+                <path d="M42,124 L46,116 L50,124" fill="#8E8E93"/>
+                <path d="M42,224 L46,232 L50,224" fill="#8E8E93"/>
+              </svg>
+
+              {/* Legend */}
+              <div style={{display:"flex",flexDirection:"column",gap:6,marginTop:12,padding:"12px",background:"#fafafa",border:"2px solid #f0f0f0"}}>
+                {[["#FF1493","B","Bust"],["#FF2D55","UB","Underbust"],["#007AFF","SH","Shoulder"],["#FF9500","W","Waist"],["#FF6B00","HH","High Hip"],["#BF5AF2","H","Hips"],["#34C759","↕","Length"],["#8E8E93","↕","Sleeve"]].map(([c,code,label])=>(
+                  <div key={label} style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{width:20,height:20,borderRadius:"50%",background:c,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <span style={{color:"#fff",fontSize:8,fontWeight:900}}>{code}</span>
+                    </div>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,color:"#555"}}>{label}</span>
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                    {steps.map((step,i)=>(
-                      <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:900,color,flexShrink:0,width:20}}>{i+1}.</span>
-                        <span style={{fontSize:14,color:"#555",lineHeight:1.6}}>{step}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-          ))}
 
-          {/* Tips box */}
-          <div style={{background:"#111",color:"#fff",padding:"28px",border:"3px solid #111",marginBottom:32}}>
-            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#FF1493",marginBottom:12}}>💡 PRO TIPS</p>
-            <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              {["Always measure over the clothes you'd wear underneath the garment","Round up to the nearest half inch for comfort","For South Asian wear, add 1–2 inches to your actual measurements for ease","List all measurements you have — the more detail, the more buyers will trust your listing","If you have spare fabric that allows letting out, always mention it!"].map((t,i)=>(
-                <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-                  <span style={{color:"#FF1493",fontWeight:900,flexShrink:0}}>✦</span>
-                  <span style={{fontSize:14,color:"#ccc",lineHeight:1.6}}>{t}</span>
+            {/* Measurement cards */}
+            <div style={{flex:1,minWidth:260,display:"flex",flexDirection:"column",gap:16}}>
+              {[
+                {label:"BUST",code:"B",color:"#FF1493",icon:"👙",
+                  how:"Measure around the fullest part of your chest, keeping the tape parallel to the floor. Don't pull tight.",
+                  tip:"Wear a well-fitted bra. Keep two fingers under the tape for ease."},
+                {label:"UNDERBUST",code:"UB",color:"#FF2D55",icon:"📏",
+                  how:"Measure directly under your bust, around your ribcage. Keep the tape snug.",
+                  tip:"This is key for blouse fitting. The difference between bust and underbust determines your cup size."},
+                {label:"SHOULDER WIDTH",code:"SH",color:"#007AFF",icon:"↔️",
+                  how:"Measure from the edge of one shoulder to the edge of the other, across the back.",
+                  tip:"Critical for kameez and blouse sleeves. Ask someone to help for accuracy."},
+                {label:"WAIST",code:"W",color:"#FF9500",icon:"⌀",
+                  how:"Find the narrowest part of your torso (about 1 inch above belly button). Exhale naturally, then measure.",
+                  tip:"Don't suck in or hold your breath — measure at your natural relaxed waist."},
+                {label:"HIGH HIP",code:"HH",color:"#FF6B00",icon:"📐",
+                  how:"Measure about 3–4 inches below your natural waist, around the upper hip/lower abdomen.",
+                  tip:"This measurement matters for lehengas and salwars that sit at the high hip."},
+                {label:"HIPS",code:"H",color:"#BF5AF2",icon:"🔵",
+                  how:"Stand with feet together. Measure around the fullest part of your hips and bottom — usually 7–9 inches below your waist.",
+                  tip:"This is often the largest measurement. Make sure the tape is parallel to the floor."},
+                {label:"GARMENT LENGTH",code:"↕",color:"#34C759",icon:"📏",
+                  how:"For tops/kameez: from highest point of shoulder straight down to desired hem. For lehengas: from natural waist to hem. For sarees: full fabric length.",
+                  tip:"Always specify what the length refers to — shoulder to hem, or waist to hem."},
+                {label:"SLEEVE LENGTH",code:"SL",color:"#8E8E93",icon:"💪",
+                  how:"From the top of the shoulder seam down to where you want the sleeve to end. Slightly bend your elbow while measuring.",
+                  tip:"For South Asian wear, 3/4 sleeves (around 16-18 inches) are most common for blouses."},
+                {label:"INSEAM",code:"IN",color:"#0A84FF",icon:"👖",
+                  how:"For churidars/salwars: from the crotch down to the ankle bone. Measure against trousers you already own.",
+                  tip:"Churidars are intentionally longer than the inseam to create the gathered effect at the ankle."},
+              ].map(({label,code,color,icon,how,tip})=>(
+                <div key={label} style={{border:`2px solid ${color}`,padding:"18px 20px",background:"#fff"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+                    <div style={{width:36,height:36,borderRadius:"50%",background:color,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <span style={{color:"#fff",fontSize:12,fontWeight:900,fontFamily:"'Barlow Condensed',sans-serif"}}>{code}</span>
+                    </div>
+                    <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:"#111"}}>{label}</h3>
+                  </div>
+                  <p style={{fontSize:13,color:"#555",lineHeight:1.6,marginBottom:8}}>{how}</p>
+                  <div style={{background:`${color}11`,border:`1px solid ${color}33`,padding:"8px 12px",display:"flex",gap:8,alignItems:"flex-start"}}>
+                    <span style={{color,fontWeight:900,fontSize:12,flexShrink:0}}>💡</span>
+                    <p style={{fontSize:12,color:"#666",lineHeight:1.5}}>{tip}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",padding:"16px 32px",fontSize:15,letterSpacing:3,width:"100%"}} onClick={()=>{ setPrevView("measuring"); setView(user?"add":"auth"); }}>
+          {/* Size chart table — Lashkaraa style */}
+          <div style={{marginBottom:40}}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:16}}>SOUTH ASIAN SIZE CHART (INCHES)</div>
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13}}>
+                <thead>
+                  <tr style={{background:"#111",color:"#fff"}}>
+                    {["SIZE","BUST","UNDERBUST","WAIST","HIGH HIP","HIPS","UK","US/CA","EU"].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontWeight:800,letterSpacing:1.5,fontSize:11,whiteSpace:"nowrap"}}>{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ["XXS","30–31","24–25","24–25","28–29","32–33","4–6","0–2","32–34"],
+                    ["XS","32–33","26–27","26–27","30–31","34–35","6–8","2–4","34–36"],
+                    ["S","34–35","28–29","28–29","32–33","36–37","8–10","4–6","36–38"],
+                    ["M","36–37","30–31","30–31","34–35","38–39","10–12","6–8","38–40"],
+                    ["L","38–39","32–33","32–33","36–37","40–41","12–14","8–10","40–42"],
+                    ["XL","40–41","34–35","34–35","38–39","42–43","14–16","10–12","42–44"],
+                    ["XXL","42–43","36–37","36–37","40–41","44–45","16–18","12–14","44–46"],
+                    ["3XL","44–46","38–40","38–40","42–44","46–48","18–20","14–16","46–48"],
+                    ["4XL","48–50","42–44","42–44","46–48","50–52","20–22","16–18","48–50"],
+                  ].map(([sz,...vals],i)=>(
+                    <tr key={sz} style={{background:i%2===0?"#fafafa":"#fff",borderBottom:"1px solid #f0f0f0"}}>
+                      <td style={{padding:"10px 14px",fontWeight:900,color:"#FF1493",fontSize:15}}>{sz}</td>
+                      {vals.map((v,j)=><td key={j} style={{padding:"10px 14px",color:"#555",whiteSpace:"nowrap"}}>{v}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p style={{fontSize:12,color:"#888",marginTop:10,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>* ALL MEASUREMENTS ARE BODY MEASUREMENTS IN INCHES. ADD 1-2in FOR GARMENT EASE.</p>
+          </div>
+
+          {/* Pro tips */}
+          <div style={{background:"#111",color:"#fff",padding:"28px",border:"3px solid #111",marginBottom:32}}>
+            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#FF1493",marginBottom:16}}>💡 PRO TIPS FOR SOUTH ASIAN WEAR</p>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:12}}>
+              {[
+                "Always measure over the clothes you'd normally wear underneath",
+                "Add 1-2 inches ease to your measurements for comfort in fitted pieces",
+                "For heavily embroidered pieces, go 1 size up — the embroidery reduces stretch",
+                "Blouse measurements matter most: bust, underbust and shoulder width",
+                "Churidar length should be 3-4 inches longer than your actual inseam",
+                "If the listing has spare fabric, it can often be let out by 1-2 inches",
+                "When in doubt between two sizes, always size up for South Asian wear",
+                "Custom stitched items use your exact measurements — always measure fresh",
+              ].map((t,i)=>(
+                <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <span style={{color:"#FF1493",fontWeight:900,flexShrink:0,fontSize:14}}>✦</span>
+                  <span style={{fontSize:13,color:"#ccc",lineHeight:1.6}}>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",padding:"16px 32px",fontSize:15,letterSpacing:3,width:"100%"}} onClick={()=>{setPrevView("measuring");setView(user?"add":"auth");}}>
             LIST A PIECE NOW →
           </button>
         </main>
       )}
 
-      {view==="shop"&&(
+            {view==="shop"&&(
         <>
           <section style={S.hero}>
             <div style={S.heroLeft}>
@@ -2375,8 +2439,8 @@ export default function App() {
                         {(item.occasions||[]).length>0&&<div style={S.occRow}>{item.occasions.slice(0,3).map(o=><span key={o} style={{...S.occChip,background:OCC_COLOR[o]||"#999",color:"#fff"}}>{o.toUpperCase()}</span>)}{item.occasions.length>3&&<span style={{...S.occChip,background:"#111",color:"#fff"}}>+{item.occasions.length-3}</span>}</div>}
                         <div style={S.measRow}>
                           {item.size&&item.size!=="Free Size"&&<span style={S.mTag}>{item.size}</span>}
-                          {item.bust&&<span style={S.mTag}>B {item.bust}"</span>}
-                          {item.waist&&<span style={S.mTag}>W {item.waist}"</span>}
+                          {item.bust&&<span style={S.mTag}>B {item.bust}in</span>}
+                          {item.waist&&<span style={S.mTag}>W {item.waist}in</span>}
                           {item.can_take_in&&<span style={{...S.mTag,...S.mTagG}}>↔ TAKE IN</span>}
                           {item.spare_fabric&&<span style={{...S.mTag,...S.mTagA}}>+ FABRIC</span>}
                         </div>
@@ -2471,7 +2535,7 @@ export default function App() {
                 <p style={{...S.dBlockTitle,borderColor:selColor,color:selColor}}>MEASUREMENTS</p>
                 <div style={S.measBoxRow}>
                   {[["BUST",sel.bust],["WAIST",sel.waist],["HIPS",sel.hips],["LENGTH",sel.length]].filter(([,v])=>v).map(([l,v])=>(
-                    <div key={l} style={{...S.measBox,borderColor:selColor}}><div style={{...S.measVal,color:selColor}}>{v}"</div><div style={S.measLbl}>{l}</div></div>
+                    <div key={l} style={{...S.measBox,borderColor:selColor}}><div style={{...S.measVal,color:selColor}}>{v}in</div><div style={S.measLbl}>{l}</div></div>
                   ))}
                 </div>
                 {sel.size&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:10}}>SIZE: {sel.size}</p>}
@@ -2729,40 +2793,11 @@ export default function App() {
               </div>
             </Sec>}
 
-            <Sec label="📦 POSTAGE & DELIVERY">
-              <p style={{fontSize:12,color:"#888",marginBottom:16,lineHeight:1.6}}>Select which carriers you'll use. Buyers choose at checkout and the cost is added to their total.</p>
-              <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
-                {POSTAGE_OPTIONS.map(carrier=>{
-                  const selected=(form.postage_options||[]).find(p=>p.id===carrier.id);
-                  return(
-                    <div key={carrier.id} style={{border:`2px solid ${selected?"#FF1493":"#e0e0e0"}`,padding:"12px 16px",transition:"border-color .15s"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:selected?10:0,cursor:"pointer"}} onClick={()=>{
-                        const existing=(form.postage_options||[]).find(p=>p.id===carrier.id);
-                        if(existing){
-                          setForm(f=>({...f,postage_options:(f.postage_options||[]).filter(p=>p.id!==carrier.id)}));
-                        } else {
-                          setForm(f=>({...f,postage_options:[...(f.postage_options||[]),{id:carrier.id,name:carrier.name,emoji:carrier.emoji,selectedPrice:carrier.prices[0]}]}));
-                        }
-                      }}>
-                        <span style={{fontSize:20}}>{carrier.emoji}</span>
-                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,flex:1}}>{carrier.name}</span>
-                        <div style={{width:22,height:22,borderRadius:"50%",border:`2px solid ${selected?"#FF1493":"#ccc"}`,background:selected?"#FF1493":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                          {selected&&<span style={{color:"#fff",fontSize:12,fontWeight:900}}>✓</span>}
-                        </div>
-                      </div>
-                      {selected&&(
-                        <select style={{...S.inp,fontSize:13}} value={selected.selectedPrice?.label} onChange={e=>{
-                          const price=carrier.prices.find(p=>p.label===e.target.value);
-                          setForm(f=>({...f,postage_options:(f.postage_options||[]).map(p=>p.id===carrier.id?{...p,selectedPrice:price}:p)}));
-                        }}>
-                          {carrier.prices.map(p=><option key={p.label} value={p.label}>{p.label} — £{p.price}</option>)}
-                        </select>
-                      )}
-                    </div>
-                  );
-                })}
+            <Sec label="📦 POSTAGE">
+              <p style={{fontSize:12,color:"#888",marginBottom:12,lineHeight:1.6}}>Does this item include free postage, or will buyers pay separately at checkout?</p>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <Tog on={form.accepts_collection} onToggle={()=>setForm(f=>({...f,accepts_collection:!f.accepts_collection}))} color="#34C759" label="ACCEPT COLLECTION IN PERSON" sub="Buyer can collect for free — arrange separately"/>
               </div>
-              <Tog on={form.accepts_collection} onToggle={()=>setForm(f=>({...f,accepts_collection:!f.accepts_collection}))} color="#34C759" label="ACCEPT COLLECTION IN PERSON" sub="Buyer can collect for free"/>
             </Sec>
 
             <Sec label="DESCRIBE IT">
