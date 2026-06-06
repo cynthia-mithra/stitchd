@@ -1425,9 +1425,9 @@ export default function App() {
       {view==="messages"&&user&&(
         <main style={{...S.main,maxWidth:1000}}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
-          <div style={S.msgLayout}>
+          <div style={S.msgLayout} className="msg-layout">
             {/* Conversation list */}
-            <div style={S.msgSidebar}>
+            <div style={S.msgSidebar} className="msg-sidebar">
               <div style={S.msgSidebarHead}>
                 <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,letterSpacing:1}}>MESSAGES</span>
                 {unreadCount>0&&<span style={{...S.wishBadge,position:"static",width:"auto",borderRadius:4,padding:"2px 8px"}}>{unreadCount} NEW</span>}
@@ -1587,7 +1587,7 @@ export default function App() {
       {view==="auth"&&(
         <main style={{...S.main,maxWidth:480}}>
           <button style={S.back} onClick={()=>{ setView("shop"); setOtpStep("form"); setOtpCode(""); setAError(""); }}>← BACK</button>
-          <div style={S.formCard}>
+          <div style={S.formCard} className="form-card">
             {otpStep==="otp"?(
               // OTP verification screen
               <>
@@ -1638,7 +1638,7 @@ export default function App() {
       {view==="editprofile"&&user&&(
         <main style={{...S.main,maxWidth:600}}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
-          <div style={S.formCard}>
+          <div style={S.formCard} className="form-card">
             <div style={S.formHero}>
               <h2 style={S.formTitle}>YOUR<br/><span style={{color:"#FF1493"}}>PROFILE.</span></h2>
               <p style={S.formSub}>This is what buyers see when they visit your page.</p>
@@ -1798,7 +1798,7 @@ export default function App() {
       {view==="profile"&&viewedProfile&&(
         <main style={S.main}>
           <button style={S.back} onClick={()=>setView(prevView||"shop")}>← BACK</button>
-          <div style={S.profileHeader}>
+          <div style={S.profileHeader} className="profile-header">
             {/* Avatar */}
             <div style={S.profileAvatarWrap}>
               {viewedProfile.avatar_url
@@ -1910,7 +1910,7 @@ export default function App() {
           {myItems.length===0?(
             <div style={{textAlign:"center",padding:"60px 20px"}}><p style={{fontSize:48,marginBottom:12}}>🥻</p><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NO LISTINGS YET.</p><button className="hbtn" style={S.hBtn} onClick={()=>setView("add")}>LIST YOUR FIRST PIECE →</button></div>
           ):(
-            <div style={S.dashGrid}>
+            <div style={S.dashGrid} className="dash-grid">
               {myItems.map((item,idx)=>(
                 <div key={item.id} style={{...S.dashCard,borderColor:item.sold?"#ccc":CARD_COLORS[idx%CARD_COLORS.length]}}>
                   <div style={{...S.dashCardImg,background:item.image_url?"#000":CARD_COLORS[idx%CARD_COLORS.length]}}>
@@ -2046,7 +2046,7 @@ export default function App() {
       {view==="createbundle"&&user&&(
         <main style={{...S.main,maxWidth:760}}>
           <button style={S.back} onClick={()=>setView("dashboard")}>← BACK TO DASHBOARD</button>
-          <div style={S.formCard}>
+          <div style={S.formCard} className="form-card">
             <div style={S.formHero}>
               <h2 style={S.formTitle}>CREATE A<br/><span style={{color:"#FF9500"}}>BUNDLE.</span></h2>
               <p style={S.formSub}>Group separate listings together and offer buyers a deal.</p>
@@ -2609,8 +2609,8 @@ export default function App() {
 
       {view==="shop"&&(
         <>
-          <section style={S.hero}>
-            <div style={S.heroLeft}>
+          <section style={S.hero} className="hero-section">
+            <div style={S.heroLeft} className="hero-left">
               <p style={S.heroTag}>THE MARKETPLACE FOR</p>
               <h1 style={S.heroH}><span style={S.heroLine1}>DESI</span><span style={S.heroLine2}>FITS</span><span style={S.heroLine3}>REHOMED.</span></h1>
               <p style={S.heroSub}>South Asian fashion — sarees, lehengas, sherwanis — with <em>real measurements</em> so you know if it fits before you buy.</p>
@@ -2619,12 +2619,20 @@ export default function App() {
                 <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"})}>BROWSE DROPS ↓</button>
               </div>
             </div>
-            <div style={S.heroRight}>
-              {["🥻","👘","👗","🧥","💍"].map((e,i)=>(
-                <div key={i} style={{...S.heroBubble,background:CARD_COLORS[i],top:`${[8,30,55,15,68][i]}%`,left:`${[10,60,20,75,50][i]}%`,width:[100,80,120,70,90][i],height:[100,80,120,70,90][i],animationDelay:`${i*0.6}s`}}>
-                  <span style={{fontSize:[44,36,52,30,40][i]}}>{e}</span>
+            <div style={S.heroRight} className="hero-right">
+              {[
+                {img:"/images/saree.png",      top:"2%",  left:"5%",  size:170, delay:"0s"},
+                {img:"/images/lehenga.png",    top:"30%", left:"55%", size:150, delay:"0.7s"},
+                {img:"/images/anarkali.png",   top:"55%", left:"8%",  size:175, delay:"1.4s"},
+                {img:"/images/sharara.png",    top:"8%",  left:"65%", size:130, delay:"2.1s"},
+                {img:"/images/indo_western.png",top:"62%",left:"58%", size:148, delay:"2.8s"},
+              ].map((b,i)=>(
+                <div key={i} style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:b.size,borderRadius:"50%",overflow:"hidden",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
+                  <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                 </div>
               ))}
+            </div>
+            ))}
             </div>
           </section>
 
@@ -2855,9 +2863,9 @@ export default function App() {
       {view==="detail"&&sel&&(
         <main style={S.main}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
-          <div style={S.detailWrap}>
+          <div style={S.detailWrap} className="detail-wrap">
             {/* Image gallery */}
-            <div style={S.detailImgWrap}>
+            <div style={S.detailImgWrap} className="detail-img">
               <div style={{...S.detailPanel,background:selImages.length>0?"#000":selColor,overflow:"hidden"}}>
                 {selImages.length>0?<img src={selImages[selImgIdx]} alt={sel.name} style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.92}}/>:<span style={{fontSize:120,filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.25))"}}>{sel.emoji||catEmoji(sel.category)}</span>}
                 <div style={{...S.cardOrigin,top:20,left:20,bottom:"auto",right:"auto",background:"rgba(0,0,0,0.3)"}}>{sel.origin?.toUpperCase()}</div>
@@ -2881,7 +2889,7 @@ export default function App() {
               )}
             </div>
 
-            <div style={S.detailInfo}>
+            <div style={S.detailInfo} className="detail-info">
               <p style={{...S.cardCatLabel,color:selColor,fontSize:12,marginBottom:8}}>{sel.category?.toUpperCase()} · {(sel.material||sel.fabric)?.toUpperCase()} · {sel.condition?.toUpperCase()}</p>
               <h2 style={S.detailName}>{sel.name}</h2>
               <div style={{...S.detailPrice,color:selColor}}>{currencySymbol(sel.currency)}{sel.price}</div>
@@ -3103,7 +3111,7 @@ export default function App() {
       {(view==="add"||view==="edit")&&(
         <main style={{...S.main,maxWidth:760}}>
           <button style={S.back} onClick={()=>setView(view==="edit"?"detail":"shop")}>← BACK</button>
-          <div style={S.formCard}>
+          <div style={S.formCard} className="form-card">
             <div style={S.formHero}><h2 style={S.formTitle}>{view==="edit"?"EDIT YOUR\nPIECE.":"LIST YOUR\nPIECE."}</h2><p style={S.formSub}>{view==="edit"?"Update your listing details.":"Real measurements. Real fit info. Real buyers."}</p></div>
 
             <Sec label="PHOTOS (UP TO 5)">
@@ -3126,7 +3134,7 @@ export default function App() {
             </Sec>
 
             <Sec label="THE BASICS">
-              <div style={S.fg2}>
+              <div style={S.fg2} className="fg2">
                 <F l="Item Name *"><input style={S.inp} placeholder="e.g. Kanjivaram Silk Saree" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></F>
                 <F l="Price *"><input style={S.inp} type="number" placeholder="65" value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))}/></F>
                 <F l="TYPE" style={{gridColumn:"1/-1"}}>
@@ -3167,12 +3175,12 @@ export default function App() {
               {/* Required */}
               <div style={{background:"#fff8fc",border:"2px solid #FF149333",padding:"14px 16px",marginBottom:16}}>
                 <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:900,letterSpacing:2,color:"#FF1493",marginBottom:12}}>✦ REQUIRED MEASUREMENTS</p>
-                <div style={S.fg4}>{[["bust","BUST *"],["waist","WAIST *"],["hips","HIPS *"],["length","LENGTH *"]].map(([k,l])=><F key={k} l={l}><input style={{...S.inp,borderColor:!form[k]?"#FF149366":"#e0e0e0"}} placeholder="e.g. 34" value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}/></F>)}</div>
+                <div style={S.fg4} className="fg4 meas-grid">{[["bust","BUST *"],["waist","WAIST *"],["hips","HIPS *"],["length","LENGTH *"]].map(([k,l])=><F key={k} l={l}><input style={{...S.inp,borderColor:!form[k]?"#FF149366":"#e0e0e0"}} placeholder="e.g. 34" value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}/></F>)}</div>
               </div>
               {/* Optional extras */}
               <div style={{border:"2px solid #f0f0f0",padding:"14px 16px",marginBottom:12}}>
                 <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:900,letterSpacing:2,color:"#888",marginBottom:12}}>ADDITIONAL MEASUREMENTS (OPTIONAL)</p>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:12}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:12}} className="meas-optional">
                   {[["underbust","UNDERBUST"],["shoulder","SHOULDER WIDTH"],["high_hip","HIGH HIP"],["sleeve_length","SLEEVE LENGTH"],["inseam","INSEAM"]].map(([k,l])=>(
                     <F key={k} l={l}><input style={S.inp} placeholder="inches" value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}/></F>
                   ))}
@@ -3229,14 +3237,25 @@ const CSS=`
   .avatar-wrap:hover .avatar-overlay{opacity:1 !important;}
   ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#eee;border-radius:2px}
   ::selection{background:#FF149333}
+  @media(max-width:768px){
+    .hero-right{flex:0 0 40% !important;}
+  }
   @media(max-width:600px){
-    .hero-left{padding:28px 20px !important;flex:1 1 100% !important;border-right:none !important;border-bottom:3px solid #111;}
+    .hero-section{flex-direction:column !important;}
+    .hero-left{flex:1 1 100% !important;border-right:none !important;border-bottom:3px solid #111;padding:28px 20px !important;}
     .hero-right{display:none !important;}
     .detail-wrap{flex-direction:column !important;}
-    .detail-img{border-right:none !important;border-bottom:3px solid #111;}
-    .msg-layout{flex-direction:column !important;height:auto !important;}
-    .msg-sidebar{width:100% !important;border-right:none !important;border-bottom:3px solid #111;}
+    .detail-img{border-right:none !important;border-bottom:3px solid #111 !important;}
+    .detail-info{padding:16px !important;}
+    .msg-layout{flex-direction:column !important;height:auto !important;min-height:80vh;}
+    .msg-sidebar{width:100% !important;border-right:none !important;border-bottom:3px solid #111 !important;max-height:200px;}
     .dash-grid{grid-template-columns:1fr !important;}
+    .meas-grid{grid-template-columns:1fr 1fr !important;}
+    .meas-optional{grid-template-columns:1fr 1fr !important;}
+    .form-card{padding:24px 16px !important;}
+    .fg4{grid-template-columns:1fr 1fr !important;}
+    .fg2{grid-template-columns:1fr !important;}
+    .profile-header{flex-direction:column !important;align-items:center !important;text-align:center;}
   }
 `;
 
@@ -3256,8 +3275,8 @@ const S={
   ticker:{background:"#FF1493",overflow:"hidden",borderBottom:"2px solid #111",height:36,display:"flex",alignItems:"center"},
   tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2.5,color:"#fff",animation:"ticker 22s linear infinite",paddingLeft:"100%"},
   toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"12px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,zIndex:999,borderRadius:0,whiteSpace:"nowrap",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"},
-  hero:{borderBottom:"3px solid #111",display:"flex",minHeight:"80vh",overflow:"hidden",flexWrap:"wrap"},
-  heroLeft:{flex:"0 0 55%",minWidth:280,padding:"40px 32px",borderRight:"3px solid #111",display:"flex",flexDirection:"column",justifyContent:"center"},
+  hero:{borderBottom:"3px solid #111",display:"flex",minHeight:"80vh",overflow:"hidden"},
+  heroLeft:{flex:"0 0 55%",padding:"40px 32px",borderRight:"3px solid #111",display:"flex",flexDirection:"column",justifyContent:"center"},
   heroTag:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:20},
   heroH:{display:"flex",flexDirection:"column",marginBottom:28},
   heroLine1:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#111"},
@@ -3267,8 +3286,8 @@ const S={
   heroCtas:{display:"flex",gap:14,flexWrap:"wrap"},
   heroBtnPrimary:{background:"#FF1493",color:"#fff",border:"2px solid #FF1493",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
   heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
-  heroRight:{flex:1,position:"relative",background:"#fafafa"},
-  heroBubble:{position:"absolute",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"3px solid #111",animation:"floatbob 4s ease-in-out infinite"},
+  heroRight:{flex:1,position:"relative",background:"#fafafa",minHeight:300,overflow:"hidden"},
+  heroBubble:{position:"absolute",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"3px solid #111",animation:"floatbob 4s ease-in-out infinite",boxShadow:"0 8px 32px rgba(0,0,0,0.15)"},
   searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"sticky",top:52,zIndex:100,isolation:"isolate"},
   searchInner:{display:"flex",alignItems:"stretch",height:48},
   searchBox:{flex:1,display:"flex",alignItems:"stretch",minWidth:0},
@@ -3359,7 +3378,7 @@ const S={
   dashCardImg:{width:120,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"},
   dashCardBody:{flex:1,padding:"14px"},
   dashBtn:{border:"none",padding:"6px 10px",fontSize:10,cursor:"pointer",fontWeight:800,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1},
-  formCard:{border:"3px solid #111",padding:"48px 44px",background:"#fff"},
+  formCard:{border:"3px solid #111",padding:"clamp(20px,5vw,48px) clamp(16px,5vw,44px)",background:"#fff"},
   formHero:{borderBottom:"3px solid #111",paddingBottom:32,marginBottom:36},
   formTitle:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:64,fontWeight:900,lineHeight:.95,letterSpacing:-1,marginBottom:10,whiteSpace:"pre-line"},
   formSub:{fontSize:15,color:"#888"},
