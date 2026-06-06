@@ -115,6 +115,13 @@ const db = {
   async updateConversation(id,patch,t){ await fetch(`${SUPABASE_URL}/rest/v1/conversations?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify(patch)}); },
   async markMessagesRead(convId,uid,t){ await fetch(`${SUPABASE_URL}/rest/v1/messages?conversation_id=eq.${convId}&sender_id=neq.${uid}&read=eq.false`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({read:true})}); },
   async countUnread(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/messages?read=eq.false&select=id,conversation_id,conversations!inner(buyer_id,seller_id)`,{headers:{...hdrs(t),"Accept":"application/json"}}); if(!r.ok)return 0; const d=await r.json(); return d.filter(m=>m.sender_id!==uid).length; },
+  // orders
+  async createOrder(order,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(order)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
+  async getMyOrders(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders?or=(buyer_id.eq.${uid},seller_id.eq.${uid})&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async updateOrder(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  async getNewListings(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?sold=eq.false&order=created_at.desc&limit=12`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async getPriceDrops(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?sold=eq.false&prev_price=not.is.null&order=updated_at.desc&limit=12`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async getTrending(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?sold=eq.false&order=views.desc&limit=12`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   // tailor marketplace
   async getTailorServices(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_services?active=eq.true&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getMyTailorServices(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_services?tailor_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
@@ -218,6 +225,20 @@ export default function App() {
   const [showSizeMatch,  setShowSizeMatch]  = useState(false);
   const [showTailorDir,  setShowTailorDir]  = useState(false);
   const [tailorProfiles, setTailorProfiles] = useState([]);
+  // orders
+  const [myOrders,       setMyOrders]       = useState([]);
+  const [ordersLoading,  setOrdersLoading]  = useState(false);
+  const [showTrackingInput, setShowTrackingInput] = useState(null);
+  const [trackingInput,  setTrackingInput]  = useState("");
+  const [showDisputeForm,setShowDisputeForm]= useState(null);
+  const [disputeReason,  setDisputeReason]  = useState("");
+  const [deliveryAddress,setDeliveryAddress]= useState({name:"",line1:"",line2:"",city:"",postcode:"",country:"UK"});
+  const [showAddressForm,setShowAddressForm]= useState(false);
+  // homepage sections
+  const [newListings,    setNewListings]    = useState([]);
+  const [priceDrops,     setPriceDrops]     = useState([]);
+  const [trendingItems,  setTrendingItems]  = useState([]);
+  const [ordersTab,      setOrdersTab]      = useState("all");
   // tailor marketplace
   const [tailorServices,    setTailorServices]    = useState([]);
   const [myTailorServices,  setMyTailorServices]  = useState([]);
@@ -416,6 +437,59 @@ export default function App() {
   };
 
   const unreadNotifs = notifications.filter(n=>!n.read).length;
+
+  async function loadOrders(){
+    if(!user||!token) return;
+    setOrdersLoading(true);
+    const orders=await db.getMyOrders(user.id,token);
+    setMyOrders(orders);
+    setOrdersLoading(false);
+  }
+
+  async function markShipped(orderId){
+    if(!trackingInput.trim()){ flash("Please enter a tracking number."); return; }
+    try{
+      await db.updateOrder(orderId,{status:"shipped",tracking_number:trackingInput,shipped_at:new Date().toISOString()},token);
+      setMyOrders(p=>p.map(o=>o.id===orderId?{...o,status:"shipped",tracking_number:trackingInput}:o));
+      const order=myOrders.find(o=>o.id===orderId);
+      if(order) await notify(order.buyer_id,"shipped","📦 Your item has been shipped!",`Tracking: ${trackingInput}`,orderId);
+      setShowTrackingInput(null); setTrackingInput("");
+      flash("📦 Marked as shipped!");
+    }catch(e){ flash("Failed to update order."); }
+  }
+
+  async function confirmReceived(orderId){
+    try{
+      await db.updateOrder(orderId,{status:"delivered",delivered_at:new Date().toISOString()},token);
+      setMyOrders(p=>p.map(o=>o.id===orderId?{...o,status:"delivered"}:o));
+      const order=myOrders.find(o=>o.id===orderId);
+      if(order) await notify(order.seller_id,"delivered","✅ Item confirmed received!","Payment will be released to you shortly.",orderId);
+      flash("✅ Confirmed! Payment released to seller.");
+    }catch(e){ flash("Failed to confirm."); }
+  }
+
+  async function raiseDispute(orderId){
+    if(!disputeReason.trim()){ flash("Please describe the issue."); return; }
+    try{
+      await db.updateOrder(orderId,{status:"disputed",dispute_reason:disputeReason,dispute_status:"open"},token);
+      setMyOrders(p=>p.map(o=>o.id===orderId?{...o,status:"disputed",dispute_reason:disputeReason}:o));
+      setShowDisputeForm(null); setDisputeReason("");
+      flash("🚩 Dispute raised. We'll review within 24hrs.");
+    }catch(e){ flash("Failed to raise dispute."); }
+  }
+
+  async function loadHomeSections(){
+    const [newL,drops,trending]=await Promise.all([
+      db.getNewListings(token),
+      db.getPriceDrops(token),
+      db.getTrending(token),
+    ]);
+    setNewListings(newL);
+    setPriceDrops(drops);
+    setTrendingItems(trending);
+  }
+
+  useEffect(()=>{ loadHomeSections(); },[]);
 
   async function loadTailors(){
     const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_tailor=eq.true`,{headers:hdrs(token)});
@@ -785,7 +859,7 @@ export default function App() {
       // notify wishlisters if price dropped
       if(parseFloat(form.price)<sel.price){
         const wishlisters=await fetch(`${SUPABASE_URL}/rest/v1/notifications?type=eq.wishlist&link_id=eq.${sel.id}`,{headers:hdrs(token)}).then(r=>r.json()).catch(()=>[]);
-        // notify via a simple price drop notif — we check wishlist localStorage can't do cross-user, so we insert for all users who wishlisted
+        // notify followers of price drop
         // For now just notify followers
         const myFollowers=await db.getFollowers(user.id,token);
         await Promise.all(myFollowers.map(f=>notify(f.follower_id,"price_drop",`📉 Price drop on "${sel.name}"`,`Now ${currencySymbol(updated.currency)}${form.price} (was ${currencySymbol(sel.currency)}${sel.price})`,sel.id)));
@@ -842,6 +916,7 @@ export default function App() {
             {user?(
               <>
                 <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{loadBundles();setView("dashboard");}}>MY DROPS</button>
+                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{loadOrders();setView("orders");}}>ORDERS</button>
                 <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{loadFeed();setView("feed");}}>✦ FEED</button>
                 {/* Notification bell */}
                 <button className="hbtn" style={{...S.hBtn,background:showNotifs?"#FF1493":"#fff",color:showNotifs?"#fff":"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setShowNotifs(p=>!p)}>
@@ -936,7 +1011,30 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Postage options — buyer chooses */}
+                  {/* Delivery address */}
+                  <div style={{marginBottom:24}}>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12}}>📬 DELIVERY ADDRESS</p>
+                    {!showAddressForm&&deliveryAddress.line1?(
+                      <div style={{border:"2px solid #34C759",padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800}}>{deliveryAddress.name}</p>
+                          <p style={{fontSize:12,color:"#666"}}>{deliveryAddress.line1}{deliveryAddress.line2?`, ${deliveryAddress.line2}`:""}, {deliveryAddress.city}, {deliveryAddress.postcode}</p>
+                        </div>
+                        <button style={{background:"none",border:"none",color:"#FF1493",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,cursor:"pointer"}} onClick={()=>setShowAddressForm(true)}>CHANGE</button>
+                      </div>
+                    ):(
+                      <div style={{border:"2px solid #e0e0e0",padding:"16px",display:"flex",flexDirection:"column",gap:10}}>
+                        <F l="FULL NAME"><input style={S.inp} placeholder="Aisha Khan" value={deliveryAddress.name} onChange={e=>setDeliveryAddress(a=>({...a,name:e.target.value}))}/></F>
+                        <F l="ADDRESS LINE 1"><input style={S.inp} placeholder="123 Main Street" value={deliveryAddress.line1} onChange={e=>setDeliveryAddress(a=>({...a,line1:e.target.value}))}/></F>
+                        <F l="ADDRESS LINE 2 (OPTIONAL)"><input style={S.inp} placeholder="Flat 2" value={deliveryAddress.line2} onChange={e=>setDeliveryAddress(a=>({...a,line2:e.target.value}))}/></F>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                          <F l="CITY"><input style={S.inp} placeholder="London" value={deliveryAddress.city} onChange={e=>setDeliveryAddress(a=>({...a,city:e.target.value}))}/></F>
+                          <F l="POSTCODE"><input style={S.inp} placeholder="E1 6RF" value={deliveryAddress.postcode} onChange={e=>setDeliveryAddress(a=>({...a,postcode:e.target.value}))}/></F>
+                        </div>
+                        {deliveryAddress.line1&&<button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",fontSize:11,padding:"10px"}} onClick={()=>setShowAddressForm(false)}>✓ SAVE ADDRESS</button>}
+                      </div>
+                    )}
+                  </div>
                   <div style={{marginBottom:24}}>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12}}>📦 CHOOSE YOUR DELIVERY</p>
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -1007,10 +1105,7 @@ export default function App() {
                   <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
                     {/* Apple/Google Pay */}
                     <button className="hbtn" style={{...S.hBtn,background:"#111",border:"none",width:"100%",padding:"14px",fontSize:14,letterSpacing:1,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}
-                      onClick={()=>{
-                        const msg=`Hi! I'd like to pay for "${paymentListing.name}" (${sym}${amount}) on Stitch'd. Can you send me a payment link?`;
-                        window.open(`https://wa.me/${paymentListing.whatsapp?.replace(/\D/g,"")}?text=${encodeURIComponent(msg)}`,"_blank");
-                      }}>
+                      onClick={()=>setPaymentStep("card")}>
                       <span style={{fontSize:18}}>🍎</span> APPLE PAY / GOOGLE PAY
                     </button>
                     {/* Card */}
@@ -1054,13 +1149,27 @@ export default function App() {
                           if(error) throw new Error(error);
                           const stripe=window.Stripe(STRIPE_PK);
                           const {error:stripeErr}=await stripe.confirmCardPayment(client_secret,{
-                            payment_method:{card:{token:"tok_visa"}} // test token
+                            payment_method:{card:{token:"tok_visa"}}
                           });
                           if(stripeErr) throw new Error(stripeErr.message);
                           flash("🎉 Payment successful!");
                           setPaymentStep("success");
                           setItems(p=>p.map(i=>i.id===paymentListing.id?{...i,payment_status:"paid",sold:true}:i));
                           db.update(paymentListing.id,{payment_status:"paid",sold:true},token).catch(()=>{});
+                          // create order record
+                          try{
+                            await db.createOrder({
+                              listing_id:paymentListing.id,
+                              buyer_id:user.id,
+                              seller_id:paymentListing.user_id,
+                              amount:paymentListing.price,
+                              postage_amount:selectedPostage?.selectedPrice?.price||0,
+                              postage_carrier:selectedPostage?.name||null,
+                              status:"paid",
+                              delivery_address:deliveryAddress.line1?deliveryAddress:null,
+                            },token);
+                          }catch(e){}
+                          await notify(paymentListing.user_id,"sale","💰 You made a sale!",`${profile?.username||"Someone"} bought "${paymentListing.name}" for ${currencySymbol(paymentListing.currency)}${paymentListing.price}`,paymentListing.id);
                         }catch(e){
                           flash(`Payment failed: ${e.message}`);
                         }
@@ -1644,6 +1753,14 @@ export default function App() {
               {viewedProfile.username&&viewedProfile.full_name&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#bbb",marginBottom:8}}>{viewedProfile.username}</p>}
               {viewedProfile.location&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:4}}>📍 {viewedProfile.location}</p>}
               {viewedProfile.region&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:10}}>🌍 {viewedProfile.region} {viewedProfile.currency&&viewedProfile.currency!=="USD"?`· ${viewedProfile.currency}`:""}</p>}
+              {/* Trust badges */}
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:14}}>
+                {viewedProfile.id_verified&&<span style={{background:"#007AFF",color:"#fff",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif"}}>🪪 ID VERIFIED</span>}
+                {viewedProfile.member_since&&<span style={{background:"#f5f5f5",color:"#888",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif"}}>📅 MEMBER SINCE {new Date(viewedProfile.member_since).toLocaleDateString("en-GB",{month:"short",year:"numeric"}).toUpperCase()}</span>}
+                {viewedProfile.response_rate>0&&<span style={{background:"#34C75922",color:"#34C759",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",border:"1px solid #34C75944"}}>💬 {viewedProfile.response_rate}% RESPONSE RATE</span>}
+                {viewedProfile.completion_rate>0&&<span style={{background:"#FF149322",color:"#FF1493",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",border:"1px solid #FF149344"}}>✓ {viewedProfile.completion_rate}% COMPLETION</span>}
+                {viewedProfile.total_sales>0&&<span style={{background:"#FF950022",color:"#FF9500",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",border:"1px solid #FF950044"}}>🛍️ {viewedProfile.total_sales} SALES</span>}
+              </div>
               {/* Specialises in */}
               {(viewedProfile.specialises_in||[]).length>0&&(
                 <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:14}}>
@@ -2341,7 +2458,92 @@ export default function App() {
         </main>
       )}
 
-            {view==="shop"&&(
+      {/* ── ORDER HISTORY ── */}
+      {view==="orders"&&user&&(
+        <main style={S.main}>
+          <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
+          <div style={{marginBottom:32,paddingBottom:24,borderBottom:"3px solid #111",display:"flex",alignItems:"flex-end",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
+            <div>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>YOUR TRANSACTIONS</p>
+              <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1}}>ORDER HISTORY</h2>
+            </div>
+            <div style={{display:"flex",gap:6}}>
+              {[["All","all"],["Buying","buying"],["Selling","selling"]].map(([l,v])=>(
+                <button key={v} className="fpill" style={{...S.pill,...((!ordersTab||ordersTab===v)?S.pillOn:{})}} onClick={()=>setOrdersTab(v)}>{l}</button>
+              ))}
+            </div>
+          </div>
+          {ordersLoading?<div style={S.loadingWrap}><div style={S.spinner}/></div>:myOrders.length===0?(
+            <div style={{textAlign:"center",padding:"60px 20px"}}>
+              <p style={{fontSize:48,marginBottom:12}}>📦</p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NO ORDERS YET.</p>
+              <button className="hbtn" style={S.hBtn} onClick={()=>setView("shop")}>BROWSE DROPS →</button>
+            </div>
+          ):(
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              {myOrders.filter(o=>!ordersTab||ordersTab==="all"||(ordersTab==="buying"&&o.buyer_id===user.id)||(ordersTab==="selling"&&o.seller_id===user.id)).map(order=>{
+                const listing=items.find(i=>i.id===order.listing_id);
+                const isBuyer=order.buyer_id===user.id;
+                const statusColors={paid:"#FF9500",shipped:"#007AFF",delivered:"#34C759",disputed:"#FF1493",complete:"#34C759"};
+                const statusColor=statusColors[order.status]||"#888";
+                return(
+                  <div key={order.id} style={{border:"2px solid #f0f0f0",padding:"20px",display:"flex",gap:16,flexWrap:"wrap",alignItems:"flex-start"}}>
+                    {listing?.image_url&&<img src={listing.image_url} alt="" style={{width:72,height:72,objectFit:"cover",border:"2px solid #111",flexShrink:0}}/>}
+                    <div style={{flex:1,minWidth:200}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
+                        <span style={{background:statusColor,color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif"}}>{order.status?.toUpperCase()}</span>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>{isBuyer?"BUYING":"SELLING"} · {new Date(order.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase()}</span>
+                      </div>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,marginBottom:4}}>{listing?.name||"Item"}</p>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#FF1493",marginBottom:6}}>{currencySymbol(listing?.currency)}{order.amount}{order.postage_amount>0&&<span style={{fontSize:13,color:"#888",fontWeight:400}}> + {currencySymbol(listing?.currency)}{order.postage_amount} postage</span>}</p>
+                      {order.tracking_number&&<p style={{fontSize:12,color:"#007AFF",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1,marginBottom:4}}>📦 TRACKING: {order.tracking_number}</p>}
+                      {order.dispute_reason&&<p style={{fontSize:12,color:"#FF1493",marginBottom:4}}>🚩 Dispute: {order.dispute_reason}</p>}
+                      {order.delivery_address?.line1&&<p style={{fontSize:12,color:"#888",marginBottom:4}}>📬 {order.delivery_address.line1}, {order.delivery_address.city}, {order.delivery_address.postcode}</p>}
+                      {/* Action buttons */}
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
+                        {/* Seller actions */}
+                        {!isBuyer&&order.status==="paid"&&(
+                          showTrackingInput===order.id?(
+                            <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                              <input style={{...S.inp,width:160,fontSize:12,padding:"8px 10px"}} placeholder="Tracking number" value={trackingInput} onChange={e=>setTrackingInput(e.target.value)}/>
+                              <button className="hbtn" style={{...S.hBtn,background:"#007AFF",border:"none",fontSize:11,padding:"8px 14px"}} onClick={()=>markShipped(order.id)}>CONFIRM SHIPPED</button>
+                              <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#888",border:"1px solid #e0e0e0",fontSize:11,padding:"8px 10px"}} onClick={()=>setShowTrackingInput(null)}>✕</button>
+                            </div>
+                          ):(
+                            <button className="hbtn" style={{...S.hBtn,background:"#007AFF",border:"none",fontSize:11,padding:"8px 16px"}} onClick={()=>setShowTrackingInput(order.id)}>📦 MARK AS SHIPPED</button>
+                          )
+                        )}
+                        {/* Buyer actions */}
+                        {isBuyer&&order.status==="shipped"&&(
+                          <>
+                            <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",fontSize:11,padding:"8px 16px"}} onClick={()=>confirmReceived(order.id)}>✓ CONFIRM RECEIVED</button>
+                            <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"8px 14px"}} onClick={()=>setShowDisputeForm(order.id)}>🚩 RAISE DISPUTE</button>
+                          </>
+                        )}
+                        {isBuyer&&order.status==="paid"&&<p style={{fontSize:12,color:"#FF9500",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1}}>⏳ WAITING FOR SELLER TO SHIP</p>}
+                        {order.status==="delivered"&&<p style={{fontSize:12,color:"#34C759",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1}}>✅ COMPLETE — PAYMENT RELEASED</p>}
+                      </div>
+                      {/* Dispute form */}
+                      {showDisputeForm===order.id&&(
+                        <div style={{marginTop:12,border:"2px solid #FF1493",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1,color:"#FF1493"}}>🚩 RAISE A DISPUTE</p>
+                          <textarea style={{...S.inp,height:80,resize:"vertical",width:"100%",fontSize:13}} placeholder="Describe the issue — item not as described, wrong size, damaged..." value={disputeReason} onChange={e=>setDisputeReason(e.target.value)}/>
+                          <div style={{display:"flex",gap:8}}>
+                            <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",flex:1,padding:"10px",fontSize:12}} onClick={()=>raiseDispute(order.id)}>SUBMIT DISPUTE</button>
+                            <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#888",border:"1px solid #e0e0e0",padding:"10px 14px",fontSize:12}} onClick={()=>setShowDisputeForm(null)}>CANCEL</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </main>
+      )}
+
+      {view==="shop"&&(
         <>
           <section style={S.hero}>
             <div style={S.heroLeft}>
@@ -2467,10 +2669,91 @@ export default function App() {
               </div>
             )}
           </div>
-        </>
-      )}
+          {/* NEW IN */}
+          {!hasFilters&&newListings.length>0&&(
+            <div style={{marginTop:48,borderTop:"3px solid #111",paddingTop:32}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12}}>✨ NEW IN — LAST 48 HOURS</div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:3}}>
+                {newListings.slice(0,8).map((item,idx)=>{
+                  const accent=CARD_COLORS[idx%CARD_COLORS.length];
+                  return(
+                    <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
+                      <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
+                        {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
+                        <div style={{position:"absolute",top:8,left:8,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
+                      </div>
+                      <div style={S.cardBody}>
+                        <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
+                        <p style={S.cardName}>{item.name}</p>
+                        <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span></div>
+                      </div>
+                      <div style={{...S.accentBar,background:accent}}/>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-      {/* ── DETAIL ── */}
+          {/* PRICE DROPS */}
+          {!hasFilters&&priceDrops.length>0&&(
+            <div style={{marginTop:48,borderTop:"3px solid #111",paddingTop:32}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:20}}>📉 PRICE DROPS</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:3}}>
+                {priceDrops.slice(0,8).map((item,idx)=>{
+                  const accent=CARD_COLORS[idx%CARD_COLORS.length];
+                  const drop=item.prev_price?Math.round(((item.prev_price-item.price)/item.prev_price)*100):0;
+                  return(
+                    <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
+                      <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
+                        {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
+                        {drop>0&&<div style={{position:"absolute",top:8,left:8,background:"#FF9500",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>-{drop}%</div>}
+                      </div>
+                      <div style={S.cardBody}>
+                        <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
+                        <p style={S.cardName}>{item.name}</p>
+                        <div style={S.cardFoot}>
+                          <div>
+                            <span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span>
+                            {item.prev_price&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#bbb",textDecoration:"line-through",marginLeft:6}}>{currencySymbol(item.currency)}{item.prev_price}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{...S.accentBar,background:accent}}/>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TRENDING */}
+          {!hasFilters&&trendingItems.length>0&&(
+            <div style={{marginTop:48,borderTop:"3px solid #111",paddingTop:32,marginBottom:48}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #BF5AF2",paddingLeft:12,marginBottom:20}}>🔥 TRENDING — MOST VIEWED</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:3}}>
+                {trendingItems.slice(0,8).map((item,idx)=>{
+                  const accent=CARD_COLORS[idx%CARD_COLORS.length];
+                  return(
+                    <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
+                      <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
+                        {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
+                        <div style={{position:"absolute",top:8,left:8,background:"#BF5AF2",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>👁 {item.views}</div>
+                      </div>
+                      <div style={S.cardBody}>
+                        <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
+                        <p style={S.cardName}>{item.name}</p>
+                        <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span></div>
+                      </div>
+                      <div style={{...S.accentBar,background:accent}}/>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          )}
       {view==="detail"&&sel&&(
         <main style={S.main}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
@@ -2578,7 +2861,7 @@ export default function App() {
                 </div>
               )}
 
-              {!isOwner(sel)&&!sel.sold&&<button className="hbtn" style={{...S.waCta,background:"#FF1493",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:10,marginLeft:sel.whatsapp?10:0}} onClick={()=>startConversation(sel)}>✉️ MESSAGE SELLER</button>}
+              {!isOwner(sel)&&!sel.sold&&<button className="hbtn" style={{...S.waCta,background:"#FF1493",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:10}} onClick={()=>startConversation(sel)}>✉️ MESSAGE SELLER</button>}
               {!isOwner(sel)&&!sel.sold&&(
                 <div style={{marginTop:16,marginBottom:8}}>
                   <button className="hbtn"
