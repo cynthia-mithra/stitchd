@@ -2754,6 +2754,10 @@ export default function App() {
               </div>
             </div>
           )}
+        </>
+      )}
+
+      {/* ── DETAIL ── */}
       {view==="detail"&&sel&&(
         <main style={S.main}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
@@ -2998,7 +3002,6 @@ export default function App() {
               </div>
             </div>
           )}
-        </>
         </main>
       )}
 
