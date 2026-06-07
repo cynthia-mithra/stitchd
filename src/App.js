@@ -1941,12 +1941,12 @@ export default function App() {
             </div>
             <div style={S.heroRight} className="hero-right">
               {[
-                {img:"/images/saree.png",       top:"2%",  left:"5%",  size:170, delay:"0s"},
-                {img:"/images/lehenga.png",     top:"30%", left:"55%", size:150, delay:"0.7s"},
-                {img:"/images/anarkali.png",    top:"55%", left:"8%",  size:175, delay:"1.4s"},
-                {img:"/images/sharara.png",     top:"8%",  left:"65%", size:130, delay:"2.1s"},
-                {img:"/images/indo_western.png",top:"62%", left:"58%", size:148, delay:"2.8s"},
-                {img:"/images/menswear.png",    top:"28%", left:"2%",  size:135, delay:"3.5s"},
+                {img:"/Images/saree.png",       top:"2%",  left:"5%",  size:170, delay:"0s"},
+                {img:"/Images/lehenga.png",     top:"30%", left:"55%", size:150, delay:"0.7s"},
+                {img:"/Images/anarkali.png",    top:"55%", left:"8%",  size:175, delay:"1.4s"},
+                {img:"/Images/sharara.png",     top:"8%",  left:"65%", size:130, delay:"2.1s"},
+                {img:"/Images/indo_western.png",top:"62%", left:"58%", size:148, delay:"2.8s"},
+                {img:"/Images/menswear.png",    top:"28%", left:"2%",  size:135, delay:"3.5s"},
               ].map((b,i)=>(
                 <div key={i} style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:b.size,borderRadius:"50%",overflow:"hidden",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
                   <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
