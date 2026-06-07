@@ -1950,8 +1950,8 @@ export default function App() {
                 // and the excess is clipped from the feet instead. Tune per image.
                 {img:"/Images/saree.png",       top:"2%",  left:"5%",  size:170, delay:"0s",   scale:1.05, oy:"30%"},
                 {img:"/Images/lehenga.png",     top:"30%", left:"55%", size:150, delay:"0.7s", scale:1.16, oy:"22%"},
-                {img:"/Images/anarkali.png",    top:"55%", left:"8%",  size:175, delay:"1.4s", scale:1.22, oy:"18%"},
-                {img:"/Images/sharara.png",     top:"8%",  left:"65%", size:130, delay:"2.1s", scale:1.20, oy:"20%"},
+                {img:"/Images/anarkali.png",    top:"55%", left:"8%",  size:175, delay:"1.4s", scale:1.10, oy:"8%"},
+                {img:"/Images/sharara.png",     top:"8%",  left:"65%", size:130, delay:"2.1s", scale:1.10, oy:"14%"},
                 {img:"/Images/indo_western.png",top:"62%", left:"58%", size:148, delay:"2.8s", scale:1.22, oy:"18%"},
                 {img:"/Images/menswear.png",    top:"28%", left:"2%",  size:135, delay:"3.5s", scale:1.18, oy:"20%"},
               ].map((b,i)=>(
