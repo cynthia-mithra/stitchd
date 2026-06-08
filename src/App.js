@@ -1941,25 +1941,21 @@ export default function App() {
             </div>
             <div style={S.heroRight} className="hero-right">
               {[
-                // Each badge is a figure on a colored disc inside a square PNG, but the
-                // disc covers a DIFFERENT fraction of the square per image. Saree & anarkali
-                // discs reach the edges (look great as-is); lehenga/sharara/indo_western/
-                // menswear have white padding around the disc, so they need their own zoom
-                // to make the disc fill the circular bubble — otherwise a white ring shows.
-                //
-                // `scale` ≈ 1 / (disc diameter ÷ square width), so the disc fills the circle.
-                // The discs are CENTERED in their squares, so we anchor the zoom at
-                // `center center` (oy:"50%"): the figure stays put, no head is cut and the
-                // outfit doesn't drop. Saree & anarkali keep their confirmed-good framing.
-                {img:"/Images/saree.png",       top:"2%",  left:"5%",  size:170, delay:"0s",   scale:1.05, oy:"30%"},
-                {img:"/Images/lehenga.png",     top:"30%", left:"55%", size:150, delay:"0.7s", scale:1.12, oy:"50%"},
-                {img:"/Images/anarkali.png",    top:"55%", left:"8%",  size:175, delay:"1.4s", scale:1.05, oy:"30%"},
-                {img:"/Images/sharara.png",     top:"8%",  left:"65%", size:130, delay:"2.1s", scale:1.08, oy:"50%"},
-                {img:"/Images/indo_western.png",top:"62%", left:"58%", size:148, delay:"2.8s", scale:1.24, oy:"50%"},
-                {img:"/Images/menswear.png",    top:"28%", left:"2%",  size:135, delay:"3.5s", scale:1.18, oy:"50%"},
+                // Each badge is a figure on a colored circular disc that already fills the
+                // square PNG (the disc is inscribed edge-to-edge; only the corners are white).
+                // The bubble itself is a circle (borderRadius:50% + overflow:hidden), so its
+                // round crop lines up exactly with the disc and removes the white corners.
+                // No per-image zoom is needed — objectFit:cover maps each square disc 1:1 into
+                // its circular bubble, figure centered, nothing cropped.
+                {img:"/Images/saree.png",       top:"2%",  left:"5%",  size:170, delay:"0s"},
+                {img:"/Images/lehenga.png",     top:"30%", left:"55%", size:150, delay:"0.7s"},
+                {img:"/Images/anarkali.png",    top:"55%", left:"8%",  size:175, delay:"1.4s"},
+                {img:"/Images/sharara.png",     top:"8%",  left:"65%", size:130, delay:"2.1s"},
+                {img:"/Images/indo_western.png",top:"62%", left:"58%", size:148, delay:"2.8s"},
+                {img:"/Images/menswear.png",    top:"28%", left:"2%",  size:135, delay:"3.5s"},
               ].map((b,i)=>(
                 <div key={i} style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:b.size,borderRadius:"50%",overflow:"hidden",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
-                  <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",transform:`scale(${b.scale})`,transformOrigin:`center ${b.oy}`}}/>
+                  <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                 </div>
               ))}
             </div>
