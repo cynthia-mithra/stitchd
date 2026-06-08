@@ -89,6 +89,7 @@ export default function App() {
   const [recentlyViewed,setRecentlyViewed]=useState(()=>{ try{return JSON.parse(localStorage.getItem("stitchd_recent"))||[];}catch{return[];} });
   const [showSizeGuide,setShowSizeGuide]=useState(false);
   const [reviews,      setReviews]      = useState([]);
+  const [sellerRatings,setSellerRatings]= useState({});
   const [showReview,   setShowReview]   = useState(false);
   const [reviewForm,   setReviewForm]   = useState({rating:5,comment:""});
   const [showReport,   setShowReport]   = useState(false);
@@ -393,6 +394,22 @@ export default function App() {
   }
 
   useEffect(()=>{ loadHomeSections(); },[]);
+
+  // Fetch every review once (only seller_id + rating columns) and aggregate into a
+  // seller_id -> {average, count} lookup. One request for the whole grid beats a
+  // per-card fetch, and the same average formula as the Detail view is reused.
+  async function loadSellerRatings(){
+    const rows=await db.getAllReviewStats(token);
+    const bySeller={};
+    rows.forEach(r=>{ (bySeller[r.seller_id]=bySeller[r.seller_id]||[]).push(r.rating); });
+    const lookup={};
+    Object.entries(bySeller).forEach(([sid,ratings])=>{
+      lookup[sid]={average:ratings.reduce((a,r)=>a+r,0)/ratings.length,count:ratings.length};
+    });
+    setSellerRatings(lookup);
+  }
+
+  useEffect(()=>{ loadSellerRatings(); },[]);
 
   async function loadTailors(){
     const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_tailor=eq.true`,{headers:hdrs(token)});
@@ -1315,6 +1332,7 @@ export default function App() {
         visible={visible} loading={loading} error={error} fetchItems={fetchItems}
         openDetail={openDetail} fitsMe={fitsMe} wishlist={wishlist} toggleWishlist={toggleWishlist}
         newListings={newListings} priceDrops={priceDrops} trendingItems={trendingItems}
+        sellerRatings={sellerRatings}
       />
 
       {/* DETAIL */}
