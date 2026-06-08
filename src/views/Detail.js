@@ -124,7 +124,7 @@ export default function Detail({
                   const accent=CARD_COLORS[idx%CARD_COLORS.length];
                   return(
                     <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
-                      <Thumb src={item.image_url} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={{...S.cardTop,height:160}} emojiStyle={{fontSize:56}}>
+                      <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={{...S.cardTop,height:160}} emojiStyle={{fontSize:56}}>
                         {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                       </Thumb>
                       <div style={{...S.cardBody,padding:"12px 14px 10px"}}>

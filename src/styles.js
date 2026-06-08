@@ -67,13 +67,13 @@ export const S={
   // search field no longer stretches the full viewport (which dwarfed the
   // FILTERS / TAILORS buttons on wide screens). Full-width on mobile keeps it
   // responsive; the sticky bar background + bottom border still span edge-to-edge.
-  searchInner:{display:"flex",alignItems:"stretch",height:48,width:"100%",maxWidth:880,margin:"0 auto",padding:"0 10px"},
+  searchInner:{display:"flex",alignItems:"stretch",height:40,width:"100%",maxWidth:880,margin:"0 auto",padding:"0 10px"},
   searchBox:{flex:1,display:"flex",alignItems:"stretch",minWidth:0},
   searchIcon:{padding:"0 10px",fontSize:14,color:"#bbb",flexShrink:0,display:"flex",alignItems:"center"},
   searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#111",padding:"0",background:"transparent",minWidth:0},
   searchClear:{background:"none",border:"none",padding:"0 10px",cursor:"pointer",fontSize:12,color:"#bbb",fontWeight:700,flexShrink:0,display:"flex",alignItems:"center"},
   filterPanel:{padding:"16px 16px",borderTop:"1px solid #f0f0f0",display:"flex",flexDirection:"column",gap:16},
-  filterBtn:{background:"#fff",border:"none",borderLeft:"1px solid #e0e0e0",borderRadius:0,padding:"0 14px",height:48,minHeight:48,fontSize:11,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
+  filterBtn:{background:"#fff",border:"none",borderLeft:"1px solid #e0e0e0",borderRadius:0,padding:"0 14px",height:40,minHeight:40,fontSize:11,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
   filterGroup:{display:"flex",flexDirection:"column",gap:10},
   filterLabel:{fontSize:10,fontWeight:900,letterSpacing:3,color:"#999",fontFamily:"'Barlow Condensed',sans-serif"},
   filterPills:{display:"flex",flexWrap:"wrap",gap:6},
