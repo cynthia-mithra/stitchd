@@ -1942,20 +1942,22 @@ export default function App() {
             <div style={S.heroRight} className="hero-right">
               {[
                 // Each badge is a figure on a colored circular disc that already fills the
-                // square PNG (the disc is inscribed edge-to-edge; only the corners are white).
-                // The bubble itself is a circle (borderRadius:50% + overflow:hidden), so its
-                // round crop lines up exactly with the disc and removes the white corners.
-                // No per-image zoom is needed — objectFit:cover maps each square disc 1:1 into
-                // its circular bubble, figure centered, nothing cropped.
-                {img:"/Images/saree.png",       top:"2%",  left:"5%",  size:170, delay:"0s"},
-                {img:"/Images/lehenga.png",     top:"30%", left:"55%", size:150, delay:"0.7s"},
-                {img:"/Images/anarkali.png",    top:"55%", left:"8%",  size:175, delay:"1.4s"},
-                {img:"/Images/sharara.png",     top:"8%",  left:"65%", size:130, delay:"2.1s"},
-                {img:"/Images/indo_western.png",top:"62%", left:"58%", size:148, delay:"2.8s"},
-                {img:"/Images/menswear.png",    top:"28%", left:"2%",  size:135, delay:"3.5s"},
+                // square PNG with the disc inscribed edge-to-edge (corners are disc color,
+                // removed by the round crop). The discs are uniform, but the FIGURE inside each
+                // disc is a different size — saree/lehenga/anarkali figures fill the disc, while
+                // sharara/indo_western/menswear figures are small with lots of background around
+                // them. Each gets a per-image `fit` zoom anchored at CENTER: the figures are all
+                // centered in their discs, so center-zoom enlarges the figure to match the saree's
+                // framing without cutting heads or pushing outfits down.
+                {img:"/Images/saree.png",       top:"2%",  left:"5%",  size:170, delay:"0s",   fit:1.00},
+                {img:"/Images/lehenga.png",     top:"30%", left:"55%", size:150, delay:"0.7s", fit:1.02},
+                {img:"/Images/anarkali.png",    top:"55%", left:"8%",  size:175, delay:"1.4s", fit:1.00},
+                {img:"/Images/sharara.png",     top:"8%",  left:"65%", size:130, delay:"2.1s", fit:1.07},
+                {img:"/Images/indo_western.png",top:"62%", left:"58%", size:148, delay:"2.8s", fit:1.18},
+                {img:"/Images/menswear.png",    top:"28%", left:"2%",  size:135, delay:"3.5s", fit:1.30},
               ].map((b,i)=>(
                 <div key={i} style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:b.size,borderRadius:"50%",overflow:"hidden",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
-                  <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",transform:`scale(${b.fit})`,transformOrigin:"center center"}}/>
                 </div>
               ))}
             </div>
