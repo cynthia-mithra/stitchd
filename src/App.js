@@ -1941,23 +1941,22 @@ export default function App() {
             </div>
             <div style={S.heroRight} className="hero-right">
               {[
-                // Each PNG is a figure on a colored disc. The bubble is a square box (borderRadius:50%
-                // + overflow:hidden) with objectFit:cover, so a disc centered in its square already
-                // crops to a clean circle (that's why the saree fits perfectly with no tuning).
-                // White gaps only appear where the disc sits OFF-CENTER in its canvas: anarkali and
-                // menswear have their disc pushed to the top, leaving a white band at the bottom, and
-                // indo_western (tallest canvas, 483x516) has a little bottom margin. The fix is
-                // `op` (object-position): bias the cover crop toward the disc so the white padding is
-                // clipped away — no zoom, so no heads/feet get cut. Default "50% 50%" = centered.
-                {img:"/Images/sharara.png",     top:"2%",  left:"5%",  size:170, delay:"0s",   op:"50% 50%"},
-                {img:"/Images/indo_western.png",top:"30%", left:"55%", size:150, delay:"0.7s", op:"50% 28%"},
-                {img:"/Images/menswear.png",    top:"55%", left:"8%",  size:175, delay:"1.4s", op:"50% 0%"},
-                {img:"/Images/saree.png",       top:"8%",  left:"65%", size:130, delay:"2.1s", op:"50% 50%"},
-                {img:"/Images/lehenga.png",     top:"62%", left:"58%", size:148, delay:"2.8s", op:"50% 50%"},
-                {img:"/Images/anarkali.png",    top:"28%", left:"2%",  size:135, delay:"3.5s", op:"50% 0%"},
+                // Instead of forcing every picture into a fixed-size circle (which cropped heads or
+                // left white rings whenever the disc wasn't a perfect square), we size each BUBBLE to
+                // match its PICTURE. `size` is the on-screen width; the box height is derived from the
+                // PNG's real pixel aspect ratio (`ar` = naturalHeight / naturalWidth) so the box is the
+                // exact shape of the image. With objectFit:cover at that matching aspect there is no
+                // crop at all — the full figure shows, head-to-hem — and borderRadius:50% rounds the
+                // box into a clean disc-shaped bubble that hugs the colored circle with no white gap.
+                {img:"/Images/sharara.png",     top:"2%",  left:"5%",  size:170, delay:"0s",   ar:493/506},
+                {img:"/Images/indo_western.png",top:"30%", left:"55%", size:150, delay:"0.7s", ar:516/483},
+                {img:"/Images/menswear.png",    top:"55%", left:"8%",  size:175, delay:"1.4s", ar:506/493},
+                {img:"/Images/saree.png",       top:"8%",  left:"65%", size:130, delay:"2.1s", ar:492/473},
+                {img:"/Images/lehenga.png",     top:"62%", left:"58%", size:148, delay:"2.8s", ar:505/490},
+                {img:"/Images/anarkali.png",    top:"28%", left:"2%",  size:135, delay:"3.5s", ar:504/495},
               ].map((b,i)=>(
-                <div key={i} style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:b.size,borderRadius:"50%",overflow:"hidden",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
-                  <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:b.op}}/>
+                <div key={i} style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:Math.round(b.size*b.ar),borderRadius:"50%",overflow:"hidden",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
+                  <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center"}}/>
                 </div>
               ))}
             </div>
