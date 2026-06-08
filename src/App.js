@@ -1950,8 +1950,8 @@ export default function App() {
                 // box into a clean disc-shaped bubble that hugs the colored circle with no white gap.
                 {img:"/Images/sharara.png",     top:"2%",  left:"5%",  size:170, delay:"0s",   ar:493/506},
                 {img:"/Images/indo_western.png",top:"30%", left:"55%", size:150, delay:"0.7s", ar:516/483},
-                {img:"/Images/menswear.png",    top:"55%", left:"8%",  size:175, delay:"1.4s", ar:506/493},
-                {img:"/Images/saree.png",       top:"8%",  left:"65%", size:130, delay:"2.1s", ar:492/473},
+                {img:"/Images/saree.png",       top:"55%", left:"8%",  size:175, delay:"1.4s", ar:492/473},
+                {img:"/Images/menswear.png",    top:"8%",  left:"65%", size:130, delay:"2.1s", ar:506/493},
                 {img:"/Images/lehenga.png",     top:"62%", left:"58%", size:148, delay:"2.8s", ar:505/490},
                 {img:"/Images/anarkali.png",    top:"28%", left:"2%",  size:135, delay:"3.5s", ar:504/495},
               ].map((b,i)=>(
