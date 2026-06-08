@@ -1,6 +1,7 @@
 import React from "react";
 import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS } from "../lib/constants";
 import { S } from "../styles";
+import { Thumb } from "../components/Shared";
 
 export default function Detail({
   view, setView, sel,
@@ -123,10 +124,9 @@ export default function Detail({
                   const accent=CARD_COLORS[idx%CARD_COLORS.length];
                   return(
                     <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
-                      <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden",height:160}}>
-                        {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:56}}>{item.emoji||catEmoji(item.category)}</span>}
+                      <Thumb src={item.image_url} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={{...S.cardTop,height:160}} emojiStyle={{fontSize:56}}>
                         {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-                      </div>
+                      </Thumb>
                       <div style={{...S.cardBody,padding:"12px 14px 10px"}}>
                         <p style={{...S.cardCatLabel,color:accent,marginBottom:2}}>{item.category?.toUpperCase()}</p>
                         <p style={{...S.cardName,fontSize:16,marginBottom:8}}>{item.name}</p>

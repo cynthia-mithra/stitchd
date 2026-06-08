@@ -1,7 +1,7 @@
 import React from "react";
 import { CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
 import { S } from "../styles";
-import { Sec, F } from "../components/Shared";
+import { Sec, F, Thumb } from "../components/Shared";
 
 export default function Dashboard({
   view, setView, user, myItems,
@@ -34,10 +34,9 @@ export default function Dashboard({
             <div style={S.dashGrid} className="dash-grid">
               {myItems.map((item,idx)=>(
                 <div key={item.id} style={{...S.dashCard,borderColor:item.sold?"#ccc":CARD_COLORS[idx%CARD_COLORS.length]}}>
-                  <div style={{...S.dashCardImg,background:item.image_url?"#000":CARD_COLORS[idx%CARD_COLORS.length]}}>
-                    {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover",opacity:item.sold?0.5:1}}/>:<span style={{fontSize:44}}>{item.emoji||catEmoji(item.category)}</span>}
+                  <Thumb src={item.image_url} emoji={item.emoji||catEmoji(item.category)} accent={CARD_COLORS[idx%CARD_COLORS.length]} imgOpacity={item.sold?0.5:1} style={S.dashCardImg} emojiStyle={{fontSize:44}}>
                     {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-                  </div>
+                  </Thumb>
                   <div style={S.dashCardBody}>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,color:item.sold?"#aaa":"#111",marginBottom:4}}>{item.name}</p>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:item.sold?"#aaa":CARD_COLORS[idx%CARD_COLORS.length],marginBottom:4}}>${item.price}</p>
@@ -108,10 +107,9 @@ export default function Dashboard({
                   const accent=CARD_COLORS[idx%CARD_COLORS.length];
                   return(
                     <div key={item.id} style={{border:`3px solid ${isSel?accent:"#e0e0e0"}`,cursor:"pointer",overflow:"hidden"}} onClick={()=>toggleBundleListing(item.id)}>
-                      <div style={{height:80,background:item.image_url?"#000":accent,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-                        {item.image_url?<img src={item.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:32}}>{item.emoji||catEmoji(item.category)}</span>}
+                      <Thumb src={item.image_url} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={{height:80}} emojiStyle={{fontSize:32}}>
                         {isSel&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.35)",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:"#fff",fontSize:24,fontWeight:900}}>✓</span></div>}
-                      </div>
+                      </Thumb>
                       <div style={{padding:"8px 10px"}}><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,color:"#111",marginBottom:2}}>{item.name}</p><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:900,color:accent}}>{currencySymbol(item.currency)}{item.price}</p></div>
                     </div>
                   );

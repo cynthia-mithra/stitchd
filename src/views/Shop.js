@@ -5,6 +5,7 @@ import {
   catEmoji, currencySymbol,
 } from "../lib/constants";
 import { S } from "../styles";
+import { Thumb } from "../components/Shared";
 
 export default function Shop({
   view,
@@ -100,7 +101,7 @@ export default function Shop({
           <button className="hbtn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailorMarket();setView("tailors");}}>✂️ TAILORS</button>
         </div>
         {(showSuggestions&&searchSuggestions.length>0)||(showSavedSearches&&savedSearches.length>0)?(
-          <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
+          <div style={{position:"absolute",top:"100%",left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:880,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
             {showSavedSearches&&savedSearches.length>0&&!search&&(
               <>
                 <div style={{padding:"8px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:900,letterSpacing:2,color:"#bbb",borderBottom:"1px solid #f0f0f0"}}>SAVED SEARCHES</div>
@@ -151,16 +152,14 @@ export default function Shop({
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
                 <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
-                  <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
-                    {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
-                    {item.image_url&&<div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.45))"}}/>}
+                  <Thumb src={item.image_url} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} emojiStyle={S.cardEmoji}>
                     {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                     {item.reserved&&!item.sold&&<div style={S.reservedBadge}>RESERVED</div>}
                     {fitsMe(item)===true&&<div style={S.fitsBadge}>📐 FITS YOU</div>}
                     <FastBadge sellerId={item.user_id} raised={fitsMe(item)===true}/>
                     <button style={{...S.heartBtn,background:wishlist.includes(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}>{wishlist.includes(item.id)?"❤️":"🤍"}</button>
                     <div style={S.cardOrigin}>{item.origin?.toUpperCase()}</div>
-                  </div>
+                  </Thumb>
                   <div style={S.cardBody}>
                     <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()} · {(item.material||item.fabric)?.toUpperCase()}</p>
                     <p style={S.cardName}>{item.name}</p>
@@ -204,11 +203,10 @@ export default function Shop({
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
                 <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
-                  <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
-                    {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
+                  <Thumb src={item.image_url} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
                     <div style={{position:"absolute",top:8,left:8,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
                     <FastBadge sellerId={item.user_id}/>
-                  </div>
+                  </Thumb>
                   <div style={S.cardBody}>
                     <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
                     <p style={S.cardName}>{item.name}</p>
@@ -232,11 +230,10 @@ export default function Shop({
               const drop=item.prev_price?Math.round(((item.prev_price-item.price)/item.prev_price)*100):0;
               return(
                 <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
-                  <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
-                    {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
+                  <Thumb src={item.image_url} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
                     {drop>0&&<div style={{position:"absolute",top:8,left:8,background:"#FF9500",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>-{drop}%</div>}
                     <FastBadge sellerId={item.user_id}/>
-                  </div>
+                  </Thumb>
                   <div style={S.cardBody}>
                     <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
                     <p style={S.cardName}>{item.name}</p>
@@ -265,11 +262,10 @@ export default function Shop({
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
                 <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
-                  <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
-                    {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
+                  <Thumb src={item.image_url} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
                     <div style={{position:"absolute",top:8,left:8,background:"#BF5AF2",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>👁 {item.views}</div>
                     <FastBadge sellerId={item.user_id}/>
-                  </div>
+                  </Thumb>
                   <div style={S.cardBody}>
                     <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
                     <p style={S.cardName}>{item.name}</p>

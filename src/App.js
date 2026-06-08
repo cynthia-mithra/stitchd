@@ -9,7 +9,7 @@ import {
 import { db } from "./lib/db";
 import { auth, uploadImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Sec, F, Tog } from "./components/Shared";
+import { Sec, F, Tog, Thumb } from "./components/Shared";
 import Tailors from "./views/Tailors";
 import Detail from "./views/Detail";
 import Shop from "./views/Shop";
@@ -819,7 +819,14 @@ export default function App() {
       const image_url=urls[0]||"";
       const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",underbust:form.listing_type==="Clothing"?form.underbust:"",shoulder:form.listing_type==="Clothing"?form.shoulder:"",high_hip:form.listing_type==="Clothing"?form.high_hip:"",sleeve_length:form.listing_type==="Clothing"?form.sleeve_length:"",inseam:form.listing_type==="Clothing"?form.inseam:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(form.category),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
       const [created]=await withFreshToken(tok=>db.insert(payload,tok));
-      setItems(p=>[created,...p]); setForm(EMPTY_FORM); flash("🩷 Listed!"); setView("shop");
+      setItems(p=>[created,...p]); setForm(EMPTY_FORM);
+      // The photo uploaded fine but didn't come back on the saved row — the
+      // self-healing insert (see lib/db.js) silently drops columns the table is
+      // missing, so an absent image_url column means the photo is lost. Surface
+      // it instead of a misleading plain "Listed!".
+      if(urls.length&&!created.image_url){ flash("⚠️ Listed — but the photo couldn't be saved: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase so photos persist.",11000); }
+      else{ flash("🩷 Listed!"); }
+      setView("shop");
       // The listing is already saved at this point. Notifying followers is a
       // best-effort extra — if it throws (e.g. a follows/notifications RLS issue)
       // it must NOT fall into the catch below and show a false "Couldn't save
@@ -851,7 +858,10 @@ export default function App() {
       const image_url=allUrls[0]||sel.image_url||"";
       const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",underbust:form.listing_type==="Clothing"?form.underbust:"",shoulder:form.listing_type==="Clothing"?form.shoulder:"",high_hip:form.listing_type==="Clothing"?form.high_hip:"",sleeve_length:form.listing_type==="Clothing"?form.sleeve_length:"",inseam:form.listing_type==="Clothing"?form.inseam:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(form.category),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
       const [updated]=await withFreshToken(tok=>db.update(sel.id,patch,tok));
-      setItems(p=>p.map(i=>i.id===sel.id?updated:i)); setSel(updated); flash("✓ Updated!"); setView("detail");
+      setItems(p=>p.map(i=>i.id===sel.id?updated:i)); setSel(updated);
+      if(allUrls.length&&!updated.image_url){ flash("⚠️ Saved — but the photo couldn't be stored: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase.",11000); }
+      else{ flash("✓ Updated!"); }
+      setView("detail");
       // The update is already saved. Price-drop notifications are best-effort and
       // must not fall into the catch below and show a false "Couldn't update
       // listing" toast for an update that actually succeeded.
@@ -1229,12 +1239,11 @@ export default function App() {
                 const accent=CARD_COLORS[idx%CARD_COLORS.length];
                 return(
                   <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}}>
-                    {(()=>{ const thumb=item.image_url||(item.images&&item.images[0])||""; return(
-                    <div style={{...S.cardTop,background:thumb?"#000":accent,overflow:"hidden"}} onClick={()=>openDetail(item)}>
-                      {thumb?<img src={thumb} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
+                    <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
+                      <div style={{position:"absolute",inset:0,zIndex:1}} onClick={()=>openDetail(item)}/>
                       {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                       <button style={S.heartBtn} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}>❤️</button>
-                    </div>); })()}
+                    </Thumb>
                     <div style={S.cardBody} onClick={()=>openDetail(item)}>
                       <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
                       <p style={S.cardName}>{item.name}</p>
