@@ -1945,16 +1945,18 @@ export default function App() {
                 // square PNG with the disc inscribed edge-to-edge (corners are disc color,
                 // removed by the round crop). The discs are uniform, but the FIGURE inside each
                 // disc is a different size — saree/lehenga/anarkali figures fill the disc, while
-                // sharara/indo_western/menswear figures are small with lots of background around
-                // them. Each gets a per-image `fit` zoom anchored at CENTER: the figures are all
-                // centered in their discs, so center-zoom enlarges the figure to match the saree's
-                // framing without cutting heads or pushing outfits down.
+                // Every badge is a centered figure on a colored disc that already reaches the square's
+                // edges, so objectFit:cover at fit=1.0 maps the disc 1:1 onto the circular bubble with
+                // no white ring. saree/lehenga/anarkali/sharara have large figures that fill their disc,
+                // so they all use the saree's exact framing (fit 1.0). indo_western & menswear are the
+                // only ones whose SOURCE figure is small with lots of background, so they get a center-
+                // anchored zoom to enlarge the figure to match — center anchor keeps heads in frame.
                 {img:"/Images/saree.png",       top:"2%",  left:"5%",  size:170, delay:"0s",   fit:1.00},
-                {img:"/Images/lehenga.png",     top:"30%", left:"55%", size:150, delay:"0.7s", fit:1.02},
+                {img:"/Images/lehenga.png",     top:"30%", left:"55%", size:150, delay:"0.7s", fit:1.00},
                 {img:"/Images/anarkali.png",    top:"55%", left:"8%",  size:175, delay:"1.4s", fit:1.00},
-                {img:"/Images/sharara.png",     top:"8%",  left:"65%", size:130, delay:"2.1s", fit:1.07},
-                {img:"/Images/indo_western.png",top:"62%", left:"58%", size:148, delay:"2.8s", fit:1.18},
-                {img:"/Images/menswear.png",    top:"28%", left:"2%",  size:135, delay:"3.5s", fit:1.30},
+                {img:"/Images/sharara.png",     top:"8%",  left:"65%", size:130, delay:"2.1s", fit:1.00},
+                {img:"/Images/indo_western.png",top:"62%", left:"58%", size:148, delay:"2.8s", fit:1.16},
+                {img:"/Images/menswear.png",    top:"28%", left:"2%",  size:135, delay:"3.5s", fit:1.26},
               ].map((b,i)=>(
                 <div key={i} style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:b.size,borderRadius:"50%",overflow:"hidden",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
                   <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",transform:`scale(${b.fit})`,transformOrigin:"center center"}}/>
