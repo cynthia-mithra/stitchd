@@ -1941,22 +1941,21 @@ export default function App() {
             </div>
             <div style={S.heroRight} className="hero-right">
               {[
-                // `scale` zooms each badge so its colored disc fills the bubble.
-                // The source PNGs have differing amounts of transparent padding
-                // around the disc; saree's disc already fills its frame (scale 1),
-                // the others need a nudge. Tune these if a figure gets clipped.
-                // `oy` is the vertical zoom anchor (transform-origin Y): a lower %
-                // anchors the zoom near the top so the figure's head stays in frame
-                // and the excess is clipped from the feet instead. Tune per image.
-                {img:"/Images/saree.png",       top:"2%",  left:"5%",  size:170, delay:"0s",   scale:1.05, oy:"30%"},
-                {img:"/Images/lehenga.png",     top:"30%", left:"55%", size:150, delay:"0.7s", scale:1.16, oy:"22%"},
-                {img:"/Images/anarkali.png",    top:"55%", left:"8%",  size:175, delay:"1.4s", scale:1.10, oy:"8%"},
-                {img:"/Images/sharara.png",     top:"8%",  left:"65%", size:130, delay:"2.1s", scale:1.10, oy:"14%"},
-                {img:"/Images/indo_western.png",top:"62%", left:"58%", size:148, delay:"2.8s", scale:1.22, oy:"18%"},
-                {img:"/Images/menswear.png",    top:"28%", left:"2%",  size:135, delay:"3.5s", scale:1.18, oy:"20%"},
+                // Every badge is the same shape: a figure on a colored disc that
+                // fills the square to the cardinal edges (white only in the corners,
+                // which the circular crop removes). So they all get the SAME gentle
+                // treatment as the saree — scale 1.05 anchored at 30% from the top —
+                // which is the framing that was confirmed to look right. Keeping it
+                // uniform is what makes every bubble match the saree.
+                {img:"/Images/saree.png",       top:"2%",  left:"5%",  size:170, delay:"0s"  },
+                {img:"/Images/lehenga.png",     top:"30%", left:"55%", size:150, delay:"0.7s"},
+                {img:"/Images/anarkali.png",    top:"55%", left:"8%",  size:175, delay:"1.4s"},
+                {img:"/Images/sharara.png",     top:"8%",  left:"65%", size:130, delay:"2.1s"},
+                {img:"/Images/indo_western.png",top:"62%", left:"58%", size:148, delay:"2.8s"},
+                {img:"/Images/menswear.png",    top:"28%", left:"2%",  size:135, delay:"3.5s"},
               ].map((b,i)=>(
                 <div key={i} style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:b.size,borderRadius:"50%",overflow:"hidden",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
-                  <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",transform:`scale(${b.scale})`,transformOrigin:`center ${b.oy}`}}/>
+                  <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",transform:"scale(1.05)",transformOrigin:"center 30%"}}/>
                 </div>
               ))}
             </div>
