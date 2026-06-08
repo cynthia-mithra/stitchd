@@ -19,6 +19,15 @@ import Dashboard from "./views/Dashboard";
 import Feed from "./views/Feed";
 import Orders from "./views/Orders";
 
+// Pull the human-readable reason out of a thrown Supabase/PostgREST error.
+// db.* throws `new Error(await r.text())` where the text is usually JSON like
+// {"code":"42501","message":"new row violates row-level security policy", ...}.
+function errMsg(e){
+  const raw=(e&&e.message)?e.message:String(e);
+  try{ const j=JSON.parse(raw); return j.message||j.error||j.hint||j.msg||raw; }
+  catch{ return raw; }
+}
+
 async function createStripeCheckout(listing, buyerEmail) {
   if (!window.Stripe) {
     await new Promise((res, rej) => {
@@ -200,7 +209,7 @@ export default function App() {
     return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond;
   }),[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter]);
 
-  function flash(m){ setToast(m); setTimeout(()=>setToast(""),3500); }
+  function flash(m,dur=3500){ setToast(m); setTimeout(()=>setToast(""),dur); }
 
   useEffect(()=>{
     const el=document.getElementById("chat-messages");
@@ -728,22 +737,38 @@ export default function App() {
     if(!form.name||!form.price)return;
     if(!user){setView("auth");return;}
     setSaving(true);
+    let urls=[];
     try{
-      const urls=await Promise.all(form.imageFiles.map(f=>uploadImage(f,token)));
+      urls=await Promise.all(form.imageFiles.map(f=>uploadImage(f,token)));
+    }catch(e){
+      console.error("Listing image upload failed:",e);
+      flash(errMsg(e),9000);
+      setSaving(false);
+      return;
+    }
+    try{
       const image_url=urls[0]||"";
       const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",underbust:form.listing_type==="Clothing"?form.underbust:"",shoulder:form.listing_type==="Clothing"?form.shoulder:"",high_hip:form.listing_type==="Clothing"?form.high_hip:"",sleeve_length:form.listing_type==="Clothing"?form.sleeve_length:"",inseam:form.listing_type==="Clothing"?form.inseam:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(form.category),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
       const [created]=await db.insert(payload,token);
       setItems(p=>[created,...p]); setForm(EMPTY_FORM); flash("🩷 Listed!"); setView("shop");
       const myFollowers=await db.getFollowers(user.id,token);
       await Promise.all(myFollowers.map(f=>notify(f.follower_id,"new_listing",`✨ New drop from ${profile?.username||"a seller you follow"}`,`"${payload.name}" listed for ${currencySymbol(payload.currency||"USD")}${payload.price}`,created.id)));
-    }catch(e){ flash("Failed to save. Try again."); }
+    }catch(e){ console.error("Listing insert failed:",e); flash(`Couldn't save listing: ${errMsg(e)}`,9000); }
     finally{ setSaving(false); }
   }
 
   async function saveEdit(){
     if(!form.name||!form.price)return; setSaving(true);
+    let newUrls=[];
     try{
-      const newUrls=await Promise.all(form.imageFiles.map(f=>uploadImage(f,token)));
+      newUrls=await Promise.all(form.imageFiles.map(f=>uploadImage(f,token)));
+    }catch(e){
+      console.error("Listing image upload failed:",e);
+      flash(errMsg(e),9000);
+      setSaving(false);
+      return;
+    }
+    try{
       const existingUrls=(sel.images||[]).filter((_,i)=>form.imagePreviews[i]&&!form.imageFiles[i]);
       const allUrls=[...existingUrls,...newUrls];
       const image_url=allUrls[0]||sel.image_url||"";
@@ -754,7 +779,7 @@ export default function App() {
         const myFollowers=await db.getFollowers(user.id,token);
         await Promise.all(myFollowers.map(f=>notify(f.follower_id,"price_drop",`📉 Price drop on "${sel.name}"`,`Now ${currencySymbol(updated.currency)}${form.price} (was ${currencySymbol(sel.currency)}${sel.price})`,sel.id)));
       }
-    }catch(e){ flash("Failed to update."); }
+    }catch(e){ console.error("Listing update failed:",e); flash(`Couldn't update listing: ${errMsg(e)}`,9000); }
     finally{ setSaving(false); }
   }
 
