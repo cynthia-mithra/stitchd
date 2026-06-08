@@ -90,6 +90,7 @@ export default function App() {
   const [showSizeGuide,setShowSizeGuide]=useState(false);
   const [reviews,      setReviews]      = useState([]);
   const [sellerRatings,setSellerRatings]= useState({});
+  const [fastSellers,  setFastSellers]  = useState(()=>new Set());
   const [showReview,   setShowReview]   = useState(false);
   const [reviewForm,   setReviewForm]   = useState({rating:5,comment:""});
   const [showReport,   setShowReport]   = useState(false);
@@ -410,6 +411,16 @@ export default function App() {
   }
 
   useEffect(()=>{ loadSellerRatings(); },[]);
+
+  // Fetch once the set of seller ids flagged fast_seller=true on their profile, so
+  // cards/Detail can show a "⚡ FAST SELLER" badge without a per-card profile fetch.
+  // Mirrors the seller-ratings lookup: one request feeds the whole grid.
+  async function loadFastSellers(){
+    const rows=await db.getFastSellers(token);
+    setFastSellers(new Set(rows.map(r=>r.id)));
+  }
+
+  useEffect(()=>{ loadFastSellers(); },[]);
 
   async function loadTailors(){
     const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_tailor=eq.true`,{headers:hdrs(token)});
@@ -1332,7 +1343,7 @@ export default function App() {
         visible={visible} loading={loading} error={error} fetchItems={fetchItems}
         openDetail={openDetail} fitsMe={fitsMe} wishlist={wishlist} toggleWishlist={toggleWishlist}
         newListings={newListings} priceDrops={priceDrops} trendingItems={trendingItems}
-        sellerRatings={sellerRatings}
+        sellerRatings={sellerRatings} fastSellers={fastSellers}
       />
 
       {/* DETAIL */}
@@ -1347,6 +1358,7 @@ export default function App() {
         reviews={reviews}
         openEdit={openEdit} markSold={markSold} relist={relist} del={del}
         similarItems={similarItems} openDetail={openDetail}
+        fastSellers={fastSellers}
       />
 
       {/* ADD / EDIT */}

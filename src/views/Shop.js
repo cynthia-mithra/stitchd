@@ -23,8 +23,17 @@ export default function Shop({
   openDetail, fitsMe, wishlist, toggleWishlist,
   newListings, priceDrops, trendingItems,
   sellerRatings = {},
+  fastSellers = new Set(),
 }) {
   if(view!=="shop") return null;
+  // Small "⚡ FAST SELLER" badge for sellers flagged fast_seller=true on their profile.
+  // Reuses the same overlay badge style as RESERVED / NEW / FITS YOU. On the main grid
+  // it stacks above the FITS YOU badge (which also sits bottom-left) so the two never
+  // overlap; in the home rails there's no fits badge so it sits at the standard offset.
+  const FastBadge = ({ sellerId, raised = false }) =>
+    fastSellers.has(sellerId)
+      ? <div style={{...S.fastBadge,...(raised?{bottom:40}:{})}}>⚡ FAST SELLER</div>
+      : null;
   // Subtle seller rating chip — sits in the price/views row, mirrors the view-count
   // style (Barlow Condensed, small, muted). Renders nothing when the seller has no
   // reviews so new sellers never show "0 stars".
@@ -148,6 +157,7 @@ export default function Shop({
                     {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                     {item.reserved&&!item.sold&&<div style={S.reservedBadge}>RESERVED</div>}
                     {fitsMe(item)===true&&<div style={S.fitsBadge}>📐 FITS YOU</div>}
+                    <FastBadge sellerId={item.user_id} raised={fitsMe(item)===true}/>
                     <button style={{...S.heartBtn,background:wishlist.includes(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}>{wishlist.includes(item.id)?"❤️":"🤍"}</button>
                     <div style={S.cardOrigin}>{item.origin?.toUpperCase()}</div>
                   </div>
@@ -197,6 +207,7 @@ export default function Shop({
                   <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
                     {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
                     <div style={{position:"absolute",top:8,left:8,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
+                    <FastBadge sellerId={item.user_id}/>
                   </div>
                   <div style={S.cardBody}>
                     <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
@@ -224,6 +235,7 @@ export default function Shop({
                   <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
                     {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
                     {drop>0&&<div style={{position:"absolute",top:8,left:8,background:"#FF9500",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>-{drop}%</div>}
+                    <FastBadge sellerId={item.user_id}/>
                   </div>
                   <div style={S.cardBody}>
                     <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
@@ -256,6 +268,7 @@ export default function Shop({
                   <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
                     {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
                     <div style={{position:"absolute",top:8,left:8,background:"#BF5AF2",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>👁 {item.views}</div>
+                    <FastBadge sellerId={item.user_id}/>
                   </div>
                   <div style={S.cardBody}>
                     <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
