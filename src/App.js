@@ -13,6 +13,11 @@ import { Sec, F, Tog } from "./components/Shared";
 import Tailors from "./views/Tailors";
 import Detail from "./views/Detail";
 import Shop from "./views/Shop";
+import Auth from "./views/Auth";
+import Profile from "./views/Profile";
+import Dashboard from "./views/Dashboard";
+import Feed from "./views/Feed";
+import Orders from "./views/Orders";
 
 async function createStripeCheckout(listing, buyerEmail) {
   if (!window.Stripe) {
@@ -1232,378 +1237,39 @@ export default function App() {
       )}
 
       {/* AUTH */}
-      {view==="auth"&&(
-        <main style={{...S.main,maxWidth:480}}>
-          <button style={S.back} onClick={()=>{ setView("shop"); setOtpStep("form"); setOtpCode(""); setAError(""); }}>← BACK</button>
-          <div style={S.formCard} className="form-card">
-            {otpStep==="otp"?(
-              <>
-                <div style={S.formHero}>
-                  <h2 style={S.formTitle}>CHECK YOUR<br/><span style={{color:"#FF1493"}}>EMAIL.</span></h2>
-                  <p style={S.formSub}>We sent a 6-digit code to <strong>{otpEmail}</strong></p>
-                </div>
-                <form onSubmit={handleOTPVerify} style={{display:"flex",flexDirection:"column",gap:14}}>
-                  <F l="6-DIGIT CODE">
-                    <input style={{...S.inp,fontSize:28,letterSpacing:12,textAlign:"center",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900}} placeholder="000000" maxLength={6} value={otpCode} onChange={e=>setOtpCode(e.target.value.replace(/\D/g,"").slice(0,6))} autoFocus/>
-                  </F>
-                  {aError&&<div style={S.aError}>{aError}</div>}
-                  <button type="submit" className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:(aLoading||otpCode.length!==6)?0.5:1}} disabled={aLoading||otpCode.length!==6}>{aLoading?"VERIFYING...":"VERIFY CODE →"}</button>
-                </form>
-                <p style={{textAlign:"center",marginTop:16,fontSize:13,color:"#888"}}>Didn't get it? <span style={{color:"#FF1493",cursor:"pointer",fontWeight:700}} onClick={()=>{ auth.sendOTP(otpEmail); flash("📧 Code resent!"); }}>Resend code</span></p>
-              </>
-            ):(
-              <>
-                <div style={S.formHero}><h2 style={S.formTitle}>{authMode==="login"?"WELCOME\nBACK.":"JOIN\nSTITCH'D."}</h2><p style={S.formSub}>{authMode==="login"?"Sign in to your account.":"Create an account to start selling."}</p></div>
-                <a href={auth.googleUrl()} style={S.googleBtn}><svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/></svg>CONTINUE WITH GOOGLE</a>
-                <div style={S.divider}><span style={S.dividerText}>OR</span></div>
-                <form onSubmit={handleAuth} style={{display:"flex",flexDirection:"column",gap:14}}>
-                  <F l="EMAIL"><input style={S.inp} type="email" placeholder="you@email.com" value={aForm.email} onChange={e=>setAForm(f=>({...f,email:e.target.value}))} required/></F>
-                  {authMode==="login"&&<F l="PASSWORD"><input style={S.inp} type="password" placeholder="••••••••" value={aForm.password} onChange={e=>setAForm(f=>({...f,password:e.target.value}))} required/></F>}
-                  {aError&&<div style={S.aError}>{aError}</div>}
-                  <button type="submit" className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:aLoading?0.5:1}}>{aLoading?"...":authMode==="login"?"SIGN IN →":"GET VERIFICATION CODE →"}</button>
-                </form>
-                <p style={S.authSwitch}>{authMode==="login"?"No account? ":"Already have one? "}<span style={S.authSwitchLink} onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setAError("");setAForm({email:"",password:""});}}>{authMode==="login"?"Sign up":"Log in"}</span></p>
-              </>
-            )}
-          </div>
-        </main>
-      )}
+      <Auth
+        view={view} setView={setView}
+        authMode={authMode} setAuthMode={setAuthMode}
+        aForm={aForm} setAForm={setAForm} aError={aError} setAError={setAError} aLoading={aLoading}
+        handleAuth={handleAuth} handleOTPVerify={handleOTPVerify}
+        otpStep={otpStep} setOtpStep={setOtpStep} otpCode={otpCode} setOtpCode={setOtpCode} otpEmail={otpEmail}
+        flash={flash}
+      />
 
-      {/* EDIT PROFILE */}
-      {view==="editprofile"&&user&&(
-        <main style={{...S.main,maxWidth:600}}>
-          <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
-          <div style={S.formCard} className="form-card">
-            <div style={S.formHero}>
-              <h2 style={S.formTitle}>YOUR<br/><span style={{color:"#FF1493"}}>PROFILE.</span></h2>
-            </div>
-            <Sec label="PROFILE PICTURE">
-              <div style={{display:"flex",alignItems:"center",gap:20}}>
-                <div style={S.avatarUploadCircle} onClick={()=>document.getElementById("avatar-input").click()}>
-                  {profForm.avatarPreview?<img src={profForm.avatarPreview} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<div style={S.avatarInitials}>{(profForm.full_name||profForm.username||user.email||"?")[0].toUpperCase()}</div>}
-                  <div style={S.avatarEditOverlay}>📸</div>
-                </div>
-                <div>
-                  <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",marginBottom:8,display:"block"}} onClick={()=>document.getElementById("avatar-input").click()}>UPLOAD PHOTO</button>
-                  {profForm.avatarPreview&&<button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11}} onClick={()=>setProfForm(f=>({...f,avatarFile:null,avatarPreview:"",avatar_url:""}))}>REMOVE</button>}
-                </div>
-              </div>
-              <input id="avatar-input" type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];if(f)setProfForm(p=>({...p,avatarFile:f,avatarPreview:URL.createObjectURL(f)}));}}/>
-            </Sec>
-            <Sec label="YOUR DETAILS">
-              <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                <F l="FULL NAME"><input style={S.inp} placeholder="e.g. Nasreen Ahmed" value={profForm.full_name} onChange={e=>setProfForm(f=>({...f,full_name:e.target.value}))}/></F>
-                <F l="USERNAME"><input style={S.inp} placeholder="e.g. @nasreen.closet" value={profForm.username} onChange={e=>setProfForm(f=>({...f,username:e.target.value}))}/></F>
-                <F l="BIO"><textarea style={{...S.inp,height:80,resize:"vertical",width:"100%"}} value={profForm.bio} onChange={e=>setProfForm(f=>({...f,bio:e.target.value}))}/></F>
-                <F l="LOCATION"><input style={S.inp} placeholder="e.g. London, UK" value={profForm.location} onChange={e=>setProfForm(f=>({...f,location:e.target.value}))}/></F>
-                <F l="REGION">
-                  <select style={S.inp} value={profForm.region} onChange={e=>setProfForm(f=>({...f,region:e.target.value}))}>
-                    <option value="">Select region...</option>
-                    {["UK","USA","Canada","Australia","UAE","Pakistan","India","Bangladesh","Sri Lanka","Europe","Other"].map(r=><option key={r} value={r}>{r}</option>)}
-                  </select>
-                </F>
-                <F l="CURRENCY">
-                  <select style={S.inp} value={profForm.currency} onChange={e=>setProfForm(f=>({...f,currency:e.target.value}))}>
-                    {[["USD","$ USD"],["GBP","£ GBP"],["EUR","€ EUR"],["CAD","$ CAD"],["AUD","$ AUD"],["AED","AED"],["PKR","₨ PKR"],["INR","₹ INR"],["BDT","৳ BDT"]].map(([code,label])=><option key={code} value={code}>{label}</option>)}
-                  </select>
-                </F>
-              </div>
-            </Sec>
-            <Sec label="I SPECIALISE IN">
-              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-                {["Bridal","Eid","Casual","Party","Vintage","Luxury","Budget-friendly","Handmade","Designer","All Occasions"].map(s=>{
-                  const on=(profForm.specialises_in||[]).includes(s);
-                  return <button key={s} type="button" className="hbtn" style={{...S.hBtn,background:on?"#FF1493":"#fff",color:on?"#fff":"#111",border:`2px solid ${on?"#FF1493":"#111"}`,padding:"8px 16px",fontSize:11,letterSpacing:1.5}} onClick={()=>setProfForm(f=>({...f,specialises_in:on?f.specialises_in.filter(x=>x!==s):[...f.specialises_in,s]}))}>{s.toUpperCase()}</button>;
-                })}
-              </div>
-            </Sec>
-            <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:profSaving?0.5:1}} onClick={saveProfile}>{profSaving?"SAVING...":"SAVE PROFILE →"}</button>
-            <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #007AFF",paddingLeft:12,marginBottom:8}}>📐 MY MEASUREMENTS</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-                {[["bust","BUST (inches)"],["waist","WAIST (inches)"],["hips","HIPS (inches)"],["height","HEIGHT (cm)"]].map(([k,l])=>(
-                  <F key={k} l={l}><input style={S.inp} type="number" placeholder="e.g. 34" value={profForm[k]} onChange={e=>setProfForm(f=>({...f,[k]:e.target.value}))}/></F>
-                ))}
-              </div>
-              <F l="PREFERRED SIZE">
-                <select style={S.inp} value={profForm.preferred_size} onChange={e=>setProfForm(f=>({...f,preferred_size:e.target.value}))}>
-                  <option value="">Select...</option>
-                  {SIZES.map(s=><option key={s}>{s}</option>)}
-                </select>
-              </F>
-            </div>
-            <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:8}}>✂️ TAILOR LISTING</div>
-              <Tog on={profForm.is_tailor} onToggle={()=>setProfForm(f=>({...f,is_tailor:!f.is_tailor}))} color="#FF9500" label="LIST ME AS A TAILOR" sub="Show my profile in the tailor directory"/>
-              {profForm.is_tailor&&(
-                <div style={{marginTop:12}}>
-                  <Tog on={profForm.accepting_clients} onToggle={()=>setProfForm(f=>({...f,accepting_clients:!f.accepting_clients}))} color="#34C759" label="ACCEPTING NEW CLIENTS" sub="Turn off if you're fully booked"/>
-                  <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:12}}>
-                    <div>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:10}}>SERVICES OFFERED</p>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                        {["Alterations","Taking In","Letting Out","Hemming","Blouse Stitching","Full Stitching","Embroidery","Repairs","Custom Orders"].map(s=>{
-                          const on=(profForm.tailor_services||[]).includes(s);
-                          return<button key={s} type="button" className="hbtn" style={{...S.hBtn,background:on?"#FF9500":"#fff",color:on?"#fff":"#111",border:`2px solid ${on?"#FF9500":"#111"}`,padding:"6px 14px",fontSize:11}} onClick={()=>setProfForm(f=>({...f,tailor_services:on?f.tailor_services.filter(x=>x!==s):[...f.tailor_services,s]}))}>{s.toUpperCase()}</button>;
-                        })}
-                      </div>
-                    </div>
-                    <F l="STARTING PRICE"><input style={S.inp} type="number" placeholder="e.g. 15" value={profForm.tailor_price_from} onChange={e=>setProfForm(f=>({...f,tailor_price_from:e.target.value}))}/></F>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20}}>🔐 TWO-FACTOR AUTHENTICATION</div>
-              {twoFAStep==="enroll"&&twoFAData?(
-                <div>
-                  <p style={{fontSize:13,color:"#666",marginBottom:16}}>Scan this QR code with Google Authenticator or Authy.</p>
-                  {twoFAData.totp?.qr_code&&<img src={twoFAData.totp.qr_code} alt="2FA QR Code" style={{width:180,height:180,border:"3px solid #111",marginBottom:16,display:"block"}}/>}
-                  <F l="ENTER 6-DIGIT CODE FROM APP">
-                    <input style={{...S.inp,fontSize:24,letterSpacing:8,textAlign:"center",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900}} placeholder="000000" maxLength={6} value={twoFACode} onChange={e=>setTwoFACode(e.target.value.replace(/\D/g,"").slice(0,6))}/>
-                  </F>
-                  <div style={{display:"flex",gap:10,marginTop:14}}>
-                    <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",flex:1,padding:"12px",opacity:(twoFACode.length!==6||twoFALoading)?0.4:1}} onClick={confirm2FA} disabled={twoFACode.length!==6||twoFALoading}>{twoFALoading?"VERIFYING...":"✓ CONFIRM 2FA"}</button>
-                    <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",padding:"12px 16px"}} onClick={()=>{setTwoFAStep(null);setTwoFACode("");setTwoFAData(null);}}>CANCEL</button>
-                  </div>
-                </div>
-              ):(
-                <div>
-                  {twoFAFactors.length>0?(
-                    <div>
-                      <div style={{...S.alterBadge,...S.aY,marginBottom:16,display:"inline-flex",alignItems:"center",gap:8}}>✓ 2FA IS ENABLED</div>
-                      {twoFAFactors.map(f=>(
-                        <div key={f.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:"#fafafa",border:"1.5px solid #e0e0e0",marginBottom:8}}>
-                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700}}>{f.friendly_name||"Authenticator App"}</span>
-                          <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"1.5px solid #FF1493",fontSize:11,padding:"5px 12px"}} onClick={()=>disable2FA(f.id)}>REMOVE</button>
-                        </div>
-                      ))}
-                    </div>
-                  ):(
-                    <div>
-                      <p style={{fontSize:13,color:"#888",marginBottom:16}}>Add an extra layer of security with an authenticator app.</p>
-                      <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",padding:"12px 24px",opacity:twoFALoading?0.5:1}} onClick={()=>{load2FAFactors();setup2FA();}}>{twoFALoading?"SETTING UP...":"🔐 ENABLE 2FA"}</button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </main>
-      )}
+      {/* PROFILE (edit + seller) */}
+      <Profile
+        view={view} setView={setView} prevView={prevView} user={user}
+        profForm={profForm} setProfForm={setProfForm} saveProfile={saveProfile} profSaving={profSaving}
+        twoFAStep={twoFAStep} setTwoFAStep={setTwoFAStep} twoFAData={twoFAData} setTwoFAData={setTwoFAData}
+        twoFACode={twoFACode} setTwoFACode={setTwoFACode} twoFAFactors={twoFAFactors} twoFALoading={twoFALoading}
+        confirm2FA={confirm2FA} disable2FA={disable2FA} load2FAFactors={load2FAFactors} setup2FA={setup2FA}
+        viewedProfile={viewedProfile} profileListings={profileListings} reviews={reviews}
+        isFollowing={isFollowing} toggleFollow={toggleFollow} openDetail={openDetail}
+      />
 
-      {/* SELLER PROFILE */}
-      {view==="profile"&&viewedProfile&&(
-        <main style={S.main}>
-          <button style={S.back} onClick={()=>setView(prevView||"shop")}>← BACK</button>
-          <div style={S.profileHeader} className="profile-header">
-            <div style={S.profileAvatarWrap}>
-              {viewedProfile.avatar_url?<img src={viewedProfile.avatar_url} alt={viewedProfile.full_name||viewedProfile.username} style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<div style={S.profileAvatar}>{(viewedProfile.full_name||viewedProfile.username||"S")[0].toUpperCase()}</div>}
-            </div>
-            <div style={{flex:1}}>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:4}}>SELLER PROFILE</p>
-              <h2 style={S.profileName}>{viewedProfile.full_name||viewedProfile.username||"Seller"}{viewedProfile.verified&&<span style={S.verifiedBadge}>✓ VERIFIED</span>}</h2>
-              {viewedProfile.location&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:10}}>📍 {viewedProfile.location}</p>}
-              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:14}}>
-                {viewedProfile.id_verified&&<span style={{background:"#007AFF",color:"#fff",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif"}}>🪪 ID VERIFIED</span>}
-                {viewedProfile.total_sales>0&&<span style={{background:"#FF950022",color:"#FF9500",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",border:"1px solid #FF950044"}}>🛍️ {viewedProfile.total_sales} SALES</span>}
-              </div>
-              <p style={S.profileMeta}>{profileListings.length} listings · {profileListings.filter(i=>i.sold).length} sold{reviews.length>0&&` · ⭐ ${(reviews.reduce((a,r)=>a+r.rating,0)/reviews.length).toFixed(1)} avg`}</p>
-              {user&&viewedProfile.id!==user.id&&(
-                <button className="hbtn" style={{...S.hBtn,background:isFollowing(viewedProfile.id)?"#fff":"#FF1493",color:isFollowing(viewedProfile.id)?"#FF1493":"#fff",border:"2px solid #FF1493",marginTop:14}} onClick={()=>toggleFollow(viewedProfile.id)}>
-                  {isFollowing(viewedProfile.id)?"✓ FOLLOWING":"+ FOLLOW"}
-                </button>
-              )}
-            </div>
-          </div>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>ALL LISTINGS</div>
-          <div style={S.grid}>
-            {profileListings.map((item,idx)=>{
-              const accent=CARD_COLORS[idx%CARD_COLORS.length];
-              return(
-                <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
-                  <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
-                    {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
-                    {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-                  </div>
-                  <div style={S.cardBody}>
-                    <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
-                    <p style={S.cardName}>{item.name}</p>
-                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>${item.price}</span></div>
-                  </div>
-                  <div style={{...S.accentBar,background:accent}}/>
-                </article>
-              );
-            })}
-            {profileListings.length===0&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"40px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#bbb"}}>NO LISTINGS YET.</div>}
-          </div>
-          {reviews.length>0&&(
-            <div style={{marginTop:48}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:20}}>REVIEWS ({reviews.length})</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:3}}>
-                {reviews.map(r=>(
-                  <div key={r.id} style={S.reviewCard}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                      <span style={{fontSize:16}}>{Array(r.rating).fill("⭐").join("")}</span>
-                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>{new Date(r.created_at).toLocaleDateString("en-GB",{month:"short",year:"numeric"}).toUpperCase()}</span>
-                    </div>
-                    {r.comment&&<p style={{fontSize:13,color:"#666",lineHeight:1.5}}>{r.comment}</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </main>
-      )}
-
-      {/* DASHBOARD */}
-      {view==="dashboard"&&user&&(
-        <main style={S.main}>
-          <button style={S.back} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
-          <div style={S.dashHeader}>
-            <div><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:8}}>YOUR CLOSET</p><h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1}}>MY DROPS</h2></div>
-            <div style={S.dashStats}>
-              <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#FF1493"}}>{myItems.length}</div><div style={S.dashStatLabel}>TOTAL</div></div>
-              <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#34C759"}}>{myItems.filter(i=>!i.sold).length}</div><div style={S.dashStatLabel}>LIVE</div></div>
-              <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#FF9500"}}>{myItems.filter(i=>i.sold).length}</div><div style={S.dashStatLabel}>SOLD</div></div>
-              <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#007AFF"}}>${myItems.filter(i=>i.sold).reduce((a,i)=>a+i.price,0)}</div><div style={S.dashStatLabel}>EARNED</div></div>
-              <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#BF5AF2"}}>{myItems.reduce((a,i)=>a+(i.views||0),0)}</div><div style={S.dashStatLabel}>VIEWS</div></div>
-            </div>
-          </div>
-          {myItems.length===0?(
-            <div style={{textAlign:"center",padding:"60px 20px"}}><p style={{fontSize:48,marginBottom:12}}>🥻</p><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NO LISTINGS YET.</p><button className="hbtn" style={S.hBtn} onClick={()=>setView("add")}>LIST YOUR FIRST PIECE →</button></div>
-          ):(
-            <div style={S.dashGrid} className="dash-grid">
-              {myItems.map((item,idx)=>(
-                <div key={item.id} style={{...S.dashCard,borderColor:item.sold?"#ccc":CARD_COLORS[idx%CARD_COLORS.length]}}>
-                  <div style={{...S.dashCardImg,background:item.image_url?"#000":CARD_COLORS[idx%CARD_COLORS.length]}}>
-                    {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover",opacity:item.sold?0.5:1}}/>:<span style={{fontSize:44}}>{item.emoji||catEmoji(item.category)}</span>}
-                    {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-                  </div>
-                  <div style={S.dashCardBody}>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,color:item.sold?"#aaa":"#111",marginBottom:4}}>{item.name}</p>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:item.sold?"#aaa":CARD_COLORS[idx%CARD_COLORS.length],marginBottom:4}}>${item.price}</p>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,marginBottom:10}}>👁 {item.views||0} VIEWS</p>
-                    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                      <button className="hbtn" style={{...S.dashBtn,background:CARD_COLORS[idx%CARD_COLORS.length],color:"#fff"}} onClick={()=>{setSel(item);openEdit(item);}}>EDIT</button>
-                      {!item.sold&&<button className="hbtn" style={{...S.dashBtn,background:"#111",color:"#fff"}} onClick={()=>markSold(item.id,item.sold)}>MARK SOLD</button>}
-                      {item.sold&&<button className="hbtn" style={{...S.dashBtn,background:"#34C759",color:"#fff"}} onClick={()=>relist(item.id)}>RELIST</button>}
-                      <button className="hbtn" style={{...S.dashBtn,background:"#fff",color:"#FF1493",border:"1.5px solid #FF1493"}} onClick={()=>del(item.id)}>DELETE</button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          <div style={{marginTop:48}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,paddingBottom:16,borderBottom:"2px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12}}>🎁 MY BUNDLES</div>
-              <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",fontSize:11}} onClick={()=>{loadBundles();setView("createbundle");}}>+ CREATE BUNDLE</button>
-            </div>
-            {bundles.length===0?(
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#bbb",letterSpacing:1}}>No bundles yet. Bundle separate listings to offer a deal! 🎁</p>
-            ):(
-              <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                {bundles.map(b=>{
-                  const bListings=bundleItems[b.id]||[];
-                  const total=bListings.reduce((a,i)=>a+i.price,0);
-                  const discounted=parseFloat((total*(1-b.discount_percent/100)).toFixed(2));
-                  return(
-                    <div key={b.id} style={{border:"2px solid #FF9500",padding:"16px 20px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
-                      <div>
-                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,marginBottom:4}}>{b.name} {b.discount_percent>0&&<span style={{background:"#FF9500",color:"#fff",padding:"2px 8px",fontSize:10,fontWeight:800}}>{b.discount_percent}% OFF</span>}</p>
-                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#FF9500"}}>Bundle: ${discounted}</p>
-                      </div>
-                      <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11}} onClick={()=>deleteBundle(b.id)}>DELETE</button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </main>
-      )}
+      {/* DASHBOARD + CREATE BUNDLE */}
+      <Dashboard
+        view={view} setView={setView} user={user} myItems={myItems}
+        setSel={setSel} openEdit={openEdit} markSold={markSold} relist={relist} del={del}
+        bundles={bundles} bundleItems={bundleItems} loadBundles={loadBundles} deleteBundle={deleteBundle}
+        bundleForm={bundleForm} setBundleForm={setBundleForm} toggleBundleListing={toggleBundleListing} createBundle={createBundle}
+      />
 
       {/* FEED */}
-      {view==="feed"&&user&&(
-        <main style={S.main}>
-          <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
-          <div style={{marginBottom:36,paddingBottom:24,borderBottom:"3px solid #111"}}>
-            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>YOUR FEED</p>
-            <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1}}>FOLLOWING ✦</h2>
-          </div>
-          {feedLoading&&<div style={S.loadingWrap}><div style={S.spinner}/></div>}
-          {!feedLoading&&following.length===0&&(
-            <div style={{textAlign:"center",padding:"60px 20px"}}>
-              <p style={{fontSize:48,marginBottom:12}}>✦</p>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>YOU'RE NOT FOLLOWING ANYONE YET.</p>
-              <button className="hbtn" style={S.hBtn} onClick={()=>setView("shop")}>BROWSE DROPS →</button>
-            </div>
-          )}
-          {!feedLoading&&feedItems.length>0&&(
-            <div style={S.grid}>
-              {feedItems.map((item,idx)=>{
-                const accent=CARD_COLORS[idx%CARD_COLORS.length];
-                return(
-                  <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
-                    <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
-                      {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
-                      {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-                    </div>
-                    <div style={S.cardBody}>
-                      <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
-                      <p style={S.cardName}>{item.name}</p>
-                      <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span></div>
-                    </div>
-                    <div style={{...S.accentBar,background:accent}}/>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </main>
-      )}
-
-      {/* CREATE BUNDLE */}
-      {view==="createbundle"&&user&&(
-        <main style={{...S.main,maxWidth:760}}>
-          <button style={S.back} onClick={()=>setView("dashboard")}>← BACK TO DASHBOARD</button>
-          <div style={S.formCard} className="form-card">
-            <div style={S.formHero}><h2 style={S.formTitle}>CREATE A<br/><span style={{color:"#FF9500"}}>BUNDLE.</span></h2></div>
-            <Sec label="BUNDLE DETAILS">
-              <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                <F l="Bundle Name *"><input style={S.inp} placeholder="e.g. Bridal Lehenga + Jewellery Set" value={bundleForm.name} onChange={e=>setBundleForm(f=>({...f,name:e.target.value}))}/></F>
-                <F l="Description"><input style={S.inp} placeholder="e.g. Complete bridal look" value={bundleForm.description} onChange={e=>setBundleForm(f=>({...f,description:e.target.value}))}/></F>
-                <F l="BUNDLE DISCOUNT (%)">
-                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                    {[0,5,10,15,20].map(pct=>(
-                      <button key={pct} type="button" className="hbtn" style={{...S.hBtn,background:bundleForm.discount_percent===pct?"#FF9500":"#fff",color:bundleForm.discount_percent===pct?"#fff":"#111",border:`2px solid ${bundleForm.discount_percent===pct?"#FF9500":"#111"}`,padding:"8px 14px",fontSize:11}} onClick={()=>setBundleForm(f=>({...f,discount_percent:pct}))}>{pct===0?"NO DISCOUNT":`${pct}% OFF`}</button>
-                    ))}
-                  </div>
-                </F>
-              </div>
-            </Sec>
-            <Sec label={`SELECT LISTINGS (${bundleForm.selectedListings.length} selected — min 2)`}>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:8,marginBottom:14}}>
-                {myItems.filter(i=>!i.sold).map((item,idx)=>{
-                  const isSel=bundleForm.selectedListings.includes(item.id);
-                  const accent=CARD_COLORS[idx%CARD_COLORS.length];
-                  return(
-                    <div key={item.id} style={{border:`3px solid ${isSel?accent:"#e0e0e0"}`,cursor:"pointer",overflow:"hidden"}} onClick={()=>toggleBundleListing(item.id)}>
-                      <div style={{height:80,background:item.image_url?"#000":accent,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-                        {item.image_url?<img src={item.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:32}}>{item.emoji||catEmoji(item.category)}</span>}
-                        {isSel&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.35)",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:"#fff",fontSize:24,fontWeight:900}}>✓</span></div>}
-                      </div>
-                      <div style={{padding:"8px 10px"}}><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,color:"#111",marginBottom:2}}>{item.name}</p><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:900,color:accent}}>{currencySymbol(item.currency)}{item.price}</p></div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Sec>
-            <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:(bundleForm.selectedListings.length<2||!bundleForm.name)?0.4:1}} onClick={createBundle} disabled={bundleForm.selectedListings.length<2||!bundleForm.name}>🎁 CREATE BUNDLE →</button>
-          </div>
-        </main>
-      )}
+      <Feed
+        view={view} setView={setView} user={user}
+        feedLoading={feedLoading} following={following} feedItems={feedItems} openDetail={openDetail}
+      />
 
       {/* TAILOR MARKETPLACE */}
       <Tailors
@@ -1622,79 +1288,15 @@ export default function App() {
       />
 
       {/* ORDERS */}
-      {view==="orders"&&user&&(
-        <main style={S.main}>
-          <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
-          <div style={{marginBottom:32,paddingBottom:24,borderBottom:"3px solid #111",display:"flex",alignItems:"flex-end",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
-            <div>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>YOUR TRANSACTIONS</p>
-              <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1}}>ORDER HISTORY</h2>
-            </div>
-            <div style={{display:"flex",gap:6}}>
-              {[["All","all"],["Buying","buying"],["Selling","selling"]].map(([l,v])=>(
-                <button key={v} className="fpill" style={{...S.pill,...(ordersTab===v?S.pillOn:{})}} onClick={()=>setOrdersTab(v)}>{l}</button>
-              ))}
-            </div>
-          </div>
-          {ordersLoading?<div style={S.loadingWrap}><div style={S.spinner}/></div>:myOrders.length===0?(
-            <div style={{textAlign:"center",padding:"60px 20px"}}>
-              <p style={{fontSize:48,marginBottom:12}}>📦</p>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NO ORDERS YET.</p>
-              <button className="hbtn" style={S.hBtn} onClick={()=>setView("shop")}>BROWSE DROPS →</button>
-            </div>
-          ):(
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              {myOrders.filter(o=>ordersTab==="all"||(ordersTab==="buying"&&o.buyer_id===user.id)||(ordersTab==="selling"&&o.seller_id===user.id)).map(order=>{
-                const listing=items.find(i=>i.id===order.listing_id);
-                const isBuyer=order.buyer_id===user.id;
-                const statusColors={paid:"#FF9500",shipped:"#007AFF",delivered:"#34C759",disputed:"#FF1493"};
-                return(
-                  <div key={order.id} style={{border:"2px solid #f0f0f0",padding:"20px",display:"flex",gap:16,flexWrap:"wrap",alignItems:"flex-start"}}>
-                    {listing?.image_url&&<img src={listing.image_url} alt="" style={{width:72,height:72,objectFit:"cover",border:"2px solid #111",flexShrink:0}}/>}
-                    <div style={{flex:1,minWidth:200}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
-                        <span style={{background:statusColors[order.status]||"#888",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif"}}>{order.status?.toUpperCase()}</span>
-                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>{isBuyer?"BUYING":"SELLING"} · {new Date(order.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase()}</span>
-                      </div>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,marginBottom:4}}>{listing?.name||"Item"}</p>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#FF1493",marginBottom:6}}>{currencySymbol(listing?.currency)}{order.amount}</p>
-                      {order.tracking_number&&<p style={{fontSize:12,color:"#007AFF",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1,marginBottom:4}}>📦 TRACKING: {order.tracking_number}</p>}
-                      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
-                        {!isBuyer&&order.status==="paid"&&(
-                          showTrackingInput===order.id?(
-                            <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                              <input style={{...S.inp,width:160,fontSize:12,padding:"8px 10px"}} placeholder="Tracking number" value={trackingInput} onChange={e=>setTrackingInput(e.target.value)}/>
-                              <button className="hbtn" style={{...S.hBtn,background:"#007AFF",border:"none",fontSize:11,padding:"8px 14px"}} onClick={()=>markShipped(order.id)}>CONFIRM SHIPPED</button>
-                              <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#888",border:"1px solid #e0e0e0",fontSize:11,padding:"8px 10px"}} onClick={()=>setShowTrackingInput(null)}>✕</button>
-                            </div>
-                          ):(
-                            <button className="hbtn" style={{...S.hBtn,background:"#007AFF",border:"none",fontSize:11,padding:"8px 16px"}} onClick={()=>setShowTrackingInput(order.id)}>📦 MARK AS SHIPPED</button>
-                          )
-                        )}
-                        {isBuyer&&order.status==="shipped"&&(
-                          <>
-                            <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",fontSize:11,padding:"8px 16px"}} onClick={()=>confirmReceived(order.id)}>✓ CONFIRM RECEIVED</button>
-                            <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"8px 14px"}} onClick={()=>setShowDisputeForm(order.id)}>🚩 RAISE DISPUTE</button>
-                          </>
-                        )}
-                      </div>
-                      {showDisputeForm===order.id&&(
-                        <div style={{marginTop:12,border:"2px solid #FF1493",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
-                          <textarea style={{...S.inp,height:80,resize:"vertical",width:"100%",fontSize:13}} placeholder="Describe the issue..." value={disputeReason} onChange={e=>setDisputeReason(e.target.value)}/>
-                          <div style={{display:"flex",gap:8}}>
-                            <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",flex:1,padding:"10px",fontSize:12}} onClick={()=>raiseDispute(order.id)}>SUBMIT DISPUTE</button>
-                            <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#888",border:"1px solid #e0e0e0",padding:"10px 14px",fontSize:12}} onClick={()=>setShowDisputeForm(null)}>CANCEL</button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </main>
-      )}
+      <Orders
+        view={view} setView={setView} user={user} items={items}
+        ordersTab={ordersTab} setOrdersTab={setOrdersTab} ordersLoading={ordersLoading} myOrders={myOrders}
+        showTrackingInput={showTrackingInput} setShowTrackingInput={setShowTrackingInput}
+        trackingInput={trackingInput} setTrackingInput={setTrackingInput}
+        markShipped={markShipped} confirmReceived={confirmReceived}
+        showDisputeForm={showDisputeForm} setShowDisputeForm={setShowDisputeForm}
+        disputeReason={disputeReason} setDisputeReason={setDisputeReason} raiseDispute={raiseDispute}
+      />
 
       {/* SHOP VIEW */}
       <Shop
