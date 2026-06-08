@@ -201,6 +201,12 @@ export default function App() {
   }),[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter]);
 
   function flash(m){ setToast(m); setTimeout(()=>setToast(""),3500); }
+  // Supabase/PostgREST errors arrive as a JSON string in error.message (we throw `new Error(await r.text())`).
+  // Pull out a human-readable reason so toasts show the ACTUAL cause instead of a generic "try again".
+  function errMsg(e){
+    const raw=(e&&e.message)||String(e||"");
+    try{ const j=JSON.parse(raw); return j.message||j.error||j.msg||raw; }catch{ return raw; }
+  }
 
   useEffect(()=>{
     const el=document.getElementById("chat-messages");
@@ -729,21 +735,42 @@ export default function App() {
     if(!user){setView("auth");return;}
     setSaving(true);
     try{
-      const urls=await Promise.all(form.imageFiles.map(f=>uploadImage(f,token)));
+      // Step 1 — upload images. Keep this in its own try so a storage failure gives a
+      // clear "image upload failed" message instead of looking like the DB insert broke.
+      let urls;
+      try{
+        urls=await Promise.all(form.imageFiles.map(f=>uploadImage(f,token)));
+      }catch(e){
+        console.error("[add] image upload failed:",e);
+        flash(`Image upload failed: ${errMsg(e)}`);
+        return;
+      }
       const image_url=urls[0]||"";
       const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",underbust:form.listing_type==="Clothing"?form.underbust:"",shoulder:form.listing_type==="Clothing"?form.shoulder:"",high_hip:form.listing_type==="Clothing"?form.high_hip:"",sleeve_length:form.listing_type==="Clothing"?form.sleeve_length:"",inseam:form.listing_type==="Clothing"?form.inseam:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(form.category),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
       const [created]=await db.insert(payload,token);
       setItems(p=>[created,...p]); setForm(EMPTY_FORM); flash("🩷 Listed!"); setView("shop");
       const myFollowers=await db.getFollowers(user.id,token);
       await Promise.all(myFollowers.map(f=>notify(f.follower_id,"new_listing",`✨ New drop from ${profile?.username||"a seller you follow"}`,`"${payload.name}" listed for ${currencySymbol(payload.currency||"USD")}${payload.price}`,created.id)));
-    }catch(e){ flash("Failed to save. Try again."); }
+    }catch(e){
+      // Step 2 — the listings insert failed. Surface the real Postgres/PostgREST reason
+      // (RLS violation, missing column, type mismatch) instead of a generic message.
+      console.error("[add] listing insert failed:",e);
+      flash(`Couldn't save listing: ${errMsg(e)}`);
+    }
     finally{ setSaving(false); }
   }
 
   async function saveEdit(){
     if(!form.name||!form.price)return; setSaving(true);
     try{
-      const newUrls=await Promise.all(form.imageFiles.map(f=>uploadImage(f,token)));
+      let newUrls;
+      try{
+        newUrls=await Promise.all(form.imageFiles.map(f=>uploadImage(f,token)));
+      }catch(e){
+        console.error("[saveEdit] image upload failed:",e);
+        flash(`Image upload failed: ${errMsg(e)}`);
+        return;
+      }
       const existingUrls=(sel.images||[]).filter((_,i)=>form.imagePreviews[i]&&!form.imageFiles[i]);
       const allUrls=[...existingUrls,...newUrls];
       const image_url=allUrls[0]||sel.image_url||"";
@@ -754,7 +781,7 @@ export default function App() {
         const myFollowers=await db.getFollowers(user.id,token);
         await Promise.all(myFollowers.map(f=>notify(f.follower_id,"price_drop",`📉 Price drop on "${sel.name}"`,`Now ${currencySymbol(updated.currency)}${form.price} (was ${currencySymbol(sel.currency)}${sel.price})`,sel.id)));
       }
-    }catch(e){ flash("Failed to update."); }
+    }catch(e){ console.error("[saveEdit] listing update failed:",e); flash(`Couldn't update listing: ${errMsg(e)}`); }
     finally{ setSaving(false); }
   }
 
