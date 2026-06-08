@@ -21,12 +21,7 @@ export const auth = {
 export async function uploadImage(file,t){
   const ext=file.name.split(".").pop();
   const path=`${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const r=await fetch(`${SUPABASE_URL}/storage/v1/object/listings/${path}`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t||SUPABASE_KEY}`,"Content-Type":file.type||"application/octet-stream","x-upsert":"true"},body:file});
-  if(!r.ok){
-    let detail="";
-    try{ const j=await r.clone().json(); detail=j.message||j.error||j.msg||JSON.stringify(j); }
-    catch{ try{ detail=await r.text(); }catch{ detail=""; } }
-    throw new Error(`Image upload failed (HTTP ${r.status}): ${detail||r.statusText}`);
-  }
+  const r=await fetch(`${SUPABASE_URL}/storage/v1/object/listings/${path}`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t||SUPABASE_KEY}`,"Content-Type":file.type,"x-upsert":"true"},body:file});
+  if(!r.ok)throw new Error(await r.text());
   return `${SUPABASE_URL}/storage/v1/object/public/listings/${path}`;
 }
