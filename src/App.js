@@ -7,7 +7,7 @@ import {
   catEmoji, currencySymbol, buildPaymentSummary,
 } from "./lib/constants";
 import { db } from "./lib/db";
-import { auth, uploadImage } from "./lib/auth";
+import { auth, uploadImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
 import { Sec, F, Tog } from "./components/Shared";
 import Tailors from "./views/Tailors";
@@ -26,6 +26,15 @@ function errMsg(e){
   const raw=(e&&e.message)?e.message:String(e);
   try{ const j=JSON.parse(raw); return j.message||j.error||j.hint||j.msg||raw; }
   catch{ return raw; }
+}
+
+// True when an error is specifically an expired/invalid-JWT failure from Supabase
+// (e.g. "JWT expired", `"exp" claim timestamp check failed`). We retry these once
+// with a force-refreshed token. Note: this deliberately does NOT match generic 403
+// RLS errors — retrying those would just fail again the same way.
+function isExpiredTokenErr(e){
+  const m=(errMsg(e)||"").toLowerCase();
+  return m.includes("jwt expired")||m.includes("exp claim")||m.includes("token is expired")||m.includes("invalid jwt")||(m.includes("jwt")&&m.includes("expir"));
 }
 
 async function createStripeCheckout(listing, buyerEmail) {
@@ -163,7 +172,20 @@ export default function App() {
     const hash=window.location.hash;
     if(hash.includes("access_token")){
       const p=new URLSearchParams(hash.slice(1));
-      const s={access_token:p.get("access_token"),user:{email:p.get("email")||"user",id:p.get("user_id")}};
+      const access_token=p.get("access_token");
+      // The OAuth redirect hash has no user_id param, so read the real user id
+      // and email from the JWT itself. Without this, user.id is null and the
+      // `auth.uid() = user_id` RLS check fails on every insert.
+      const claims=decodeJWT(access_token)||{};
+      const s={
+        access_token,
+        // Persisting refresh_token is what lets a Google session refresh after
+        // the ~1h access token expires; without it the token dies and every
+        // save fails with "JWT expired" until a manual re-login.
+        refresh_token:p.get("refresh_token")||null,
+        expires_at:claims.exp||null,
+        user:{email:claims.email||p.get("email")||"user",id:claims.sub||p.get("user_id")||null},
+      };
       auth.saveSession(s); setSession(s); window.location.hash="";
       flash("🩷 Signed in!"); setView("shop");
     }
@@ -218,16 +240,62 @@ export default function App() {
 
   useEffect(()=>{ window.scrollTo({top:0,behavior:"smooth"}); },[view]);
 
+  // Returns a guaranteed-fresh access token, refreshing first if the current one
+  // is expired or about to expire. Throws a clear, user-facing error if the
+  // session can't be refreshed (e.g. an old Google login saved with no
+  // refresh_token) so the caller can tell the user to sign in again.
+  const getValidToken = useCallback(async(force=false)=>{
+    if(!session?.access_token) return null;
+    if(!force && !isTokenExpired(session.access_token)) return session.access_token;
+    if(!session.refresh_token){
+      auth.clearSession(); setSession(null);
+      throw new Error("Your session has expired. Please sign out and sign in again.");
+    }
+    try{
+      const fresh=await auth.refreshSession(session.refresh_token);
+      const next={...session,...fresh,user:fresh.user||session.user};
+      auth.saveSession(next); setSession(next);
+      return fresh.access_token;
+    }catch(e){
+      auth.clearSession(); setSession(null);
+      throw new Error("Your session has expired. Please sign in again.");
+    }
+  },[session]);
+
+  // Runs a token-using operation and, if it fails specifically because the token
+  // expired mid-flight (a window the pre-check can miss — clock skew, a slow
+  // multi-image upload, or the tab being backgrounded), force-refreshes and
+  // retries ONCE. This is what makes the listing flow self-heal instead of
+  // surfacing "JWT expired" / `"exp" claim timestamp check failed`.
+  const withFreshToken = useCallback(async(fn)=>{
+    const tok=await getValidToken();
+    try{ return await fn(tok); }
+    catch(e){
+      if(isExpiredTokenErr(e) && session?.refresh_token){
+        const fresh=await getValidToken(true);
+        return await fn(fresh);
+      }
+      throw e;
+    }
+  },[getValidToken,session?.refresh_token]);
+
+  // Refresh the token the moment the app loads (and whenever the refresh token
+  // changes), then keep it fresh on a timer. Refreshing on mount means an
+  // already-expired session heals itself instead of erroring on the next action.
   useEffect(()=>{
     if(!session?.refresh_token) return;
-    const interval=setInterval(async()=>{
+    let cancelled=false;
+    const doRefresh=async()=>{
       try{
         const fresh=await auth.refreshSession(session.refresh_token);
-        auth.saveSession({...fresh, user:fresh.user||session.user});
-        setSession(s=>({...s,...fresh}));
-      }catch(e){ auth.clearSession(); setSession(null); }
-    }, 10*60*1000);
-    return ()=>clearInterval(interval);
+        if(cancelled) return;
+        const next={...session,...fresh,user:fresh.user||session.user};
+        auth.saveSession(next); setSession(s=>({...s,...fresh}));
+      }catch(e){ if(!cancelled){ auth.clearSession(); setSession(null); } }
+    };
+    if(isTokenExpired(session.access_token)) doRefresh();
+    const interval=setInterval(doRefresh, 10*60*1000);
+    return ()=>{ cancelled=true; clearInterval(interval); };
   },[session?.refresh_token]);
 
   useEffect(()=>{
@@ -739,20 +807,28 @@ export default function App() {
     setSaving(true);
     let urls=[];
     try{
-      urls=await Promise.all(form.imageFiles.map(f=>uploadImage(f,token)));
+      urls=await withFreshToken(tok=>Promise.all(form.imageFiles.map(f=>uploadImage(f,tok))));
     }catch(e){
       console.error("Listing image upload failed:",e);
       flash(errMsg(e),9000);
       setSaving(false);
+      if(/sign (in|out)/i.test(errMsg(e))) setView("auth");
       return;
     }
     try{
       const image_url=urls[0]||"";
       const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",underbust:form.listing_type==="Clothing"?form.underbust:"",shoulder:form.listing_type==="Clothing"?form.shoulder:"",high_hip:form.listing_type==="Clothing"?form.high_hip:"",sleeve_length:form.listing_type==="Clothing"?form.sleeve_length:"",inseam:form.listing_type==="Clothing"?form.inseam:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(form.category),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
-      const [created]=await db.insert(payload,token);
+      const [created]=await withFreshToken(tok=>db.insert(payload,tok));
       setItems(p=>[created,...p]); setForm(EMPTY_FORM); flash("🩷 Listed!"); setView("shop");
-      const myFollowers=await db.getFollowers(user.id,token);
-      await Promise.all(myFollowers.map(f=>notify(f.follower_id,"new_listing",`✨ New drop from ${profile?.username||"a seller you follow"}`,`"${payload.name}" listed for ${currencySymbol(payload.currency||"USD")}${payload.price}`,created.id)));
+      // The listing is already saved at this point. Notifying followers is a
+      // best-effort extra — if it throws (e.g. a follows/notifications RLS issue)
+      // it must NOT fall into the catch below and show a false "Couldn't save
+      // listing" toast for a listing that actually saved fine.
+      try{
+        const ntok=await getValidToken();
+        const myFollowers=await db.getFollowers(user.id,ntok);
+        await Promise.all(myFollowers.map(f=>notify(f.follower_id,"new_listing",`✨ New drop from ${profile?.username||"a seller you follow"}`,`"${payload.name}" listed for ${currencySymbol(payload.currency||"USD")}${payload.price}`,created.id)));
+      }catch(e){ console.warn("Post-listing follower notifications failed (listing was saved):",e); }
     }catch(e){ console.error("Listing insert failed:",e); flash(`Couldn't save listing: ${errMsg(e)}`,9000); }
     finally{ setSaving(false); }
   }
@@ -761,11 +837,12 @@ export default function App() {
     if(!form.name||!form.price)return; setSaving(true);
     let newUrls=[];
     try{
-      newUrls=await Promise.all(form.imageFiles.map(f=>uploadImage(f,token)));
+      newUrls=await withFreshToken(tok=>Promise.all(form.imageFiles.map(f=>uploadImage(f,tok))));
     }catch(e){
       console.error("Listing image upload failed:",e);
       flash(errMsg(e),9000);
       setSaving(false);
+      if(/sign (in|out)/i.test(errMsg(e))) setView("auth");
       return;
     }
     try{
@@ -773,12 +850,18 @@ export default function App() {
       const allUrls=[...existingUrls,...newUrls];
       const image_url=allUrls[0]||sel.image_url||"";
       const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",underbust:form.listing_type==="Clothing"?form.underbust:"",shoulder:form.listing_type==="Clothing"?form.shoulder:"",high_hip:form.listing_type==="Clothing"?form.high_hip:"",sleeve_length:form.listing_type==="Clothing"?form.sleeve_length:"",inseam:form.listing_type==="Clothing"?form.inseam:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(form.category),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
-      const [updated]=await db.update(sel.id,patch,token);
+      const [updated]=await withFreshToken(tok=>db.update(sel.id,patch,tok));
       setItems(p=>p.map(i=>i.id===sel.id?updated:i)); setSel(updated); flash("✓ Updated!"); setView("detail");
-      if(parseFloat(form.price)<sel.price){
-        const myFollowers=await db.getFollowers(user.id,token);
-        await Promise.all(myFollowers.map(f=>notify(f.follower_id,"price_drop",`📉 Price drop on "${sel.name}"`,`Now ${currencySymbol(updated.currency)}${form.price} (was ${currencySymbol(sel.currency)}${sel.price})`,sel.id)));
-      }
+      // The update is already saved. Price-drop notifications are best-effort and
+      // must not fall into the catch below and show a false "Couldn't update
+      // listing" toast for an update that actually succeeded.
+      try{
+        if(parseFloat(form.price)<sel.price){
+          const ntok=await getValidToken();
+          const myFollowers=await db.getFollowers(user.id,ntok);
+          await Promise.all(myFollowers.map(f=>notify(f.follower_id,"price_drop",`📉 Price drop on "${sel.name}"`,`Now ${currencySymbol(updated.currency)}${form.price} (was ${currencySymbol(sel.currency)}${sel.price})`,sel.id)));
+        }
+      }catch(e){ console.warn("Price-drop notifications failed (listing was updated):",e); }
     }catch(e){ console.error("Listing update failed:",e); flash(`Couldn't update listing: ${errMsg(e)}`,9000); }
     finally{ setSaving(false); }
   }
@@ -1146,11 +1229,12 @@ export default function App() {
                 const accent=CARD_COLORS[idx%CARD_COLORS.length];
                 return(
                   <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}}>
-                    <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}} onClick={()=>openDetail(item)}>
-                      {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
+                    {(()=>{ const thumb=item.image_url||(item.images&&item.images[0])||""; return(
+                    <div style={{...S.cardTop,background:thumb?"#000":accent,overflow:"hidden"}} onClick={()=>openDetail(item)}>
+                      {thumb?<img src={thumb} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
                       {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                       <button style={S.heartBtn} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}>❤️</button>
-                    </div>
+                    </div>); })()}
                     <div style={S.cardBody} onClick={()=>openDetail(item)}>
                       <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
                       <p style={S.cardName}>{item.name}</p>
