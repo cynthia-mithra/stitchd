@@ -796,8 +796,14 @@ export default function App() {
       const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",underbust:form.listing_type==="Clothing"?form.underbust:"",shoulder:form.listing_type==="Clothing"?form.shoulder:"",high_hip:form.listing_type==="Clothing"?form.high_hip:"",sleeve_length:form.listing_type==="Clothing"?form.sleeve_length:"",inseam:form.listing_type==="Clothing"?form.inseam:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(form.category),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
       const [created]=await db.insert(payload,tok);
       setItems(p=>[created,...p]); setForm(EMPTY_FORM); flash("🩷 Listed!"); setView("shop");
-      const myFollowers=await db.getFollowers(user.id,tok);
-      await Promise.all(myFollowers.map(f=>notify(f.follower_id,"new_listing",`✨ New drop from ${profile?.username||"a seller you follow"}`,`"${payload.name}" listed for ${currencySymbol(payload.currency||"USD")}${payload.price}`,created.id)));
+      // The listing is already saved at this point. Notifying followers is a
+      // best-effort extra — if it throws (e.g. a follows/notifications RLS issue)
+      // it must NOT fall into the catch below and show a false "Couldn't save
+      // listing" toast for a listing that actually saved fine.
+      try{
+        const myFollowers=await db.getFollowers(user.id,tok);
+        await Promise.all(myFollowers.map(f=>notify(f.follower_id,"new_listing",`✨ New drop from ${profile?.username||"a seller you follow"}`,`"${payload.name}" listed for ${currencySymbol(payload.currency||"USD")}${payload.price}`,created.id)));
+      }catch(e){ console.warn("Post-listing follower notifications failed (listing was saved):",e); }
     }catch(e){ console.error("Listing insert failed:",e); flash(`Couldn't save listing: ${errMsg(e)}`,9000); }
     finally{ setSaving(false); }
   }
@@ -823,10 +829,15 @@ export default function App() {
       const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",underbust:form.listing_type==="Clothing"?form.underbust:"",shoulder:form.listing_type==="Clothing"?form.shoulder:"",high_hip:form.listing_type==="Clothing"?form.high_hip:"",sleeve_length:form.listing_type==="Clothing"?form.sleeve_length:"",inseam:form.listing_type==="Clothing"?form.inseam:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(form.category),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
       const [updated]=await db.update(sel.id,patch,tok);
       setItems(p=>p.map(i=>i.id===sel.id?updated:i)); setSel(updated); flash("✓ Updated!"); setView("detail");
-      if(parseFloat(form.price)<sel.price){
-        const myFollowers=await db.getFollowers(user.id,tok);
-        await Promise.all(myFollowers.map(f=>notify(f.follower_id,"price_drop",`📉 Price drop on "${sel.name}"`,`Now ${currencySymbol(updated.currency)}${form.price} (was ${currencySymbol(sel.currency)}${sel.price})`,sel.id)));
-      }
+      // The update is already saved. Price-drop notifications are best-effort and
+      // must not fall into the catch below and show a false "Couldn't update
+      // listing" toast for an update that actually succeeded.
+      try{
+        if(parseFloat(form.price)<sel.price){
+          const myFollowers=await db.getFollowers(user.id,tok);
+          await Promise.all(myFollowers.map(f=>notify(f.follower_id,"price_drop",`📉 Price drop on "${sel.name}"`,`Now ${currencySymbol(updated.currency)}${form.price} (was ${currencySymbol(sel.currency)}${sel.price})`,sel.id)));
+        }
+      }catch(e){ console.warn("Price-drop notifications failed (listing was updated):",e); }
     }catch(e){ console.error("Listing update failed:",e); flash(`Couldn't update listing: ${errMsg(e)}`,9000); }
     finally{ setSaving(false); }
   }
