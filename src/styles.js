@@ -1,0 +1,198 @@
+export const CSS=`
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,800&family=Barlow:wght@400;500;600&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#fff;}
+  .scard{transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s !important;cursor:pointer;}
+  .scard:hover{transform:translateY(-8px) rotate(-0.5deg) !important;box-shadow:0 24px 60px rgba(0,0,0,0.13) !important;}
+  .hbtn{transition:all .14s ease !important;}
+  .hbtn:hover{transform:scale(0.96) !important;filter:brightness(0.9) !important;}
+  .fpill{transition:all .14s !important;}
+  .fpill:hover{background:#111 !important;color:#fff !important;}
+  @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+  @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+  @keyframes floatbob{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-14px) rotate(5deg)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  input:focus,select:focus,textarea:focus{border-color:#FF1493 !important;box-shadow:0 0 0 3px rgba(255,20,147,0.1) !important;outline:none;}
+  ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#eee;border-radius:2px}
+  ::selection{background:#FF149333}
+  @media(max-width:600px){
+    .hero-section{flex-direction:column !important;}
+    .hero-left{flex:1 1 100% !important;border-right:none !important;border-bottom:3px solid #111;padding:28px 20px !important;}
+    .hero-right{display:none !important;}
+    .detail-wrap{flex-direction:column !important;}
+    .detail-img{border-right:none !important;border-bottom:3px solid #111 !important;}
+    .detail-info{padding:16px !important;}
+    .msg-layout{flex-direction:column !important;height:auto !important;min-height:80vh;}
+    .msg-sidebar{width:100% !important;border-right:none !important;border-bottom:3px solid #111 !important;max-height:200px;}
+    .dash-grid{grid-template-columns:1fr !important;}
+    .meas-grid{grid-template-columns:1fr 1fr !important;}
+    .form-card{padding:24px 16px !important;}
+    .fg4{grid-template-columns:1fr 1fr !important;}
+    .fg2{grid-template-columns:1fr !important;}
+    .profile-header{flex-direction:column !important;align-items:center !important;text-align:center;}
+  }
+`;
+
+export const S={
+  root:{minHeight:"100vh",background:"#fff",color:"#111",fontFamily:"'Barlow',sans-serif"},
+  header:{background:"#fff",borderBottom:"3px solid #111",position:"sticky",top:0,zIndex:200},
+  hWrap:{maxWidth:"100%",padding:"0 10px",display:"flex",alignItems:"stretch",height:52,overflowX:"auto",WebkitOverflowScrolling:"touch"},
+  logoWrap:{display:"flex",alignItems:"center",gap:2,cursor:"pointer",paddingRight:10,borderRight:"2px solid #111",flexShrink:0},
+  logoText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2},
+  logoTM:{fontSize:10,color:"#FF1493",alignSelf:"flex-start",marginTop:6},
+  hMid:{flex:1,overflow:"hidden",display:"flex",alignItems:"center",paddingLeft:10,minWidth:0},
+  marqueeTrack:{overflow:"hidden",width:"100%"},
+  marqueeInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:2,color:"#bbb",animation:"marquee 30s linear infinite"},
+  hRight:{display:"flex",alignItems:"center",gap:5,paddingLeft:10,borderLeft:"2px solid #111",flexShrink:0},
+  hLive:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1,color:"#FF1493",whiteSpace:"nowrap"},
+  hBtn:{background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"5px 8px",fontSize:9,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,whiteSpace:"nowrap"},
+  ticker:{background:"#FF1493",overflow:"hidden",borderBottom:"2px solid #111",height:36,display:"flex",alignItems:"center"},
+  tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2.5,color:"#fff",animation:"ticker 22s linear infinite",paddingLeft:"100%"},
+  toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"12px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,zIndex:999,borderRadius:0,whiteSpace:"nowrap",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"},
+  hero:{borderBottom:"3px solid #111",display:"flex",minHeight:"80vh",overflow:"hidden"},
+  heroLeft:{flex:"0 0 55%",padding:"40px 32px",borderRight:"3px solid #111",display:"flex",flexDirection:"column",justifyContent:"center"},
+  heroTag:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:20},
+  heroH:{display:"flex",flexDirection:"column",marginBottom:28},
+  heroLine1:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#111"},
+  heroLine2:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#FF1493"},
+  heroLine3:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#fff",WebkitTextStroke:"2px #111"},
+  heroSub:{fontSize:16,color:"#555",lineHeight:1.7,maxWidth:440,marginBottom:36},
+  heroCtas:{display:"flex",gap:14,flexWrap:"wrap"},
+  heroBtnPrimary:{background:"#FF1493",color:"#fff",border:"2px solid #FF1493",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
+  heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
+  heroRight:{flex:1,position:"relative",background:"#fafafa",minHeight:300,overflow:"hidden"},
+  searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"sticky",top:52,zIndex:100},
+  searchInner:{display:"flex",alignItems:"stretch",height:48},
+  searchBox:{flex:1,display:"flex",alignItems:"stretch",minWidth:0},
+  searchIcon:{padding:"0 10px",fontSize:14,color:"#bbb",flexShrink:0,display:"flex",alignItems:"center"},
+  searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#111",padding:"0",background:"transparent",minWidth:0},
+  searchClear:{background:"none",border:"none",padding:"0 10px",cursor:"pointer",fontSize:12,color:"#bbb",fontWeight:700,flexShrink:0,display:"flex",alignItems:"center"},
+  filterPanel:{padding:"16px 16px",borderTop:"1px solid #f0f0f0",display:"flex",flexDirection:"column",gap:16},
+  filterBtn:{background:"#fff",border:"none",borderLeft:"1px solid #e0e0e0",borderRadius:0,padding:"0 14px",height:48,minHeight:48,fontSize:11,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
+  filterGroup:{display:"flex",flexDirection:"column",gap:10},
+  filterLabel:{fontSize:10,fontWeight:900,letterSpacing:3,color:"#999",fontFamily:"'Barlow Condensed',sans-serif"},
+  filterPills:{display:"flex",flexWrap:"wrap",gap:6},
+  pill:{background:"#fff",border:"1.5px solid #e0e0e0",padding:"6px 14px",fontSize:11,cursor:"pointer",color:"#888",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1.5,whiteSpace:"nowrap",borderRadius:0,flexShrink:0},
+  pillOn:{background:"#111",border:"1.5px solid #111",color:"#fff"},
+  gridWrap:{padding:"20px 10px",maxWidth:1300,margin:"0 auto",background:"#fff"},
+  loadingWrap:{display:"flex",flexDirection:"column",alignItems:"center",padding:"80px 0",gap:16},
+  spinner:{width:36,height:36,border:"4px solid #f0f0f0",borderTop:"4px solid #FF1493",borderRadius:"50%",animation:"spin 0.8s linear infinite"},
+  loadingText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:3,color:"#bbb"},
+  errorBanner:{background:"#fff0f0",border:"2px solid #FF1493",padding:"16px 24px",marginBottom:24,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1,display:"flex",alignItems:"center",gap:16},
+  retryBtn:{background:"#FF1493",color:"#fff",border:"none",padding:"6px 16px",fontSize:12,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2},
+  grid:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:3},
+  card:{background:"#fff",border:"3px solid #111",overflow:"hidden",cursor:"pointer",borderRadius:0,position:"relative"},
+  cardTop:{height:200,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"},
+  cardEmoji:{fontSize:80,filter:"drop-shadow(0 6px 16px rgba(0,0,0,0.2))",position:"relative",zIndex:2},
+  cardOrigin:{position:"absolute",top:12,left:12,background:"rgba(0,0,0,0.5)",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",backdropFilter:"blur(4px)",zIndex:3},
+  soldVeil:{position:"absolute",inset:0,background:"rgba(255,255,255,0.75)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(2px)",zIndex:4},
+  soldStamp:{fontSize:22,fontWeight:900,letterSpacing:6,color:"#111",border:"3px solid #111",padding:"6px 18px",fontFamily:"'Barlow Condensed',sans-serif"},
+  reservedBadge:{position:"absolute",top:12,right:12,background:"#FF9500",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3},
+  cardBody:{padding:"16px 18px 12px"},
+  cardCatLabel:{fontSize:10,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,marginBottom:4},
+  cardName:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:"#111",marginBottom:10,lineHeight:1.15,letterSpacing:0.5},
+  occRow:{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10},
+  occChip:{borderRadius:0,padding:"2px 8px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif"},
+  measRow:{display:"flex",flexWrap:"wrap",gap:5,marginBottom:12},
+  mTag:{background:"#f5f5f5",color:"#555",border:"1px solid #e0e0e0",padding:"3px 8px",fontSize:10,fontWeight:700,letterSpacing:.5,fontFamily:"'Barlow Condensed',sans-serif"},
+  mTagG:{background:"#34C75922",color:"#34C759",borderColor:"#34C75966"},
+  mTagA:{background:"#FF950022",color:"#FF9500",borderColor:"#FF950066"},
+  cardFoot:{display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"2px solid #f5f5f5",paddingTop:12,paddingBottom:4},
+  cardPrice:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,letterSpacing:-0.5},
+  accentBar:{height:4,width:"100%"},
+  empty:{gridColumn:"1/-1",textAlign:"center",padding:"80px 20px"},
+  main:{maxWidth:1200,margin:"0 auto",padding:"20px 12px"},
+  back:{background:"none",border:"none",color:"#999",fontSize:12,cursor:"pointer",marginBottom:32,padding:0,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase"},
+  detailWrap:{display:"flex",flexWrap:"wrap",gap:0,border:"3px solid #111"},
+  detailImgWrap:{flex:"0 0 300px",minWidth:"min(300px,100%)",display:"flex",flexDirection:"column",borderRight:"3px solid #111"},
+  detailPanel:{flex:1,minHeight:320,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"},
+  thumbRow:{display:"flex",gap:0,borderTop:"2px solid #111",overflowX:"auto"},
+  thumb:{width:70,height:70,flexShrink:0,cursor:"pointer",border:"2px solid transparent",overflow:"hidden",transition:"border-color .15s"},
+  imgNav:{position:"absolute",top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",color:"#fff",border:"none",width:36,height:36,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,fontWeight:900},
+  detailInfo:{flex:1,minWidth:"min(280px,100%)",padding:"20px 16px"},
+  detailName:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:44,fontWeight:900,color:"#111",lineHeight:1,marginBottom:10,letterSpacing:-1},
+  detailPrice:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:56,fontWeight:900,marginBottom:16,letterSpacing:-2},
+  dBlock:{marginBottom:24,paddingBottom:24,borderBottom:"1px solid #f0f0f0"},
+  dBlockTitle:{fontSize:11,fontWeight:900,letterSpacing:3,borderLeft:"4px solid",paddingLeft:10,marginBottom:12,fontFamily:"'Barlow Condensed',sans-serif"},
+  measBoxRow:{display:"flex",flexWrap:"wrap",gap:10,marginBottom:12},
+  measBox:{border:"2px solid",padding:"12px 18px",textAlign:"center",minWidth:72},
+  measVal:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900},
+  measLbl:{fontSize:9,color:"#999",letterSpacing:2,fontWeight:800,fontFamily:"'Barlow Condensed',sans-serif",marginTop:2},
+  measNote:{fontSize:13,color:"#888",marginBottom:12},
+  alterRow:{display:"flex",flexWrap:"wrap",gap:8},
+  alterBadge:{padding:"7px 14px",fontSize:11,fontWeight:800,letterSpacing:1,border:"1.5px solid",fontFamily:"'Barlow Condensed',sans-serif"},
+  aY:{background:"#34C75922",color:"#34C759",borderColor:"#34C75966"},
+  aY2:{background:"#FF950022",color:"#FF9500",borderColor:"#FF950066"},
+  aN:{background:"#f5f5f5",color:"#ccc",borderColor:"#eee"},
+  detailDesc:{fontSize:15,color:"#666",lineHeight:1.7,marginBottom:24},
+  waCta:{color:"#fff",padding:"14px 26px",fontSize:14,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",marginBottom:24,border:"none",cursor:"pointer"},
+  actRow:{display:"flex",gap:10,flexWrap:"wrap"},
+  actBtn:{border:"none",padding:"12px 22px",fontSize:12,cursor:"pointer",fontWeight:800,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1.5,color:"#fff"},
+  profileHeader:{display:"flex",alignItems:"flex-start",gap:28,marginBottom:36,paddingBottom:32,borderBottom:"3px solid #111",flexWrap:"wrap"},
+  profileAvatarWrap:{width:110,height:110,borderRadius:"50%",border:"3px solid #111",overflow:"hidden",flexShrink:0,background:"#FF1493",display:"flex",alignItems:"center",justifyContent:"center"},
+  profileAvatar:{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,color:"#fff"},
+  profileName:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:40,fontWeight:900,letterSpacing:-1,marginBottom:4,lineHeight:1},
+  profileMeta:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:2,color:"#bbb"},
+  avatarUploadCircle:{width:100,height:100,borderRadius:"50%",border:"3px solid #111",overflow:"hidden",cursor:"pointer",position:"relative",flexShrink:0,background:"#FF1493",display:"flex",alignItems:"center",justifyContent:"center"},
+  avatarInitials:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:40,fontWeight:900,color:"#fff"},
+  avatarEditOverlay:{position:"absolute",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,opacity:0,transition:"opacity .15s"},
+  dashHeader:{display:"flex",flexWrap:"wrap",alignItems:"flex-start",justifyContent:"space-between",gap:24,marginBottom:40,paddingBottom:32,borderBottom:"3px solid #111"},
+  dashStats:{display:"flex",gap:3,flexWrap:"wrap"},
+  dashStat:{background:"#fafafa",border:"2px solid #111",padding:"16px 20px",textAlign:"center",minWidth:72},
+  dashStatNum:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:900,lineHeight:1},
+  dashStatLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:2,color:"#bbb",marginTop:4},
+  dashGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:3},
+  dashCard:{background:"#fff",border:"3px solid",overflow:"hidden",display:"flex"},
+  dashCardImg:{width:120,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"},
+  dashCardBody:{flex:1,padding:"14px"},
+  dashBtn:{border:"none",padding:"6px 10px",fontSize:10,cursor:"pointer",fontWeight:800,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1},
+  formCard:{border:"3px solid #111",padding:"clamp(20px,5vw,48px) clamp(16px,5vw,44px)",background:"#fff"},
+  formHero:{borderBottom:"3px solid #111",paddingBottom:32,marginBottom:36},
+  formTitle:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:64,fontWeight:900,lineHeight:.95,letterSpacing:-1,marginBottom:10,whiteSpace:"pre-line"},
+  formSub:{fontSize:15,color:"#888"},
+  fg2:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14},
+  fg4:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12},
+  inp:{background:"#fff",border:"2px solid #e0e0e0",borderRadius:0,padding:"12px 14px",fontSize:14,color:"#111",fontFamily:"'Barlow',sans-serif",width:"100%",transition:"all .15s"},
+  occGrid:{display:"flex",flexWrap:"wrap",gap:6},
+  occToggle:{padding:"7px 16px",fontSize:11,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1.5,cursor:"pointer",transition:"all .14s",borderRadius:0},
+  multiUploadGrid:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:8},
+  uploadThumb:{position:"relative",aspectRatio:"1",border:"2px solid #e0e0e0",overflow:"hidden"},
+  uploadZone:{aspectRatio:"1",border:"3px dashed #e0e0e0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative"},
+  uploadPlaceholder:{textAlign:"center",pointerEvents:"none"},
+  uploadIcon:{fontSize:24,marginBottom:4},
+  uploadText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#bbb"},
+  removeImg:{position:"absolute",top:4,right:4,background:"#111",color:"#fff",border:"none",padding:"2px 6px",fontSize:10,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,cursor:"pointer",zIndex:2},
+  mainImgBadge:{position:"absolute",bottom:4,left:4,background:"#FF1493",color:"#fff",padding:"2px 6px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif"},
+  toggleStack:{display:"flex",flexDirection:"column",marginTop:16},
+  googleBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:12,border:"2px solid #111",padding:"14px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:13,letterSpacing:2,color:"#111",textDecoration:"none",marginBottom:20,cursor:"pointer"},
+  divider:{display:"flex",alignItems:"center",gap:12,marginBottom:20},
+  dividerText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:3,color:"#ccc"},
+  aError:{background:"#fff0f0",border:"1.5px solid #FF1493",padding:"10px 14px",fontSize:13,color:"#FF1493",fontWeight:600},
+  authSwitch:{textAlign:"center",marginTop:20,fontSize:13,color:"#888"},
+  authSwitchLink:{color:"#FF1493",fontWeight:800,cursor:"pointer",textDecoration:"underline"},
+  wishBadge:{position:"absolute",top:-6,right:-6,background:"#FF1493",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Barlow Condensed',sans-serif"},
+  notifPanel:{position:"fixed",top:96,right:16,width:360,background:"#fff",border:"3px solid #111",zIndex:300,boxShadow:"0 8px 40px rgba(0,0,0,0.15)",maxHeight:500,display:"flex",flexDirection:"column"},
+  notifHeader:{padding:"14px 16px",borderBottom:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fafafa"},
+  notifItem:{padding:"14px 16px",borderBottom:"1px solid #f5f5f5",cursor:"pointer",transition:"background .15s"},
+  heartBtn:{position:"absolute",top:10,right:10,background:"rgba(255,255,255,0.85)",border:"none",borderRadius:"50%",width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,zIndex:5,transition:"all .15s"},
+  modalOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:24},
+  modalBox:{background:"#fff",border:"3px solid #111",padding:32,maxWidth:640,width:"100%",maxHeight:"85vh",overflowY:"auto"},
+  verifiedBadge:{background:"#34C759",color:"#fff",fontSize:11,fontWeight:800,letterSpacing:1,padding:"2px 8px",fontFamily:"'Barlow Condensed',sans-serif",verticalAlign:"middle",marginLeft:8},
+  fitsBadge:{position:"absolute",bottom:10,left:10,background:"#34C759",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3},
+  reviewCard:{background:"#fafafa",border:"1.5px solid #f0f0f0",padding:"14px 16px"},
+  msgLayout:{display:"flex",border:"3px solid #111",height:"70vh",overflow:"hidden"},
+  msgSidebar:{width:300,flexShrink:0,borderRight:"3px solid #111",display:"flex",flexDirection:"column",overflow:"hidden"},
+  msgSidebarHead:{padding:"16px 20px",borderBottom:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fafafa"},
+  convItem:{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderBottom:"1px solid #f5f5f5",cursor:"pointer",transition:"background .15s"},
+  convAvatar:{width:40,height:40,borderRadius:"50%",background:"#FF1493",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden",border:"2px solid #111"},
+  msgMain:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"},
+  chatHeader:{padding:"14px 20px",borderBottom:"2px solid #111",display:"flex",alignItems:"center",gap:12,background:"#fafafa"},
+  chatMessages:{flex:1,overflowY:"auto",padding:"20px",display:"flex",flexDirection:"column"},
+  chatListingPreview:{display:"inline-flex",alignItems:"center",gap:12,border:"2px solid #f0f0f0",padding:"10px 14px",cursor:"pointer",marginTop:12,background:"#fafafa"},
+  msgBubble:{padding:"10px 14px",maxWidth:"70%"},
+  chatInput:{display:"flex",borderTop:"2px solid #111"},
+  offerBar:{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",borderTop:"1px solid #f5f5f5",flexWrap:"wrap",background:"#fafafa"},
+  offerCard:{background:"#fff",padding:"14px 16px",borderRadius:0},
+  offerStatusBadge:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:1.5,color:"#fff",padding:"2px 8px",borderRadius:0},
+};
