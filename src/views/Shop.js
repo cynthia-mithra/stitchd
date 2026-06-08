@@ -22,8 +22,21 @@ export default function Shop({
   visible, loading, error, fetchItems,
   openDetail, fitsMe, wishlist, toggleWishlist,
   newListings, priceDrops, trendingItems,
+  sellerRatings = {},
 }) {
   if(view!=="shop") return null;
+  // Subtle seller rating chip — sits in the price/views row, mirrors the view-count
+  // style (Barlow Condensed, small, muted). Renders nothing when the seller has no
+  // reviews so new sellers never show "0 stars".
+  const SellerRating = ({ sellerId }) => {
+    const r = sellerRatings[sellerId];
+    if(!r||!r.count) return null;
+    return (
+      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,whiteSpace:"nowrap"}}>
+        ⭐ {r.average.toFixed(1)} ({r.count})
+      </span>
+    );
+  };
   return (
     <>
       <section style={S.hero} className="hero-section">
@@ -151,7 +164,10 @@ export default function Shop({
                     </div>
                     <div style={S.cardFoot}>
                       <span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span>
-                      {item.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>👁 {item.views}</span>}
+                      <span style={{display:"flex",alignItems:"center",gap:8}}>
+                        <SellerRating sellerId={item.user_id}/>
+                        {item.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>👁 {item.views}</span>}
+                      </span>
                     </div>
                   </div>
                   <div style={{...S.accentBar,background:accent}}/>
@@ -185,7 +201,7 @@ export default function Shop({
                   <div style={S.cardBody}>
                     <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
                     <p style={S.cardName}>{item.name}</p>
-                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span></div>
+                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span><SellerRating sellerId={item.user_id}/></div>
                   </div>
                   <div style={{...S.accentBar,background:accent}}/>
                 </article>
@@ -213,8 +229,11 @@ export default function Shop({
                     <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
                     <p style={S.cardName}>{item.name}</p>
                     <div style={S.cardFoot}>
-                      <span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span>
-                      {item.prev_price&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#bbb",textDecoration:"line-through",marginLeft:6}}>{currencySymbol(item.currency)}{item.prev_price}</span>}
+                      <span style={{display:"flex",alignItems:"baseline"}}>
+                        <span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span>
+                        {item.prev_price&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#bbb",textDecoration:"line-through",marginLeft:6}}>{currencySymbol(item.currency)}{item.prev_price}</span>}
+                      </span>
+                      <SellerRating sellerId={item.user_id}/>
                     </div>
                   </div>
                   <div style={{...S.accentBar,background:accent}}/>
@@ -241,7 +260,7 @@ export default function Shop({
                   <div style={S.cardBody}>
                     <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
                     <p style={S.cardName}>{item.name}</p>
-                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span></div>
+                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span><SellerRating sellerId={item.user_id}/></div>
                   </div>
                   <div style={{...S.accentBar,background:accent}}/>
                 </article>
