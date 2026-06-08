@@ -1942,20 +1942,21 @@ export default function App() {
             <div style={S.heroRight} className="hero-right">
               {[
                 // Each bubble is a perfect square (width === height) so borderRadius:50% renders a true
-                // circle. The image fills it with objectFit:cover + objectPosition:center + display:block —
-                // centred, no stretching, consistent across every bubble. A soft blush (#FCE4EF) sits behind
-                // each image so the transparent padding baked into the remove.bg PNGs reads as an intentional
-                // tint instead of a jarring white gap. Filenames are clean (one extension, correct spelling)
-                // and match the files in /public/Images character-for-character (Vercel's Linux hosting is
-                // case- and extension-sensitive). Sizes are scaled ~22% up from the previous values.
+                // circle. The image is sized to 105% and absolutely centred (top/left 50% + translate
+                // -50%/-50%) so the 5% overflow is cropped evenly on every side — the coloured image always
+                // reaches the inside of the black border with no pale ring. The container background is #111
+                // (the same dark as the border) so if any sliver ever peeks through it reads as the border,
+                // never a bright white gap. Filenames are clean (one extension, correct spelling) and match
+                // the files in /public/Images character-for-character (Vercel's Linux hosting is case- and
+                // extension-sensitive).
                 {img:"/Images/indo-western.png",top:"30%", left:"55%", size:184, delay:"0.7s"},
                 {img:"/Images/menswear.png",    top:"55%", left:"8%",  size:214, delay:"1.4s"},
                 {img:"/Images/saree.png",       top:"8%",  left:"65%", size:159, delay:"2.1s"},
                 {img:"/Images/lehenga.png",     top:"62%", left:"58%", size:181, delay:"2.8s"},
                 {img:"/Images/anarkali.png",    top:"28%", left:"2%",  size:165, delay:"3.5s"},
               ].map((b,i)=>(
-                <div key={i} style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:b.size,borderRadius:"50%",overflow:"hidden",backgroundColor:"#FCE4EF",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
-                  <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center",display:"block"}}/>
+                <div key={i} style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:b.size,borderRadius:"50%",overflow:"hidden",backgroundColor:"#111",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
+                  <img src={b.img} alt="" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"105%",height:"105%",objectFit:"cover",objectPosition:"center",display:"block"}}/>
                 </div>
               ))}
             </div>
