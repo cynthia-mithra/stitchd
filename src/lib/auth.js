@@ -18,10 +18,34 @@ export const auth = {
   clearSession(){ localStorage.removeItem("stitchd_session"); },
 };
 
+// Decode a Supabase JWT (access_token) without verifying it, so we can read the
+// real user id (`sub`), `email`, and expiry (`exp`) from the token itself. The
+// OAuth redirect hash does NOT include a user_id param, so this is the only
+// reliable way to learn who is logged in after a Google sign-in.
+export function decodeJWT(token){
+  try{
+    const payload=token.split(".")[1];
+    const json=decodeURIComponent(atob(payload.replace(/-/g,"+").replace(/_/g,"/")).split("").map(c=>"%"+("00"+c.charCodeAt(0).toString(16)).slice(-2)).join(""));
+    return JSON.parse(json);
+  }catch{ return null; }
+}
+
+// True when the token is missing, unreadable, or expires within `skewMs`.
+export function isTokenExpired(token,skewMs=60000){
+  const claims=decodeJWT(token);
+  if(!claims||!claims.exp) return true;
+  return claims.exp*1000 < Date.now()+skewMs;
+}
+
 export async function uploadImage(file,t){
   const ext=file.name.split(".").pop();
   const path=`${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const r=await fetch(`${SUPABASE_URL}/storage/v1/object/listings/${path}`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t||SUPABASE_KEY}`,"Content-Type":file.type,"x-upsert":"true"},body:file});
-  if(!r.ok)throw new Error(await r.text());
+  const r=await fetch(`${SUPABASE_URL}/storage/v1/object/listings/${path}`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t||SUPABASE_KEY}`,"Content-Type":file.type||"application/octet-stream","x-upsert":"true"},body:file});
+  if(!r.ok){
+    let detail="";
+    try{ const j=await r.clone().json(); detail=j.message||j.error||j.msg||JSON.stringify(j); }
+    catch{ try{ detail=await r.text(); }catch{ detail=""; } }
+    throw new Error(`Image upload failed (HTTP ${r.status}): ${detail||r.statusText}`);
+  }
   return `${SUPABASE_URL}/storage/v1/object/public/listings/${path}`;
 }
