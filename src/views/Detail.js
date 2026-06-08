@@ -13,6 +13,7 @@ export default function Detail({
   reviews,
   openEdit, markSold, relist, del,
   similarItems, openDetail,
+  fastSellers = new Set(),
 }) {
   return (
     <>
@@ -46,6 +47,7 @@ export default function Detail({
               <p style={{...S.cardCatLabel,color:selColor,fontSize:12,marginBottom:8}}>{sel.category?.toUpperCase()} · {(sel.material||sel.fabric)?.toUpperCase()} · {sel.condition?.toUpperCase()}</p>
               <h2 style={S.detailName}>{sel.name}</h2>
               <div style={{...S.detailPrice,color:selColor}}>{currencySymbol(sel.currency)}{sel.price}</div>
+              {fastSellers.has(sel.user_id)&&<div style={{display:"inline-block",background:"#007AFF",color:"#fff",padding:"4px 12px",fontSize:11,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",marginBottom:16}}>⚡ FAST SELLER</div>}
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20,flexWrap:"wrap"}}>
                 <button className="hbtn" style={{...S.hBtn,background:wishlist.includes(sel.id)?"#FF1493":"#fff",color:wishlist.includes(sel.id)?"#fff":"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>toggleWishlist(sel.id)}>{wishlist.includes(sel.id)?"❤️ SAVED":"🤍 SAVE"}</button>
                 <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>shareItem(sel)}>🔗 SHARE</button>
