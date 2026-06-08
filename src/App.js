@@ -1229,11 +1229,12 @@ export default function App() {
                 const accent=CARD_COLORS[idx%CARD_COLORS.length];
                 return(
                   <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}}>
-                    <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}} onClick={()=>openDetail(item)}>
-                      {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
+                    {(()=>{ const thumb=item.image_url||(item.images&&item.images[0])||""; return(
+                    <div style={{...S.cardTop,background:thumb?"#000":accent,overflow:"hidden"}} onClick={()=>openDetail(item)}>
+                      {thumb?<img src={thumb} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
                       {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                       <button style={S.heartBtn} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}>❤️</button>
-                    </div>
+                    </div>); })()}
                     <div style={S.cardBody} onClick={()=>openDetail(item)}>
                       <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
                       <p style={S.cardName}>{item.name}</p>
