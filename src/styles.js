@@ -63,21 +63,22 @@ export const S={
   heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
   heroRight:{flex:1,position:"relative",background:"#fafafa",minHeight:300,overflow:"hidden"},
   searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"sticky",top:52,zIndex:100},
-  // The control row is a CENTRED group of [search field][FILTERS][FIT][TAILORS]
-  // rather than a full-width bar. The search field is capped (`searchBox`
-  // flex-basis/maxWidth 460) so it never overstretches and the buttons sit
-  // right beside it — `justifyContent:center` splits any spare space to the two
-  // outer margins, so there's no awkward gap between the field and the buttons.
-  // `flexWrap` lets the buttons drop to a second centred line on narrow/mobile
-  // widths instead of overflowing. Children carry their own height so a wrapped
-  // second line isn't clipped.
-  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"center",width:"100%",maxWidth:760,margin:"0 auto",padding:"6px 12px"},
-  searchBox:{flex:"0 1 460px",maxWidth:460,minWidth:0,height:30,display:"flex",alignItems:"center"},
+  // The control row is a CENTRED CLUSTER of [search field][FILTERS][FIT][TAILORS]
+  // that reads as one tidy group, not a full-width bar pushed to the edges.
+  // `justifyContent:center` + a uniform `gap` keeps the three elements evenly
+  // spaced and grouped in the middle (no awkward empty gap), and `flexWrap`
+  // lets the buttons drop to a clean second centred line on narrow/mobile
+  // widths instead of overflowing. The search field is capped (`searchBox`
+  // flex-basis/maxWidth 420) so it never overstretches, and it carries its own
+  // thin editorial border so it reads as a contained input alongside the
+  // bordered buttons. Children carry their own height so a wrapped line isn't clipped.
+  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"center",gap:10,width:"100%",maxWidth:760,margin:"0 auto",padding:"8px 12px"},
+  searchBox:{flex:"0 1 420px",maxWidth:420,minWidth:0,height:32,display:"flex",alignItems:"center",border:"1px solid #111",borderRadius:0,background:"#fff"},
   searchIcon:{padding:"0 8px",fontSize:12,color:"#bbb",flexShrink:0,display:"flex",alignItems:"center"},
   searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:1,color:"#111",padding:"0",background:"transparent",minWidth:0},
   searchClear:{background:"none",border:"none",padding:"0 8px",cursor:"pointer",fontSize:11,color:"#bbb",fontWeight:700,flexShrink:0,display:"flex",alignItems:"center"},
   filterPanel:{padding:"16px 16px",borderTop:"1px solid #f0f0f0",display:"flex",flexDirection:"column",gap:16},
-  filterBtn:{background:"#fff",border:"none",borderLeft:"1px solid #e0e0e0",borderRadius:0,padding:"0 12px",height:30,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
+  filterBtn:{background:"#fff",border:"1px solid #111",borderRadius:0,padding:"0 14px",height:32,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
   filterGroup:{display:"flex",flexDirection:"column",gap:10},
   filterLabel:{fontSize:10,fontWeight:900,letterSpacing:3,color:"#999",fontFamily:"'Barlow Condensed',sans-serif"},
   filterPills:{display:"flex",flexWrap:"wrap",gap:6},
