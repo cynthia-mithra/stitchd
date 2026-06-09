@@ -151,7 +151,7 @@ export default function Shop({
             {visible.map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
-                <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
+                <article key={item.id} className="scard" style={{...S.card,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} emojiStyle={S.cardEmoji}>
                     {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                     {item.reserved&&!item.sold&&<div style={S.reservedBadge}>RESERVED</div>}
@@ -202,9 +202,9 @@ export default function Shop({
             {newListings.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
-                <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
+                <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
-                    <div style={{position:"absolute",top:8,left:8,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
+                    <div style={{position:"absolute",top:12,left:12,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
                     <FastBadge sellerId={item.user_id}/>
                   </Thumb>
                   <div style={S.cardBody}>
@@ -229,9 +229,9 @@ export default function Shop({
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               const drop=item.prev_price?Math.round(((item.prev_price-item.price)/item.prev_price)*100):0;
               return(
-                <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
+                <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
-                    {drop>0&&<div style={{position:"absolute",top:8,left:8,background:"#FF9500",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>-{drop}%</div>}
+                    {drop>0&&<div style={{position:"absolute",top:12,left:12,background:"#FF9500",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>-{drop}%</div>}
                     <FastBadge sellerId={item.user_id}/>
                   </Thumb>
                   <div style={S.cardBody}>
@@ -261,9 +261,9 @@ export default function Shop({
             {trendingItems.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
-                <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
+                <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
-                    <div style={{position:"absolute",top:8,left:8,background:"#BF5AF2",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>👁 {item.views}</div>
+                    <div style={{position:"absolute",top:12,left:12,background:"#BF5AF2",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>👁 {item.views}</div>
                     <FastBadge sellerId={item.user_id}/>
                   </Thumb>
                   <div style={S.cardBody}>
