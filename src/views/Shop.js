@@ -75,7 +75,7 @@ export default function Shop({
             {img:"/Images/lehenga.png",     top:"62%", left:"58%", size:148, delay:"2.8s", ar:1254/1254},
             {img:"/Images/anarkali.png",    top:"28%", left:"2%",  size:135, delay:"3.5s", ar:1254/1254},
           ].map((b,i)=>(
-            <div key={i} style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:Math.round(b.size*b.ar),borderRadius:"50%",overflow:"hidden",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
+            <div key={i} className="hero-bubble" style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:Math.round(b.size*b.ar),borderRadius:"50%",overflow:"hidden",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
               <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center"}}/>
             </div>
           ))}
@@ -85,7 +85,7 @@ export default function Shop({
       {/* SEARCH BAR */}
       <div style={{...S.searchBar,position:"relative"}} id="grid-anchor">
         <div style={S.searchInner}>
-          <div style={S.searchBox}>
+          <div style={S.searchBox} className="search-box">
             <span style={S.searchIcon}>🔍</span>
             <input style={S.searchInput} placeholder="SEARCH SAREES, SILK, WEDDING..."
               value={search}
@@ -96,9 +96,9 @@ export default function Shop({
             {search&&<button style={S.searchClear} onClick={()=>{setSearch("");setShowSuggestions(false);}}>✕</button>}
             {search&&user&&<button style={{...S.searchClear,color:"#FF1493",fontSize:10,fontWeight:800,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,whiteSpace:"nowrap",paddingRight:12}} onClick={saveCurrentSearch}>🔔 SAVE</button>}
           </div>
-          <button className="hbtn" style={{...S.filterBtn,background:showFilters?"#FF1493":"#fff",color:showFilters?"#fff":"#111"}} onClick={()=>setShowFilters(f=>!f)}>FILTERS {hasFilters?"●":""}</button>
-          {user&&profile?.bust&&<button className="hbtn" style={{...S.filterBtn,background:showSizeMatch?"#34C759":"#fff",color:showSizeMatch?"#fff":"#111"}} onClick={()=>setShowSizeMatch(f=>!f)}>📐 FIT</button>}
-          <button className="hbtn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailorMarket();setView("tailors");}}>✂️ TAILORS</button>
+          <button className="hbtn search-action-btn" style={{...S.filterBtn,background:showFilters?"#FF1493":"#fff",color:showFilters?"#fff":"#111"}} onClick={()=>setShowFilters(f=>!f)}>FILTERS {hasFilters?"●":""}</button>
+          {user&&profile?.bust&&<button className="hbtn search-action-btn" style={{...S.filterBtn,background:showSizeMatch?"#34C759":"#fff",color:showSizeMatch?"#fff":"#111"}} onClick={()=>setShowSizeMatch(f=>!f)}>📐 FIT</button>}
+          <button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailorMarket();setView("tailors");}}>✂️ TAILORS</button>
         </div>
         {(showSuggestions&&searchSuggestions.length>0)||(showSavedSearches&&savedSearches.length>0)?(
           <div style={{position:"absolute",top:"100%",left:10,width:"calc(100% - 20px)",maxWidth:560,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
@@ -144,15 +144,15 @@ export default function Shop({
       {hasFilters&&<div style={{padding:"12px 24px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:2,color:"#bbb",borderBottom:"1px solid #f0f0f0"}}>{visible.length} RESULT{visible.length!==1?"S":""}{search?` FOR "${search.toUpperCase()}"`:""}  <span style={{color:"#FF1493",cursor:"pointer",marginLeft:12}} onClick={clearFilters}>CLEAR</span></div>}
 
       <div style={S.gridWrap}>
-        {loading&&<div style={S.grid}>{Array(8).fill(0).map((_,i)=><div key={i} style={{...S.card,borderColor:"#f0f0f0"}}><div style={{height:200,background:"linear-gradient(90deg,#f5f5f5 25%,#ececec 50%,#f5f5f5 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s infinite"}}/><div style={{padding:"16px 18px",background:"#fff"}}><div style={{height:16,background:"#f0f0f0",borderRadius:2,marginBottom:8,width:"80%"}}/><div style={{height:20,background:"#f0f0f0",borderRadius:2,width:"30%"}}/></div></div>)}</div>}
+        {loading&&<div style={S.grid} className="shop-grid">{Array(8).fill(0).map((_,i)=><div key={i} style={{...S.card,borderColor:"#f0f0f0"}}><div style={{height:200,background:"linear-gradient(90deg,#f5f5f5 25%,#ececec 50%,#f5f5f5 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s infinite"}}/><div style={{padding:"16px 18px",background:"#fff"}}><div style={{height:16,background:"#f0f0f0",borderRadius:2,marginBottom:8,width:"80%"}}/><div style={{height:20,background:"#f0f0f0",borderRadius:2,width:"30%"}}/></div></div>)}</div>}
         {error&&<div style={S.errorBanner}>{error}<button style={S.retryBtn} onClick={fetchItems}>RETRY</button></div>}
         {!loading&&!error&&(
-          <div style={S.grid}>
+          <div style={S.grid} className="shop-grid">
             {visible.map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
                 <article key={item.id} className="scard" style={{...S.card,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
-                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} emojiStyle={S.cardEmoji}>
+                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                     {item.reserved&&!item.sold&&<div style={S.reservedBadge}>RESERVED</div>}
                     {fitsMe(item)===true&&<div style={S.fitsBadge}>📐 FITS YOU</div>}
@@ -160,9 +160,9 @@ export default function Shop({
                     <button style={{...S.heartBtn,background:wishlist.includes(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}>{wishlist.includes(item.id)?"❤️":"🤍"}</button>
                     <div style={S.cardOrigin}>{item.origin?.toUpperCase()}</div>
                   </Thumb>
-                  <div style={S.cardBody}>
-                    <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()} · {(item.material||item.fabric)?.toUpperCase()}</p>
-                    <p style={S.cardName}>{item.name}</p>
+                  <div style={S.cardBody} className="card-body">
+                    <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()} · {(item.material||item.fabric)?.toUpperCase()}</p>
+                    <p style={S.cardName} className="card-name">{item.name}</p>
                     {(item.occasions||[]).length>0&&<div style={S.occRow}>{item.occasions.slice(0,3).map(o=><span key={o} style={{...S.occChip,background:OCC_COLOR[o]||"#999",color:"#fff"}}>{o.toUpperCase()}</span>)}</div>}
                     <div style={S.measRow}>
                       {item.size&&item.size!=="Free Size"&&<span style={S.mTag}>{item.size}</span>}
@@ -172,7 +172,7 @@ export default function Shop({
                       {item.spare_fabric&&<span style={{...S.mTag,...S.mTagA}}>+ FABRIC</span>}
                     </div>
                     <div style={S.cardFoot}>
-                      <span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span>
+                      <span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span>
                       <span style={{display:"flex",alignItems:"center",gap:8}}>
                         <SellerRating sellerId={item.user_id}/>
                         {item.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>👁 {item.views}</span>}
@@ -198,19 +198,19 @@ export default function Shop({
       {!hasFilters&&newListings.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20}}>✨ NEW IN — LAST 48 HOURS</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
             {newListings.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
                 <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
-                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
+                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <div style={{position:"absolute",top:12,left:12,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
                     <FastBadge sellerId={item.user_id}/>
                   </Thumb>
-                  <div style={S.cardBody}>
-                    <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
-                    <p style={S.cardName}>{item.name}</p>
-                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span><SellerRating sellerId={item.user_id}/></div>
+                  <div style={S.cardBody} className="card-body">
+                    <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
+                    <p style={S.cardName} className="card-name">{item.name}</p>
+                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span><SellerRating sellerId={item.user_id}/></div>
                   </div>
                   <div style={{...S.accentBar,background:accent}}/>
                 </article>
@@ -224,22 +224,22 @@ export default function Shop({
       {!hasFilters&&priceDrops.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:20}}>📉 PRICE DROPS</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
             {priceDrops.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               const drop=item.prev_price?Math.round(((item.prev_price-item.price)/item.prev_price)*100):0;
               return(
                 <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
-                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
+                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     {drop>0&&<div style={{position:"absolute",top:12,left:12,background:"#FF9500",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>-{drop}%</div>}
                     <FastBadge sellerId={item.user_id}/>
                   </Thumb>
-                  <div style={S.cardBody}>
-                    <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
-                    <p style={S.cardName}>{item.name}</p>
+                  <div style={S.cardBody} className="card-body">
+                    <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
+                    <p style={S.cardName} className="card-name">{item.name}</p>
                     <div style={S.cardFoot}>
                       <span style={{display:"flex",alignItems:"baseline"}}>
-                        <span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span>
+                        <span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span>
                         {item.prev_price&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#bbb",textDecoration:"line-through",marginLeft:6}}>{currencySymbol(item.currency)}{item.prev_price}</span>}
                       </span>
                       <SellerRating sellerId={item.user_id}/>
@@ -257,19 +257,19 @@ export default function Shop({
       {!hasFilters&&trendingItems.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 48px",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #BF5AF2",paddingLeft:12,marginBottom:20}}>🔥 TRENDING — MOST VIEWED</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
             {trendingItems.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
                 <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
-                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
+                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <div style={{position:"absolute",top:12,left:12,background:"#BF5AF2",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>👁 {item.views}</div>
                     <FastBadge sellerId={item.user_id}/>
                   </Thumb>
-                  <div style={S.cardBody}>
-                    <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
-                    <p style={S.cardName}>{item.name}</p>
-                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span><SellerRating sellerId={item.user_id}/></div>
+                  <div style={S.cardBody} className="card-body">
+                    <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
+                    <p style={S.cardName} className="card-name">{item.name}</p>
+                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span><SellerRating sellerId={item.user_id}/></div>
                   </div>
                   <div style={{...S.accentBar,background:accent}}/>
                 </article>

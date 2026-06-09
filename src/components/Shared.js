@@ -9,11 +9,11 @@ export function F({l,children,style}){return<div style={{display:"flex",flexDire
 // accent background instead of an ugly broken-image icon. `gradient` adds the
 // bottom darkening overlay used on the main grid cards; `children` are overlays
 // (SOLD veil, badges, heart button…) layered on top.
-export function Thumb({src,emoji,accent,gradient=false,imgOpacity=1,imgStyle,emojiStyle,style,children}){
+export function Thumb({src,emoji,accent,gradient=false,imgOpacity=1,imgStyle,emojiStyle,style,className,children}){
   const [ok,setOk]=React.useState(true);
   const showImg=!!src&&ok;
   return (
-    <div style={{position:"relative",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",...style,background:showImg?"#000":accent}}>
+    <div className={className} style={{position:"relative",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",...style,background:showImg?"#000":accent}}>
       {showImg
         ?<img src={src} alt="" onError={()=>setOk(false)} style={{width:"100%",height:"100%",objectFit:"cover",opacity:imgOpacity,...imgStyle}}/>
         :<span style={emojiStyle}>{emoji}</span>}
