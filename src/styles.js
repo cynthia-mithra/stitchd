@@ -92,14 +92,14 @@ export const S={
   loadingText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:3,color:"#bbb"},
   errorBanner:{background:"#fff0f0",border:"2px solid #FF1493",padding:"16px 24px",marginBottom:24,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1,display:"flex",alignItems:"center",gap:16},
   retryBtn:{background:"#FF1493",color:"#fff",border:"none",padding:"6px 16px",fontSize:12,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2},
-  grid:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:3},
+  grid:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3},
   // Uniform card: flex column at full row height so every card in a row ends flush.
   // Border is a fixed 2px solid #111 for ALL cards (no per-category coloured border) —
   // the category accent now lives only on the label, price and bottom accentBar.
   card:{background:"#fff",border:"2px solid #111",overflow:"hidden",cursor:"pointer",borderRadius:0,position:"relative",display:"flex",flexDirection:"column",height:"100%"},
   // Fixed image zone height across every card so the picture areas line up; flexShrink:0
   // keeps it from compressing inside the flex column. Image uses objectFit:cover (see Thumb).
-  cardTop:{height:320,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",flexShrink:0},
+  cardTop:{height:240,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",flexShrink:0},
   cardEmoji:{fontSize:80,filter:"drop-shadow(0 6px 16px rgba(0,0,0,0.2))",position:"relative",zIndex:2},
   cardOrigin:{position:"absolute",top:12,left:12,background:"rgba(0,0,0,0.5)",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",backdropFilter:"blur(4px)",zIndex:3},
   soldVeil:{position:"absolute",inset:0,background:"rgba(255,255,255,0.75)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(2px)",zIndex:4},

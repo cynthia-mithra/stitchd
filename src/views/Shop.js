@@ -198,7 +198,7 @@ export default function Shop({
       {!hasFilters&&newListings.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20}}>✨ NEW IN — LAST 48 HOURS</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:3}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}}>
             {newListings.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
@@ -224,7 +224,7 @@ export default function Shop({
       {!hasFilters&&priceDrops.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:20}}>📉 PRICE DROPS</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:3}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}}>
             {priceDrops.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               const drop=item.prev_price?Math.round(((item.prev_price-item.price)/item.prev_price)*100):0;
@@ -257,7 +257,7 @@ export default function Shop({
       {!hasFilters&&trendingItems.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 48px",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #BF5AF2",paddingLeft:12,marginBottom:20}}>🔥 TRENDING — MOST VIEWED</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:3}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}}>
             {trendingItems.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
