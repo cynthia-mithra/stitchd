@@ -17,12 +17,13 @@ export const CSS=`
   ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#eee;border-radius:2px}
   ::selection{background:#FF149333}
   @media(max-width:600px){
-    .hero-section{flex-direction:column !important;}
-    .hero-left{flex:1 1 100% !important;border-right:none !important;border-bottom:3px solid #111;padding:28px 20px !important;}
-    /* PROBLEM 1 — show the hero bubbles below the text on mobile as a tidy
-       centred wrapping row instead of the desktop absolute-positioned cluster. */
-    .hero-right{display:flex !important;flex-wrap:wrap !important;justify-content:center !important;align-items:center !important;gap:14px !important;padding:24px 16px 28px !important;min-height:0 !important;}
-    .hero-bubble{position:static !important;width:88px !important;height:88px !important;flex:0 0 auto !important;}
+    /* PROBLEM 1 — keep the hero SIDE-BY-SIDE on mobile (like desktop): the writing
+       takes ~2/3 of the row and the bubbles sit to the RIGHT in the remaining ~1/3
+       as a compact wrapping cluster of smaller circles (keeps the divider border). */
+    .hero-section{flex-direction:row !important;min-height:0 !important;}
+    .hero-left{flex:0 0 66.66% !important;padding:24px 14px !important;}
+    .hero-right{flex:0 0 33.33% !important;display:flex !important;flex-wrap:wrap !important;justify-content:center !important;align-content:center !important;align-items:center !important;gap:6px !important;padding:14px 6px !important;min-height:0 !important;}
+    .hero-bubble{position:static !important;width:54px !important;height:54px !important;flex:0 0 auto !important;border-width:2px !important;}
     /* PROBLEM 2 — search field full-width on its own line, FILTERS/FIT/TAILORS
        sharing the second line equally and compactly. */
     .search-box{flex:1 1 100% !important;}
