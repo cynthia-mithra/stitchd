@@ -30,7 +30,12 @@ export const CSS=`
        half the narrow column, so they naturally stack one-per-row (1-up); nth-child sizing
        keeps the size mix, while a small alternating horizontal nudge keeps the organic
        stagger. The widest bubble (86px) still fits the column inner width with no horizontal
-       overflow down to ~320px phones (the hero clips any transform overshoot). */
+       overflow down to ~320px phones (the hero clips any transform overshoot).
+       IMPORTANT: the stagger is done with margin (not transform) on purpose — each bubble
+       runs the 'floatbob' keyframe animation, which animates 'transform'. An '!important'
+       transform here would override that animation (per the CSS cascade) and freeze the
+       bubbles, so on mobile they'd sit still instead of floating like the desktop hero.
+       Using margin leaves 'transform' free for the animation, so they bob just like desktop. */
     .hero-bubble{position:static !important;width:72px !important;height:72px !important;flex:0 0 auto !important;border-width:3px !important;}
     .hero-bubble:nth-child(1){width:86px !important;height:86px !important;}
     .hero-bubble:nth-child(2){width:62px !important;height:62px !important;}
@@ -38,8 +43,8 @@ export const CSS=`
     .hero-bubble:nth-child(4){width:66px !important;height:66px !important;}
     .hero-bubble:nth-child(5){width:82px !important;height:82px !important;}
     .hero-bubble:nth-child(6){width:64px !important;height:64px !important;}
-    .hero-bubble:nth-child(even){transform:translateX(9px) !important;}
-    .hero-bubble:nth-child(odd){transform:translateX(-7px) !important;}
+    .hero-bubble:nth-child(even){margin-left:16px !important;}
+    .hero-bubble:nth-child(odd){margin-right:12px !important;}
     /* PROBLEM 2 — search field full-width on its own line, FILTERS/FIT/TAILORS
        sharing the second line equally and compactly. */
     .search-box{flex:1 1 100% !important;}
