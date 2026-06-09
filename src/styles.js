@@ -21,9 +21,21 @@ export const CSS=`
        takes ~2/3 of the row and the bubbles sit to the RIGHT in the remaining ~1/3
        as a compact wrapping cluster of smaller circles (keeps the divider border). */
     .hero-section{flex-direction:row !important;min-height:0 !important;}
-    .hero-left{flex:0 0 66.66% !important;padding:24px 14px !important;}
-    .hero-right{flex:0 0 33.33% !important;display:flex !important;flex-wrap:wrap !important;justify-content:center !important;align-content:center !important;align-items:center !important;gap:6px !important;padding:14px 6px !important;min-height:0 !important;}
-    .hero-bubble{position:static !important;width:54px !important;height:54px !important;flex:0 0 auto !important;border-width:2px !important;}
+    /* Give the heading/description more horizontal room and narrow the bubble column. */
+    .hero-left{flex:0 0 70% !important;padding:24px 14px !important;}
+    .hero-right{flex:0 0 30% !important;display:flex !important;flex-wrap:wrap !important;justify-content:center !important;align-content:center !important;align-items:center !important;gap:5px !important;padding:14px 5px !important;min-height:0 !important;}
+    /* VARY bubble sizes (mix of larger & smaller circles) for the same playful look as
+       the desktop hero. The wrapping flex cluster + nth-child sizing keeps them tidy and
+       inside the narrower column with no overflow; a small offset on every other bubble
+       gives a gentle organic stagger. Each consecutive pair fits 2-up even on ~360px phones. */
+    .hero-bubble{position:static !important;width:46px !important;height:46px !important;flex:0 0 auto !important;border-width:2px !important;}
+    .hero-bubble:nth-child(1){width:50px !important;height:50px !important;}
+    .hero-bubble:nth-child(2){width:36px !important;height:36px !important;}
+    .hero-bubble:nth-child(3){width:42px !important;height:42px !important;}
+    .hero-bubble:nth-child(4){width:44px !important;height:44px !important;}
+    .hero-bubble:nth-child(5){width:48px !important;height:48px !important;}
+    .hero-bubble:nth-child(6){width:38px !important;height:38px !important;}
+    .hero-bubble:nth-child(even){margin-top:10px !important;}
     /* PROBLEM 2 — search field full-width on its own line, FILTERS/FIT/TAILORS
        sharing the second line equally and compactly. */
     .search-box{flex:1 1 100% !important;}
