@@ -72,13 +72,13 @@ export const S={
   // flex-basis/maxWidth 420) so it never overstretches, and it carries its own
   // thin editorial border so it reads as a contained input alongside the
   // bordered buttons. Children carry their own height so a wrapped line isn't clipped.
-  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"center",gap:10,width:"100%",maxWidth:760,margin:"0 auto",padding:"8px 12px"},
-  searchBox:{flex:"0 1 420px",maxWidth:420,minWidth:0,height:32,display:"flex",alignItems:"center",border:"1px solid #111",borderRadius:0,background:"#fff"},
+  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"center",gap:10,width:"100%",maxWidth:760,margin:"0 auto",padding:"4px 12px"},
+  searchBox:{flex:"0 1 420px",maxWidth:420,minWidth:0,height:26,display:"flex",alignItems:"center",border:"1px solid #111",borderRadius:0,background:"#fff"},
   searchIcon:{padding:"0 8px",fontSize:12,color:"#bbb",flexShrink:0,display:"flex",alignItems:"center"},
   searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:1,color:"#111",padding:"0",background:"transparent",minWidth:0},
   searchClear:{background:"none",border:"none",padding:"0 8px",cursor:"pointer",fontSize:11,color:"#bbb",fontWeight:700,flexShrink:0,display:"flex",alignItems:"center"},
   filterPanel:{padding:"16px 16px",borderTop:"1px solid #f0f0f0",display:"flex",flexDirection:"column",gap:16},
-  filterBtn:{background:"#fff",border:"1px solid #111",borderRadius:0,padding:"0 14px",height:32,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
+  filterBtn:{background:"#fff",border:"1px solid #111",borderRadius:0,padding:"0 14px",height:26,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
   filterGroup:{display:"flex",flexDirection:"column",gap:10},
   filterLabel:{fontSize:10,fontWeight:900,letterSpacing:3,color:"#999",fontFamily:"'Barlow Condensed',sans-serif"},
   filterPills:{display:"flex",flexWrap:"wrap",gap:6},
