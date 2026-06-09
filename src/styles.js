@@ -62,7 +62,10 @@ export const S={
   heroBtnPrimary:{background:"#FF1493",color:"#fff",border:"2px solid #FF1493",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
   heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
   heroRight:{flex:1,position:"relative",background:"#fafafa",minHeight:300,overflow:"hidden"},
-  searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"sticky",top:52,zIndex:100},
+  // Rendered position:relative in Shop.js so the suggestions dropdown anchors to it
+  // and the row sits in normal document flow above the grid. No top offset here — a
+  // leftover `top:52` would shift a relative element 52px down and overlap the grid.
+  searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"relative",zIndex:100},
   // FULL-WIDTH control row: the search field grows to fill the LEFT
   // (`searchBox` flex:1) so it spans most of the row, and the FILTERS / FIT /
   // TAILORS buttons sit together on the FAR RIGHT (each `flexShrink:0`). The row
@@ -71,13 +74,13 @@ export const S={
   // of overflowing. The buttons are sized snugly to their content (`padding:0 12px`)
   // and share the search field's height (34) so they read as tidy, proportionate
   // buttons rather than oversized boxes, all vertically centred (`alignItems:center`).
-  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",gap:8,width:"100%",padding:"7px 10px"},
-  searchBox:{flex:"1 1 240px",minWidth:0,height:34,display:"flex",alignItems:"center",border:"1px solid #111",borderRadius:0,background:"#fff"},
+  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",gap:8,width:"100%",padding:"4px 10px"},
+  searchBox:{flex:"1 1 240px",minWidth:0,height:30,display:"flex",alignItems:"center",border:"1px solid #111",borderRadius:0,background:"#fff"},
   searchIcon:{padding:"0 10px",fontSize:13,color:"#bbb",flexShrink:0,display:"flex",alignItems:"center"},
   searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#111",padding:"0",background:"transparent",minWidth:0},
   searchClear:{background:"none",border:"none",padding:"0 10px",cursor:"pointer",fontSize:12,color:"#bbb",fontWeight:700,flexShrink:0,display:"flex",alignItems:"center"},
   filterPanel:{padding:"16px 16px",borderTop:"1px solid #f0f0f0",display:"flex",flexDirection:"column",gap:16},
-  filterBtn:{background:"#fff",border:"1px solid #111",borderRadius:0,padding:"0 12px",height:34,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
+  filterBtn:{background:"#fff",border:"1px solid #111",borderRadius:0,padding:"0 12px",height:30,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
   filterGroup:{display:"flex",flexDirection:"column",gap:10},
   filterLabel:{fontSize:10,fontWeight:900,letterSpacing:3,color:"#999",fontFamily:"'Barlow Condensed',sans-serif"},
   filterPills:{display:"flex",flexWrap:"wrap",gap:6},
