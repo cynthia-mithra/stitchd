@@ -63,19 +63,21 @@ export const S={
   heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
   heroRight:{flex:1,position:"relative",background:"#fafafa",minHeight:300,overflow:"hidden"},
   searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"sticky",top:52,zIndex:100},
-  // Cap the control row at a comfortable editorial width and centre it so the
-  // search field no longer stretches the full viewport (which dwarfed the
-  // FILTERS / TAILORS buttons on wide screens). A slim 28px height + tighter
-  // max-width keeps the whole row compact and balanced against the buttons.
-  // Full-width on mobile keeps it responsive; the sticky bar background + bottom
-  // border still span edge-to-edge.
-  searchInner:{display:"flex",alignItems:"stretch",height:28,width:"100%",maxWidth:680,margin:"0 auto",padding:"0 10px"},
-  searchBox:{flex:1,display:"flex",alignItems:"stretch",minWidth:0},
+  // The control row is a CENTRED group of [search field][FILTERS][FIT][TAILORS]
+  // rather than a full-width bar. The search field is capped (`searchBox`
+  // flex-basis/maxWidth 460) so it never overstretches and the buttons sit
+  // right beside it — `justifyContent:center` splits any spare space to the two
+  // outer margins, so there's no awkward gap between the field and the buttons.
+  // `flexWrap` lets the buttons drop to a second centred line on narrow/mobile
+  // widths instead of overflowing. Children carry their own height so a wrapped
+  // second line isn't clipped.
+  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"center",width:"100%",maxWidth:760,margin:"0 auto",padding:"6px 12px"},
+  searchBox:{flex:"0 1 460px",maxWidth:460,minWidth:0,height:30,display:"flex",alignItems:"center"},
   searchIcon:{padding:"0 8px",fontSize:12,color:"#bbb",flexShrink:0,display:"flex",alignItems:"center"},
   searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:1,color:"#111",padding:"0",background:"transparent",minWidth:0},
   searchClear:{background:"none",border:"none",padding:"0 8px",cursor:"pointer",fontSize:11,color:"#bbb",fontWeight:700,flexShrink:0,display:"flex",alignItems:"center"},
   filterPanel:{padding:"16px 16px",borderTop:"1px solid #f0f0f0",display:"flex",flexDirection:"column",gap:16},
-  filterBtn:{background:"#fff",border:"none",borderLeft:"1px solid #e0e0e0",borderRadius:0,padding:"0 12px",height:28,minHeight:28,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
+  filterBtn:{background:"#fff",border:"none",borderLeft:"1px solid #e0e0e0",borderRadius:0,padding:"0 12px",height:30,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
   filterGroup:{display:"flex",flexDirection:"column",gap:10},
   filterLabel:{fontSize:10,fontWeight:900,letterSpacing:3,color:"#999",fontFamily:"'Barlow Condensed',sans-serif"},
   filterPills:{display:"flex",flexWrap:"wrap",gap:6},
