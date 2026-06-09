@@ -63,16 +63,19 @@ export const S={
   heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
   heroRight:{flex:1,position:"relative",background:"#fafafa",minHeight:300,overflow:"hidden"},
   searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"sticky",top:52,zIndex:100},
-  // The control row is a CENTRED CLUSTER of [search field][FILTERS][FIT][TAILORS]
-  // that reads as one tidy group, not a full-width bar pushed to the edges.
-  // `justifyContent:center` + a uniform `gap` keeps the three elements evenly
-  // spaced and grouped in the middle (no awkward empty gap), and `flexWrap`
-  // lets the buttons drop to a clean second centred line on narrow/mobile
-  // widths instead of overflowing. The search field is capped (`searchBox`
-  // flex-basis/maxWidth 420) so it never overstretches, and it carries its own
-  // thin editorial border so it reads as a contained input alongside the
-  // bordered buttons. Children carry their own height so a wrapped line isn't clipped.
-  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"center",gap:10,width:"100%",maxWidth:760,margin:"0 auto",padding:"4px 12px"},
+  // The control row is a LEFT-ALIGNED CLUSTER of [search field][FILTERS][FIT][TAILORS]
+  // that reads as one tidy group. It shares the SAME content box as the product
+  // grid below (`gridWrap`: maxWidth 1300, `0 auto`, 10px side padding) so the
+  // row no longer spans edge-to-edge while the grid sits narrower — the search
+  // field's left edge now lines up exactly with the first card's left edge.
+  // `justifyContent:flex-start` + a uniform `gap` groups the three elements at
+  // the left (no awkward middle gap); `flexWrap` lets the buttons drop to a
+  // clean second line on narrow/mobile widths instead of overflowing. The search
+  // field is capped (`searchBox` flex-basis/maxWidth 420) so it never
+  // overstretches, and it carries its own thin editorial border so it reads as a
+  // contained input alongside the bordered buttons. Children carry their own
+  // height so a wrapped line isn't clipped.
+  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"flex-start",gap:10,width:"100%",maxWidth:1300,margin:"0 auto",padding:"4px 10px"},
   searchBox:{flex:"0 1 420px",maxWidth:420,minWidth:0,height:26,display:"flex",alignItems:"center",border:"1px solid #111",borderRadius:0,background:"#fff"},
   searchIcon:{padding:"0 8px",fontSize:12,color:"#bbb",flexShrink:0,display:"flex",alignItems:"center"},
   searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:1,color:"#111",padding:"0",background:"transparent",minWidth:0},

@@ -101,7 +101,7 @@ export default function Shop({
           <button className="hbtn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailorMarket();setView("tailors");}}>✂️ TAILORS</button>
         </div>
         {(showSuggestions&&searchSuggestions.length>0)||(showSavedSearches&&savedSearches.length>0)?(
-          <div style={{position:"absolute",top:"100%",left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:420,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
+          <div style={{position:"absolute",top:"100%",left:10,width:"calc(100% - 20px)",maxWidth:420,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
             {showSavedSearches&&savedSearches.length>0&&!search&&(
               <>
                 <div style={{padding:"8px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:900,letterSpacing:2,color:"#bbb",borderBottom:"1px solid #f0f0f0"}}>SAVED SEARCHES</div>
@@ -196,7 +196,7 @@ export default function Shop({
 
       {/* NEW IN */}
       {!hasFilters&&newListings.length>0&&(
-        <div style={{marginTop:48,borderTop:"3px solid #111",paddingTop:32}}>
+        <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20}}>✨ NEW IN — LAST 48 HOURS</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:3}}>
             {newListings.slice(0,8).map((item,idx)=>{
@@ -222,7 +222,7 @@ export default function Shop({
 
       {/* PRICE DROPS */}
       {!hasFilters&&priceDrops.length>0&&(
-        <div style={{marginTop:48,borderTop:"3px solid #111",paddingTop:32}}>
+        <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:20}}>📉 PRICE DROPS</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:3}}>
             {priceDrops.slice(0,8).map((item,idx)=>{
@@ -255,7 +255,7 @@ export default function Shop({
 
       {/* TRENDING */}
       {!hasFilters&&trendingItems.length>0&&(
-        <div style={{marginTop:48,borderTop:"3px solid #111",paddingTop:32,marginBottom:48}}>
+        <div style={{maxWidth:1300,margin:"48px auto 48px",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #BF5AF2",paddingLeft:12,marginBottom:20}}>🔥 TRENDING — MOST VIEWED</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:3}}>
             {trendingItems.slice(0,8).map((item,idx)=>{
