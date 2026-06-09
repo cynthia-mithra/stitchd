@@ -24,27 +24,26 @@ export const CSS=`
     /* Give the heading/description room while widening the bubble column just enough
        for the larger bubbles below (text 66% / bubbles 34%). */
     .hero-left{flex:0 0 66% !important;padding:24px 14px !important;}
-    .hero-right{flex:0 0 34% !important;display:flex !important;flex-wrap:wrap !important;justify-content:center !important;align-content:center !important;align-items:center !important;gap:8px !important;padding:14px 5px !important;min-height:0 !important;}
-    /* VARY bubble sizes (mix of larger & smaller circles) for the same playful look as
-       the desktop hero — now noticeably BIGGER. At these sizes each circle is wider than
-       half the narrow column, so they naturally stack one-per-row (1-up); nth-child sizing
-       keeps the size mix, while a small alternating horizontal nudge keeps the organic
-       stagger. The widest bubble (86px) still fits the column inner width with no horizontal
-       overflow down to ~320px phones (the hero clips any transform overshoot).
-       IMPORTANT: the stagger is done with margin (not transform) on purpose — each bubble
-       runs the 'floatbob' keyframe animation, which animates 'transform'. An '!important'
-       transform here would override that animation (per the CSS cascade) and freeze the
-       bubbles, so on mobile they'd sit still instead of floating like the desktop hero.
-       Using margin leaves 'transform' free for the animation, so they bob just like desktop. */
-    .hero-bubble{position:static !important;width:72px !important;height:72px !important;flex:0 0 auto !important;border-width:3px !important;}
-    .hero-bubble:nth-child(1){width:86px !important;height:86px !important;}
-    .hero-bubble:nth-child(2){width:62px !important;height:62px !important;}
-    .hero-bubble:nth-child(3){width:78px !important;height:78px !important;}
-    .hero-bubble:nth-child(4){width:66px !important;height:66px !important;}
-    .hero-bubble:nth-child(5){width:82px !important;height:82px !important;}
-    .hero-bubble:nth-child(6){width:64px !important;height:64px !important;}
-    .hero-bubble:nth-child(even){margin-left:16px !important;}
-    .hero-bubble:nth-child(odd){margin-right:12px !important;}
+    .hero-right{flex:0 0 34% !important;display:flex !important;flex-direction:column !important;flex-wrap:nowrap !important;justify-content:center !important;align-items:center !important;gap:0 !important;padding:16px 5px !important;min-height:0 !important;overflow:visible !important;}
+    /* OVERLAPPING, FLOATING CLUSTER (like the desktop hero): the bubbles stack in a single
+       column and OVERLAP each other vertically via a negative top margin, while a small
+       alternating LEFT/RIGHT margin nudges each one sideways for an organic, staggered
+       look. nth-child keeps the playful size mix. Sizes are tuned so the widest bubble
+       (80px) plus its sideways nudge still fits the narrow column's inner width with NO
+       horizontal overflow / no right-edge cutoff down to ~360px phones (the hero also
+       clips any transient rotate overshoot, so there is never a horizontal scrollbar).
+       IMPORTANT: the stagger + overlap use MARGIN, never transform — each bubble runs the
+       floatbob keyframe animation, which animates transform. An !important transform here
+       would override that animation (per the CSS cascade) and FREEZE the bubbles. Leaving
+       transform free lets them bob just like the desktop hero. Later siblings paint over
+       earlier ones (DOM order), so the overlaps read as a layered, floating cluster. */
+    .hero-bubble{position:static !important;width:72px !important;height:72px !important;flex:0 0 auto !important;border-width:3px !important;margin-top:-20px !important;}
+    .hero-bubble:nth-child(1){width:80px !important;height:80px !important;margin-top:0 !important;margin-left:12px !important;}
+    .hero-bubble:nth-child(2){width:60px !important;height:60px !important;margin-right:12px !important;}
+    .hero-bubble:nth-child(3){width:76px !important;height:76px !important;margin-left:12px !important;}
+    .hero-bubble:nth-child(4){width:64px !important;height:64px !important;margin-right:10px !important;}
+    .hero-bubble:nth-child(5){width:78px !important;height:78px !important;margin-left:10px !important;}
+    .hero-bubble:nth-child(6){width:60px !important;height:60px !important;margin-right:12px !important;}
     /* PROBLEM 2 — search field full-width on its own line, FILTERS/FIT/TAILORS
        sharing the second line equally and compactly. */
     .search-box{flex:1 1 100% !important;}
