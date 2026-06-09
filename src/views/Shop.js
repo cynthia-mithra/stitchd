@@ -101,7 +101,7 @@ export default function Shop({
           <button className="hbtn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailorMarket();setView("tailors");}}>✂️ TAILORS</button>
         </div>
         {(showSuggestions&&searchSuggestions.length>0)||(showSavedSearches&&savedSearches.length>0)?(
-          <div style={{position:"absolute",top:"100%",left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:880,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
+          <div style={{position:"absolute",top:"100%",left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:680,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
             {showSavedSearches&&savedSearches.length>0&&!search&&(
               <>
                 <div style={{padding:"8px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:900,letterSpacing:2,color:"#bbb",borderBottom:"1px solid #f0f0f0"}}>SAVED SEARCHES</div>
