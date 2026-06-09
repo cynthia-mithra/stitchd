@@ -63,25 +63,21 @@ export const S={
   heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
   heroRight:{flex:1,position:"relative",background:"#fafafa",minHeight:300,overflow:"hidden"},
   searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"sticky",top:52,zIndex:100},
-  // The control row is a LEFT-ALIGNED CLUSTER of [search field][FILTERS][FIT][TAILORS]
-  // that reads as one tidy group. It shares the SAME content box as the product
-  // grid below (`gridWrap`: maxWidth 1300, `0 auto`, 10px side padding) so the
-  // row no longer spans edge-to-edge while the grid sits narrower — the search
-  // field's left edge now lines up exactly with the first card's left edge.
-  // `justifyContent:flex-start` + a uniform `gap` groups the three elements at
-  // the left (no awkward middle gap); `flexWrap` lets the buttons drop to a
-  // clean second line on narrow/mobile widths instead of overflowing. The search
-  // field is capped (`searchBox` flex-basis/maxWidth 420) so it never
-  // overstretches, and it carries its own thin editorial border so it reads as a
-  // contained input alongside the bordered buttons. Children carry their own
-  // height so a wrapped line isn't clipped.
-  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"flex-start",gap:10,width:"100%",maxWidth:1300,margin:"0 auto",padding:"4px 10px"},
-  searchBox:{flex:"0 1 420px",maxWidth:420,minWidth:0,height:26,display:"flex",alignItems:"center",border:"1px solid #111",borderRadius:0,background:"#fff"},
-  searchIcon:{padding:"0 8px",fontSize:12,color:"#bbb",flexShrink:0,display:"flex",alignItems:"center"},
-  searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:1,color:"#111",padding:"0",background:"transparent",minWidth:0},
-  searchClear:{background:"none",border:"none",padding:"0 8px",cursor:"pointer",fontSize:11,color:"#bbb",fontWeight:700,flexShrink:0,display:"flex",alignItems:"center"},
+  // FULL-WIDTH control row: the search field grows to fill the LEFT
+  // (`searchBox` flex:1) so it spans most of the row, and the FILTERS / FIT /
+  // TAILORS buttons sit together on the FAR RIGHT (each `flexShrink:0`). The row
+  // spans edge-to-edge (`width:100%`, no centered max-width cluster). `flexWrap`
+  // lets the buttons drop to a clean second line on narrow/mobile widths instead
+  // of overflowing. The buttons are sized snugly to their content (`padding:0 12px`)
+  // and share the search field's height (34) so they read as tidy, proportionate
+  // buttons rather than oversized boxes, all vertically centred (`alignItems:center`).
+  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",gap:8,width:"100%",padding:"7px 10px"},
+  searchBox:{flex:"1 1 240px",minWidth:0,height:34,display:"flex",alignItems:"center",border:"1px solid #111",borderRadius:0,background:"#fff"},
+  searchIcon:{padding:"0 10px",fontSize:13,color:"#bbb",flexShrink:0,display:"flex",alignItems:"center"},
+  searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#111",padding:"0",background:"transparent",minWidth:0},
+  searchClear:{background:"none",border:"none",padding:"0 10px",cursor:"pointer",fontSize:12,color:"#bbb",fontWeight:700,flexShrink:0,display:"flex",alignItems:"center"},
   filterPanel:{padding:"16px 16px",borderTop:"1px solid #f0f0f0",display:"flex",flexDirection:"column",gap:16},
-  filterBtn:{background:"#fff",border:"1px solid #111",borderRadius:0,padding:"0 14px",height:26,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
+  filterBtn:{background:"#fff",border:"1px solid #111",borderRadius:0,padding:"0 12px",height:34,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
   filterGroup:{display:"flex",flexDirection:"column",gap:10},
   filterLabel:{fontSize:10,fontWeight:900,letterSpacing:3,color:"#999",fontFamily:"'Barlow Condensed',sans-serif"},
   filterPills:{display:"flex",flexWrap:"wrap",gap:6},
