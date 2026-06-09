@@ -19,7 +19,21 @@ export const CSS=`
   @media(max-width:600px){
     .hero-section{flex-direction:column !important;}
     .hero-left{flex:1 1 100% !important;border-right:none !important;border-bottom:3px solid #111;padding:28px 20px !important;}
-    .hero-right{display:none !important;}
+    /* PROBLEM 1 — show the hero bubbles below the text on mobile as a tidy
+       centred wrapping row instead of the desktop absolute-positioned cluster. */
+    .hero-right{display:flex !important;flex-wrap:wrap !important;justify-content:center !important;align-items:center !important;gap:14px !important;padding:24px 16px 28px !important;min-height:0 !important;}
+    .hero-bubble{position:static !important;width:88px !important;height:88px !important;flex:0 0 auto !important;}
+    /* PROBLEM 2 — search field full-width on its own line, FILTERS/FIT/TAILORS
+       sharing the second line equally and compactly. */
+    .search-box{flex:1 1 100% !important;}
+    .search-action-btn{flex:1 1 0 !important;min-width:0 !important;}
+    /* PROBLEM 3 — two-column listing grid with proportionally scaled cards. */
+    .shop-grid{grid-template-columns:1fr 1fr !important;gap:8px !important;}
+    .card-top{height:150px !important;}
+    .card-body{padding:11px !important;}
+    .card-cat{font-size:9px !important;}
+    .card-name{font-size:16px !important;margin-bottom:6px !important;}
+    .card-price{font-size:20px !important;}
     .detail-wrap{flex-direction:column !important;}
     .detail-img{border-right:none !important;border-bottom:3px solid #111 !important;}
     .detail-info{padding:16px !important;}
