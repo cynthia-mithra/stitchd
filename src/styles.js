@@ -201,6 +201,11 @@ export const S={
   soldVeil:{position:"absolute",inset:0,background:"rgba(255,255,255,0.75)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(2px)",zIndex:4},
   soldStamp:{fontSize:22,fontWeight:900,letterSpacing:6,color:"#111",border:"3px solid #111",padding:"6px 18px",fontFamily:"'Barlow Condensed',sans-serif"},
   reservedBadge:{position:"absolute",top:12,right:12,background:"#FF9500",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3},
+  // PRICE DROP badge — teal fill, dark ink + 2px dark border, square corners. Sits in the
+  // top-right of the card image, offset left of the 32px heart button so the two never overlap.
+  priceDropBadge:{position:"absolute",top:12,right:52,background:"#00E5CC",color:"#111",border:"2px solid #111",borderRadius:0,padding:"3px 8px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:4},
+  // Original (pre-drop) price shown struck through in grey beside the live price on cards.
+  cardPrevPrice:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#999",textDecoration:"line-through",letterSpacing:-0.3},
   // Flex column so the price row (cardFoot) can pin to the bottom via marginTop:auto,
   // keeping prices aligned across cards with different title/tag lengths. Even 16px padding.
   cardBody:{padding:16,display:"flex",flexDirection:"column",flex:1},

@@ -157,6 +157,7 @@ export default function Shop({
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                     {item.reserved&&!item.sold&&<div style={S.reservedBadge}>RESERVED</div>}
+                    {item.prev_price>item.price&&<div style={S.priceDropBadge}>PRICE DROP</div>}
                     {fitsMe(item)===true&&<div style={{...S.fitsBadge,display:"inline-flex",alignItems:"center",gap:5}}><Ruler width={11} height={11}/> FITS YOU</div>}
                     <FastBadge sellerId={item.user_id} raised={fitsMe(item)===true}/>
                     <button style={{...S.heartBtn,background:wishlist.includes(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}><Heart width={16} height={16} fill={wishlist.includes(item.id)?"#fff":"none"} color={wishlist.includes(item.id)?"#fff":"#111"}/></button>
@@ -174,7 +175,10 @@ export default function Shop({
                       {item.spare_fabric&&<span style={{...S.mTag,...S.mTagA}}>+ FABRIC</span>}
                     </div>
                     <div style={S.cardFoot}>
-                      <span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span>
+                      <span style={{display:"flex",alignItems:"baseline",gap:8}}>
+                        <span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span>
+                        {item.prev_price>item.price&&<span style={S.cardPrevPrice}>{currencySymbol(item.currency)}{item.prev_price}</span>}
+                      </span>
                       <span style={{display:"flex",alignItems:"center",gap:8}}>
                         <SellerRating sellerId={item.user_id}/>
                         {item.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,display:"inline-flex",alignItems:"center",gap:4}}><Eye width={12} height={12}/> {item.views}</span>}
