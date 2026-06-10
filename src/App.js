@@ -8,6 +8,7 @@ import {
   garmentTypesFor, garmentFieldsFor, defaultGarmentFor, parseMeasurements, buildMeasPayload,
 } from "./lib/constants";
 import { db } from "./lib/db";
+import { startCheckout, verifySession } from "./lib/checkout";
 import { auth, uploadImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag } from "lucide-react";
@@ -112,6 +113,9 @@ export default function App() {
   // like the wishlist above. No Supabase sync in this issue.
   const [bag,        setBag]        = useState(()=>{ try{return JSON.parse(localStorage.getItem("stitchd_bag"))||[];}catch{return[];} });
   const [showBag,    setShowBag]    = useState(false);
+  const [checkingOut,setCheckingOut]= useState(false);
+  // Order-success page state: {status:'loading'|'ok'|'error', items, amount}.
+  const [orderResult,setOrderResult]= useState(null);
   const [recentlyViewed,setRecentlyViewed]=useState(()=>{ try{return JSON.parse(localStorage.getItem("stitchd_recent"))||[];}catch{return[];} });
   const [showSizeGuide,setShowSizeGuide]=useState(false);
   const [reviews,      setReviews]      = useState([]);
@@ -210,6 +214,35 @@ export default function App() {
   },[]);
 
   useEffect(()=>{ fetchItems(); },[]);
+
+  // Stripe redirects back to /order-success?session_id=… after a paid checkout.
+  // Detect that path on load, verify the session server-side (via Edge Function),
+  // and show the confirmation page. The post-purchase actions (mark sold, create
+  // order, notify seller) are handled by the stripe-webhook function; here we
+  // only confirm to the buyer and clear the purchased pieces from their bag.
+  useEffect(()=>{
+    // Stripe's cancel_url is /bag — drop the buyer back on the shop with the bag
+    // panel open (the bag is a slide-in panel, not its own route).
+    if(window.location.pathname.includes("/bag")){
+      window.history.replaceState({},document.title,"/");
+      setShowBag(true);
+    }
+    if(!window.location.pathname.includes("order-success")) return;
+    setView("order-success");
+    setOrderResult({status:"loading"});
+    const sid=new URLSearchParams(window.location.search).get("session_id");
+    if(!sid){ setOrderResult({status:"error"}); return; }
+    verifySession(sid).then(r=>{
+      if(r&&r.paid){
+        setOrderResult({status:"ok",items:r.items||[],amount:r.amount_total||0});
+        // Clear the purchased listings from the (localStorage) bag.
+        const purchased=new Set(r.listing_ids||[]);
+        setBag(prev=>{ const next=purchased.size?prev.filter(b=>!purchased.has(b.id)):[]; localStorage.setItem("stitchd_bag",JSON.stringify(next)); return next; });
+      } else {
+        setOrderResult({status:"error"});
+      }
+    }).catch(()=>setOrderResult({status:"error"}));
+  },[]);
 
   useEffect(()=>{
     if(user&&token){
@@ -365,6 +398,21 @@ export default function App() {
   }
 
   const bagTotal = bag.reduce((sum,b)=>sum+(parseFloat(b.price)||0),0);
+
+  // PROCEED TO CHECKOUT → create a Stripe Checkout Session server-side and
+  // redirect to the hosted checkout page. No Stripe secret key ever touches
+  // the frontend (see src/lib/checkout.js + the stripe-checkout Edge Function).
+  async function doCheckout(){
+    if(checkingOut||!bag.length) return;
+    setCheckingOut(true);
+    flash("Taking you to secure checkout…");
+    try{
+      await startCheckout(bag,{buyerId:user?.id,buyerEmail:user?.email});
+    }catch(e){
+      flash(`Checkout failed: ${errMsg(e)}`);
+      setCheckingOut(false);
+    }
+  }
 
   function shareItem(item){
     const text=`Check out "${item.name}" for £${item.price} on Stitch'd 🩷`;
@@ -1122,7 +1170,7 @@ export default function App() {
                   <span style={S.bagTotalLabel}>TOTAL</span>
                   <span style={S.bagTotalVal}>{currencySymbol(bag[0]?.currency)}{bagTotal.toFixed(2)}</span>
                 </div>
-                <button className="hbtn" style={S.bagCheckoutBtn} onClick={()=>flash("Checkout coming soon")}>PROCEED TO CHECKOUT</button>
+                <button className="hbtn" style={{...S.bagCheckoutBtn,opacity:checkingOut?0.6:1,cursor:checkingOut?"wait":"pointer"}} onClick={doCheckout} disabled={checkingOut}>{checkingOut?"REDIRECTING…":"PROCEED TO CHECKOUT"}</button>
                 <button style={S.bagContinue} onClick={()=>setShowBag(false)}>CONTINUE SHOPPING</button>
               </div>
             )}
@@ -1362,6 +1410,50 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ORDER SUCCESS PAGE — shown after Stripe redirects back from a paid
+          checkout. Session is verified server-side via the verify-session Edge
+          Function before anything is confirmed. */}
+      {view==="order-success"&&(
+        <main style={{...S.main,maxWidth:640}}>
+          {(!orderResult||orderResult.status==="loading")&&(
+            <div style={{textAlign:"center",padding:"60px 0"}}>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:700,letterSpacing:1,color:"#111"}}>CONFIRMING YOUR ORDER…</p>
+            </div>
+          )}
+          {orderResult&&orderResult.status==="ok"&&(
+            <div style={{background:"#fff",border:"2px solid #111",padding:"40px 32px"}}>
+              <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:56,fontWeight:900,letterSpacing:-1,lineHeight:1,marginBottom:8,color:"#111"}}>ORDER CONFIRMED</h1>
+              <div style={{height:4,width:80,background:"#FF1493",marginBottom:28}}/>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:3,color:"#FF1493",marginBottom:14}}>WHAT YOU BOUGHT</p>
+              <div style={{border:"2px solid #111",marginBottom:24}}>
+                {orderResult.items.map((it,i)=>(
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"14px 16px",borderBottom:i<orderResult.items.length-1?"2px solid #111":"none"}}>
+                    <span style={{fontSize:15,color:"#111"}}>{it.name}</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:16,color:"#111"}}>£{(it.amount/100).toFixed(2)}</span>
+                  </div>
+                ))}
+                <div style={{display:"flex",justifyContent:"space-between",padding:"14px 16px",borderTop:"2px solid #111",background:"#fafafa"}}>
+                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:16,letterSpacing:1}}>TOTAL PAID</span>
+                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:20}}>£{(orderResult.amount/100).toFixed(2)}</span>
+                </div>
+              </div>
+              <p style={{fontSize:15,color:"#111",marginBottom:28}}>📩 The seller has been notified.</p>
+              <button className="hbtn" style={{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:16,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase"}}
+                onClick={()=>{ window.history.replaceState({},document.title,"/"); setOrderResult(null); setView("shop"); }}>CONTINUE SHOPPING</button>
+            </div>
+          )}
+          {orderResult&&orderResult.status==="error"&&(
+            <div style={{background:"#fff",border:"2px solid #111",padding:"40px 32px"}}>
+              <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1,marginBottom:8,color:"#111"}}>HMM, SOMETHING'S OFF</h1>
+              <div style={{height:4,width:80,background:"#FF1493",marginBottom:24}}/>
+              <p style={{fontSize:15,color:"#111",marginBottom:28,lineHeight:1.6}}>We couldn't confirm this payment. If you were charged, don't worry — your order is recorded and the seller notified once Stripe confirms. Otherwise, head back to your bag and try again.</p>
+              <button className="hbtn" style={{width:"100%",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:16,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase"}}
+                onClick={()=>{ window.history.replaceState({},document.title,"/"); setOrderResult(null); setView("shop"); setShowBag(true); }}>BACK TO BAG</button>
+            </div>
+          )}
+        </main>
       )}
 
       {/* WISHLIST VIEW */}
