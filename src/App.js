@@ -11,7 +11,7 @@ import { db } from "./lib/db";
 import { startCheckout, verifySession } from "./lib/checkout";
 import { auth, uploadImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock } from "lucide-react";
 import { Sec, F, Tog, Thumb } from "./components/Shared";
 import Tailors from "./views/Tailors";
 import Detail from "./views/Detail";
@@ -1268,6 +1268,7 @@ export default function App() {
                   <span style={S.bagTotalVal}>{currencySymbol(bag[0]?.currency)}{bagTotal.toFixed(2)}</span>
                 </div>
                 <button className="hbtn" style={{...S.bagCheckoutBtn,opacity:checkingOut?0.6:1,cursor:checkingOut?"wait":"pointer"}} onClick={doCheckout} disabled={checkingOut}>{checkingOut?"REDIRECTING…":"PROCEED TO CHECKOUT"}</button>
+                <p style={S.bagGuarantee}><Lock width={13} height={13}/> Secure checkout · Stitch'd Buyer Guarantee</p>
                 <button style={S.bagContinue} onClick={()=>setShowBag(false)}>CONTINUE SHOPPING</button>
               </div>
             )}
