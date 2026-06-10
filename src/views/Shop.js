@@ -1,12 +1,12 @@
 import React from "react";
-import { Search, Scissors, Zap, Heart, Star, Bell, Ruler, Eye, ArrowDown, Sparkles, TrendingDown, Flame, Shirt } from "lucide-react";
+import { Search, Scissors, Zap, Heart, Bell, Ruler, Eye, ArrowDown, Sparkles, TrendingDown, Flame, Shirt } from "lucide-react";
 import {
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, ALL_CATEGORIES,
   CONDITIONS, SIZES, OCC_COLOR, CARD_COLORS,
   catEmoji, currencySymbol,
 } from "../lib/constants";
 import { S } from "../styles";
-import { Thumb } from "../components/Shared";
+import { Thumb, Stars } from "../components/Shared";
 
 export default function Shop({
   view,
@@ -36,15 +36,16 @@ export default function Shop({
     fastSellers.has(sellerId)
       ? <div style={{...S.fastBadge,...(raised?{bottom:40}:{}),display:"inline-flex",alignItems:"center",gap:5}}><Zap width={12} height={12} fill="currentColor"/> FAST SELLER</div>
       : null;
-  // Subtle seller rating chip — sits in the price/views row, mirrors the view-count
-  // style (Barlow Condensed, small, muted). Renders nothing when the seller has no
-  // reviews so new sellers never show "0 stars".
+  // Seller rating chip — sits in the price/views row. Shows up to five #FF1493
+  // stars filled proportionally to the seller's average, with the review count in
+  // brackets (e.g. ★★★★★ (3)). Renders nothing when the seller has no reviews so
+  // new sellers never show empty stars.
   const SellerRating = ({ sellerId }) => {
     const r = sellerRatings[sellerId];
     if(!r||!r.count) return null;
     return (
-      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,whiteSpace:"nowrap",display:"inline-flex",alignItems:"center",gap:4}}>
-        <Star width={11} height={11} fill="currentColor"/> {r.average.toFixed(1)} ({r.count})
+      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,color:"#FF1493",letterSpacing:0.5,whiteSpace:"nowrap",display:"inline-flex",alignItems:"center",gap:4}}>
+        <Stars value={r.average} size={11} color="#FF1493" gap={1}/> ({r.count})
       </span>
     );
   };

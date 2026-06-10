@@ -440,12 +440,30 @@ export default function App() {
     else{ navigator.clipboard.writeText(`${text}\n${window.location.href}`).then(()=>flash("🔗 Link copied!")); }
   }
 
+  // Reviews only store reviewer_id, so resolve those ids to profiles in one batch
+  // and attach a display `reviewer_name` (first name) for the review cards. Falls
+  // back to the raw rows if the profile lookup fails so reviews still render.
+  async function loadReviews(sellerId){
+    const revs=await db.getReviews(sellerId,token);
+    const ids=[...new Set(revs.map(r=>r.reviewer_id).filter(Boolean))];
+    if(!ids.length) return revs;
+    try{
+      const profs=await db.getProfilesByIds(ids,token);
+      const byId={}; profs.forEach(p=>{ byId[p.id]=p; });
+      return revs.map(r=>{
+        const name=(byId[r.reviewer_id]?.full_name||byId[r.reviewer_id]?.username||"").trim();
+        return {...r,reviewer_name:name?name.split(/\s+/)[0]:"Anonymous"};
+      });
+    }catch(e){ return revs; }
+  }
+
   async function submitReview(){
     if(!user||!sel)return;
     try{
       await db.insertReview({listing_id:sel.id,reviewer_id:user.id,seller_id:sel.user_id,rating:reviewForm.rating,comment:reviewForm.comment},token);
-      const updated=await db.getReviews(sel.user_id,token);
-      setReviews(updated); setShowReview(false); setReviewForm({rating:5,comment:""});
+      setReviews(await loadReviews(sel.user_id)); setShowReview(false); setReviewForm({rating:5,comment:""});
+      // Refresh the grid-wide rating lookup so the new review updates card stars too.
+      loadSellerRatings();
       flash("⭐ Review submitted!");
     }catch(e){ flash("Failed to submit review."); }
   }
@@ -927,7 +945,7 @@ export default function App() {
     setPrevView(view);
     const p=await db.getProfile(userId,token);
     const listings=await db.getListingsByUser(userId,token);
-    const revs=await db.getReviews(userId,token);
+    const revs=await loadReviews(userId);
     setViewedProfile(p||{id:userId,username:"Seller",bio:""});
     setProfileListings(listings); setReviews(revs); setView("profile");
   }
@@ -1039,7 +1057,7 @@ export default function App() {
       localStorage.setItem("stitchd_recent",JSON.stringify(next));
       return next;
     });
-    if(item.user_id) db.getReviews(item.user_id,token).then(setReviews);
+    if(item.user_id) loadReviews(item.user_id).then(setReviews);
   }
 
   const selIdx   = sel?items.findIndex(i=>i.id===sel.id):0;
@@ -1722,6 +1740,7 @@ export default function App() {
       {/* DASHBOARD + CREATE BUNDLE */}
       <Dashboard
         view={view} setView={setView} user={user} myItems={myItems}
+        sellerRatings={sellerRatings}
         setSel={setSel} openEdit={openEdit} markSold={markSold} relist={relist} del={del}
         bundles={bundles} bundleItems={bundleItems} loadBundles={loadBundles} deleteBundle={deleteBundle}
         bundleForm={bundleForm} setBundleForm={setBundleForm} toggleBundleListing={toggleBundleListing} createBundle={createBundle}
