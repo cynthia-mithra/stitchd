@@ -84,8 +84,16 @@ export const CSS=`
     /* With the category strip (flex:1 spacer) hidden, nothing pushes the
        right-side nav buttons (3 LIVE, ❤, LOG IN, SIGN UP) over, so they
        collapse next to the logo. margin-left:auto sends them back to the
-       right edge. Logo stays on the left; marquee/hero/strip untouched. */
-    .nav-right{margin-left:auto !important;}
+       right edge. Logo stays on the left; marquee/hero/strip untouched.
+       LEFTOVER DIVIDER LINES — with the category strip gone, the two vertical
+       borders that used to FRAME it sit right next to each other and read as
+       stray black divider lines: the logo's right border (S.logoWrap
+       borderRight) and the nav buttons' left border (S.hRight borderLeft).
+       Hide just those two borders on mobile. Desktop/iPad (≥769px) keep them
+       since the strip is still visible there. Borders are only hidden, not
+       removed — the inline styles are untouched. */
+    .nav-logo{border-right:none !important;}
+    .nav-right{margin-left:auto !important;border-left:none !important;}
   }
 `;
 
