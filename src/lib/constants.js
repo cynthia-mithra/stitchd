@@ -61,6 +61,18 @@ const WOMEN_CAT_MAP={Saree:"Saree",Lehenga:"Lehenga","Salwar Kameez":"Salwar Kam
 const MEN_CAT_MAP={Sherwani:"Sherwani",Kurta:"Kurta / Kurta Pyjama","Salwar Kameez":"Kurta / Kurta Pyjama","Co-ord Set":"Indo-Western Suit",Accessories:"Accessories",Dupatta:"Dhoti / Lungi",Saree:"Other / General",Lehenga:"Other / General",Other:"Other / General"};
 export const defaultGarmentFor=(g,cat)=>(g==="men"?MEN_CAT_MAP:WOMEN_CAT_MAP)[cat]||"Other / General";
 
+// Reverse mapping: Clothing listings no longer have a separate Category dropdown
+// — the garment type IS the category. This picks the closest legacy `category`
+// value so card labels, emoji, search and the Shop category filter keep working.
+const GARMENT_CAT_MAP={
+  "Saree":"Saree","Lehenga":"Lehenga","Salwar Kameez / Suit":"Salwar Kameez",
+  "Anarkali":"Salwar Kameez","Sharara / Gharara":"Salwar Kameez","Dupatta / Stole":"Dupatta",
+  "Dress / Gown (Western)":"Co-ord Set","Jewellery / Accessories":"Accessories",
+  "Sherwani":"Sherwani","Kurta / Kurta Pyjama":"Kurta","Nehru Jacket / Waistcoat":"Other",
+  "Indo-Western Suit":"Co-ord Set","Dhoti / Lungi":"Other","Accessories":"Accessories",
+};
+export const categoryForGarment=gt=>GARMENT_CAT_MAP[gt]||"Other";
+
 // Field-label → legacy column. Used to keep top-level bust/waist/hips/etc filled
 // for backward compatibility (fit matching, legacy detail view).
 export const MEAS_LEGACY={"Bust":"bust","Chest":"bust","Blouse bust":"bust","Waist":"waist","Hip":"hips","Hips":"hips","Length":"length","Length (floor to shoulder)":"length","Saree length":"length","Lehenga length":"length","Sherwani length":"length","Kurta length":"length","Sleeve length":"sleeve_length","Blouse sleeve length":"sleeve_length","Shoulder width":"shoulder","Inseam":"inseam"};
@@ -98,6 +110,7 @@ export function buildMeasPayload(form){
   fields.forEach(l=>{ const col=MEAS_LEGACY[l]; if(col&&values[l]&&!legacy[col]) legacy[col]=values[l]; });
   return {
     ...legacy,
+    category:categoryForGarment(gt),
     measurement_notes:form.additional_measurements||"",
     measurements:{gender:form.gender,unit:form.meas_unit,garment:gt,values},
     measurements_unit:form.meas_unit,
