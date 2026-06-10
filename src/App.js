@@ -999,15 +999,14 @@ export default function App() {
             <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setView("wishlist")}>
               <Heart width={18} height={18} style={{verticalAlign:"middle"}}/> {wishlist.length>0&&<span style={S.wishBadge}>{wishlist.length}</span>}
             </button>
-            {/* SHOPPING BAG — always visible (logged-out guests can bag items too),
-                sits alongside Favourites and (when signed in) Notifications. */}
-            <button className="hbtn" style={{...S.hBtn,background:showBag?"#FF1493":"#fff",color:showBag?"#fff":"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setShowBag(true)} aria-label="Shopping bag">
-              <ShoppingBag width={18} height={18} style={{verticalAlign:"middle"}}/> {bag.length>0&&<span style={S.bagBadge}>{bag.length}</span>}
-            </button>
             {user?(
               <>
-                {/* ALWAYS VISIBLE: Notifications, then LIST IT. Favourites (heart)
-                    sits just before this block and is always visible too. */}
+                {/* SHOPPING BAG — signed-in only, sits alongside Notifications. */}
+                <button className="hbtn" style={{...S.hBtn,background:showBag?"#FF1493":"#fff",color:showBag?"#fff":"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setShowBag(true)} aria-label="Shopping bag">
+                  <ShoppingBag width={18} height={18} style={{verticalAlign:"middle"}}/> {bag.length>0&&<span style={S.bagBadge}>{bag.length}</span>}
+                </button>
+                {/* ALWAYS VISIBLE (when signed in): Notifications, then LIST IT.
+                    Favourites (heart) sits just before this block. */}
                 <button className="hbtn" style={{...S.hBtn,background:showNotifs?"#FF1493":"#fff",color:showNotifs?"#fff":"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setShowNotifs(p=>!p)}>
                   <Bell width={18} height={18} style={{verticalAlign:"middle"}}/> {unreadNotifs>0&&<span style={S.wishBadge}>{unreadNotifs}</span>}
                 </button>
@@ -1090,7 +1089,7 @@ export default function App() {
 
       {/* SHOPPING BAG PANEL — slide-in from the right. UI/state only; the checkout
           button is a placeholder until Stripe is wired up in a separate issue. */}
-      {showBag&&(
+      {user&&showBag&&(
         <div style={S.bagOverlay} onClick={()=>setShowBag(false)}>
           <div style={S.bagPanel} onClick={e=>e.stopPropagation()}>
             <div style={S.bagHead}>

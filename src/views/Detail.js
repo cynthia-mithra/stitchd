@@ -61,7 +61,7 @@ export default function Detail({
               <p style={{...S.cardCatLabel,color:selColor,fontSize:12,marginBottom:8}}>{sel.category?.toUpperCase()} · {(sel.material||sel.fabric)?.toUpperCase()} · {sel.condition?.toUpperCase()}</p>
               <h2 style={S.detailName}>{sel.name}</h2>
               <div style={{...S.detailPrice,color:selColor}}>{currencySymbol(sel.currency)}{sel.price}</div>
-              {!isOwner(sel)&&(()=>{
+              {user&&!isOwner(sel)&&(()=>{
                 const bagged=inBag(sel.id);
                 const soldStyle={background:"#e5e5e5",color:"#999",border:"2px solid #ccc",cursor:"not-allowed"};
                 const baggedStyle={background:"#111",color:"#fff"};
