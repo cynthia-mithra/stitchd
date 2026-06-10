@@ -121,6 +121,13 @@ export default function App() {
   const [reviews,      setReviews]      = useState([]);
   const [sellerRatings,setSellerRatings]= useState({});
   const [fastSellers,  setFastSellers]  = useState(()=>new Set());
+  // DB-backed wishlist/favourite counts (Phase 10b). `wishlistCounts` maps
+  // listing_id -> how many users saved it; `myWishlist` is the set of listing_ids
+  // the signed-in user has saved (drives the filled heart). This is separate from
+  // the localStorage `wishlist` above, which is a per-device personal list with
+  // its own "MY WISHLIST" view.
+  const [wishlistCounts,setWishlistCounts]= useState({});
+  const [myWishlist,    setMyWishlist]    = useState(()=>new Set());
   const [showReview,   setShowReview]   = useState(false);
   const [reviewForm,   setReviewForm]   = useState({rating:5,comment:""});
   const [showReport,   setShowReport]   = useState(false);
@@ -248,6 +255,9 @@ export default function App() {
       db.getFollowing(user.id,token).then(setFollowing);
       db.getNotifications(user.id,token).then(setNotifications);
       loadSavedSearches();
+      loadMyWishlist();
+    } else {
+      setMyWishlist(new Set());
     }
   },[user,token]);
 
@@ -637,6 +647,42 @@ export default function App() {
   }
 
   useEffect(()=>{ loadSellerRatings(); },[]);
+
+  // Fetch every wishlist row once (listing_id only) and aggregate into a
+  // listing_id -> count map for the whole grid — one request beats a per-card
+  // count, same shape as loadSellerRatings.
+  async function loadWishlistCounts(){
+    const rows=await db.getAllWishlists(token);
+    const counts={};
+    rows.forEach(r=>{ counts[r.listing_id]=(counts[r.listing_id]||0)+1; });
+    setWishlistCounts(counts);
+  }
+  useEffect(()=>{ loadWishlistCounts(); },[]);
+
+  // The signed-in user's own saved listing_ids, so cards render a filled heart.
+  // Cleared on sign-out. Loaded alongside the other per-user data below.
+  async function loadMyWishlist(){
+    if(!user||!token){ setMyWishlist(new Set()); return; }
+    const rows=await db.getMyWishlist(user.id,token);
+    setMyWishlist(new Set(rows.map(r=>r.listing_id)));
+  }
+
+  // Toggle a DB favourite. Logged-out clicks are sent to sign-in. Updates the
+  // count + my-set optimistically and rolls back if the request fails.
+  async function toggleFavourite(item){
+    if(!user||!token){ flash("Sign in to wishlist this piece!"); setAuthMode("login"); setView("auth"); return; }
+    const id=item.id, has=myWishlist.has(id);
+    setMyWishlist(prev=>{ const n=new Set(prev); has?n.delete(id):n.add(id); return n; });
+    setWishlistCounts(prev=>({...prev,[id]:Math.max(0,(prev[id]||0)+(has?-1:1))}));
+    try{
+      if(has) await db.removeWishlist(user.id,id,token);
+      else    await db.addWishlist(user.id,id,token);
+    }catch(e){
+      setMyWishlist(prev=>{ const n=new Set(prev); has?n.add(id):n.delete(id); return n; });
+      setWishlistCounts(prev=>({...prev,[id]:Math.max(0,(prev[id]||0)+(has?1:-1))}));
+      flash("Couldn't update wishlist. Try again.");
+    }
+  }
 
   // Fetch once the set of seller ids flagged fast_seller=true on their profile, so
   // cards/Detail can show a "⚡ FAST SELLER" badge without a per-card profile fetch.
@@ -1795,6 +1841,7 @@ export default function App() {
         openDetail={openDetail} fitsMe={fitsMe} wishlist={wishlist} toggleWishlist={toggleWishlist}
         newListings={newListings} priceDrops={priceDrops} trendingItems={trendingItems}
         sellerRatings={sellerRatings} fastSellers={fastSellers}
+        wishlistCounts={wishlistCounts} myWishlist={myWishlist} toggleFavourite={toggleFavourite}
       />
 
       {/* DETAIL */}

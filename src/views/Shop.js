@@ -26,6 +26,9 @@ export default function Shop({
   newListings, priceDrops, trendingItems,
   sellerRatings = {},
   fastSellers = new Set(),
+  wishlistCounts = {},
+  myWishlist = new Set(),
+  toggleFavourite = () => {},
 }) {
   if(view!=="shop") return null;
   // Small "⚡ FAST SELLER" badge for sellers flagged fast_seller=true on their profile.
@@ -47,6 +50,24 @@ export default function Shop({
       <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,color:"#FF1493",letterSpacing:0.5,whiteSpace:"nowrap",display:"inline-flex",alignItems:"center",gap:4}}>
         <Stars value={r.average} size={11} color="#FF1493" gap={1}/> ({r.count})
       </span>
+    );
+  };
+  // DB-backed favourite count (Phase 10b). Shows a heart + how many users have
+  // wishlisted the listing, in the price/views row. Filled when the signed-in
+  // user has saved it, outline otherwise; clicking toggles the save (or prompts
+  // sign-in when logged out). Renders nothing when the count is 0, per spec.
+  const WishCount = ({ item }) => {
+    const count = wishlistCounts[item.id] || 0;
+    if(count <= 0) return null;
+    const mine = myWishlist.has(item.id);
+    return (
+      <button
+        onClick={e=>{e.stopPropagation();toggleFavourite(item);}}
+        aria-label={mine?"Remove from wishlist":"Add to wishlist"}
+        style={{display:"inline-flex",alignItems:"center",gap:4,background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,color:"#FF1493",letterSpacing:0.5,whiteSpace:"nowrap"}}
+      >
+        <Heart width={12} height={12} fill={mine?"#FF1493":"none"} color="#FF1493"/> {count}
+      </button>
     );
   };
   return (
@@ -180,6 +201,7 @@ export default function Shop({
                         {item.prev_price>item.price&&<span style={S.cardPrevPrice}>{currencySymbol(item.currency)}{item.prev_price}</span>}
                       </span>
                       <span style={{display:"flex",alignItems:"center",gap:8}}>
+                        <WishCount item={item}/>
                         <SellerRating sellerId={item.user_id}/>
                         {item.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,display:"inline-flex",alignItems:"center",gap:4}}><Eye width={12} height={12}/> {item.views}</span>}
                       </span>
@@ -216,7 +238,7 @@ export default function Shop({
                   <div style={S.cardBody} className="card-body">
                     <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
                     <p style={S.cardName} className="card-name">{item.name}</p>
-                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span><SellerRating sellerId={item.user_id}/></div>
+                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span><span style={{display:"flex",alignItems:"center",gap:8}}><WishCount item={item}/><SellerRating sellerId={item.user_id}/></span></div>
                   </div>
                   <div style={{...S.accentBar,background:accent}}/>
                 </article>
@@ -248,7 +270,7 @@ export default function Shop({
                         <span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span>
                         {item.prev_price&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#bbb",textDecoration:"line-through",marginLeft:6}}>{currencySymbol(item.currency)}{item.prev_price}</span>}
                       </span>
-                      <SellerRating sellerId={item.user_id}/>
+                      <span style={{display:"flex",alignItems:"center",gap:8}}><WishCount item={item}/><SellerRating sellerId={item.user_id}/></span>
                     </div>
                   </div>
                   <div style={{...S.accentBar,background:accent}}/>
@@ -275,7 +297,7 @@ export default function Shop({
                   <div style={S.cardBody} className="card-body">
                     <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
                     <p style={S.cardName} className="card-name">{item.name}</p>
-                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span><SellerRating sellerId={item.user_id}/></div>
+                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span><span style={{display:"flex",alignItems:"center",gap:8}}><WishCount item={item}/><SellerRating sellerId={item.user_id}/></span></div>
                   </div>
                   <div style={{...S.accentBar,background:accent}}/>
                 </article>
