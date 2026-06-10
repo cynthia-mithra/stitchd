@@ -75,6 +75,13 @@ export const CSS=`
     .fg2{grid-template-columns:1fr !important;}
     .profile-header{flex-direction:column !important;align-items:center !important;text-align:center;}
   }
+  /* MOBILE — hide the scrolling category ticker strip in the navbar (SAREES ✦
+     LEHENGAS ✦ …). The pink marquee banner (S.ticker) below the header and the
+     navbar's logo / heart / LOG IN / SIGN UP buttons are intentionally untouched.
+     Desktop and iPad (≥769px) keep showing the strip. */
+  @media(max-width:768px){
+    .nav-category-strip{display:none !important;}
+  }
 `;
 
 export const S={
