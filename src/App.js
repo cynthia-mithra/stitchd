@@ -5,6 +5,7 @@ import {
   LISTING_TYPES, JEWELLERY_MATERIALS, ORIGINS, FABRICS, CONDITIONS,
   OCCASIONS, SIZES, OCC_COLOR, CARD_COLORS, EMPTY_FORM, POSTAGE_OPTIONS,
   catEmoji, currencySymbol, buildPaymentSummary,
+  garmentTypesFor, garmentFieldsFor, defaultGarmentFor, parseMeasurements, buildMeasPayload,
 } from "./lib/constants";
 import { db } from "./lib/db";
 import { auth, uploadImage, isTokenExpired, decodeJWT } from "./lib/auth";
@@ -817,7 +818,7 @@ export default function App() {
     }
     try{
       const image_url=urls[0]||"";
-      const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",underbust:form.listing_type==="Clothing"?form.underbust:"",shoulder:form.listing_type==="Clothing"?form.shoulder:"",high_hip:form.listing_type==="Clothing"?form.high_hip:"",sleeve_length:form.listing_type==="Clothing"?form.sleeve_length:"",inseam:form.listing_type==="Clothing"?form.inseam:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(form.category),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
+      const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,...buildMeasPayload(form),can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(form.category),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
       const [created]=await withFreshToken(tok=>db.insert(payload,tok));
       setItems(p=>[created,...p]); setForm(EMPTY_FORM);
       // The photo uploaded fine but didn't come back on the saved row — the
@@ -856,7 +857,7 @@ export default function App() {
       const existingUrls=(sel.images||[]).filter((_,i)=>form.imagePreviews[i]&&!form.imageFiles[i]);
       const allUrls=[...existingUrls,...newUrls];
       const image_url=allUrls[0]||sel.image_url||"";
-      const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,bust:form.listing_type==="Clothing"?form.bust:"",waist:form.listing_type==="Clothing"?form.waist:"",hips:form.listing_type==="Clothing"?form.hips:"",length:form.listing_type==="Clothing"?form.length:"",underbust:form.listing_type==="Clothing"?form.underbust:"",shoulder:form.listing_type==="Clothing"?form.shoulder:"",high_hip:form.listing_type==="Clothing"?form.high_hip:"",sleeve_length:form.listing_type==="Clothing"?form.sleeve_length:"",inseam:form.listing_type==="Clothing"?form.inseam:"",measurement_notes:form.listing_type==="Clothing"?form.measurement_notes:"",can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(form.category),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
+      const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:form.category,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,...buildMeasPayload(form),can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(form.category),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
       const [updated]=await withFreshToken(tok=>db.update(sel.id,patch,tok));
       setItems(p=>p.map(i=>i.id===sel.id?updated:i)); setSel(updated);
       if(allUrls.length&&!updated.image_url){ flash("⚠️ Saved — but the photo couldn't be stored: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase.",11000); }
@@ -877,7 +878,16 @@ export default function App() {
   }
 
   function openEdit(item){
-    setForm({name:item.name||"",price:item.price||"",condition:item.condition||"Like New",listing_type:item.listing_type||"Clothing",category:item.category||"Saree",origin:item.origin||"Indian",fabric:item.fabric||"Silk",material:item.material||"",size:item.size||"Free Size",occasions:item.occasions||[],bust:item.bust||"",waist:item.waist||"",hips:item.hips||"",length:item.length||"",underbust:item.underbust||"",shoulder:item.shoulder||"",high_hip:item.high_hip||"",sleeve_length:item.sleeve_length||"",inseam:item.inseam||"",measurement_notes:item.measurement_notes||"",can_take_in:item.can_take_in||false,spare_fabric:item.spare_fabric||false,description:item.description||"",imageFiles:[],imagePreviews:item.images||[item.image_url].filter(Boolean),postage_options:item.postage_options||[],accepts_collection:item.accepts_collection||false});
+    // Hydrate the new gender/unit/garment measurement model. Newer listings carry
+    // a `measurements` JSON; older ones only have legacy bust/waist/… columns (in
+    // inches), which we map back onto the default garment's field labels.
+    const pm=parseMeasurements(item);
+    const gender=pm?.gender||"women";
+    const garment_type=pm?.garment||defaultGarmentFor(gender,item.category||"Other");
+    const meas_unit=pm?.unit||item.measurements_unit||"inches";
+    let meas=pm?.values?{...pm.values}:{};
+    if(!pm){ garmentFieldsFor(gender,garment_type).forEach(l=>{ const col=({"Bust":"bust","Chest":"bust","Blouse bust":"bust","Waist":"waist","Hip":"hips","Hips":"hips","Length":"length","Length (floor to shoulder)":"length","Saree length":"length","Lehenga length":"length","Sherwani length":"length","Kurta length":"length","Sleeve length":"sleeve_length","Blouse sleeve length":"sleeve_length","Shoulder width":"shoulder","Inseam":"inseam"})[l]; if(col&&item[col]) meas[l]=item[col]; }); }
+    setForm({name:item.name||"",price:item.price||"",condition:item.condition||"Like New",listing_type:item.listing_type||"Clothing",category:item.category||"Saree",origin:item.origin||"Indian",fabric:item.fabric||"Silk",material:item.material||"",size:item.size||"Free Size",occasions:item.occasions||[],gender,meas_unit,garment_type,meas,additional_measurements:item.additional_measurements||item.measurement_notes||"",bust:item.bust||"",waist:item.waist||"",hips:item.hips||"",length:item.length||"",underbust:item.underbust||"",shoulder:item.shoulder||"",high_hip:item.high_hip||"",sleeve_length:item.sleeve_length||"",inseam:item.inseam||"",measurement_notes:item.measurement_notes||"",can_take_in:item.can_take_in||false,spare_fabric:item.spare_fabric||false,description:item.description||"",imageFiles:[],imagePreviews:item.images||[item.image_url].filter(Boolean),postage_options:item.postage_options||[],accepts_collection:item.accepts_collection||false});
     setView("edit");
   }
 
@@ -1525,23 +1535,58 @@ export default function App() {
             <Sec label="OCCASIONS">
               <div style={S.occGrid}>{OCCASIONS.map(o=>{const on=form.occasions.includes(o),col=OCC_COLOR[o];return<button key={o} type="button" onClick={()=>togOcc(o)} style={{...S.occToggle,background:on?col:"#fff",color:on?"#fff":"#111",border:`2px solid ${on?col:"#111"}`,fontWeight:on?800:600}}>{o.toUpperCase()}</button>;})}</div>
             </Sec>
-            {form.listing_type==="Clothing"&&(
-              <Sec label="MEASUREMENTS (INCHES)">
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                  <p style={{fontSize:12,color:"#888"}}>Need help? Use a soft measuring tape.</p>
-                  <button type="button" style={{background:"none",border:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:1,color:"#FF1493",cursor:"pointer",padding:0}} onClick={()=>{setPrevView(view);setView("measuring");}}>📏 HOW TO MEASURE →</button>
+            {form.listing_type==="Clothing"&&(()=>{
+              const gt=form.garment_type||defaultGarmentFor(form.gender,form.category);
+              const fields=garmentFieldsFor(form.gender,gt);
+              const pillBtn=(active)=>({...S.hBtn,background:active?"#FF1493":"#fff",color:active?"#fff":"#111",border:"2px solid #111",borderRadius:0,padding:"10px 18px"});
+              return (
+              <Sec label="MEASUREMENTS">
+                <div style={{display:"flex",gap:20,marginBottom:18,flexWrap:"wrap"}}>
+                  <div>
+                    <div style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,marginBottom:6}}>FOR</div>
+                    <div style={{display:"flex",gap:0}}>
+                      {[["women","WOMEN"],["men","MEN"]].map(([g,l])=>(
+                        <button key={g} type="button" className="hbtn" style={pillBtn(form.gender===g)} onClick={()=>setForm(f=>({...f,gender:g,garment_type:defaultGarmentFor(g,f.category),meas:{}}))}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,marginBottom:6}}>UNITS</div>
+                    <div style={{display:"flex",gap:0}}>
+                      {[["cm","CM"],["inches","INCHES"]].map(([u,l])=>(
+                        <button key={u} type="button" className="hbtn" style={pillBtn(form.meas_unit===u)} onClick={()=>setForm(f=>({...f,meas_unit:u}))}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div style={{background:"#fff8fc",border:"2px solid #FF149333",padding:"14px 16px",marginBottom:16}}>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:900,letterSpacing:2,color:"#FF1493",marginBottom:12}}>✦ REQUIRED MEASUREMENTS</p>
-                  <div style={S.fg4} className="fg4 meas-grid">{[["bust","BUST *"],["waist","WAIST *"],["hips","HIPS *"],["length","LENGTH *"]].map(([k,l])=><F key={k} l={l}><input style={{...S.inp,borderColor:!form[k]?"#FF149366":"#e0e0e0"}} placeholder="e.g. 34" value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}/></F>)}</div>
-                </div>
-                <div style={{marginTop:12}}><F l="NOTES"><input style={S.inp} placeholder="e.g. stitched for 5'4, blouse included" value={form.measurement_notes} onChange={e=>setForm(f=>({...f,measurement_notes:e.target.value}))}/></F></div>
-                <div style={S.toggleStack}>
-                  <Tog on={form.can_take_in} onToggle={()=>setForm(f=>({...f,can_take_in:!f.can_take_in}))} color="#34C759" label="CAN BE TAKEN IN (MADE SMALLER)" sub="Seam allowance exists to reduce sizing"/>
-                  <Tog on={form.spare_fabric} onToggle={()=>setForm(f=>({...f,spare_fabric:!f.spare_fabric}))} color="#FF9500" label="SPARE FABRIC INCLUDED (CAN LET OUT)" sub="Extra fabric allows making it bigger"/>
-                </div>
+                <div style={{marginBottom:16}}><F l="Garment type"><select style={S.inp} value={gt} onChange={e=>setForm(f=>({...f,garment_type:e.target.value,meas:{}}))}>{garmentTypesFor(form.gender).map(t=><option key={t}>{t}</option>)}</select></F></div>
+                {fields.length===0?(
+                  <p style={{fontSize:13,color:"#888"}}>No measurements needed for this category.</p>
+                ):(<>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}>
+                    <p style={{fontSize:12,color:"#888"}}>Enter values in {form.meas_unit.toUpperCase()}. Use a soft measuring tape.</p>
+                    <button type="button" style={{background:"none",border:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:1,color:"#FF1493",cursor:"pointer",padding:0}} onClick={()=>{setPrevView(view);setView("measuring");}}>📏 HOW TO MEASURE →</button>
+                  </div>
+                  <div style={S.fg4} className="fg4 meas-grid">
+                    {fields.map(label=>(
+                      <F key={label} l={`${label} (${form.meas_unit})`}>
+                        <input style={S.inp} placeholder="e.g. 34" value={form.meas[label]||""} onChange={e=>setForm(f=>({...f,meas:{...f.meas,[label]:e.target.value}}))}/>
+                      </F>
+                    ))}
+                  </div>
+                  <div style={{marginTop:16}}>
+                    <F l="Additional measurements or notes">
+                      <textarea style={{...S.inp,height:90,resize:"vertical"}} placeholder="e.g. padding included, altered hem, custom stitching notes..." value={form.additional_measurements} onChange={e=>setForm(f=>({...f,additional_measurements:e.target.value}))}/>
+                    </F>
+                  </div>
+                  <div style={S.toggleStack}>
+                    <Tog on={form.can_take_in} onToggle={()=>setForm(f=>({...f,can_take_in:!f.can_take_in}))} color="#34C759" label="CAN BE TAKEN IN (MADE SMALLER)" sub="Seam allowance exists to reduce sizing"/>
+                    <Tog on={form.spare_fabric} onToggle={()=>setForm(f=>({...f,spare_fabric:!f.spare_fabric}))} color="#FF9500" label="SPARE FABRIC INCLUDED (CAN LET OUT)" sub="Extra fabric allows making it bigger"/>
+                  </div>
+                </>)}
               </Sec>
-            )}
+              );
+            })()}
             <Sec label="📦 POSTAGE">
               <Tog on={form.accepts_collection} onToggle={()=>setForm(f=>({...f,accepts_collection:!f.accepts_collection}))} color="#34C759" label="ACCEPT COLLECTION IN PERSON" sub="Buyer can collect for free"/>
             </Sec>
