@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import sareeMeasurements from "../assets/saree-measurements.png";
+
+// Saree measurement guide image. Served from /public like every other image in
+// the app (e.g. Shop.js uses /Images/*.png). PUBLIC_URL keeps the path correct
+// regardless of where the app is deployed.
+const SAREE_MEASUREMENTS = `${process.env.PUBLIC_URL || ""}/Images/saree-measurements.png`;
 
 /* ------------------------------------------------------------------ *
  * How to Measure — gender toggle, garment-specific accordions,
@@ -289,7 +293,7 @@ function GarmentSection({ gender, garment, open, onToggle }) {
           // Saree uses a custom image that already includes the numbered legend.
           <div style={{ padding: "20px 18px", borderTop: "2px solid #111" }}>
             <img
-              src={sareeMeasurements}
+              src={SAREE_MEASUREMENTS}
               alt="How to measure a saree — blouse bust, waist, length, saree length, sleeve length"
               style={{ width: "100%", maxWidth: 800, height: "auto", display: "block", margin: "0 auto" }}
             />
