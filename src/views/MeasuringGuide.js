@@ -284,43 +284,54 @@ function GarmentSection({ gender, garment, open, onToggle }) {
         <span style={{ color: PINK, fontSize: 26, lineHeight: 1 }}>{open ? "–" : "+"}</span>
       </button>
       {open && (
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 24,
-            padding: "20px 18px",
-            borderTop: "2px solid #111",
-          }}
-        >
-          <div style={{ flex: "1 1 200px", minWidth: 180, maxWidth: 260 }}>
-            <BodyDiagram gender={gender} marks={garment.marks} />
+        garment.key === "saree" ? (
+          // Saree uses a custom image that already includes the numbered legend.
+          <div style={{ padding: "20px 18px", borderTop: "2px solid #111" }}>
+            <img
+              src="/Images/saree-measurements.png"
+              alt="How to measure a saree — blouse bust, waist, length, saree length, sleeve length"
+              style={{ width: "100%", maxWidth: 800, height: "auto", display: "block", margin: "0 auto" }}
+            />
           </div>
-          <ol style={{ flex: "2 1 280px", listStyle: "none", margin: 0, padding: 0 }}>
-            {garment.marks.map((m, i) => (
-              <li
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 12,
-                  padding: "10px 0",
-                  borderBottom: i < garment.marks.length - 1 ? "1px solid #f0f0f0" : "none",
-                }}
-              >
-                <NumBadge n={i + 1} />
-                <span style={{ paddingTop: 1 }}>
-                  <span style={{ fontFamily: BC, fontSize: 17, fontWeight: 800, color: "#111" }}>
-                    {m[0]}
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 24,
+              padding: "20px 18px",
+              borderTop: "2px solid #111",
+            }}
+          >
+            <div style={{ flex: "1 1 200px", minWidth: 180, maxWidth: 260 }}>
+              <BodyDiagram gender={gender} marks={garment.marks} />
+            </div>
+            <ol style={{ flex: "2 1 280px", listStyle: "none", margin: 0, padding: 0 }}>
+              {garment.marks.map((m, i) => (
+                <li
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 12,
+                    padding: "10px 0",
+                    borderBottom: i < garment.marks.length - 1 ? "1px solid #f0f0f0" : "none",
+                  }}
+                >
+                  <NumBadge n={i + 1} />
+                  <span style={{ paddingTop: 1 }}>
+                    <span style={{ fontFamily: BC, fontSize: 17, fontWeight: 800, color: "#111" }}>
+                      {m[0]}
+                    </span>
+                    <span style={{ fontSize: 13.5, color: "#666", display: "block", lineHeight: 1.4 }}>
+                      {m[1]}
+                    </span>
                   </span>
-                  <span style={{ fontSize: 13.5, color: "#666", display: "block", lineHeight: 1.4 }}>
-                    {m[1]}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ol>
-        </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )
       )}
     </div>
   );
