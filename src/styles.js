@@ -30,25 +30,28 @@ export const CSS=`
        style). A min-height guarantees a tall-enough canvas for the cluster even when
        the heading text is short, and overflow:hidden clips any float-animation
        overshoot so there is never horizontal page scroll. */
-    .hero-right{flex:0 0 40% !important;padding:0 !important;min-height:340px !important;}
+    .hero-right{flex:0 0 40% !important;padding:0 !important;min-height:360px !important;}
     /* OVERLAPPING FLOATING CLUSTER (mobile): bubbles stay position:absolute (from the
        inline style) and we override only top/left/size per bubble with !important.
-       Sizes are kept close to the previous LARGER look (64–84px). Crucially, sizes are
+       Sizes are BIGGER now (74–96px). Crucially, sizes are
        fixed px while left is a PERCENTAGE of the column width: the column is narrowest
        on the smallest phone (~40% of 320px ≈ 128px), so designing the fit there
        guarantees every wider phone has MORE room — no bubble can be clipped or cut off
-       by the right edge, and there is no horizontal overflow. Bubbles alternate
+       by the right edge, and there is no horizontal overflow. The right-edge fit holds
+       even at the larger sizes: left bubbles sit at ~2–3% (≈4px) so a 96px bubble ends
+       near 100px (well inside 128px), and right bubbles sit at ~36–37% (≈47px) so a
+       76px bubble ends near 123px (still inside 128px). Bubbles alternate
        left/right and step down ~14% each, so they overlap vertically for the staggered
        floating look while every right edge stays well inside the column. The inline
        'floatbob' animation (which animates transform) is left untouched, so they keep
        bobbing exactly like the desktop hero. */
     .hero-bubble{border-width:3px !important;box-shadow:0 6px 22px rgba(0,0,0,0.16) !important;}
-    .hero-bubble:nth-child(1){top:1%  !important;left:4%  !important;width:84px !important;height:84px !important;}
-    .hero-bubble:nth-child(2){top:15% !important;left:40% !important;width:64px !important;height:64px !important;}
-    .hero-bubble:nth-child(3){top:30% !important;left:5%  !important;width:80px !important;height:80px !important;}
-    .hero-bubble:nth-child(4){top:45% !important;left:38% !important;width:66px !important;height:66px !important;}
-    .hero-bubble:nth-child(5){top:59% !important;left:3%  !important;width:82px !important;height:82px !important;}
-    .hero-bubble:nth-child(6){top:73% !important;left:42% !important;width:64px !important;height:64px !important;}
+    .hero-bubble:nth-child(1){top:1%  !important;left:3%  !important;width:96px !important;height:96px !important;}
+    .hero-bubble:nth-child(2){top:15% !important;left:36% !important;width:76px !important;height:76px !important;}
+    .hero-bubble:nth-child(3){top:30% !important;left:3%  !important;width:94px !important;height:94px !important;}
+    .hero-bubble:nth-child(4){top:45% !important;left:36% !important;width:76px !important;height:76px !important;}
+    .hero-bubble:nth-child(5){top:59% !important;left:2%  !important;width:94px !important;height:94px !important;}
+    .hero-bubble:nth-child(6){top:73% !important;left:37% !important;width:74px !important;height:74px !important;}
     /* PROBLEM 2 — search field full-width on its own line, FILTERS/FIT/TAILORS
        sharing the second line equally and compactly. */
     .search-box{flex:1 1 100% !important;}
