@@ -1,4 +1,5 @@
 import React from "react";
+import { Search, Scissors, Zap, Heart, Star, Bell, Ruler, Eye, ArrowDown, Sparkles, TrendingDown, Flame, Shirt } from "lucide-react";
 import {
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, ALL_CATEGORIES,
   CONDITIONS, SIZES, OCC_COLOR, CARD_COLORS,
@@ -33,7 +34,7 @@ export default function Shop({
   // overlap; in the home rails there's no fits badge so it sits at the standard offset.
   const FastBadge = ({ sellerId, raised = false }) =>
     fastSellers.has(sellerId)
-      ? <div style={{...S.fastBadge,...(raised?{bottom:40}:{})}}>⚡ FAST SELLER</div>
+      ? <div style={{...S.fastBadge,...(raised?{bottom:40}:{}),display:"inline-flex",alignItems:"center",gap:5}}><Zap width={12} height={12} fill="currentColor"/> FAST SELLER</div>
       : null;
   // Subtle seller rating chip — sits in the price/views row, mirrors the view-count
   // style (Barlow Condensed, small, muted). Renders nothing when the seller has no
@@ -42,8 +43,8 @@ export default function Shop({
     const r = sellerRatings[sellerId];
     if(!r||!r.count) return null;
     return (
-      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,whiteSpace:"nowrap"}}>
-        ⭐ {r.average.toFixed(1)} ({r.count})
+      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,whiteSpace:"nowrap",display:"inline-flex",alignItems:"center",gap:4}}>
+        <Star width={11} height={11} fill="currentColor"/> {r.average.toFixed(1)} ({r.count})
       </span>
     );
   };
@@ -56,7 +57,7 @@ export default function Shop({
           <p style={S.heroSub}>Buy or Resell South Asian fashion</p>
           <div style={S.heroCtas}>
             <button className="hbtn" style={S.heroBtnPrimary} onClick={()=>user?setView("add"):(setAuthMode("signup"),setView("auth"))}>LIST YOUR PIECE →</button>
-            <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"})}>BROWSE DROPS ↓</button>
+            <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"})}><span style={{display:"inline-flex",alignItems:"center",gap:8}}>BROWSE DROPS <ArrowDown width={16} height={16}/></span></button>
           </div>
         </div>
         <div style={S.heroRight} className="hero-right">
@@ -86,7 +87,7 @@ export default function Shop({
       <div style={{...S.searchBar,position:"relative"}} id="grid-anchor">
         <div style={S.searchInner}>
           <div style={S.searchBox} className="search-box">
-            <span style={S.searchIcon}>🔍</span>
+            <span style={S.searchIcon}><Search width={16} height={16}/></span>
             <input style={S.searchInput} placeholder="SEARCH SAREES, SILK, WEDDING..."
               value={search}
               onChange={e=>handleSearchInput(e.target.value)}
@@ -94,11 +95,11 @@ export default function Shop({
               onBlur={()=>setTimeout(()=>{ setShowSuggestions(false); setShowSavedSearches(false); },200)}
             />
             {search&&<button style={S.searchClear} onClick={()=>{setSearch("");setShowSuggestions(false);}}>✕</button>}
-            {search&&user&&<button style={{...S.searchClear,color:"#FF1493",fontSize:10,fontWeight:800,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,whiteSpace:"nowrap",paddingRight:12}} onClick={saveCurrentSearch}>🔔 SAVE</button>}
+            {search&&user&&<button style={{...S.searchClear,color:"#FF1493",fontSize:10,fontWeight:800,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,whiteSpace:"nowrap",paddingRight:12}} onClick={saveCurrentSearch}><span style={{display:"inline-flex",alignItems:"center",gap:4}}><Bell width={12} height={12}/> SAVE</span></button>}
           </div>
           <button className="hbtn search-action-btn" style={{...S.filterBtn,background:showFilters?"#FF1493":"#fff",color:showFilters?"#fff":"#111"}} onClick={()=>setShowFilters(f=>!f)}>FILTERS {hasFilters?"●":""}</button>
-          {user&&profile?.bust&&<button className="hbtn search-action-btn" style={{...S.filterBtn,background:showSizeMatch?"#34C759":"#fff",color:showSizeMatch?"#fff":"#111"}} onClick={()=>setShowSizeMatch(f=>!f)}>📐 FIT</button>}
-          <button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailorMarket();setView("tailors");}}>✂️ TAILORS</button>
+          {user&&profile?.bust&&<button className="hbtn search-action-btn" style={{...S.filterBtn,background:showSizeMatch?"#34C759":"#fff",color:showSizeMatch?"#fff":"#111"}} onClick={()=>setShowSizeMatch(f=>!f)}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Ruler width={16} height={16}/> FIT</span></button>}
+          <button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailorMarket();setView("tailors");}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Scissors width={16} height={16}/> TAILORS</span></button>
         </div>
         {(showSuggestions&&searchSuggestions.length>0)||(showSavedSearches&&savedSearches.length>0)?(
           <div style={{position:"absolute",top:"100%",left:10,width:"calc(100% - 20px)",maxWidth:560,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
@@ -107,7 +108,7 @@ export default function Shop({
                 <div style={{padding:"8px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:900,letterSpacing:2,color:"#bbb",borderBottom:"1px solid #f0f0f0"}}>SAVED SEARCHES</div>
                 {savedSearches.map(s=>(
                   <div key={s.id} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderBottom:"1px solid #f5f5f5",cursor:"pointer",gap:10}}>
-                    <span style={{fontSize:14}}>🔔</span>
+                    <span style={{display:"flex",alignItems:"center",color:"#FF1493"}}><Bell width={15} height={15}/></span>
                     <span style={{flex:1,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#111"}} onClick={()=>applySearch(s.query)}>{s.query}</span>
                     <button style={{background:"none",border:"none",color:"#bbb",cursor:"pointer",fontSize:12,fontWeight:900,padding:"2px 6px"}} onClick={()=>deleteSavedSearch(s.id)}>✕</button>
                   </div>
@@ -116,7 +117,7 @@ export default function Shop({
             )}
             {showSuggestions&&searchSuggestions.map((s,i)=>(
               <div key={i} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderBottom:"1px solid #f5f5f5",cursor:"pointer",gap:10}} onMouseDown={()=>applySearch(s)}>
-                <span style={{fontSize:14,color:"#bbb"}}>🔍</span>
+                <span style={{display:"flex",alignItems:"center",color:"#bbb"}}><Search width={15} height={15}/></span>
                 <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#111"}}>{s}</span>
               </div>
             ))}
@@ -155,9 +156,9 @@ export default function Shop({
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                     {item.reserved&&!item.sold&&<div style={S.reservedBadge}>RESERVED</div>}
-                    {fitsMe(item)===true&&<div style={S.fitsBadge}>📐 FITS YOU</div>}
+                    {fitsMe(item)===true&&<div style={{...S.fitsBadge,display:"inline-flex",alignItems:"center",gap:5}}><Ruler width={11} height={11}/> FITS YOU</div>}
                     <FastBadge sellerId={item.user_id} raised={fitsMe(item)===true}/>
-                    <button style={{...S.heartBtn,background:wishlist.includes(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}>{wishlist.includes(item.id)?"❤️":"🤍"}</button>
+                    <button style={{...S.heartBtn,background:wishlist.includes(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}><Heart width={16} height={16} fill={wishlist.includes(item.id)?"#fff":"none"} color={wishlist.includes(item.id)?"#fff":"#111"}/></button>
                     <div style={S.cardOrigin}>{item.origin?.toUpperCase()}</div>
                   </Thumb>
                   <div style={S.cardBody} className="card-body">
@@ -175,7 +176,7 @@ export default function Shop({
                       <span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span>
                       <span style={{display:"flex",alignItems:"center",gap:8}}>
                         <SellerRating sellerId={item.user_id}/>
-                        {item.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>👁 {item.views}</span>}
+                        {item.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,display:"inline-flex",alignItems:"center",gap:4}}><Eye width={12} height={12}/> {item.views}</span>}
                       </span>
                     </div>
                   </div>
@@ -185,7 +186,7 @@ export default function Shop({
             })}
             {visible.length===0&&(
               <div style={S.empty}>
-                <p style={{fontSize:60}}>{hasFilters?"🔍":"🥻"}</p>
+                <p style={{display:"flex",justifyContent:"center"}}>{hasFilters?<Search width={60} height={60}/>:<Shirt width={60} height={60}/>}</p>
                 <p style={{fontSize:28,fontWeight:900,margin:"12px 0 6px",fontFamily:"'Barlow Condensed',sans-serif"}}>{hasFilters?"NO RESULTS.":"NOTHING HERE YET."}</p>
                 {hasFilters?<button className="hbtn" style={S.hBtn} onClick={clearFilters}>CLEAR FILTERS</button>:<button className="hbtn" style={S.hBtn} onClick={()=>user?setView("add"):(setAuthMode("signup"),setView("auth"))}>LIST IT →</button>}
               </div>
@@ -197,7 +198,7 @@ export default function Shop({
       {/* NEW IN */}
       {!hasFilters&&newListings.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20}}>✨ NEW IN — LAST 48 HOURS</div>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><Sparkles width={16} height={16}/> NEW IN — LAST 48 HOURS</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
             {newListings.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
@@ -223,7 +224,7 @@ export default function Shop({
       {/* PRICE DROPS */}
       {!hasFilters&&priceDrops.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:20}}>📉 PRICE DROPS</div>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><TrendingDown width={16} height={16}/> PRICE DROPS</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
             {priceDrops.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
@@ -256,14 +257,14 @@ export default function Shop({
       {/* TRENDING */}
       {!hasFilters&&trendingItems.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 48px",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #BF5AF2",paddingLeft:12,marginBottom:20}}>🔥 TRENDING — MOST VIEWED</div>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #BF5AF2",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><Flame width={16} height={16}/> TRENDING — MOST VIEWED</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
             {trendingItems.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
                 <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
-                    <div style={{position:"absolute",top:12,left:12,background:"#BF5AF2",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>👁 {item.views}</div>
+                    <div style={{position:"absolute",top:12,left:12,background:"#BF5AF2",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3,display:"inline-flex",alignItems:"center",gap:4}}><Eye width={11} height={11}/> {item.views}</div>
                     <FastBadge sellerId={item.user_id}/>
                   </Thumb>
                   <div style={S.cardBody} className="card-body">
