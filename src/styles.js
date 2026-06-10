@@ -322,6 +322,14 @@ export const S={
   // Barlow Condensed, 2px #111 border, no radius. Background/colour are overridden
   // inline for the ADDED (black) and SOLD (grey) states.
   bagAddBtn:{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:17,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16},
+  // BUYER GUARANTEE BANNER (Detail page) — trust signal below ADD TO BAG.
+  // Square 2px #111 frame, white fill, Barlow Condensed throughout.
+  guaranteeBanner:{border:"2px solid #111",borderRadius:0,background:"#fff",padding:"16px 18px",marginBottom:16},
+  guaranteeHeading:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,letterSpacing:2,color:"#FF1493",textTransform:"uppercase",marginBottom:12},
+  guaranteeList:{display:"flex",flexDirection:"column",gap:9},
+  guaranteePoint:{display:"flex",alignItems:"center",gap:10,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:0.5,color:"#111",lineHeight:1.2},
+  // Compact guarantee line below PROCEED TO CHECKOUT in the bag panel.
+  bagGuarantee:{display:"flex",alignItems:"center",justifyContent:"center",gap:7,marginTop:14,fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#111"},
   // Slide-in bag panel — dim backdrop pinned to the right edge of the screen.
   bagOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:600,display:"flex",justifyContent:"flex-end"},
   bagPanel:{width:"min(420px,100%)",height:"100%",background:"#fff",borderLeft:"2px solid #111",display:"flex",flexDirection:"column",overflowY:"auto"},
