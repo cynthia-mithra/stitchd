@@ -31,8 +31,22 @@ export async function startCheckout(bag, { buyerId, buyerEmail } = {}) {
     clearTimeout(timeout);
   }
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.url) throw new Error(data.error || "Could not start checkout.");
+  // Read the body once as text so we can still surface a reason even when the
+  // function crashes and returns a non-JSON error page (e.g. a raw 500 HTML).
+  const raw = await res.text().catch(() => "");
+  let data = {};
+  try { data = raw ? JSON.parse(raw) : {}; } catch { /* non-JSON body */ }
+
+  if (!res.ok || !data.url) {
+    // Log the full failure so the exact cause is visible in DevTools → Console,
+    // not just the toast. This is what tells us "is it config, Stripe, or data?".
+    console.error("[checkout] failed", { status: res.status, body: raw });
+    const reason =
+      data.error ||
+      (raw && !raw.trim().startsWith("<") ? raw : "") ||
+      `Could not start checkout (HTTP ${res.status}).`;
+    throw new Error(reason);
+  }
   // Hand the buyer over to Stripe's hosted checkout page.
   window.location.href = data.url;
 }
