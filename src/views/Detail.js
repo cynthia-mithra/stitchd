@@ -1,5 +1,5 @@
 import React from "react";
-import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS } from "../lib/constants";
+import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb } from "../components/Shared";
 
@@ -16,6 +16,17 @@ export default function Detail({
   similarItems, openDetail,
   fastSellers = new Set(),
 }) {
+  // Buyer-side unit toggle — converts on the fly, never writes back (PART 2a).
+  const [dispUnit, setDispUnit] = React.useState("cm");
+  // Source of truth for measurements: prefer the new `measurements` JSON, fall
+  // back to legacy bust/waist/… columns (which were always entered in inches).
+  const meas = sel ? parseMeasurements(sel) : null;
+  const storedUnit = meas?.unit || sel?.measurements_unit || "inches";
+  const measRows = meas?.values && Object.keys(meas.values).length
+    ? Object.entries(meas.values)
+    : [["BUST",sel?.bust],["WAIST",sel?.waist],["HIPS",sel?.hips],["LENGTH",sel?.length],["UNDERBUST",sel?.underbust],["SHOULDER",sel?.shoulder],["HIGH HIP",sel?.high_hip],["SLEEVE",sel?.sleeve_length],["INSEAM",sel?.inseam]].filter(([,v])=>v);
+  const hasMeas = sel && sel.listing_type!=="Jewellery" && measRows.length>0;
+  const sellerNotes = sel ? (sel.additional_measurements||sel.measurement_notes) : "";
   return (
     <>
       {view==="detail"&&sel&&(
@@ -58,16 +69,29 @@ export default function Detail({
               {(sel.occasions||[]).length>0&&(
                 <div style={S.dBlock}><p style={{...S.dBlockTitle,borderColor:selColor,color:selColor}}>OCCASIONS</p><div style={S.occRow}>{sel.occasions.map(o=><span key={o} style={{...S.occChip,background:OCC_COLOR[o]||"#999",color:"#fff"}}>{o.toUpperCase()}</span>)}</div></div>
               )}
-              {sel.listing_type!=="Jewellery"&&(sel.bust||sel.waist||sel.hips||sel.length)&&(
+              {hasMeas&&(
                 <div style={S.dBlock}>
-                  <p style={{...S.dBlockTitle,borderColor:selColor,color:selColor}}>MEASUREMENTS</p>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}>
+                    <p style={{...S.dBlockTitle,borderColor:selColor,color:selColor,marginBottom:0}}>MEASUREMENTS</p>
+                    <div style={{display:"flex",gap:0}}>
+                      {[["cm","CM"],["inches","INCHES"]].map(([u,l])=>(
+                        <button key={u} type="button" onClick={()=>setDispUnit(u)} style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,fontSize:11,padding:"6px 12px",cursor:"pointer",border:"2px solid #111",borderRadius:0,background:dispUnit===u?"#FF1493":"#fff",color:dispUnit===u?"#fff":"#111"}}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
                   <div style={S.measBoxRow}>
-                    {[["BUST",sel.bust],["WAIST",sel.waist],["HIPS",sel.hips],["LENGTH",sel.length],["UNDERBUST",sel.underbust],["SHOULDER",sel.shoulder],["HIGH HIP",sel.high_hip],["SLEEVE",sel.sleeve_length],["INSEAM",sel.inseam]].filter(([,v])=>v).map(([l,v])=>(
-                      <div key={l} style={{...S.measBox,borderColor:selColor}}><div style={{...S.measVal,color:selColor}}>{v}in</div><div style={S.measLbl}>{l}</div></div>
+                    {measRows.map(([l,v])=>(
+                      <div key={l} style={{...S.measBox,borderColor:selColor}}><div style={{...S.measVal,color:selColor}}>{convertMeasure(v,storedUnit,dispUnit)}{dispUnit==="inches"?"in":"cm"}</div><div style={S.measLbl}>{String(l).toUpperCase()}</div></div>
                     ))}
                   </div>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#bbb",letterSpacing:1,marginBottom:10}}>📐 LISTED IN {storedUnit==="inches"?"INCHES":"CM"} BY SELLER</p>
                   {sel.size&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:10}}>SIZE: {sel.size}</p>}
-                  {sel.measurement_notes&&<p style={S.measNote}>📌 {sel.measurement_notes}</p>}
+                  {sellerNotes&&(
+                    <div style={{marginBottom:12}}>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:900,letterSpacing:2,color:"#888",marginBottom:4}}>SELLER'S NOTES</p>
+                      <p style={S.measNote}>📌 {sellerNotes}</p>
+                    </div>
+                  )}
                   <div style={S.alterRow}>
                     <div style={{...S.alterBadge,...(sel.can_take_in?S.aY:S.aN)}}>{sel.can_take_in?"✓ CAN BE TAKEN IN":"✗ CANNOT TAKE IN"}</div>
                     <div style={{...S.alterBadge,...(sel.spare_fabric?S.aY2:S.aN)}}>{sel.spare_fabric?"✓ SPARE FABRIC INCLUDED":"✗ NO SPARE FABRIC"}</div>
