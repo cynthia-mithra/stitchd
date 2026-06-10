@@ -29,6 +29,9 @@ const GARMENTS = {
     {
       key: "lehenga",
       name: "Lehenga",
+      // Custom measurement image replaces the SVG diagram + numbered legend.
+      // The image already includes the numbered legend.
+      image: "/Images/lehenga-measurements.png",
       marks: [
         ["Waist", "Around the natural waist", 100, 146],
         ["Hip", "Around the fullest part of the hips, 8 inches below waist", 100, 182],
@@ -284,6 +287,15 @@ function GarmentSection({ gender, garment, open, onToggle }) {
         <span style={{ color: PINK, fontSize: 26, lineHeight: 1 }}>{open ? "–" : "+"}</span>
       </button>
       {open && (
+        garment.image ? (
+          <div style={{ padding: "20px 18px", borderTop: "2px solid #111" }}>
+            <img
+              src={garment.image}
+              alt="How to measure a lehenga — waist, hip, lehenga length, blouse bust, blouse waist, blouse length"
+              style={{ width: "100%", maxWidth: "800px", height: "auto", display: "block", margin: "0 auto" }}
+            />
+          </div>
+        ) : (
         <div
           style={{
             display: "flex",
@@ -321,6 +333,7 @@ function GarmentSection({ gender, garment, open, onToggle }) {
             ))}
           </ol>
         </div>
+        )
       )}
     </div>
   );
