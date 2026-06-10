@@ -1,0 +1,98 @@
+// Vercel serverless function: POST /api/stripe-checkout
+// ------------------------------------------------------
+// Creates a Stripe Checkout Session for the given listing ids and returns the
+// hosted-checkout URL for the browser to redirect to. This runs server-side on
+// Vercel (the same host that serves the app), so:
+//   • the Stripe SECRET key never reaches the browser, and
+//   • the request is same-origin — there is no CORS preflight to fail, which is
+//     what produced the old "Load failed" / "Failed to fetch" error when the
+//     (undeployed) Supabase Edge Function had no Access-Control headers.
+//
+// The ONLY setup step required: add the secret key in
+//   Vercel → Project → Settings → Environment Variables
+//     STRIPE_SECRET_KEY = sk_test_…   (use your Stripe TEST secret key)
+// then redeploy. No CLI needed — Vercel auto-deploys this file on push.
+
+const Stripe = require("stripe");
+
+// Same Supabase project the app already reads from. The anon key is already
+// public (it ships in the browser bundle) and can only read publicly-readable
+// listing rows — we re-read prices here so a buyer can't tamper with them.
+const SUPABASE_URL = "https://zhstooqgkyuzxseylsbk.supabase.co";
+const SUPABASE_ANON =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoc3Rvb3Fna3l1enhzZXlsc2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NzM3MzQsImV4cCI6MjA5NjE0OTczNH0.mW5GB1VzSfRBMWZRlU7OfQ0RqoT1wEBVBoai6dJ6eQs";
+
+module.exports = async (req, res) => {
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  const secret = process.env.STRIPE_SECRET_KEY;
+  if (!secret) {
+    // Surface the real reason instead of a generic 500, so it's obvious what's
+    // missing the first time checkout is hit on a fresh deploy.
+    return res.status(500).json({
+      error:
+        "Checkout isn't configured yet — set STRIPE_SECRET_KEY in your Vercel environment variables and redeploy.",
+    });
+  }
+  const stripe = new Stripe(secret, { apiVersion: "2024-12-18.acacia" });
+
+  try {
+    const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const { listing_ids, buyer_id, buyer_email } = body;
+    if (!Array.isArray(listing_ids) || listing_ids.length === 0) {
+      return res.status(400).json({ error: "No items to check out." });
+    }
+
+    // Pull authoritative prices straight from Supabase — never trust the client.
+    const ids = listing_ids.map((id) => `"${id}"`).join(",");
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/listings?id=in.(${ids})&select=id,name,price,user_id,sold,status`,
+      { headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` } },
+    );
+    if (!r.ok) return res.status(502).json({ error: `Could not load listings: ${await r.text()}` });
+    const listings = await r.json();
+    if (!Array.isArray(listings) || listings.length === 0) {
+      return res.status(404).json({ error: "Listings not found." });
+    }
+
+    // Refuse anything already sold so two buyers can't pay for the same piece.
+    const unavailable = listings.filter((l) => l.sold === true || l.status === "sold");
+    if (unavailable.length) {
+      return res
+        .status(409)
+        .json({ error: `No longer available: ${unavailable.map((l) => l.name).join(", ")}` });
+    }
+
+    // One GBP line item per listing, quantity 1.
+    const line_items = listings.map((l) => {
+      const pence = Math.round(parseFloat(String(l.price)) * 100);
+      if (!Number.isFinite(pence) || pence <= 0) throw new Error(`Invalid price for "${l.name}"`);
+      return {
+        price_data: { currency: "gbp", product_data: { name: l.name }, unit_amount: pence },
+        quantity: 1,
+      };
+    });
+
+    // Build success/cancel URLs from the request origin so this works on every
+    // Vercel deployment (preview + production) without hardcoding a domain.
+    const origin =
+      req.headers.origin || (req.headers.host ? `https://${req.headers.host}` : "https://stitchd.fit");
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items,
+      success_url: `${origin}/order-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/bag`,
+      customer_email: buyer_email || undefined,
+      metadata: {
+        listing_ids: listings.map((l) => l.id).join(","),
+        seller_ids: listings.map((l) => l.user_id).join(","),
+        buyer_id: buyer_id || "",
+      },
+    });
+
+    return res.status(200).json({ url: session.url, id: session.id });
+  } catch (e) {
+    return res.status(500).json({ error: e.message || "Checkout failed." });
+  }
+};
