@@ -10,6 +10,7 @@ import {
 import { db } from "./lib/db";
 import { auth, uploadImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package } from "lucide-react";
 import { Sec, F, Tog, Thumb } from "./components/Shared";
 import Tailors from "./views/Tailors";
 import Detail from "./views/Detail";
@@ -932,7 +933,7 @@ export default function App() {
           <div className="nav-right" style={S.hRight}>
             <span style={S.hLive}>{items.filter(i=>!i.sold).length} LIVE</span>
             <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setView("wishlist")}>
-              ❤️ {wishlist.length>0&&<span style={S.wishBadge}>{wishlist.length}</span>}
+              <Heart width={18} height={18} style={{verticalAlign:"middle"}}/> {wishlist.length>0&&<span style={S.wishBadge}>{wishlist.length}</span>}
             </button>
             {user?(
               <>
@@ -940,10 +941,10 @@ export default function App() {
                 <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{loadOrders();setView("orders");}}>ORDERS</button>
                 <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{loadFeed();setView("feed");}}>✦ FEED</button>
                 <button className="hbtn" style={{...S.hBtn,background:showNotifs?"#FF1493":"#fff",color:showNotifs?"#fff":"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setShowNotifs(p=>!p)}>
-                  🔔 {unreadNotifs>0&&<span style={S.wishBadge}>{unreadNotifs}</span>}
+                  <Bell width={18} height={18} style={{verticalAlign:"middle"}}/> {unreadNotifs>0&&<span style={S.wishBadge}>{unreadNotifs}</span>}
                 </button>
                 <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",position:"relative"}} onClick={openMessages}>
-                  💬 {unreadCount>0&&<span style={S.wishBadge}>{unreadCount}</span>}
+                  <MessageCircle width={18} height={18} style={{verticalAlign:"middle"}}/> {unreadCount>0&&<span style={S.wishBadge}>{unreadCount}</span>}
                 </button>
                 <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{ load2FAFactors(); setView("editprofile"); }}>PROFILE</button>
                 <button className="hbtn" style={S.hBtn} onClick={()=>setView("add")}>LIST IT →</button>
@@ -1237,13 +1238,13 @@ export default function App() {
           <div style={{marginBottom:36,paddingBottom:24,borderBottom:"3px solid #111",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div>
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>SAVED PIECES</p>
-              <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1}}>MY WISHLIST ❤️</h2>
+              <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,display:"flex",alignItems:"center",gap:12}}>MY WISHLIST <Heart width={40} height={40} fill="#FF1493" color="#FF1493"/></h2>
             </div>
             {wishlistItems.length>0&&<button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493"}} onClick={()=>{setWishlist([]);localStorage.removeItem("stitchd_wishlist");}}>CLEAR ALL</button>}
           </div>
           {wishlistItems.length===0?(
             <div style={{textAlign:"center",padding:"60px 20px"}}>
-              <p style={{fontSize:48,marginBottom:12}}>🤍</p>
+              <p style={{display:"flex",justifyContent:"center",marginBottom:12}}><Heart width={48} height={48} color="#ddd"/></p>
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NOTHING SAVED YET.</p>
               <button className="hbtn" style={S.hBtn} onClick={()=>setView("shop")}>BROWSE DROPS →</button>
             </div>
@@ -1256,7 +1257,7 @@ export default function App() {
                     <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
                       <div style={{position:"absolute",inset:0,zIndex:1}} onClick={()=>openDetail(item)}/>
                       {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-                      <button style={S.heartBtn} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}>❤️</button>
+                      <button style={S.heartBtn} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}><Heart width={16} height={16} fill="#FF1493" color="#FF1493"/></button>
                     </Thumb>
                     <div style={S.cardBody} onClick={()=>openDetail(item)}>
                       <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
@@ -1510,7 +1511,7 @@ export default function App() {
                 ))}
                 {form.imagePreviews.length<5&&(
                   <div style={S.uploadZone} onClick={()=>document.getElementById("img-input").click()}>
-                    <div style={S.uploadPlaceholder}><div style={S.uploadIcon}>📸</div><p style={S.uploadText}>ADD PHOTO</p></div>
+                    <div style={S.uploadPlaceholder}><div style={{...S.uploadIcon,display:"flex",justifyContent:"center"}}><Camera width={24} height={24}/></div><p style={S.uploadText}>ADD PHOTO</p></div>
                   </div>
                 )}
               </div>
@@ -1524,7 +1525,7 @@ export default function App() {
                   <div style={{display:"flex",gap:0}}>
                     {LISTING_TYPES.map(t=>(
                       <button key={t} type="button" className="hbtn" style={{...S.hBtn,flex:1,background:form.listing_type===t?"#FF1493":"#fff",color:form.listing_type===t?"#fff":"#111",border:"2px solid #111",borderRadius:0,padding:"10px"}} onClick={()=>setForm(f=>({...f,listing_type:t,category:t==="Jewellery"?"Necklace":t==="Shoes"?"Heels":"Saree"}))}>
-                        {t==="Clothing"?"👗 CLOTHING":t==="Jewellery"?"💎 JEWELLERY":"👠 SHOES"}
+                        {t==="Clothing"?<span style={{display:"inline-flex",alignItems:"center",gap:8}}><Shirt width={16} height={16}/> CLOTHING</span>:t==="Jewellery"?<span style={{display:"inline-flex",alignItems:"center",gap:8}}><Gem width={16} height={16}/> JEWELLERY</span>:<span style={{display:"inline-flex",alignItems:"center",gap:8}}><Footprints width={16} height={16}/> SHOES</span>}
                       </button>
                     ))}
                   </div>
@@ -1569,7 +1570,7 @@ export default function App() {
                 ):(<>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}>
                     <p style={{fontSize:12,color:"#888"}}>Enter values in {form.meas_unit.toUpperCase()}. Use a soft measuring tape.</p>
-                    <button type="button" style={{background:"none",border:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:1,color:"#FF1493",cursor:"pointer",padding:0}} onClick={()=>{setPrevView(view);setView("measuring");}}>📏 HOW TO MEASURE →</button>
+                    <button type="button" style={{background:"none",border:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:1,color:"#FF1493",cursor:"pointer",padding:0}} onClick={()=>{setPrevView(view);setView("measuring");}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Ruler width={14} height={14}/> HOW TO MEASURE →</span></button>
                   </div>
                   <div style={S.fg4} className="fg4 meas-grid">
                     {fields.map(label=>(
@@ -1591,7 +1592,7 @@ export default function App() {
               </Sec>
               );
             })()}
-            <Sec label="📦 POSTAGE">
+            <Sec label={<span style={{display:"inline-flex",alignItems:"center",gap:8}}><Package width={16} height={16}/> POSTAGE</span>}>
               <Tog on={form.accepts_collection} onToggle={()=>setForm(f=>({...f,accepts_collection:!f.accepts_collection}))} color="#34C759" label="ACCEPT COLLECTION IN PERSON" sub="Buyer can collect for free"/>
             </Sec>
             <Sec label="DESCRIBE IT">

@@ -1,4 +1,5 @@
 import React from "react";
+import { Search, Scissors, MapPin } from "lucide-react";
 import { CARD_COLORS, currencySymbol } from "../lib/constants";
 import { S } from "../styles";
 import { F } from "../components/Shared";
@@ -34,7 +35,7 @@ export default function Tailors({
           <div style={{maxWidth:1200,margin:"0 auto",padding:"32px 16px"}}>
             <div style={{display:"flex",gap:10,marginBottom:24,flexWrap:"wrap",alignItems:"stretch"}}>
               <div style={{flex:1,minWidth:200,display:"flex",alignItems:"center",border:"2px solid #111",background:"#fff"}}>
-                <span style={{padding:"0 12px",fontSize:14,color:"#bbb"}}>🔍</span>
+                <span style={{padding:"0 12px",color:"#bbb",display:"flex",alignItems:"center"}}><Search width={16} height={16}/></span>
                 <input style={{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,padding:"12px 0",background:"transparent"}} placeholder="SEARCH TAILORS..." value={tailorSearch} onChange={e=>setTailorSearch(e.target.value)}/>
               </div>
             </div>
@@ -45,7 +46,7 @@ export default function Tailors({
             </div>
             {tailorServices.length===0?(
               <div style={{textAlign:"center",padding:"80px 20px",border:"3px dashed #e0e0e0"}}>
-                <p style={{fontSize:64,marginBottom:16}}>✂️</p>
+                <p style={{display:"flex",justifyContent:"center",marginBottom:16}}><Scissors width={64} height={64}/></p>
                 <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:900,marginBottom:8}}>NO TAILORS YET.</p>
                 {user&&<button className="hbtn" style={{...S.hBtn,background:"#00E5CC",border:"none",padding:"14px 32px",fontSize:14}} onClick={()=>setShowTailorForm(true)}>LIST MY SERVICE →</button>}
               </div>
@@ -62,9 +63,9 @@ export default function Tailors({
                   return(
                     <div key={s.id} style={{background:"#fff",border:"3px solid #111",overflow:"hidden",display:"flex",flexDirection:"column"}}>
                       <div style={{height:200,background:s.images?.[0]?"#000":accent,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",position:"relative"}}>
-                        {s.images?.[0]?<img src={s.images[0]} alt={s.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:72}}>✂️</span>}
+                        {s.images?.[0]?<img src={s.images[0]} alt={s.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<Scissors width={72} height={72} color="#fff"/>}
                         <div style={{position:"absolute",top:12,left:12,background:accent,color:"#fff",padding:"4px 12px",fontSize:10,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif"}}>{s.service_type?.toUpperCase()}</div>
-                        {s.location&&<div style={{position:"absolute",bottom:12,left:12,color:"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700}}>📍 {s.location}</div>}
+                        {s.location&&<div style={{position:"absolute",bottom:12,left:12,color:"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}><MapPin width={13} height={13}/> {s.location}</div>}
                       </div>
                       {tailorProf&&(
                         <div style={{padding:"12px 16px",borderBottom:"2px solid #f0f0f0",display:"flex",alignItems:"center",gap:12,background:"#fafafa"}}>
@@ -93,7 +94,7 @@ export default function Tailors({
             <div style={S.modalOverlay} onClick={()=>setShowBookingForm(false)}>
               <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
-                  <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>✂️ BOOK SERVICE</h3>
+                  <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,display:"flex",alignItems:"center",gap:10}}><Scissors width={24} height={24}/> BOOK SERVICE</h3>
                   <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowBookingForm(false)}>✕</button>
                 </div>
                 <F l="NOTES FOR TAILOR">
@@ -107,7 +108,7 @@ export default function Tailors({
             <div style={S.modalOverlay} onClick={()=>setShowTailorForm(false)}>
               <div style={{...S.modalBox,maxWidth:580}} onClick={e=>e.stopPropagation()}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
-                  <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>{editingService?"EDIT SERVICE":"LIST YOUR SERVICE ✂️"}</h3>
+                  <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,display:"flex",alignItems:"center",gap:10}}>{editingService?"EDIT SERVICE":<>LIST YOUR SERVICE <Scissors width={24} height={24}/></>}</h3>
                   <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowTailorForm(false)}>✕</button>
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:14}}>

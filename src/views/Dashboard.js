@@ -1,4 +1,5 @@
 import React from "react";
+import { Shirt, Gift, Eye, Check } from "lucide-react";
 import { CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Thumb } from "../components/Shared";
@@ -29,7 +30,7 @@ export default function Dashboard({
             </div>
           </div>
           {myItems.length===0?(
-            <div style={{textAlign:"center",padding:"60px 20px"}}><p style={{fontSize:48,marginBottom:12}}>🥻</p><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NO LISTINGS YET.</p><button className="hbtn" style={S.hBtn} onClick={()=>setView("add")}>LIST YOUR FIRST PIECE →</button></div>
+            <div style={{textAlign:"center",padding:"60px 20px"}}><p style={{display:"flex",justifyContent:"center",marginBottom:12}}><Shirt width={48} height={48}/></p><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NO LISTINGS YET.</p><button className="hbtn" style={S.hBtn} onClick={()=>setView("add")}>LIST YOUR FIRST PIECE →</button></div>
           ):(
             <div style={S.dashGrid} className="dash-grid">
               {myItems.map((item,idx)=>(
@@ -40,7 +41,7 @@ export default function Dashboard({
                   <div style={S.dashCardBody}>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,color:item.sold?"#aaa":"#111",marginBottom:4}}>{item.name}</p>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:item.sold?"#aaa":CARD_COLORS[idx%CARD_COLORS.length],marginBottom:4}}>{currencySymbol(item.currency)}{item.price}</p>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,marginBottom:10}}>👁 {item.views||0} VIEWS</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,marginBottom:10,display:"flex",alignItems:"center",gap:5}}><Eye width={12} height={12}/> {item.views||0} VIEWS</p>
                     <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                       <button className="hbtn" style={{...S.dashBtn,background:CARD_COLORS[idx%CARD_COLORS.length],color:"#fff"}} onClick={()=>{setSel(item);openEdit(item);}}>EDIT</button>
                       {!item.sold&&<button className="hbtn" style={{...S.dashBtn,background:"#111",color:"#fff"}} onClick={()=>markSold(item.id,item.sold)}>MARK SOLD</button>}
@@ -54,11 +55,11 @@ export default function Dashboard({
           )}
           <div style={{marginTop:48}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,paddingBottom:16,borderBottom:"2px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12}}>🎁 MY BUNDLES</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,display:"flex",alignItems:"center",gap:8}}><Gift width={16} height={16}/> MY BUNDLES</div>
               <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",fontSize:11}} onClick={()=>{loadBundles();setView("createbundle");}}>+ CREATE BUNDLE</button>
             </div>
             {bundles.length===0?(
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#bbb",letterSpacing:1}}>No bundles yet. Bundle separate listings to offer a deal! 🎁</p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#bbb",letterSpacing:1}}>No bundles yet. Bundle separate listings to offer a deal! <Gift width={14} height={14} style={{display:"inline",verticalAlign:"middle"}}/></p>
             ):(
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 {bundles.map(b=>{
@@ -108,7 +109,7 @@ export default function Dashboard({
                   return(
                     <div key={item.id} style={{border:`3px solid ${isSel?accent:"#e0e0e0"}`,cursor:"pointer",overflow:"hidden"}} onClick={()=>toggleBundleListing(item.id)}>
                       <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={{height:80}} emojiStyle={{fontSize:32}}>
-                        {isSel&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.35)",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:"#fff",fontSize:24,fontWeight:900}}>✓</span></div>}
+                        {isSel&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.35)",display:"flex",alignItems:"center",justifyContent:"center"}}><Check width={24} height={24} color="#fff"/></div>}
                       </Thumb>
                       <div style={{padding:"8px 10px"}}><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,color:"#111",marginBottom:2}}>{item.name}</p><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:900,color:accent}}>{currencySymbol(item.currency)}{item.price}</p></div>
                     </div>
@@ -116,7 +117,7 @@ export default function Dashboard({
                 })}
               </div>
             </Sec>
-            <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:(bundleForm.selectedListings.length<2||!bundleForm.name)?0.4:1}} onClick={createBundle} disabled={bundleForm.selectedListings.length<2||!bundleForm.name}>🎁 CREATE BUNDLE →</button>
+            <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:(bundleForm.selectedListings.length<2||!bundleForm.name)?0.4:1}} onClick={createBundle} disabled={bundleForm.selectedListings.length<2||!bundleForm.name}><span style={{display:"inline-flex",alignItems:"center",gap:8}}><Gift width={18} height={18}/> CREATE BUNDLE →</span></button>
           </div>
         </main>
       )}

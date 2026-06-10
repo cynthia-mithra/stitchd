@@ -1,4 +1,5 @@
 import React from "react";
+import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Star } from "lucide-react";
 import { SIZES, CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Tog } from "../components/Shared";
@@ -27,7 +28,7 @@ export default function Profile({
               <div style={{display:"flex",alignItems:"center",gap:20}}>
                 <div style={S.avatarUploadCircle} onClick={()=>document.getElementById("avatar-input").click()}>
                   {profForm.avatarPreview?<img src={profForm.avatarPreview} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<div style={S.avatarInitials}>{(profForm.full_name||profForm.username||user.email||"?")[0].toUpperCase()}</div>}
-                  <div style={S.avatarEditOverlay}>📸</div>
+                  <div style={S.avatarEditOverlay}><Camera width={24} height={24} color="#fff"/></div>
                 </div>
                 <div>
                   <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",marginBottom:8,display:"block"}} onClick={()=>document.getElementById("avatar-input").click()}>UPLOAD PHOTO</button>
@@ -60,7 +61,7 @@ export default function Profile({
             </Sec>
             <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:profSaving?0.5:1}} onClick={saveProfile}>{profSaving?"SAVING...":"SAVE PROFILE →"}</button>
             <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #007AFF",paddingLeft:12,marginBottom:8}}>📐 MY MEASUREMENTS</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #007AFF",paddingLeft:12,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><Ruler width={16} height={16}/> MY MEASUREMENTS</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
                 {[["bust","BUST (inches)"],["waist","WAIST (inches)"],["hips","HIPS (inches)"],["height","HEIGHT (cm)"]].map(([k,l])=>(
                   <F key={k} l={l}><input style={S.inp} type="number" placeholder="e.g. 34" value={profForm[k]} onChange={e=>setProfForm(f=>({...f,[k]:e.target.value}))}/></F>
@@ -74,7 +75,7 @@ export default function Profile({
               </F>
             </div>
             <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:8}}>✂️ TAILOR LISTING</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><Scissors width={16} height={16}/> TAILOR LISTING</div>
               <Tog on={profForm.is_tailor} onToggle={()=>setProfForm(f=>({...f,is_tailor:!f.is_tailor}))} color="#FF9500" label="LIST ME AS A TAILOR" sub="Show my profile in the tailor directory"/>
               {profForm.is_tailor&&(
                 <div style={{marginTop:12}}>
@@ -95,7 +96,7 @@ export default function Profile({
               )}
             </div>
             <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20}}>🔐 TWO-FACTOR AUTHENTICATION</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><ShieldCheck width={16} height={16}/> TWO-FACTOR AUTHENTICATION</div>
               {twoFAStep==="enroll"&&twoFAData?(
                 <div>
                   <p style={{fontSize:13,color:"#666",marginBottom:16}}>Scan this QR code with Google Authenticator or Authy.</p>
@@ -104,7 +105,7 @@ export default function Profile({
                     <input style={{...S.inp,fontSize:24,letterSpacing:8,textAlign:"center",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900}} placeholder="000000" maxLength={6} value={twoFACode} onChange={e=>setTwoFACode(e.target.value.replace(/\D/g,"").slice(0,6))}/>
                   </F>
                   <div style={{display:"flex",gap:10,marginTop:14}}>
-                    <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",flex:1,padding:"12px",opacity:(twoFACode.length!==6||twoFALoading)?0.4:1}} onClick={confirm2FA} disabled={twoFACode.length!==6||twoFALoading}>{twoFALoading?"VERIFYING...":"✓ CONFIRM 2FA"}</button>
+                    <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",flex:1,padding:"12px",opacity:(twoFACode.length!==6||twoFALoading)?0.4:1}} onClick={confirm2FA} disabled={twoFACode.length!==6||twoFALoading}>{twoFALoading?"VERIFYING...":<span style={{display:"inline-flex",alignItems:"center",gap:6}}><Check width={16} height={16}/> CONFIRM 2FA</span>}</button>
                     <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",padding:"12px 16px"}} onClick={()=>{setTwoFAStep(null);setTwoFACode("");setTwoFAData(null);}}>CANCEL</button>
                   </div>
                 </div>
@@ -112,7 +113,7 @@ export default function Profile({
                 <div>
                   {twoFAFactors.length>0?(
                     <div>
-                      <div style={{...S.alterBadge,...S.aY,marginBottom:16,display:"inline-flex",alignItems:"center",gap:8}}>✓ 2FA IS ENABLED</div>
+                      <div style={{...S.alterBadge,...S.aY,marginBottom:16,display:"inline-flex",alignItems:"center",gap:8}}><Check width={14} height={14}/> 2FA IS ENABLED</div>
                       {twoFAFactors.map(f=>(
                         <div key={f.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:"#fafafa",border:"1.5px solid #e0e0e0",marginBottom:8}}>
                           <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700}}>{f.friendly_name||"Authenticator App"}</span>
@@ -123,7 +124,7 @@ export default function Profile({
                   ):(
                     <div>
                       <p style={{fontSize:13,color:"#888",marginBottom:16}}>Add an extra layer of security with an authenticator app.</p>
-                      <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",padding:"12px 24px",opacity:twoFALoading?0.5:1}} onClick={()=>{load2FAFactors();setup2FA();}}>{twoFALoading?"SETTING UP...":"🔐 ENABLE 2FA"}</button>
+                      <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",padding:"12px 24px",opacity:twoFALoading?0.5:1}} onClick={()=>{load2FAFactors();setup2FA();}}>{twoFALoading?"SETTING UP...":<span style={{display:"inline-flex",alignItems:"center",gap:6}}><ShieldCheck width={16} height={16}/> ENABLE 2FA</span>}</button>
                     </div>
                   )}
                 </div>
@@ -143,16 +144,16 @@ export default function Profile({
             </div>
             <div style={{flex:1}}>
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:4}}>SELLER PROFILE</p>
-              <h2 style={S.profileName}>{viewedProfile.full_name||viewedProfile.username||"Seller"}{viewedProfile.verified&&<span style={S.verifiedBadge}>✓ VERIFIED</span>}</h2>
-              {viewedProfile.location&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:10}}>📍 {viewedProfile.location}</p>}
+              <h2 style={S.profileName}>{viewedProfile.full_name||viewedProfile.username||"Seller"}{viewedProfile.verified&&<span style={{...S.verifiedBadge,display:"inline-flex",alignItems:"center",gap:4}}><Check width={12} height={12}/> VERIFIED</span>}</h2>
+              {viewedProfile.location&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:10,display:"flex",alignItems:"center",gap:5}}><MapPin width={14} height={14}/> {viewedProfile.location}</p>}
               <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:14}}>
-                {viewedProfile.id_verified&&<span style={{background:"#007AFF",color:"#fff",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif"}}>🪪 ID VERIFIED</span>}
-                {viewedProfile.total_sales>0&&<span style={{background:"#FF950022",color:"#FF9500",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",border:"1px solid #FF950044"}}>🛍️ {viewedProfile.total_sales} SALES</span>}
+                {viewedProfile.id_verified&&<span style={{background:"#007AFF",color:"#fff",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",display:"inline-flex",alignItems:"center",gap:5}}><BadgeCheck width={12} height={12}/> ID VERIFIED</span>}
+                {viewedProfile.total_sales>0&&<span style={{background:"#FF950022",color:"#FF9500",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",border:"1px solid #FF950044",display:"inline-flex",alignItems:"center",gap:5}}><ShoppingBag width={12} height={12}/> {viewedProfile.total_sales} SALES</span>}
               </div>
-              <p style={S.profileMeta}>{profileListings.length} listings · {profileListings.filter(i=>i.sold).length} sold{reviews.length>0&&` · ⭐ ${(reviews.reduce((a,r)=>a+r.rating,0)/reviews.length).toFixed(1)} avg`}</p>
+              <p style={{...S.profileMeta,display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>{profileListings.length} listings · {profileListings.filter(i=>i.sold).length} sold{reviews.length>0&&<> · <Star width={13} height={13} fill="currentColor"/> {(reviews.reduce((a,r)=>a+r.rating,0)/reviews.length).toFixed(1)} avg</>}</p>
               {user&&viewedProfile.id!==user.id&&(
                 <button className="hbtn" style={{...S.hBtn,background:isFollowing(viewedProfile.id)?"#fff":"#FF1493",color:isFollowing(viewedProfile.id)?"#FF1493":"#fff",border:"2px solid #FF1493",marginTop:14}} onClick={()=>toggleFollow(viewedProfile.id)}>
-                  {isFollowing(viewedProfile.id)?"✓ FOLLOWING":"+ FOLLOW"}
+                  {isFollowing(viewedProfile.id)?<span style={{display:"inline-flex",alignItems:"center",gap:6}}><Check width={15} height={15}/> FOLLOWING</span>:"+ FOLLOW"}
                 </button>
               )}
             </div>
@@ -185,7 +186,7 @@ export default function Profile({
                 {reviews.map(r=>(
                   <div key={r.id} style={S.reviewCard}>
                     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                      <span style={{fontSize:16}}>{Array(r.rating).fill("⭐").join("")}</span>
+                      <span style={{display:"inline-flex",alignItems:"center",color:"#FF9500"}}>{Array.from({length:r.rating}).map((_,i)=><Star key={i} width={15} height={15} fill="currentColor"/>)}</span>
                       <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>{new Date(r.created_at).toLocaleDateString("en-GB",{month:"short",year:"numeric"}).toUpperCase()}</span>
                     </div>
                     {r.comment&&<p style={{fontSize:13,color:"#666",lineHeight:1.5}}>{r.comment}</p>}

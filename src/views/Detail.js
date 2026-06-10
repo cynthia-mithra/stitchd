@@ -1,4 +1,5 @@
 import React from "react";
+import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag } from "lucide-react";
 import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb } from "../components/Shared";
@@ -59,13 +60,13 @@ export default function Detail({
               <p style={{...S.cardCatLabel,color:selColor,fontSize:12,marginBottom:8}}>{sel.category?.toUpperCase()} · {(sel.material||sel.fabric)?.toUpperCase()} · {sel.condition?.toUpperCase()}</p>
               <h2 style={S.detailName}>{sel.name}</h2>
               <div style={{...S.detailPrice,color:selColor}}>{currencySymbol(sel.currency)}{sel.price}</div>
-              {fastSellers.has(sel.user_id)&&<div style={{display:"inline-block",background:"#007AFF",color:"#fff",padding:"4px 12px",fontSize:11,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",marginBottom:16}}>⚡ FAST SELLER</div>}
+              {fastSellers.has(sel.user_id)&&<div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#007AFF",color:"#fff",padding:"4px 12px",fontSize:11,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",marginBottom:16}}><Zap width={14} height={14} fill="currentColor"/> FAST SELLER</div>}
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20,flexWrap:"wrap"}}>
-                <button className="hbtn" style={{...S.hBtn,background:wishlist.includes(sel.id)?"#FF1493":"#fff",color:wishlist.includes(sel.id)?"#fff":"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>toggleWishlist(sel.id)}>{wishlist.includes(sel.id)?"❤️ SAVED":"🤍 SAVE"}</button>
-                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>shareItem(sel)}>🔗 SHARE</button>
-                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>setShowSizeGuide(true)}>📏 SIZE GUIDE</button>
+                <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:wishlist.includes(sel.id)?"#FF1493":"#fff",color:wishlist.includes(sel.id)?"#fff":"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>toggleWishlist(sel.id)}><Heart width={15} height={15} fill={wishlist.includes(sel.id)?"currentColor":"none"}/> {wishlist.includes(sel.id)?"SAVED":"SAVE"}</button>
+                <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>shareItem(sel)}><Share2 width={15} height={15}/> SHARE</button>
+                <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>setShowSizeGuide(true)}><Ruler width={15} height={15}/> SIZE GUIDE</button>
               </div>
-              {sel.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#bbb",letterSpacing:1,display:"block",marginBottom:16}}>👁 {sel.views} VIEWS</span>}
+              {sel.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#bbb",letterSpacing:1,display:"flex",alignItems:"center",gap:5,marginBottom:16}}><Eye width={13} height={13}/> {sel.views} VIEWS</span>}
               {(sel.occasions||[]).length>0&&(
                 <div style={S.dBlock}><p style={{...S.dBlockTitle,borderColor:selColor,color:selColor}}>OCCASIONS</p><div style={S.occRow}>{sel.occasions.map(o=><span key={o} style={{...S.occChip,background:OCC_COLOR[o]||"#999",color:"#fff"}}>{o.toUpperCase()}</span>)}</div></div>
               )}
@@ -84,34 +85,34 @@ export default function Detail({
                       <div key={l} style={{...S.measBox,borderColor:selColor}}><div style={{...S.measVal,color:selColor}}>{convertMeasure(v,storedUnit,dispUnit)}{dispUnit==="inches"?"in":"cm"}</div><div style={S.measLbl}>{String(l).toUpperCase()}</div></div>
                     ))}
                   </div>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#bbb",letterSpacing:1,marginBottom:10}}>📐 LISTED IN {storedUnit==="inches"?"INCHES":"CM"} BY SELLER</p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#bbb",letterSpacing:1,marginBottom:10,display:"flex",alignItems:"center",gap:5}}><Ruler width={13} height={13}/> LISTED IN {storedUnit==="inches"?"INCHES":"CM"} BY SELLER</p>
                   {sel.size&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:10}}>SIZE: {sel.size}</p>}
                   {sellerNotes&&(
                     <div style={{marginBottom:12}}>
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:900,letterSpacing:2,color:"#888",marginBottom:4}}>SELLER'S NOTES</p>
-                      <p style={S.measNote}>📌 {sellerNotes}</p>
+                      <p style={{...S.measNote,display:"flex",alignItems:"flex-start",gap:6}}><Pin width={14} height={14} style={{flexShrink:0,marginTop:2}}/> {sellerNotes}</p>
                     </div>
                   )}
                   <div style={S.alterRow}>
-                    <div style={{...S.alterBadge,...(sel.can_take_in?S.aY:S.aN)}}>{sel.can_take_in?"✓ CAN BE TAKEN IN":"✗ CANNOT TAKE IN"}</div>
-                    <div style={{...S.alterBadge,...(sel.spare_fabric?S.aY2:S.aN)}}>{sel.spare_fabric?"✓ SPARE FABRIC INCLUDED":"✗ NO SPARE FABRIC"}</div>
+                    <div style={{...S.alterBadge,...(sel.can_take_in?S.aY:S.aN),display:"inline-flex",alignItems:"center",gap:5}}>{sel.can_take_in?<><Check width={13} height={13}/> CAN BE TAKEN IN</>:<><X width={13} height={13}/> CANNOT TAKE IN</>}</div>
+                    <div style={{...S.alterBadge,...(sel.spare_fabric?S.aY2:S.aN),display:"inline-flex",alignItems:"center",gap:5}}>{sel.spare_fabric?<><Check width={13} height={13}/> SPARE FABRIC INCLUDED</>:<><X width={13} height={13}/> NO SPARE FABRIC</>}</div>
                   </div>
                 </div>
               )}
               {sel.description&&<p style={S.detailDesc}>{sel.description}</p>}
-              {!isOwner(sel)&&!sel.sold&&<button className="hbtn" style={{...S.waCta,background:"#FF1493",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:10,marginBottom:16}} onClick={()=>startConversation(sel)}>✉️ MESSAGE SELLER</button>}
+              {!isOwner(sel)&&!sel.sold&&<button className="hbtn" style={{...S.waCta,background:"#FF1493",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:10,marginBottom:16}} onClick={()=>startConversation(sel)}><Mail width={16} height={16}/> MESSAGE SELLER</button>}
               {!isOwner(sel)&&!sel.sold&&(
                 <div style={{marginBottom:24}}>
                   <button className="hbtn" style={{...S.hBtn,background:"#111",border:"none",padding:"16px 32px",fontSize:16,letterSpacing:2,width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:12}} onClick={()=>{ if(!user){setAuthMode("login");setView("auth");return;} setPaymentListing(sel); setPaymentStep("summary"); setSelectedPostage(null); setShowPayment(true); }}>
-                    💳 BUY NOW · {currencySymbol(sel.currency)}{sel.price}
+                    <CreditCard width={18} height={18}/> BUY NOW · {currencySymbol(sel.currency)}{sel.price}
                   </button>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1.5,textAlign:"center",marginTop:8}}>🔒 SECURE CHECKOUT · 5% PLATFORM FEE APPLIES</p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1.5,textAlign:"center",marginTop:8,display:"flex",alignItems:"center",justifyContent:"center",gap:5}}><Lock width={12} height={12}/> SECURE CHECKOUT · 5% PLATFORM FEE APPLIES</p>
                 </div>
               )}
               {!isOwner(sel)&&user&&(
                 <div style={{display:"flex",gap:10,marginBottom:24,flexWrap:"wrap"}}>
-                  <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF9500",border:"2px solid #FF9500",fontSize:11,padding:"8px 14px"}} onClick={()=>setShowReview(true)}>⭐ LEAVE A REVIEW</button>
-                  <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#888",border:"2px solid #e0e0e0",fontSize:11,padding:"8px 14px"}} onClick={()=>setShowReport(true)}>🚩 REPORT</button>
+                  <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#FF9500",border:"2px solid #FF9500",fontSize:11,padding:"8px 14px"}} onClick={()=>setShowReview(true)}><Star width={14} height={14} fill="currentColor"/> LEAVE A REVIEW</button>
+                  <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#888",border:"2px solid #e0e0e0",fontSize:11,padding:"8px 14px"}} onClick={()=>setShowReport(true)}><Flag width={14} height={14}/> REPORT</button>
                 </div>
               )}
               {reviews.length>0&&(
@@ -121,7 +122,7 @@ export default function Detail({
                     {reviews.slice(0,3).map(r=>(
                       <div key={r.id} style={S.reviewCard}>
                         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                          <span style={{fontSize:14}}>{Array(r.rating).fill("⭐").join("")}</span>
+                          <span style={{display:"inline-flex",alignItems:"center",color:"#FF9500"}}>{Array.from({length:r.rating}).map((_,i)=><Star key={i} width={14} height={14} fill="currentColor"/>)}</span>
                           <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb"}}>{new Date(r.created_at).toLocaleDateString("en-GB",{month:"short",year:"numeric"}).toUpperCase()}</span>
                         </div>
                         {r.comment&&<p style={{fontSize:13,color:"#666",lineHeight:1.5}}>{r.comment}</p>}

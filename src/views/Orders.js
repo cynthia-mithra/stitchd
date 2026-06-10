@@ -1,4 +1,5 @@
 import React from "react";
+import { Package, Check, Flag } from "lucide-react";
 import { currencySymbol } from "../lib/constants";
 import { S } from "../styles";
 
@@ -27,7 +28,7 @@ export default function Orders({
       </div>
       {ordersLoading?<div style={S.loadingWrap}><div style={S.spinner}/></div>:myOrders.length===0?(
         <div style={{textAlign:"center",padding:"60px 20px"}}>
-          <p style={{fontSize:48,marginBottom:12}}>📦</p>
+          <p style={{display:"flex",justifyContent:"center",marginBottom:12}}><Package width={48} height={48}/></p>
           <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NO ORDERS YET.</p>
           <button className="hbtn" style={S.hBtn} onClick={()=>setView("shop")}>BROWSE DROPS →</button>
         </div>
@@ -47,7 +48,7 @@ export default function Orders({
                   </div>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,marginBottom:4}}>{listing?.name||"Item"}</p>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#FF1493",marginBottom:6}}>{currencySymbol(listing?.currency)}{order.amount}</p>
-                  {order.tracking_number&&<p style={{fontSize:12,color:"#007AFF",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1,marginBottom:4}}>📦 TRACKING: {order.tracking_number}</p>}
+                  {order.tracking_number&&<p style={{fontSize:12,color:"#007AFF",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1,marginBottom:4,display:"flex",alignItems:"center",gap:6}}><Package width={14} height={14}/> TRACKING: {order.tracking_number}</p>}
                   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
                     {!isBuyer&&order.status==="paid"&&(
                       showTrackingInput===order.id?(
@@ -57,13 +58,13 @@ export default function Orders({
                           <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#888",border:"1px solid #e0e0e0",fontSize:11,padding:"8px 10px"}} onClick={()=>setShowTrackingInput(null)}>✕</button>
                         </div>
                       ):(
-                        <button className="hbtn" style={{...S.hBtn,background:"#007AFF",border:"none",fontSize:11,padding:"8px 16px"}} onClick={()=>setShowTrackingInput(order.id)}>📦 MARK AS SHIPPED</button>
+                        <button className="hbtn" style={{...S.hBtn,background:"#007AFF",border:"none",fontSize:11,padding:"8px 16px",display:"inline-flex",alignItems:"center",gap:6}} onClick={()=>setShowTrackingInput(order.id)}><Package width={14} height={14}/> MARK AS SHIPPED</button>
                       )
                     )}
                     {isBuyer&&order.status==="shipped"&&(
                       <>
-                        <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",fontSize:11,padding:"8px 16px"}} onClick={()=>confirmReceived(order.id)}>✓ CONFIRM RECEIVED</button>
-                        <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"8px 14px"}} onClick={()=>setShowDisputeForm(order.id)}>🚩 RAISE DISPUTE</button>
+                        <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",fontSize:11,padding:"8px 16px",display:"inline-flex",alignItems:"center",gap:6}} onClick={()=>confirmReceived(order.id)}><Check width={14} height={14}/> CONFIRM RECEIVED</button>
+                        <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"8px 14px",display:"inline-flex",alignItems:"center",gap:6}} onClick={()=>setShowDisputeForm(order.id)}><Flag width={14} height={14}/> RAISE DISPUTE</button>
                       </>
                     )}
                   </div>
