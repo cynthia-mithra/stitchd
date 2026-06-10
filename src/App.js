@@ -414,6 +414,29 @@ export default function App() {
     }
   }
 
+  // BUY NOW (single listing) → same hosted-checkout redirect as the bag. Stripe
+  // blocks card entry when its checkout is embedded in a modal/iframe, so we hand
+  // the buyer straight to Stripe's hosted page via window.location.href (inside
+  // startCheckout) instead of opening the in-page payment modal.
+  //
+  // Deliberately NO sign-in gate here: this mirrors the bag's doCheckout, which
+  // lets guests check out and passes a null buyer id / empty email so Stripe's
+  // hosted page collects the email itself. The old `if(!user) → setView("auth")`
+  // guard bounced signed-out buyers (and anyone whose session had silently
+  // expired) straight back to the login screen instead of to Stripe — the
+  // "click buy now and it just sends me to sign in again" bug.
+  async function buyNow(listing){
+    if(!listing||checkingOut) return;
+    setCheckingOut(true);
+    flash("Taking you to secure checkout…");
+    try{
+      await startCheckout([listing],{buyerId:user?.id,buyerEmail:user?.email});
+    }catch(e){
+      flash(`Checkout failed: ${errMsg(e)}`);
+      setCheckingOut(false);
+    }
+  }
+
   function shareItem(item){
     const text=`Check out "${item.name}" for £${item.price} on Stitch'd 🩷`;
     if(navigator.share){ navigator.share({title:item.name,text,url:window.location.href}).catch(()=>{}); }
@@ -1755,7 +1778,7 @@ export default function App() {
         wishlist={wishlist} toggleWishlist={toggleWishlist} shareItem={shareItem} setShowSizeGuide={setShowSizeGuide}
         inBag={inBag} toggleBag={toggleBag}
         isOwner={isOwner} startConversation={startConversation}
-        user={user} setAuthMode={setAuthMode}
+        user={user} setAuthMode={setAuthMode} buyNow={buyNow}
         setShowPayment={setShowPayment} setPaymentListing={setPaymentListing} setPaymentStep={setPaymentStep} setSelectedPostage={setSelectedPostage}
         setShowReview={setShowReview} setShowReport={setShowReport}
         reviews={reviews}

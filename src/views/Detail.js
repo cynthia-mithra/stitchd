@@ -10,7 +10,7 @@ export default function Detail({
   wishlist, toggleWishlist, shareItem, setShowSizeGuide,
   inBag = () => false, toggleBag = () => {},
   isOwner, startConversation,
-  user, setAuthMode,
+  user, setAuthMode, buyNow = () => {},
   setShowPayment, setPaymentListing, setPaymentStep, setSelectedPostage,
   setShowReview, setShowReport,
   reviews,
@@ -121,7 +121,7 @@ export default function Detail({
               {!isOwner(sel)&&!sel.sold&&<button className="hbtn" style={{...S.waCta,background:"#FF1493",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:10,marginBottom:16}} onClick={()=>startConversation(sel)}><Mail width={16} height={16}/> MESSAGE SELLER</button>}
               {!isOwner(sel)&&!sel.sold&&(
                 <div style={{marginBottom:24}}>
-                  <button className="hbtn" style={{...S.hBtn,background:"#111",border:"none",padding:"16px 32px",fontSize:16,letterSpacing:2,width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:12}} onClick={()=>{ if(!user){setAuthMode("login");setView("auth");return;} setPaymentListing(sel); setPaymentStep("summary"); setSelectedPostage(null); setShowPayment(true); }}>
+                  <button className="hbtn" style={{...S.hBtn,background:"#111",border:"none",padding:"16px 32px",fontSize:16,letterSpacing:2,width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:12}} onClick={()=>buyNow(sel)}>
                     <CreditCard width={18} height={18}/> BUY NOW · {currencySymbol(sel.currency)}{sel.price}
                   </button>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1.5,textAlign:"center",marginTop:8,display:"flex",alignItems:"center",justifyContent:"center",gap:5}}><Lock width={12} height={12}/> SECURE CHECKOUT · 5% PLATFORM FEE APPLIES</p>
