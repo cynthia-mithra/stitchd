@@ -22,15 +22,15 @@ export const CSS=`
        grid the bubbles now form a SLIGHTLY-OVERLAPPING, STAGGERED FLOATING cluster —
        the same playful arrangement as the desktop hero (keeps the divider border). */
     .hero-section{flex-direction:row !important;min-height:0 !important;}
-    /* Give the bubble column a touch more room (text 60% / bubbles 40%) so the
-       overlapping cluster has space to stagger left/right without clipping. */
-    .hero-left{flex:0 0 60% !important;padding:24px 14px !important;}
+    /* Split the hero text 58% / bubbles 42% on mobile so the writing column has
+       more room while the overlapping cluster can still stagger without clipping. */
+    .hero-left{flex:0 0 58% !important;padding:24px 14px !important;}
     /* The bubble column is the POSITIONING CONTEXT for the absolutely-placed bubbles
        (position:relative + overflow:hidden are inherited from the inline heroRight
        style). A min-height guarantees a tall-enough canvas for the cluster even when
        the heading text is short, and overflow:hidden clips any float-animation
        overshoot so there is never horizontal page scroll. */
-    .hero-right{flex:0 0 40% !important;padding:0 !important;min-height:360px !important;}
+    .hero-right{flex:0 0 42% !important;padding:0 !important;min-height:360px !important;}
     /* OVERLAPPING FLOATING CLUSTER (mobile): bubbles stay position:absolute (from the
        inline style) and we override only top/left/size per bubble with !important.
        Sizes are BIGGER now (74–96px). Crucially, sizes are
