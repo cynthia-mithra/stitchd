@@ -143,11 +143,8 @@ export default function App() {
   const [showTailorDir,  setShowTailorDir]  = useState(false);
   const [tailorProfiles, setTailorProfiles] = useState([]);
   const [myOrders,       setMyOrders]       = useState([]);
+  const [orderProfiles,  setOrderProfiles]  = useState({});
   const [ordersLoading,  setOrdersLoading]  = useState(false);
-  const [showTrackingInput, setShowTrackingInput] = useState(null);
-  const [trackingInput,  setTrackingInput]  = useState("");
-  const [showDisputeForm,setShowDisputeForm]= useState(null);
-  const [disputeReason,  setDisputeReason]  = useState("");
   const [deliveryAddress,setDeliveryAddress]= useState({name:"",line1:"",line2:"",city:"",postcode:"",country:"UK"});
   const [showAddressForm,setShowAddressForm]= useState(false);
   const [newListings,    setNewListings]    = useState([]);
@@ -552,39 +549,52 @@ export default function App() {
     setOrdersLoading(true);
     const orders=await db.getMyOrders(user.id,token);
     setMyOrders(orders);
+    // Fetch the counterpart profiles (the OTHER party on each order) so the seller
+    // can see the buyer's first name and the buyer can see the seller's name
+    // without a per-card request (issue PART 2 / PART 3).
+    const ids=[...new Set(orders.flatMap(o=>[o.buyer_id,o.seller_id]).filter(Boolean).filter(id=>id!==user.id))];
+    const profs={};
+    await Promise.all(ids.map(async id=>{ const p=await db.getProfile(id,token); if(p)profs[id]=p; }));
+    setOrderProfiles(profs);
     setOrdersLoading(false);
   }
 
-  async function markShipped(orderId){
-    if(!trackingInput.trim()){ flash("Please enter a tracking number."); return; }
+  // Seller moves an order through PENDING → DISPATCHED → DELIVERED (issue PART 5).
+  // Each transition updates the orders table and notifies the buyer with the exact
+  // wording the issue specifies. Guest orders (no buyer_id) simply skip the notify.
+  async function updateOrderStatus(orderId,newStatus){
+    const order=myOrders.find(o=>o.id===orderId);
     try{
-      await db.updateOrder(orderId,{status:"shipped",tracking_number:trackingInput,shipped_at:new Date().toISOString()},token);
-      setMyOrders(p=>p.map(o=>o.id===orderId?{...o,status:"shipped",tracking_number:trackingInput}:o));
-      const order=myOrders.find(o=>o.id===orderId);
-      if(order) await notify(order.buyer_id,"shipped","📦 Your item has been shipped!",`Tracking: ${trackingInput}`,orderId);
-      setShowTrackingInput(null); setTrackingInput("");
-      flash("📦 Marked as shipped!");
-    }catch(e){ flash("Failed to update order."); }
+      // Only patch `status` — it's the one column the orders table is guaranteed to
+      // have. db.updateOrder isn't self-healing, so sending an optional column the
+      // deployment lacks (e.g. shipped_at) would fail the whole update.
+      await db.updateOrder(orderId,{status:newStatus},token);
+      setMyOrders(p=>p.map(o=>o.id===orderId?{...o,status:newStatus}:o));
+      if(order){
+        const title=items.find(i=>i.id===order.listing_id)?.name||"your order";
+        if(newStatus==="dispatched") await notify(order.buyer_id,"order","📦 Order dispatched",`Your order ${title} has been dispatched by the seller`,order.listing_id);
+        if(newStatus==="delivered")  await notify(order.buyer_id,"order","✅ Order delivered",`Your order ${title} has been marked as delivered`,order.listing_id);
+      }
+      flash(`Order marked ${newStatus.toUpperCase()}.`);
+    }catch(e){ flash("Failed to update order status."); }
   }
 
-  async function confirmReceived(orderId){
+  // Open (or reuse) the conversation tied to an order, working for BOTH parties:
+  // the buyer "MESSAGE SELLER" and the seller "MESSAGE BUYER" land in the same
+  // thread because the conversation is keyed by the order's fixed buyer/seller ids
+  // rather than by who is currently signed in (unlike startConversation).
+  async function startOrderConversation(order){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    if(!order.buyer_id){ flash("This was a guest checkout — there's no buyer account to message."); return; }
+    const { buyer_id:buyerId, seller_id:sellerId, listing_id:listingId }=order;
     try{
-      await db.updateOrder(orderId,{status:"delivered",delivered_at:new Date().toISOString()},token);
-      setMyOrders(p=>p.map(o=>o.id===orderId?{...o,status:"delivered"}:o));
-      const order=myOrders.find(o=>o.id===orderId);
-      if(order) await notify(order.seller_id,"delivered","✅ Item confirmed received!","Payment will be released to you shortly.",orderId);
-      flash("✅ Confirmed! Payment released to seller.");
-    }catch(e){ flash("Failed to confirm."); }
-  }
-
-  async function raiseDispute(orderId){
-    if(!disputeReason.trim()){ flash("Please describe the issue."); return; }
-    try{
-      await db.updateOrder(orderId,{status:"disputed",dispute_reason:disputeReason,dispute_status:"open"},token);
-      setMyOrders(p=>p.map(o=>o.id===orderId?{...o,status:"disputed",dispute_reason:disputeReason}:o));
-      setShowDisputeForm(null); setDisputeReason("");
-      flash("🚩 Dispute raised. We'll review within 24hrs.");
-    }catch(e){ flash("Failed to raise dispute."); }
+      let conv=await db.findConversation(buyerId,sellerId,listingId,token);
+      if(!conv){ conv=await db.createConversation({listing_id:listingId,buyer_id:buyerId,seller_id:sellerId,last_message:"",last_message_at:new Date().toISOString()},token); }
+      await loadConversations();
+      setActiveConv(conv);
+      setMessages(await db.getMessages(conv.id,token));
+      setView("messages");
+    }catch(e){ flash("Could not start conversation."); }
   }
 
   async function loadHomeSections(){
@@ -1047,7 +1057,7 @@ export default function App() {
   // menu was open so navigating dismisses the overlay.
   const navMenuItems = [
     {label:"MY DROPS",       run:()=>{loadBundles();setView("dashboard");}},
-    {label:"ORDERS",         run:()=>{loadOrders();setView("orders");}},
+    {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
     {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
     {label:"MESSAGES",       run:openMessages},
     {label:"MY PROFILE",     run:()=>{load2FAFactors();setView("editprofile");}},
@@ -1743,12 +1753,9 @@ export default function App() {
       <Orders
         view={view} setView={setView} user={user} items={items}
         ordersTab={ordersTab} setOrdersTab={setOrdersTab} ordersLoading={ordersLoading} myOrders={myOrders}
-        showTrackingInput={showTrackingInput} setShowTrackingInput={setShowTrackingInput}
-        trackingInput={trackingInput} setTrackingInput={setTrackingInput}
-        markShipped={markShipped} confirmReceived={confirmReceived}
-        showDisputeForm={showDisputeForm} setShowDisputeForm={setShowDisputeForm}
-        disputeReason={disputeReason} setDisputeReason={setDisputeReason} raiseDispute={raiseDispute}
-        startConversation={startConversation}
+        orderProfiles={orderProfiles}
+        updateOrderStatus={updateOrderStatus}
+        startOrderConversation={startOrderConversation}
       />
 
       {/* SHOP VIEW */}
