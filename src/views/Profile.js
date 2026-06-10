@@ -1,5 +1,5 @@
 import React from "react";
-import { SIZES, CARD_COLORS, catEmoji } from "../lib/constants";
+import { SIZES, CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Tog } from "../components/Shared";
 
@@ -48,11 +48,6 @@ export default function Profile({
                     {["UK","USA","Canada","Australia","UAE","Pakistan","India","Bangladesh","Sri Lanka","Europe","Other"].map(r=><option key={r} value={r}>{r}</option>)}
                   </select>
                 </F>
-                <F l="CURRENCY">
-                  <select style={S.inp} value={profForm.currency} onChange={e=>setProfForm(f=>({...f,currency:e.target.value}))}>
-                    {[["USD","$ USD"],["GBP","£ GBP"],["EUR","€ EUR"],["CAD","$ CAD"],["AUD","$ AUD"],["AED","AED"],["PKR","₨ PKR"],["INR","₹ INR"],["BDT","৳ BDT"]].map(([code,label])=><option key={code} value={code}>{label}</option>)}
-                  </select>
-                </F>
               </div>
             </Sec>
             <Sec label="I SPECIALISE IN">
@@ -94,7 +89,7 @@ export default function Profile({
                         })}
                       </div>
                     </div>
-                    <F l="STARTING PRICE"><input style={S.inp} type="number" placeholder="e.g. 15" value={profForm.tailor_price_from} onChange={e=>setProfForm(f=>({...f,tailor_price_from:e.target.value}))}/></F>
+                    <F l="STARTING PRICE (£)"><div style={{position:"relative"}}><span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#111",fontFamily:"'Barlow',sans-serif",pointerEvents:"none"}}>£</span><input style={{...S.inp,paddingLeft:26}} type="number" placeholder="0.00" value={profForm.tailor_price_from} onChange={e=>setProfForm(f=>({...f,tailor_price_from:e.target.value}))}/></div></F>
                   </div>
                 </div>
               )}
@@ -175,7 +170,7 @@ export default function Profile({
                   <div style={S.cardBody}>
                     <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
                     <p style={S.cardName}>{item.name}</p>
-                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>${item.price}</span></div>
+                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span></div>
                   </div>
                   <div style={{...S.accentBar,background:accent}}/>
                 </article>
