@@ -12,6 +12,9 @@ export default function Dashboard({
   // createbundle
   bundleForm, setBundleForm, toggleBundleListing, createBundle,
 }) {
+  // Split listings into ACTIVE vs SOLD (issue PART 4 — sold listings move to a
+  // separate SOLD tab in the seller dashboard).
+  const [dashTab,setDashTab]=React.useState("active");
   if(view!=="dashboard"&&view!=="createbundle") return null;
   return (
     <>
@@ -31,9 +34,20 @@ export default function Dashboard({
           </div>
           {myItems.length===0?(
             <div style={{textAlign:"center",padding:"60px 20px"}}><p style={{display:"flex",justifyContent:"center",marginBottom:12}}><Shirt width={48} height={48}/></p><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NO LISTINGS YET.</p><button className="hbtn" style={S.hBtn} onClick={()=>setView("add")}>LIST YOUR FIRST PIECE →</button></div>
-          ):(
+          ):(()=>{
+            const tabItems=myItems.filter(i=>dashTab==="sold"?i.sold:!i.sold);
+            return (
+            <>
+            <div style={{display:"flex",gap:8,marginBottom:20}}>
+              {[["ACTIVE","active",myItems.filter(i=>!i.sold).length],["SOLD","sold",myItems.filter(i=>i.sold).length]].map(([l,v,n])=>(
+                <button key={v} className="hbtn" style={{...S.hBtn,background:dashTab===v?"#111":"#fff",color:dashTab===v?"#fff":"#111",border:"2px solid #111",fontSize:12,padding:"8px 18px"}} onClick={()=>setDashTab(v)}>{l} ({n})</button>
+              ))}
+            </div>
+            {tabItems.length===0?(
+              <div style={{textAlign:"center",padding:"48px 20px"}}><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#bbb",letterSpacing:1}}>{dashTab==="sold"?"NO SALES YET.":"NO ACTIVE LISTINGS."}</p></div>
+            ):(
             <div style={S.dashGrid} className="dash-grid">
-              {myItems.map((item,idx)=>(
+              {tabItems.map((item,idx)=>(
                 <div key={item.id} style={{...S.dashCard,borderColor:item.sold?"#ccc":CARD_COLORS[idx%CARD_COLORS.length]}}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={CARD_COLORS[idx%CARD_COLORS.length]} imgOpacity={item.sold?0.5:1} style={S.dashCardImg} emojiStyle={{fontSize:44}}>
                     {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
@@ -52,7 +66,10 @@ export default function Dashboard({
                 </div>
               ))}
             </div>
-          )}
+            )}
+            </>
+            );
+          })()}
           <div style={{marginTop:48}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,paddingBottom:16,borderBottom:"2px solid #111"}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,display:"flex",alignItems:"center",gap:8}}><Gift width={16} height={16}/> MY BUNDLES</div>

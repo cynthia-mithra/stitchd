@@ -234,7 +234,7 @@ export default function App() {
     if(!sid){ setOrderResult({status:"error"}); return; }
     verifySession(sid).then(r=>{
       if(r&&r.paid){
-        setOrderResult({status:"ok",items:r.items||[],amount:r.amount_total||0});
+        setOrderResult({status:"ok",items:r.items||[],amount:r.amount_total||0,sessionId:sid,listingIds:r.listing_ids||[]});
         // Clear the purchased listings from the (localStorage) bag.
         const purchased=new Set(r.listing_ids||[]);
         setBag(prev=>{ const next=purchased.size?prev.filter(b=>!purchased.has(b.id)):[]; localStorage.setItem("stitchd_bag",JSON.stringify(next)); return next; });
@@ -1422,28 +1422,71 @@ export default function App() {
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:700,letterSpacing:1,color:"#111"}}>CONFIRMING YOUR ORDER…</p>
             </div>
           )}
-          {orderResult&&orderResult.status==="ok"&&(
+          {orderResult&&orderResult.status==="ok"&&(()=>{
+            // Order reference = last 8 chars of the Stripe session id (issue PART 1).
+            const refNo=(orderResult.sessionId||"").slice(-8).toUpperCase();
+            const purchaseDate=new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+            // Resolve purchased listings from the loaded `items` so we can show the
+            // thumbnail + seller link; fall back to the verify-session line items
+            // (name + pence) if a listing isn't in the local cache.
+            const purchased=(orderResult.listingIds||[]).map(id=>items.find(i=>i.id===id)).filter(Boolean);
+            const lines=purchased.length
+              ? purchased.map(l=>({name:l.name,image:l.image_url||(l.images&&l.images[0])||"",emoji:l.emoji||catEmoji(l.category),seller:l.seller,userId:l.user_id,price:Number(l.price)||0}))
+              : (orderResult.items||[]).map(it=>({name:it.name,image:"",emoji:"💎",seller:"",userId:null,price:(it.amount||0)/100}));
+            return (
             <div style={{background:"#fff",border:"2px solid #111",padding:"40px 32px"}}>
-              <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:56,fontWeight:900,letterSpacing:-1,lineHeight:1,marginBottom:8,color:"#111"}}>ORDER CONFIRMED</h1>
-              <div style={{height:4,width:80,background:"#FF1493",marginBottom:28}}/>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:3,color:"#FF1493",marginBottom:14}}>WHAT YOU BOUGHT</p>
-              <div style={{border:"2px solid #111",marginBottom:24}}>
-                {orderResult.items.map((it,i)=>(
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"14px 16px",borderBottom:i<orderResult.items.length-1?"2px solid #111":"none"}}>
-                    <span style={{fontSize:15,color:"#111"}}>{it.name}</span>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:16,color:"#111"}}>£{(it.amount/100).toFixed(2)}</span>
+              <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:64,fontWeight:900,letterSpacing:-1.5,lineHeight:0.95,marginBottom:6,color:"#111"}}>IT'S YOURS.</h1>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,letterSpacing:3,color:"#FF1493",textTransform:"uppercase",marginBottom:28}}>Order confirmed</p>
+
+              {/* ORDER SUMMARY CARD(S) */}
+              <div style={{border:"2px solid #111",marginBottom:20}}>
+                {lines.map((l,i)=>(
+                  <div key={i} style={{display:"flex",gap:14,alignItems:"center",padding:"16px",borderBottom:i<lines.length-1?"2px solid #111":"none"}}>
+                    <div style={{width:64,height:64,flexShrink:0,border:"2px solid #111",background:"#f6f6f6",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+                      {l.image?<img src={l.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:30}}>{l.emoji}</span>}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:17,fontWeight:900,color:"#111",lineHeight:1.1,marginBottom:3}}>{l.name}</p>
+                      {l.seller&&(
+                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#888",letterSpacing:0.5}}>by{" "}
+                          {l.userId?(
+                            <button onClick={()=>{window.history.replaceState({},document.title,"/");setOrderResult(null);openProfile(l.userId);}} style={{background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#FF1493",letterSpacing:0.5,textDecoration:"underline"}}>@{l.seller}</button>
+                          ):<span style={{fontWeight:800,color:"#111"}}>@{l.seller}</span>}
+                        </p>
+                      )}
+                    </div>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,color:"#111"}}>£{l.price.toFixed(2)}</span>
                   </div>
                 ))}
-                <div style={{display:"flex",justifyContent:"space-between",padding:"14px 16px",borderTop:"2px solid #111",background:"#fafafa"}}>
-                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:16,letterSpacing:1}}>TOTAL PAID</span>
-                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:20}}>£{(orderResult.amount/100).toFixed(2)}</span>
+                <div style={{padding:"14px 16px",background:"#fafafa",borderTop:"2px solid #111",display:"flex",flexDirection:"column",gap:6}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:16,letterSpacing:1}}>AMOUNT PAID</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:22,color:"#FF1493"}}>£{(orderResult.amount/100).toFixed(2)}</span>
+                  </div>
+                  <div style={{display:"flex",justifyContent:"space-between",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#888",letterSpacing:0.5}}>
+                    <span>ORDER REF</span><span style={{fontWeight:800,color:"#111"}}>#{refNo||"—"}</span>
+                  </div>
+                  <div style={{display:"flex",justifyContent:"space-between",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#888",letterSpacing:0.5}}>
+                    <span>DATE</span><span style={{fontWeight:800,color:"#111"}}>{purchaseDate}</span>
+                  </div>
                 </div>
               </div>
-              <p style={{fontSize:15,color:"#111",marginBottom:28}}>📩 The seller has been notified.</p>
-              <button className="hbtn" style={{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:16,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase"}}
-                onClick={()=>{ window.history.replaceState({},document.title,"/"); setOrderResult(null); setView("shop"); }}>CONTINUE SHOPPING</button>
+
+              {/* SELLER-NOTIFIED MESSAGE BOX */}
+              <div style={{border:"2px solid #111",padding:"16px 18px",marginBottom:24}}>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#111",lineHeight:1.5}}>The seller has been notified and will be in touch about delivery. You can message them directly from your orders page.</p>
+              </div>
+
+              {/* ACTIONS */}
+              <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                <button className="hbtn" style={{flex:1,minWidth:180,background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:15,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,textTransform:"uppercase"}}
+                  onClick={()=>{ window.history.replaceState({},document.title,"/"); setOrderResult(null); if(user){loadOrders();setView("orders");}else{setAuthMode("login");setView("auth");} }}>View my orders</button>
+                <button className="hbtn" style={{flex:1,minWidth:180,background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:15,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,textTransform:"uppercase"}}
+                  onClick={()=>{ window.history.replaceState({},document.title,"/"); setOrderResult(null); setView("shop"); }}>Continue shopping</button>
+              </div>
             </div>
-          )}
+            );
+          })()}
           {orderResult&&orderResult.status==="error"&&(
             <div style={{background:"#fff",border:"2px solid #111",padding:"40px 32px"}}>
               <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1,marginBottom:8,color:"#111"}}>HMM, SOMETHING'S OFF</h1>
@@ -1682,6 +1725,7 @@ export default function App() {
         markShipped={markShipped} confirmReceived={confirmReceived}
         showDisputeForm={showDisputeForm} setShowDisputeForm={setShowDisputeForm}
         disputeReason={disputeReason} setDisputeReason={setDisputeReason} raiseDispute={raiseDispute}
+        startConversation={startConversation}
       />
 
       {/* SHOP VIEW */}

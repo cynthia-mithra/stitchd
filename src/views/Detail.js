@@ -66,13 +66,16 @@ export default function Detail({
                 const soldStyle={background:"#e5e5e5",color:"#999",border:"2px solid #ccc",cursor:"not-allowed"};
                 const baggedStyle={background:"#111",color:"#fff"};
                 return (
-                  <button
-                    className={sel.sold?"":"hbtn"}
-                    disabled={sel.sold}
-                    style={{...S.bagAddBtn,...(sel.sold?soldStyle:bagged?baggedStyle:{})}}
-                    onClick={()=>{ if(!sel.sold) toggleBag(sel); }}>
-                    <ShoppingBag width={18} height={18}/> {sel.sold?"SOLD":bagged?"ADDED TO BAG":"ADD TO BAG"}
-                  </button>
+                  <>
+                    <button
+                      className={sel.sold?"":"hbtn"}
+                      disabled={sel.sold}
+                      style={{...S.bagAddBtn,...(sel.sold?soldStyle:bagged?baggedStyle:{})}}
+                      onClick={()=>{ if(!sel.sold) toggleBag(sel); }}>
+                      <ShoppingBag width={18} height={18}/> {sel.sold?"SOLD":bagged?"ADDED TO BAG":"ADD TO BAG"}
+                    </button>
+                    {sel.sold&&<p style={{fontStyle:"italic",fontSize:13,color:"#999",marginTop:8,marginBottom:4}}>This piece has found a new home</p>}
+                  </>
                 );
               })()}
               {fastSellers.has(sel.user_id)&&<div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#007AFF",color:"#fff",padding:"4px 12px",fontSize:11,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",marginBottom:16}}><Zap width={14} height={14} fill="currentColor"/> FAST SELLER</div>}
