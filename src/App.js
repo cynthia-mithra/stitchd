@@ -10,7 +10,7 @@ import {
 import { db } from "./lib/db";
 import { auth, uploadImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag } from "lucide-react";
 import { Sec, F, Tog, Thumb } from "./components/Shared";
 import Tailors from "./views/Tailors";
 import Detail from "./views/Detail";
@@ -106,6 +106,12 @@ export default function App() {
   const [maxPrice,  setMaxPrice]  = useState("");
   const [showFilters,setShowFilters]=useState(false);
   const [wishlist,   setWishlist]   = useState(()=>{ try{return JSON.parse(localStorage.getItem("stitchd_wishlist"))||[];}catch{return[];} });
+  // Shopping bag holds lightweight snapshots of bagged listings ({id,name,price,
+  // currency,image,seller,sold}) so the panel renders without re-fetching. Stored
+  // in localStorage (per-device) so it survives refresh AND logging in — exactly
+  // like the wishlist above. No Supabase sync in this issue.
+  const [bag,        setBag]        = useState(()=>{ try{return JSON.parse(localStorage.getItem("stitchd_bag"))||[];}catch{return[];} });
+  const [showBag,    setShowBag]    = useState(false);
   const [recentlyViewed,setRecentlyViewed]=useState(()=>{ try{return JSON.parse(localStorage.getItem("stitchd_recent"))||[];}catch{return[];} });
   const [showSizeGuide,setShowSizeGuide]=useState(false);
   const [reviews,      setReviews]      = useState([]);
@@ -319,6 +325,46 @@ export default function App() {
       return next;
     });
   }
+
+  const inBag = (id) => bag.some(b=>b.id===id);
+
+  // Add/remove a listing from the bag (toggle). Each piece is one-of-a-kind so the
+  // bag never holds more than one of the same listing — adding an item already in
+  // the bag removes it. Stores a small snapshot so the panel needs no extra fetch.
+  function toggleBag(item){
+    setBag(prev=>{
+      let next;
+      if(prev.some(b=>b.id===item.id)){
+        next=prev.filter(b=>b.id!==item.id);
+        flash("Removed from bag.");
+      } else {
+        const snapshot={
+          id:item.id,
+          name:item.name,
+          price:item.price,
+          currency:item.currency,
+          image:item.image_url||(item.images&&item.images[0])||"",
+          emoji:item.emoji||catEmoji(item.category),
+          seller:item.seller_username||item.seller_name||item.username||"",
+          sold:!!item.sold,
+        };
+        next=[...prev,snapshot];
+        flash("🛍️ Added to bag!");
+      }
+      localStorage.setItem("stitchd_bag",JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function removeFromBag(id){
+    setBag(prev=>{
+      const next=prev.filter(b=>b.id!==id);
+      localStorage.setItem("stitchd_bag",JSON.stringify(next));
+      return next;
+    });
+  }
+
+  const bagTotal = bag.reduce((sum,b)=>sum+(parseFloat(b.price)||0),0);
 
   function shareItem(item){
     const text=`Check out "${item.name}" for £${item.price} on Stitch'd 🩷`;
@@ -955,8 +1001,12 @@ export default function App() {
             </button>
             {user?(
               <>
-                {/* ALWAYS VISIBLE: Notifications, then LIST IT. Favourites (heart)
-                    sits just before this block and is always visible too. */}
+                {/* SHOPPING BAG — signed-in only, sits alongside Notifications. */}
+                <button className="hbtn" style={{...S.hBtn,background:showBag?"#FF1493":"#fff",color:showBag?"#fff":"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setShowBag(true)} aria-label="Shopping bag">
+                  <ShoppingBag width={18} height={18} style={{verticalAlign:"middle"}}/> {bag.length>0&&<span style={S.bagBadge}>{bag.length}</span>}
+                </button>
+                {/* ALWAYS VISIBLE (when signed in): Notifications, then LIST IT.
+                    Favourites (heart) sits just before this block. */}
                 <button className="hbtn" style={{...S.hBtn,background:showNotifs?"#FF1493":"#fff",color:showNotifs?"#fff":"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setShowNotifs(p=>!p)}>
                   <Bell width={18} height={18} style={{verticalAlign:"middle"}}/> {unreadNotifs>0&&<span style={S.wishBadge}>{unreadNotifs}</span>}
                 </button>
@@ -1036,6 +1086,49 @@ export default function App() {
         </div>
       )}
       {toast&&<div style={S.toast}>{toast}</div>}
+
+      {/* SHOPPING BAG PANEL — slide-in from the right. UI/state only; the checkout
+          button is a placeholder until Stripe is wired up in a separate issue. */}
+      {user&&showBag&&(
+        <div style={S.bagOverlay} onClick={()=>setShowBag(false)}>
+          <div style={S.bagPanel} onClick={e=>e.stopPropagation()}>
+            <div style={S.bagHead}>
+              <span style={S.bagTitle}><ShoppingBag width={22} height={22}/> YOUR BAG{bag.length>0?` (${bag.length})`:""}</span>
+              <button style={S.bagClose} aria-label="Close bag" onClick={()=>setShowBag(false)}><X width={26} height={26}/></button>
+            </div>
+            {bag.length===0?(
+              <div style={S.bagEmpty}>
+                <ShoppingBag width={48} height={48} color="#ddd"/>
+                <p style={S.bagEmptyText}>YOUR BAG IS EMPTY</p>
+                <button className="hbtn" style={S.bagBrowseBtn} onClick={()=>{setShowBag(false);setView("shop");}}>BROWSE LISTINGS</button>
+              </div>
+            ):(
+              <div style={S.bagBody}>
+                {bag.map(b=>(
+                  <div key={b.id} style={S.bagRow}>
+                    <div style={S.bagThumb} onClick={()=>{ const item=items.find(i=>i.id===b.id); if(item){setShowBag(false);openDetail(item);} }}>
+                      {b.image?<img src={b.image} alt={b.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:30}}>{b.emoji}</span>}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <p style={S.bagItemName}>{b.name}</p>
+                      {b.seller&&<p style={S.bagItemSeller}>{b.seller}</p>}
+                      <p style={S.bagItemPrice}>{currencySymbol(b.currency)}{b.price}</p>
+                    </div>
+                    <button style={S.bagRemove} aria-label="Remove from bag" onClick={()=>removeFromBag(b.id)}><X width={20} height={20}/></button>
+                  </div>
+                ))}
+                <div style={S.bagDivider}/>
+                <div style={S.bagTotalRow}>
+                  <span style={S.bagTotalLabel}>TOTAL</span>
+                  <span style={S.bagTotalVal}>{currencySymbol(bag[0]?.currency)}{bagTotal.toFixed(2)}</span>
+                </div>
+                <button className="hbtn" style={S.bagCheckoutBtn} onClick={()=>flash("Checkout coming soon")}>PROCEED TO CHECKOUT</button>
+                <button style={S.bagContinue} onClick={()=>setShowBag(false)}>CONTINUE SHOPPING</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* PAYMENT MODAL */}
       {showPayment&&paymentListing&&(()=>{
@@ -1524,6 +1617,7 @@ export default function App() {
         view={view} setView={setView} sel={sel}
         selImages={selImages} selImgIdx={selImgIdx} setSelImgIdx={setSelImgIdx} selColor={selColor}
         wishlist={wishlist} toggleWishlist={toggleWishlist} shareItem={shareItem} setShowSizeGuide={setShowSizeGuide}
+        inBag={inBag} toggleBag={toggleBag}
         isOwner={isOwner} startConversation={startConversation}
         user={user} setAuthMode={setAuthMode}
         setShowPayment={setShowPayment} setPaymentListing={setPaymentListing} setPaymentStep={setPaymentStep} setSelectedPostage={setSelectedPostage}
