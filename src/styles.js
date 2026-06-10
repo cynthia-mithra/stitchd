@@ -6,6 +6,13 @@ export const CSS=`
   .scard:hover{transform:translateY(-8px) rotate(-0.5deg) !important;box-shadow:0 24px 60px rgba(0,0,0,0.13) !important;}
   .hbtn{transition:all .14s ease !important;}
   .hbtn:hover{transform:scale(0.96) !important;filter:brightness(0.9) !important;}
+  /* Desktop nav dropdown items turn pink on hover; the LOG OUT item keeps its red. */
+  .nav-drop-item:hover{color:#FF1493 !important;}
+  .nav-drop-item-danger:hover{color:#FF0000 !important;}
+  /* Mobile menu rows go pink on tap. */
+  .nav-mob-item:active{color:#FF1493 !important;background:#fff5fa !important;}
+  /* The hamburger is mobile-only; the profile-icon dropdown is desktop/iPad-only. */
+  .nav-hamburger{display:none !important;}
   .fpill{transition:all .14s !important;}
   .fpill:hover{background:#111 !important;color:#fff !important;}
   @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
@@ -94,6 +101,9 @@ export const CSS=`
        removed — the inline styles are untouched. */
     .nav-logo{border-right:none !important;}
     .nav-right{margin-left:auto !important;border-left:none !important;}
+    /* Swap the desktop hover dropdown for the tap hamburger on mobile. */
+    .nav-dropdown-wrap{display:none !important;}
+    .nav-hamburger{display:flex !important;}
   }
 `;
 
@@ -110,6 +120,20 @@ export const S={
   hRight:{display:"flex",alignItems:"center",gap:5,paddingLeft:10,borderLeft:"2px solid #111",flexShrink:0},
   hLive:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1,color:"#FF1493",whiteSpace:"nowrap"},
   hBtn:{background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"5px 8px",fontSize:9,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,whiteSpace:"nowrap"},
+  // Square profile/hamburger icon button: white bg, #111 2px border, no radius.
+  navIconBtn:{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"4px 7px",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},
+  // Wrapper for the desktop hover dropdown — relative anchor so the panel hangs
+  // directly below the icon with no gap (keeps hover continuous on mouse move).
+  navDropWrap:{position:"relative",display:"flex",alignItems:"center"},
+  navDropdown:{position:"absolute",top:"100%",right:0,minWidth:200,background:"#fff",border:"2px solid #111",borderRadius:0,zIndex:250,display:"flex",flexDirection:"column",boxShadow:"0 8px 30px rgba(0,0,0,0.15)"},
+  navDropItem:{background:"#fff",border:"none",textAlign:"left",padding:"12px 16px",fontSize:13,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,color:"#111",whiteSpace:"nowrap"},
+  navDropItemDanger:{color:"#FF0000",fontWeight:900},
+  // Mobile full-width menu overlay.
+  mobileNav:{position:"fixed",top:0,left:0,right:0,bottom:0,width:"100%",background:"#fff",zIndex:600,display:"flex",flexDirection:"column",overflowY:"auto"},
+  mobileNavHead:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",borderBottom:"2px solid #111"},
+  mobileNavTitle:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2,textTransform:"uppercase"},
+  mobileNavClose:{background:"none",border:"none",cursor:"pointer",color:"#111",display:"flex",alignItems:"center",padding:4},
+  mobileNavItem:{background:"#fff",border:"none",borderBottom:"2px solid #111",textAlign:"left",minHeight:48,padding:"0 20px",fontSize:18,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,color:"#111",textTransform:"uppercase",display:"flex",alignItems:"center"},
   ticker:{background:"#FF1493",overflow:"hidden",borderBottom:"2px solid #111",height:36,display:"flex",alignItems:"center"},
   tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2.5,color:"#fff",animation:"ticker 22s linear infinite",paddingLeft:"100%"},
   toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"12px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,zIndex:999,borderRadius:0,whiteSpace:"nowrap",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"},
