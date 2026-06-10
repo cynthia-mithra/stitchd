@@ -310,4 +310,33 @@ export const S={
   offerBar:{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",borderTop:"1px solid #f5f5f5",flexWrap:"wrap",background:"#fafafa"},
   offerCard:{background:"#fff",padding:"14px 16px",borderRadius:0},
   offerStatusBadge:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:1.5,color:"#fff",padding:"2px 8px",borderRadius:0},
+  // SHOPPING BAG — small count badge on the navbar bag icon. Pink circle, white
+  // number, 2px #111 border so it reads clearly against the white icon button.
+  bagBadge:{position:"absolute",top:-6,right:-6,background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:"50%",minWidth:20,height:20,padding:"0 4px",fontSize:11,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1},
+  // ADD TO BAG button on the Detail page. Full width, pink, white uppercase
+  // Barlow Condensed, 2px #111 border, no radius. Background/colour are overridden
+  // inline for the ADDED (black) and SOLD (grey) states.
+  bagAddBtn:{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:17,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16},
+  // Slide-in bag panel — dim backdrop pinned to the right edge of the screen.
+  bagOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:600,display:"flex",justifyContent:"flex-end"},
+  bagPanel:{width:"min(420px,100%)",height:"100%",background:"#fff",borderLeft:"2px solid #111",display:"flex",flexDirection:"column",overflowY:"auto"},
+  bagHead:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:"2px solid #111",position:"sticky",top:0,background:"#fff",zIndex:2},
+  bagTitle:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,letterSpacing:2,textTransform:"uppercase",display:"flex",alignItems:"center",gap:10},
+  bagClose:{background:"none",border:"none",cursor:"pointer",color:"#111",display:"flex",alignItems:"center",padding:4},
+  bagBody:{flex:1,display:"flex",flexDirection:"column",padding:"16px 20px"},
+  bagRow:{display:"flex",alignItems:"center",gap:12,padding:"14px 0",borderBottom:"1px solid #f0f0f0"},
+  bagThumb:{width:64,height:64,flexShrink:0,border:"2px solid #111",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",background:"#fafafa"},
+  bagItemName:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#111",lineHeight:1.1,letterSpacing:0.5},
+  bagItemSeller:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:1.5,color:"#bbb",marginTop:2,textTransform:"uppercase"},
+  bagItemPrice:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:"#111",marginTop:4,letterSpacing:-0.5},
+  bagRemove:{background:"none",border:"none",cursor:"pointer",color:"#111",display:"flex",alignItems:"center",alignSelf:"flex-start",padding:4,flexShrink:0},
+  bagDivider:{borderBottom:"2px solid #111",margin:"16px 0"},
+  bagTotalRow:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20},
+  bagTotalLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:3,color:"#111",textTransform:"uppercase"},
+  bagTotalVal:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:"#111",letterSpacing:-1},
+  bagCheckoutBtn:{width:"100%",background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:16,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase"},
+  bagContinue:{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#111",textTransform:"uppercase",textDecoration:"underline",marginTop:16,alignSelf:"center"},
+  bagEmpty:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",gap:20,padding:"40px 0"},
+  bagEmptyText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2,color:"#111",textTransform:"uppercase"},
+  bagBrowseBtn:{background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px 28px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,textTransform:"uppercase"},
 };
