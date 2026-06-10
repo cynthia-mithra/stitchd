@@ -2,6 +2,7 @@ import React from "react";
 import { CARD_COLORS, currencySymbol } from "../lib/constants";
 import { S } from "../styles";
 import { F } from "../components/Shared";
+import MeasuringGuide, { GeneralTips } from "./MeasuringGuide";
 
 export default function Tailors({
   view, setView, user, profile,
@@ -139,6 +140,8 @@ export default function Tailors({
             <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>YOUR COMPLETE GUIDE</p>
             <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:56,fontWeight:900,letterSpacing:-1,lineHeight:1,marginBottom:12}}>HOW TO<br/><span style={{color:"#FF1493"}}>MEASURE.</span></h1>
           </div>
+          <MeasuringGuide/>
+          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:3,color:"#888",marginBottom:12,textTransform:"uppercase"}}>Quick Size Reference</p>
           <div style={{overflowX:"auto",marginBottom:40}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13}}>
               <thead><tr style={{background:"#111",color:"#fff"}}>{["SIZE","BUST","WAIST","HIPS","UK","US/CA","EU"].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontWeight:800,letterSpacing:1.5,fontSize:11}}>{h}</th>)}</tr></thead>
@@ -152,6 +155,7 @@ export default function Tailors({
               </tbody>
             </table>
           </div>
+          <GeneralTips/>
           <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",padding:"16px 32px",fontSize:15,letterSpacing:3,width:"100%"}} onClick={()=>setView(user?"add":"auth")}>LIST A PIECE NOW →</button>
         </main>
       )}
