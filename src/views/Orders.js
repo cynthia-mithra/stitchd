@@ -1,86 +1,131 @@
 import React from "react";
-import { Package, Check, Flag, Mail } from "lucide-react";
-import { currencySymbol } from "../lib/constants";
+import { Package, Mail } from "lucide-react";
 import { S } from "../styles";
+
+// Post-purchase order history (issue PART 2 & PART 5).
+//
+// Orders are stored with a `status` that has varied across deployments
+// (the webhook writes "paid"; sellers move it through dispatched/delivered).
+// `normaliseStatus` collapses every legacy value onto the issue's three-state
+// model so the badge + seller dropdown stay consistent no matter what's stored.
+const normaliseStatus = (s) => {
+  const v = String(s || "").toLowerCase();
+  if (v === "dispatched" || v === "shipped") return "dispatched";
+  if (v === "delivered") return "delivered";
+  return "pending"; // paid / pending / disputed / anything else
+};
+
+// Badge palette from the design system in the issue.
+const STATUS_BADGE = {
+  pending:    { label: "PENDING",    background: "#111",     color: "#fff" },
+  dispatched: { label: "DISPATCHED", background: "#00E5CC",  color: "#111" },
+  delivered:  { label: "DELIVERED",  background: "#FF1493",  color: "#fff" },
+};
+const STATUS_FLOW = ["pending", "dispatched", "delivered"];
 
 export default function Orders({
   view, setView, user, items,
   ordersTab, setOrdersTab, ordersLoading, myOrders,
-  showTrackingInput, setShowTrackingInput, trackingInput, setTrackingInput,
-  markShipped, confirmReceived,
-  showDisputeForm, setShowDisputeForm, disputeReason, setDisputeReason, raiseDispute,
-  startConversation,
+  orderProfiles = {},
+  updateOrderStatus, startOrderConversation,
 }) {
-  if(view!=="orders") return null;
-  if(!user) return null;
+  if (view !== "orders") return null;
+  if (!user) return null;
+
+  const firstName = (uid) => {
+    const p = orderProfiles[uid];
+    if (!p) return "A buyer";
+    if (p.full_name && p.full_name.trim()) return p.full_name.trim().split(/\s+/)[0];
+    return p.username || "A buyer";
+  };
+  const sellerName = (uid, listing) => orderProfiles[uid]?.username || orderProfiles[uid]?.full_name || listing?.seller || "Seller";
+
+  const filtered = myOrders.filter(o =>
+    ordersTab === "all" ||
+    (ordersTab === "buying"  && o.buyer_id  === user.id) ||
+    (ordersTab === "selling" && o.seller_id === user.id)
+  );
+
   return (
     <main style={S.main}>
-      <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
-      <div style={{marginBottom:32,paddingBottom:24,borderBottom:"3px solid #111",display:"flex",alignItems:"flex-end",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
+      <button style={S.back} onClick={() => setView("shop")}>← BACK</button>
+      <div style={{ marginBottom: 32, paddingBottom: 24, borderBottom: "3px solid #111", display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
         <div>
-          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>YOUR TRANSACTIONS</p>
-          <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1}}>ORDER HISTORY</h2>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 4, color: "#FF1493", marginBottom: 6 }}>YOUR TRANSACTIONS</p>
+          <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 48, fontWeight: 900, letterSpacing: -1, lineHeight: 1 }}>MY ORDERS</h2>
         </div>
-        <div style={{display:"flex",gap:6}}>
-          {[["All","all"],["Buying","buying"],["Selling","selling"]].map(([l,v])=>(
-            <button key={v} className="fpill" style={{...S.pill,...(ordersTab===v?S.pillOn:{})}} onClick={()=>setOrdersTab(v)}>{l}</button>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[["All", "all"], ["Buying", "buying"], ["Selling", "selling"]].map(([l, v]) => (
+            <button key={v} className="fpill" style={{ ...S.pill, ...(ordersTab === v ? S.pillOn : {}) }} onClick={() => setOrdersTab(v)}>{l}</button>
           ))}
         </div>
       </div>
-      {ordersLoading?<div style={S.loadingWrap}><div style={S.spinner}/></div>:myOrders.length===0?(
-        <div style={{textAlign:"center",padding:"60px 20px"}}>
-          <p style={{display:"flex",justifyContent:"center",marginBottom:12}}><Package width={48} height={48}/></p>
-          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NO ORDERS YET.</p>
-          <button className="hbtn" style={S.hBtn} onClick={()=>setView("shop")}>BROWSE DROPS →</button>
+
+      {ordersLoading ? (
+        <div style={S.loadingWrap}><div style={S.spinner} /></div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "60px 20px" }}>
+          <p style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Package width={48} height={48} /></p>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 24, fontWeight: 900, marginBottom: 8 }}>NO ORDERS YET</p>
+          <button className="hbtn" style={S.hBtn} onClick={() => setView("shop")}>BROWSE LISTINGS →</button>
         </div>
-      ):(
-        <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          {myOrders.filter(o=>ordersTab==="all"||(ordersTab==="buying"&&o.buyer_id===user.id)||(ordersTab==="selling"&&o.seller_id===user.id)).map(order=>{
-            const listing=items.find(i=>i.id===order.listing_id);
-            const isBuyer=order.buyer_id===user.id;
-            const statusColors={paid:"#FF9500",shipped:"#007AFF",delivered:"#34C759",disputed:"#FF1493"};
-            return(
-              <div key={order.id} style={{border:"2px solid #f0f0f0",padding:"20px",display:"flex",gap:16,flexWrap:"wrap",alignItems:"flex-start"}}>
-                {listing?.image_url&&<img src={listing.image_url} alt="" style={{width:72,height:72,objectFit:"cover",border:"2px solid #111",flexShrink:0}}/>}
-                <div style={{flex:1,minWidth:200}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
-                    <span style={{background:statusColors[order.status]||"#888",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif"}}>{order.status?.toUpperCase()}</span>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>{isBuyer?"BUYING":"SELLING"} · {new Date(order.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase()}</span>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {filtered.map(order => {
+            const listing = items.find(i => i.id === order.listing_id);
+            const isBuyer = order.buyer_id === user.id;
+            const status = normaliseStatus(order.status);
+            const badge = STATUS_BADGE[status];
+            const amount = order.amount != null ? Number(order.amount) : (order.amount_pence || 0) / 100;
+            const dateStr = order.created_at
+              ? new Date(order.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }).toUpperCase()
+              : "";
+            return (
+              <div key={order.id} style={{ border: "2px solid #111", padding: 20, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+                <div style={{ width: 72, height: 72, flexShrink: 0, border: "2px solid #111", background: "#f6f6f6", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {listing?.image_url || (listing?.images && listing.images[0])
+                    ? <img src={listing.image_url || listing.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : <Package width={26} height={26} color="#bbb" />}
+                </div>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+                    <span style={{ background: badge.background, color: badge.color, padding: "3px 10px", fontSize: 10, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Barlow Condensed',sans-serif" }}>{badge.label}</span>
+                    <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, color: "#bbb", letterSpacing: 1 }}>{isBuyer ? "BUYING" : "SELLING"}{dateStr ? ` · ${dateStr}` : ""}</span>
                   </div>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,marginBottom:4}}>{listing?.name||"Item"}</p>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#FF1493",marginBottom:6}}>{currencySymbol(listing?.currency)}{order.amount}</p>
-                  {order.tracking_number&&<p style={{fontSize:12,color:"#007AFF",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1,marginBottom:4,display:"flex",alignItems:"center",gap:6}}><Package width={14} height={14}/> TRACKING: {order.tracking_number}</p>}
-                  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
-                    {isBuyer&&listing&&startConversation&&(
-                      <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,fontSize:11,padding:"8px 16px",display:"inline-flex",alignItems:"center",gap:6}} onClick={()=>startConversation(listing)}><Mail width={14} height={14}/> MESSAGE SELLER</button>
+                  <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 900, marginBottom: 4 }}>{listing?.name || "Item"}</p>
+                  <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, color: "#888", letterSpacing: 0.5, marginBottom: 2 }}>
+                    {isBuyer ? `from ${sellerName(order.seller_id, listing)}` : `to ${firstName(order.buyer_id)}`}
+                  </p>
+                  <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18, fontWeight: 900, color: "#FF1493", marginBottom: 10 }}>£{amount.toFixed(2)}</p>
+
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                    {/* BUYER → message the seller */}
+                    {isBuyer && startOrderConversation && (
+                      <button className="hbtn" style={{ ...S.hBtn, background: "#fff", color: "#111", border: "2px solid #111", borderRadius: 0, fontSize: 11, padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => startOrderConversation(order)}>
+                        <Mail width={14} height={14} /> MESSAGE SELLER
+                      </button>
                     )}
-                    {!isBuyer&&order.status==="paid"&&(
-                      showTrackingInput===order.id?(
-                        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                          <input style={{...S.inp,width:160,fontSize:12,padding:"8px 10px"}} placeholder="Tracking number" value={trackingInput} onChange={e=>setTrackingInput(e.target.value)}/>
-                          <button className="hbtn" style={{...S.hBtn,background:"#007AFF",border:"none",fontSize:11,padding:"8px 14px"}} onClick={()=>markShipped(order.id)}>CONFIRM SHIPPED</button>
-                          <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#888",border:"1px solid #e0e0e0",fontSize:11,padding:"8px 10px"}} onClick={()=>setShowTrackingInput(null)}>✕</button>
-                        </div>
-                      ):(
-                        <button className="hbtn" style={{...S.hBtn,background:"#007AFF",border:"none",fontSize:11,padding:"8px 16px",display:"inline-flex",alignItems:"center",gap:6}} onClick={()=>setShowTrackingInput(order.id)}><Package width={14} height={14}/> MARK AS SHIPPED</button>
-                      )
-                    )}
-                    {isBuyer&&order.status==="shipped"&&(
+                    {/* SELLER → status dropdown + message the buyer */}
+                    {!isBuyer && (
                       <>
-                        <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",fontSize:11,padding:"8px 16px",display:"inline-flex",alignItems:"center",gap:6}} onClick={()=>confirmReceived(order.id)}><Check width={14} height={14}/> CONFIRM RECEIVED</button>
-                        <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"8px 14px",display:"inline-flex",alignItems:"center",gap:6}} onClick={()=>setShowDisputeForm(order.id)}><Flag width={14} height={14}/> RAISE DISPUTE</button>
+                        <label style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: "#888" }}>STATUS</label>
+                        <select
+                          value={status}
+                          onChange={e => updateOrderStatus(order.id, e.target.value)}
+                          style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 1, padding: "8px 12px", border: "2px solid #111", borderRadius: 0, background: "#fff", color: "#111", cursor: "pointer" }}
+                        >
+                          {STATUS_FLOW.map(s => (
+                            <option key={s} value={s}>{STATUS_BADGE[s].label}</option>
+                          ))}
+                        </select>
+                        {startOrderConversation && order.buyer_id && (
+                          <button className="hbtn" style={{ ...S.hBtn, background: "#fff", color: "#111", border: "2px solid #111", borderRadius: 0, fontSize: 11, padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => startOrderConversation(order)}>
+                            <Mail width={14} height={14} /> MESSAGE BUYER
+                          </button>
+                        )}
                       </>
                     )}
                   </div>
-                  {showDisputeForm===order.id&&(
-                    <div style={{marginTop:12,border:"2px solid #FF1493",padding:"14px",display:"flex",flexDirection:"column",gap:10}}>
-                      <textarea style={{...S.inp,height:80,resize:"vertical",width:"100%",fontSize:13}} placeholder="Describe the issue..." value={disputeReason} onChange={e=>setDisputeReason(e.target.value)}/>
-                      <div style={{display:"flex",gap:8}}>
-                        <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",flex:1,padding:"10px",fontSize:12}} onClick={()=>raiseDispute(order.id)}>SUBMIT DISPUTE</button>
-                        <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#888",border:"1px solid #e0e0e0",padding:"10px 14px",fontSize:12}} onClick={()=>setShowDisputeForm(null)}>CANCEL</button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             );
