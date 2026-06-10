@@ -8,15 +8,35 @@ export async function startCheckout(bag, { buyerId, buyerEmail } = {}) {
   const listing_ids = (bag || []).map((b) => b.id).filter(Boolean);
   if (!listing_ids.length) throw new Error("Your bag is empty.");
 
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/stripe-checkout`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-    },
-    body: JSON.stringify({ listing_ids, buyer_id: buyerId || null, buyer_email: buyerEmail || "" }),
-  });
+  // Abort if the function never responds, so checkout can't hang forever.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+
+  let res;
+  try {
+    res = await fetch(`${SUPABASE_URL}/functions/v1/stripe-checkout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+      body: JSON.stringify({ listing_ids, buyer_id: buyerId || null, buyer_email: buyerEmail || "" }),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    // A rejected fetch never reached the function — DNS/CORS/offline, or the
+    // `stripe-checkout` Edge Function isn't deployed (so its CORS preflight has
+    // no Access-Control headers and the browser blocks the request). Browsers
+    // surface this as the unhelpful "Load failed" / "Failed to fetch"; translate
+    // it into something a buyer can act on instead of a cryptic native message.
+    if (e.name === "AbortError") {
+      throw new Error("The checkout service took too long to respond. Please try again.");
+    }
+    throw new Error("Couldn't reach the checkout service. Please check your connection and try again.");
+  } finally {
+    clearTimeout(timeout);
+  }
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.url) throw new Error(data.error || "Could not start checkout.");
