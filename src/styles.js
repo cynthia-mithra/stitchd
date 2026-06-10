@@ -81,6 +81,11 @@ export const CSS=`
      Desktop and iPad (≥769px) keep showing the strip. */
   @media(max-width:768px){
     .nav-category-strip{display:none !important;}
+    /* With the category strip (flex:1 spacer) hidden, nothing pushes the
+       right-side nav buttons (3 LIVE, ❤, LOG IN, SIGN UP) over, so they
+       collapse next to the logo. margin-left:auto sends them back to the
+       right edge. Logo stays on the left; marquee/hero/strip untouched. */
+    .nav-right{margin-left:auto !important;}
   }
 `;
 
