@@ -1,5 +1,5 @@
 import React from "react";
-import { Package, Check, Flag } from "lucide-react";
+import { Package, Check, Flag, Mail } from "lucide-react";
 import { currencySymbol } from "../lib/constants";
 import { S } from "../styles";
 
@@ -9,6 +9,7 @@ export default function Orders({
   showTrackingInput, setShowTrackingInput, trackingInput, setTrackingInput,
   markShipped, confirmReceived,
   showDisputeForm, setShowDisputeForm, disputeReason, setDisputeReason, raiseDispute,
+  startConversation,
 }) {
   if(view!=="orders") return null;
   if(!user) return null;
@@ -50,6 +51,9 @@ export default function Orders({
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#FF1493",marginBottom:6}}>{currencySymbol(listing?.currency)}{order.amount}</p>
                   {order.tracking_number&&<p style={{fontSize:12,color:"#007AFF",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1,marginBottom:4,display:"flex",alignItems:"center",gap:6}}><Package width={14} height={14}/> TRACKING: {order.tracking_number}</p>}
                   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
+                    {isBuyer&&listing&&startConversation&&(
+                      <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,fontSize:11,padding:"8px 16px",display:"inline-flex",alignItems:"center",gap:6}} onClick={()=>startConversation(listing)}><Mail width={14} height={14}/> MESSAGE SELLER</button>
+                    )}
                     {!isBuyer&&order.status==="paid"&&(
                       showTrackingInput===order.id?(
                         <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
