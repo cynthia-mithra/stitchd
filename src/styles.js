@@ -101,6 +101,10 @@ export const CSS=`
        removed — the inline styles are untouched. */
     .nav-logo{border-right:none !important;}
     .nav-right{margin-left:auto !important;border-left:none !important;}
+    /* Restore horizontal scroll on mobile only. The dropdown isn't used here (the
+       hamburger opens a full-screen fixed overlay instead), so the overflow-y
+       clipping this re-introduces is harmless. */
+    .nav-hwrap{overflow-x:auto !important;}
     /* Swap the desktop hover dropdown for the tap hamburger on mobile. */
     .nav-dropdown-wrap{display:none !important;}
     .nav-hamburger{display:flex !important;}
@@ -110,7 +114,12 @@ export const CSS=`
 export const S={
   root:{minHeight:"100vh",background:"#fff",color:"#111",fontFamily:"'Barlow',sans-serif"},
   header:{background:"#fff",borderBottom:"3px solid #111",position:"sticky",top:0,zIndex:200},
-  hWrap:{maxWidth:"100%",padding:"0 10px",display:"flex",alignItems:"stretch",height:52,overflowX:"auto",WebkitOverflowScrolling:"touch"},
+  // overflow is left VISIBLE here so the desktop/iPad profile-icon dropdown (which
+  // hangs below this 52px bar via position:absolute) isn't clipped. `overflow-x:auto`
+  // would force `overflow-y` to auto too and crop the dropdown to nothing. Horizontal
+  // scroll is restored ONLY on mobile (≤768px, via .nav-hwrap in CSS) where the menu is
+  // the full-screen hamburger overlay, not the clipped dropdown.
+  hWrap:{maxWidth:"100%",padding:"0 10px",display:"flex",alignItems:"stretch",height:52,overflowX:"visible",WebkitOverflowScrolling:"touch"},
   logoWrap:{display:"flex",alignItems:"center",gap:2,cursor:"pointer",paddingRight:10,borderRight:"2px solid #111",flexShrink:0},
   logoText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2},
   logoTM:{fontSize:10,color:"#FF1493",alignSelf:"flex-start",marginTop:6},
