@@ -1,11 +1,12 @@
 import React from "react";
-import { Shirt, Gift, Eye, Check } from "lucide-react";
+import { Shirt, Gift, Eye, Check, Star } from "lucide-react";
 import { CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Thumb } from "../components/Shared";
 
 export default function Dashboard({
   view, setView, user, myItems,
+  sellerRatings = {},
   // dashboard
   setSel, openEdit, markSold, relist, del,
   bundles, bundleItems, loadBundles, deleteBundle,
@@ -15,6 +16,8 @@ export default function Dashboard({
   // Split listings into ACTIVE vs SOLD (issue PART 4 — sold listings move to a
   // separate SOLD tab in the seller dashboard).
   const [dashTab,setDashTab]=React.useState("active");
+  // The seller's own overall rating, shown as a stat tile when they have reviews.
+  const myRating = user ? sellerRatings[user.id] : null;
   if(view!=="dashboard"&&view!=="createbundle") return null;
   return (
     <>
@@ -30,6 +33,12 @@ export default function Dashboard({
               <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#FF9500"}}>{myItems.filter(i=>i.sold).length}</div><div style={S.dashStatLabel}>SOLD</div></div>
               <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#007AFF"}}>£{myItems.filter(i=>i.sold).reduce((a,i)=>a+i.price,0)}</div><div style={S.dashStatLabel}>EARNED</div></div>
               <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#BF5AF2"}}>{myItems.reduce((a,i)=>a+(i.views||0),0)}</div><div style={S.dashStatLabel}>VIEWS</div></div>
+              {myRating&&myRating.count>0&&(
+                <div style={S.dashStat}>
+                  <div style={{...S.dashStatNum,color:"#FF1493",display:"inline-flex",alignItems:"center",gap:6}}><Star width={22} height={22} fill="currentColor"/> {myRating.average.toFixed(1)}</div>
+                  <div style={S.dashStatLabel}>{myRating.count} REVIEW{myRating.count!==1?"S":""}</div>
+                </div>
+              )}
             </div>
           </div>
           {myItems.length===0?(

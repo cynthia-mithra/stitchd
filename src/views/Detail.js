@@ -2,7 +2,7 @@ import React from "react";
 import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag } from "lucide-react";
 import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure } from "../lib/constants";
 import { S } from "../styles";
-import { Thumb } from "../components/Shared";
+import { Thumb, Stars } from "../components/Shared";
 
 export default function Detail({
   view, setView, sel,
@@ -29,6 +29,9 @@ export default function Detail({
     : [["BUST",sel?.bust],["WAIST",sel?.waist],["HIPS",sel?.hips],["LENGTH",sel?.length],["UNDERBUST",sel?.underbust],["SHOULDER",sel?.shoulder],["HIGH HIP",sel?.high_hip],["SLEEVE",sel?.sleeve_length],["INSEAM",sel?.inseam]].filter(([,v])=>v);
   const hasMeas = sel && sel.listing_type!=="Jewellery" && measRows.length>0;
   const sellerNotes = sel ? (sel.additional_measurements||sel.measurement_notes) : "";
+  // Seller's average across all their reviews — drives the prominent stars/score
+  // shown under the price (e.g. "4.8 · 12 reviews").
+  const avgRating = reviews.length ? reviews.reduce((a,r)=>a+r.rating,0)/reviews.length : 0;
   return (
     <>
       {view==="detail"&&sel&&(
@@ -61,6 +64,13 @@ export default function Detail({
               <p style={{...S.cardCatLabel,color:selColor,fontSize:12,marginBottom:8}}>{sel.category?.toUpperCase()} · {(sel.material||sel.fabric)?.toUpperCase()} · {sel.condition?.toUpperCase()}</p>
               <h2 style={S.detailName}>{sel.name}</h2>
               <div style={{...S.detailPrice,color:selColor}}>{currencySymbol(sel.currency)}{sel.price}</div>
+              {reviews.length>0&&(
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,fontFamily:"'Barlow Condensed',sans-serif"}}>
+                  <Stars value={avgRating} size={20} color="#FF1493"/>
+                  <span style={{fontSize:20,fontWeight:900,color:"#111",letterSpacing:0.5}}>{avgRating.toFixed(1)}</span>
+                  <span style={{fontSize:15,fontWeight:700,color:"#888",letterSpacing:0.5}}>· {reviews.length} review{reviews.length!==1?"s":""}</span>
+                </div>
+              )}
               {user&&!isOwner(sel)&&(()=>{
                 const bagged=inBag(sel.id);
                 const soldStyle={background:"#e5e5e5",color:"#999",border:"2px solid #ccc",cursor:"not-allowed"};
@@ -135,15 +145,18 @@ export default function Detail({
               )}
               {reviews.length>0&&(
                 <div style={S.dBlock}>
-                  <p style={{...S.dBlockTitle,borderColor:"#FF9500",color:"#FF9500"}}>SELLER REVIEWS ({reviews.length})</p>
+                  <p style={{...S.dBlockTitle,borderColor:"#FF1493",color:"#FF1493"}}>REVIEWS ({reviews.length})</p>
                   <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                    {reviews.slice(0,3).map(r=>(
-                      <div key={r.id} style={S.reviewCard}>
-                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                          <span style={{display:"inline-flex",alignItems:"center",color:"#FF9500"}}>{Array.from({length:r.rating}).map((_,i)=><Star key={i} width={14} height={14} fill="currentColor"/>)}</span>
-                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb"}}>{new Date(r.created_at).toLocaleDateString("en-GB",{month:"short",year:"numeric"}).toUpperCase()}</span>
+                    {reviews.map(r=>(
+                      <div key={r.id} style={{border:"2px solid #111",borderRadius:0,padding:"14px 16px"}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:6,flexWrap:"wrap"}}>
+                          <span style={{display:"inline-flex",alignItems:"center",gap:8}}>
+                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.5}}>{r.reviewer_name||"Anonymous"}</span>
+                            <Stars value={r.rating} size={13} color="#FF1493"/>
+                          </span>
+                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>{new Date(r.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase()}</span>
                         </div>
-                        {r.comment&&<p style={{fontSize:13,color:"#666",lineHeight:1.5}}>{r.comment}</p>}
+                        {r.comment&&<p style={{fontSize:13,color:"#444",lineHeight:1.5,margin:0}}>{r.comment}</p>}
                       </div>
                     ))}
                   </div>

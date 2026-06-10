@@ -1,4 +1,28 @@
 import React from "react";
+import { Star } from "lucide-react";
+
+// Proportional 5-star rating. Each position is a faint outline star with a
+// horizontally-clipped filled copy laid over it, so a 4.3 average shows four
+// solid stars plus 30% of the fifth. `color` drives the fill via currentColor
+// (defaults to the #FF1493 brand pink). Callers decide whether to render at all
+// — with no reviews we show nothing rather than five empty stars.
+export function Stars({value=0,size=14,color="#FF1493",gap=2}){
+  return (
+    <span style={{display:"inline-flex",alignItems:"center",gap,color,lineHeight:0}}>
+      {Array.from({length:5}).map((_,i)=>{
+        const pct=Math.max(0,Math.min(1,value-i))*100;
+        return (
+          <span key={i} style={{position:"relative",display:"inline-block",width:size,height:size,lineHeight:0}}>
+            <Star width={size} height={size} fill="none" stroke="currentColor" style={{position:"absolute",top:0,left:0,opacity:0.3}}/>
+            <span style={{position:"absolute",top:0,left:0,height:"100%",width:`${pct}%`,overflow:"hidden",display:"inline-block",lineHeight:0}}>
+              <Star width={size} height={size} fill="currentColor" stroke="currentColor"/>
+            </span>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
 
 export function Sec({label,children}){return<div style={{marginBottom:36}}><div style={{fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:18,textTransform:"uppercase"}}>{label}</div>{children}</div>;}
 export function F({l,children,style}){return<div style={{display:"flex",flexDirection:"column",gap:5,...style}}><label style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase"}}>{l}</label>{children}</div>;}

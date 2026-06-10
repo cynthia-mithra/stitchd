@@ -1,8 +1,8 @@
 import React from "react";
-import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Star } from "lucide-react";
+import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag } from "lucide-react";
 import { SIZES, CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
 import { S } from "../styles";
-import { Sec, F, Tog } from "../components/Shared";
+import { Sec, F, Tog, Stars } from "../components/Shared";
 
 export default function Profile({
   view, setView, prevView, user,
@@ -150,7 +150,7 @@ export default function Profile({
                 {viewedProfile.id_verified&&<span style={{background:"#007AFF",color:"#fff",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",display:"inline-flex",alignItems:"center",gap:5}}><BadgeCheck width={12} height={12}/> ID VERIFIED</span>}
                 {viewedProfile.total_sales>0&&<span style={{background:"#FF950022",color:"#FF9500",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",border:"1px solid #FF950044",display:"inline-flex",alignItems:"center",gap:5}}><ShoppingBag width={12} height={12}/> {viewedProfile.total_sales} SALES</span>}
               </div>
-              <p style={{...S.profileMeta,display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>{profileListings.length} listings · {profileListings.filter(i=>i.sold).length} sold{reviews.length>0&&<> · <Star width={13} height={13} fill="currentColor"/> {(reviews.reduce((a,r)=>a+r.rating,0)/reviews.length).toFixed(1)} avg</>}</p>
+              <p style={{...S.profileMeta,display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>{profileListings.length} listings · {profileListings.filter(i=>i.sold).length} sold{reviews.length>0&&<span style={{display:"inline-flex",alignItems:"center",gap:6}}> · <Stars value={reviews.reduce((a,r)=>a+r.rating,0)/reviews.length} size={14} color="#FF1493"/> <span style={{color:"#111",fontWeight:800}}>{(reviews.reduce((a,r)=>a+r.rating,0)/reviews.length).toFixed(1)}</span> ({reviews.length} review{reviews.length!==1?"s":""})</span>}</p>
               {user&&viewedProfile.id!==user.id&&(
                 <button className="hbtn" style={{...S.hBtn,background:isFollowing(viewedProfile.id)?"#fff":"#FF1493",color:isFollowing(viewedProfile.id)?"#FF1493":"#fff",border:"2px solid #FF1493",marginTop:14}} onClick={()=>toggleFollow(viewedProfile.id)}>
                   {isFollowing(viewedProfile.id)?<span style={{display:"inline-flex",alignItems:"center",gap:6}}><Check width={15} height={15}/> FOLLOWING</span>:"+ FOLLOW"}
@@ -181,15 +181,18 @@ export default function Profile({
           </div>
           {reviews.length>0&&(
             <div style={{marginTop:48}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:20}}>REVIEWS ({reviews.length})</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>REVIEWS ({reviews.length})</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:3}}>
                 {reviews.map(r=>(
-                  <div key={r.id} style={S.reviewCard}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                      <span style={{display:"inline-flex",alignItems:"center",color:"#FF9500"}}>{Array.from({length:r.rating}).map((_,i)=><Star key={i} width={15} height={15} fill="currentColor"/>)}</span>
-                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>{new Date(r.created_at).toLocaleDateString("en-GB",{month:"short",year:"numeric"}).toUpperCase()}</span>
+                  <div key={r.id} style={{border:"2px solid #111",borderRadius:0,padding:"14px 16px"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:6,flexWrap:"wrap"}}>
+                      <span style={{display:"inline-flex",alignItems:"center",gap:8}}>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.5}}>{r.reviewer_name||"Anonymous"}</span>
+                        <Stars value={r.rating} size={13} color="#FF1493"/>
+                      </span>
+                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>{new Date(r.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase()}</span>
                     </div>
-                    {r.comment&&<p style={{fontSize:13,color:"#666",lineHeight:1.5}}>{r.comment}</p>}
+                    {r.comment&&<p style={{fontSize:13,color:"#444",lineHeight:1.5,margin:0}}>{r.comment}</p>}
                   </div>
                 ))}
               </div>
