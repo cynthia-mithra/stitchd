@@ -127,5 +127,8 @@ export const POSTAGE_OPTIONS = [
 ];
 
 export const catEmoji = c=>({"Saree":"🥻","Salwar Kameez":"👘","Lehenga":"👗","Sherwani":"🧥","Kurta":"👕","Co-ord Set":"✨","Dupatta":"🧣","Accessories":"💍","Necklace":"📿","Earrings":"✨","Maang Tikka":"👑","Jhumka":"🔮","Bangles":"💛","Bracelet":"📿","Ring":"💍","Nose Ring":"✦","Anklet":"🦶","Haar":"📿","Choker":"📿","Full Set":"👑","Other Jewellery":"💎","Heels":"👠","Flats":"🥿","Sandals":"👡","Juttis":"✨","Khussa":"✨","Boots":"👢","Trainers":"👟","Wedges":"👠","Platforms":"👠","Other Shoes":"👠","Other":"🛍️"}[c]||"💎");
-export const waLink   = (n,name,price)=>`https://wa.me/${n.replace(/\D/g,"")}?text=${encodeURIComponent(`Hi! I saw "${name}" ($${price}) on Stitch'd — still available?`)}`;
-export const currencySymbol = c=>({USD:"$",GBP:"£",EUR:"€",CAD:"CA$",AUD:"A$",AED:"AED ",PKR:"₨",INR:"₹",BDT:"৳"}[c]||"$");
+export const waLink   = (n,name,price)=>`https://wa.me/${n.replace(/\D/g,"")}?text=${encodeURIComponent(`Hi! I saw "${name}" (£${price}) on Stitch'd — still available?`)}`;
+// Stitch'd is UK-only: all prices are displayed in GBP (£), regardless of any
+// legacy currency code stored on a listing/profile. Payment-processing currency
+// is handled separately in the Stripe call sites and is intentionally untouched.
+export const currencySymbol = ()=>"£";

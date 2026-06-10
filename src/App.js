@@ -318,7 +318,7 @@ export default function App() {
   }
 
   function shareItem(item){
-    const text=`Check out "${item.name}" for $${item.price} on Stitch'd 🩷`;
+    const text=`Check out "${item.name}" for £${item.price} on Stitch'd 🩷`;
     if(navigator.share){ navigator.share({title:item.name,text,url:window.location.href}).catch(()=>{}); }
     else{ navigator.clipboard.writeText(`${text}\n${window.location.href}`).then(()=>flash("🔗 Link copied!")); }
   }
@@ -1261,7 +1261,7 @@ export default function App() {
                     <div style={S.cardBody} onClick={()=>openDetail(item)}>
                       <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
                       <p style={S.cardName}>{item.name}</p>
-                      <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>${item.price}</span></div>
+                      <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span></div>
                     </div>
                     <div style={{...S.accentBar,background:accent}}/>
                   </article>
@@ -1359,7 +1359,7 @@ export default function App() {
                                 )}
                                 {canRespond&&showCounterOffer===msg.id&&(
                                   <div style={{display:"flex",gap:8,alignItems:"center",marginTop:4}}>
-                                    <input style={{...S.inp,flex:1,padding:"8px 12px",fontSize:13}} type="number" placeholder="Counter price" value={counterInput} onChange={e=>setCounterInput(e.target.value)}/>
+                                    <input style={{...S.inp,flex:1,padding:"8px 12px",fontSize:13}} type="number" placeholder="£ Counter price" value={counterInput} onChange={e=>setCounterInput(e.target.value)}/>
                                     <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"8px 14px",fontSize:12}} onClick={()=>respondToOffer(msg.id,"countered",counterInput)}>SEND</button>
                                     <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#888",border:"1px solid #e0e0e0",padding:"8px 12px",fontSize:12}} onClick={()=>setShowCounterOffer(null)}>✕</button>
                                   </div>
@@ -1519,7 +1519,7 @@ export default function App() {
             <Sec label="THE BASICS">
               <div style={S.fg2} className="fg2">
                 <F l="Item Name *"><input style={S.inp} placeholder="e.g. Kanjivaram Silk Saree" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></F>
-                <F l="Price *"><input style={S.inp} type="number" placeholder="65" value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))}/></F>
+                <F l="Price (£) *"><div style={{position:"relative"}}><span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#111",fontFamily:"'Barlow',sans-serif",pointerEvents:"none"}}>£</span><input style={{...S.inp,paddingLeft:26}} type="number" placeholder="0.00" value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))}/></div></F>
                 <F l="TYPE" style={{gridColumn:"1/-1"}}>
                   <div style={{display:"flex",gap:0}}>
                     {LISTING_TYPES.map(t=>(

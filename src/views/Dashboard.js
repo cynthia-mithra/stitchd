@@ -24,7 +24,7 @@ export default function Dashboard({
               <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#FF1493"}}>{myItems.length}</div><div style={S.dashStatLabel}>TOTAL</div></div>
               <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#34C759"}}>{myItems.filter(i=>!i.sold).length}</div><div style={S.dashStatLabel}>LIVE</div></div>
               <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#FF9500"}}>{myItems.filter(i=>i.sold).length}</div><div style={S.dashStatLabel}>SOLD</div></div>
-              <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#007AFF"}}>${myItems.filter(i=>i.sold).reduce((a,i)=>a+i.price,0)}</div><div style={S.dashStatLabel}>EARNED</div></div>
+              <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#007AFF"}}>£{myItems.filter(i=>i.sold).reduce((a,i)=>a+i.price,0)}</div><div style={S.dashStatLabel}>EARNED</div></div>
               <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#BF5AF2"}}>{myItems.reduce((a,i)=>a+(i.views||0),0)}</div><div style={S.dashStatLabel}>VIEWS</div></div>
             </div>
           </div>
@@ -39,7 +39,7 @@ export default function Dashboard({
                   </Thumb>
                   <div style={S.dashCardBody}>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,color:item.sold?"#aaa":"#111",marginBottom:4}}>{item.name}</p>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:item.sold?"#aaa":CARD_COLORS[idx%CARD_COLORS.length],marginBottom:4}}>${item.price}</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:item.sold?"#aaa":CARD_COLORS[idx%CARD_COLORS.length],marginBottom:4}}>{currencySymbol(item.currency)}{item.price}</p>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,marginBottom:10}}>👁 {item.views||0} VIEWS</p>
                     <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                       <button className="hbtn" style={{...S.dashBtn,background:CARD_COLORS[idx%CARD_COLORS.length],color:"#fff"}} onClick={()=>{setSel(item);openEdit(item);}}>EDIT</button>
@@ -69,7 +69,7 @@ export default function Dashboard({
                     <div key={b.id} style={{border:"2px solid #FF9500",padding:"16px 20px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
                       <div>
                         <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,marginBottom:4}}>{b.name} {b.discount_percent>0&&<span style={{background:"#FF9500",color:"#fff",padding:"2px 8px",fontSize:10,fontWeight:800}}>{b.discount_percent}% OFF</span>}</p>
-                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#FF9500"}}>Bundle: ${discounted}</p>
+                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#FF9500"}}>Bundle: £{discounted}</p>
                       </div>
                       <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11}} onClick={()=>deleteBundle(b.id)}>DELETE</button>
                     </div>
