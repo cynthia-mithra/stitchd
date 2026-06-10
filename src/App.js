@@ -10,7 +10,7 @@ import {
 import { db } from "./lib/db";
 import { auth, uploadImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X } from "lucide-react";
 import { Sec, F, Tog, Thumb } from "./components/Shared";
 import Tailors from "./views/Tailors";
 import Detail from "./views/Detail";
@@ -162,6 +162,8 @@ export default function App() {
   const [feedProfiles,   setFeedProfiles]   = useState({});
   const [notifications,  setNotifications]  = useState([]);
   const [showNotifs,     setShowNotifs]     = useState(false);
+  const [navMenuOpen,    setNavMenuOpen]    = useState(false);
+  const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
   const [showPayment,    setShowPayment]    = useState(false);
   const [paymentListing, setPaymentListing] = useState(null);
   const [paymentStep,    setPaymentStep]    = useState("summary");
@@ -921,13 +923,29 @@ export default function App() {
   const similarItems = sel ? items.filter(i=>i.id!==sel.id&&(i.category===sel.category||i.fabric===sel.fabric||i.origin===sel.origin)).slice(0,4) : [];
   const recentItems  = items.filter(i=>recentlyViewed.includes(i.id)&&(!sel||i.id!==sel.id)).slice(0,4);
   const wishlistItems= items.filter(i=>wishlist.includes(i.id));
+
+  // Items collapsed behind the desktop hover-dropdown / mobile hamburger menu.
+  // Favourites, Notifications and LIST IT deliberately stay out of this list —
+  // they remain always-visible in the navbar. Each onClick also closes whichever
+  // menu was open so navigating dismisses the overlay.
+  const navMenuItems = [
+    {label:"MY DROPS",       run:()=>{loadBundles();setView("dashboard");}},
+    {label:"ORDERS",         run:()=>{loadOrders();setView("orders");}},
+    {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
+    {label:"MESSAGES",       run:openMessages},
+    {label:"MY PROFILE",     run:()=>{load2FAFactors();setView("editprofile");}},
+    {label:"HOW TO MEASURE", run:()=>{setPrevView(view);setView("measuring");}},
+    {label:"LOG OUT",        run:handleSignOut, danger:true},
+  ];
+  const runNavItem = (item)=>{ setNavMenuOpen(false); setMobileNavOpen(false); item.run(); };
+
   return (
     <div style={S.root}>
       <style>{CSS}</style>
 
       {/* HEADER */}
       <header style={S.header}>
-        <div style={S.hWrap}>
+        <div className="nav-hwrap" style={S.hWrap}>
           <div className="nav-logo" style={S.logoWrap} onClick={()=>setView("shop")}><span style={S.logoText}>STITCH'D</span><span style={S.logoTM}>™</span></div>
           <div className="nav-category-strip" style={S.hMid}><div style={S.marqueeTrack}><span style={S.marqueeInner}>{Array(4).fill("SOUTH ASIAN PRE-LOVED FASHION \u00a0✦\u00a0 SAREES \u00a0✦\u00a0 LEHENGAS \u00a0✦\u00a0 SHERWANIS \u00a0✦\u00a0 REAL MEASUREMENTS \u00a0✦\u00a0 ").join("")}</span></div></div>
           <div className="nav-right" style={S.hRight}>
@@ -937,18 +955,27 @@ export default function App() {
             </button>
             {user?(
               <>
-                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{loadBundles();setView("dashboard");}}>MY DROPS</button>
-                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{loadOrders();setView("orders");}}>ORDERS</button>
-                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{loadFeed();setView("feed");}}>✦ FEED</button>
+                {/* ALWAYS VISIBLE: Notifications, then LIST IT. Favourites (heart)
+                    sits just before this block and is always visible too. */}
                 <button className="hbtn" style={{...S.hBtn,background:showNotifs?"#FF1493":"#fff",color:showNotifs?"#fff":"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setShowNotifs(p=>!p)}>
                   <Bell width={18} height={18} style={{verticalAlign:"middle"}}/> {unreadNotifs>0&&<span style={S.wishBadge}>{unreadNotifs}</span>}
                 </button>
-                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",position:"relative"}} onClick={openMessages}>
-                  <MessageCircle width={18} height={18} style={{verticalAlign:"middle"}}/> {unreadCount>0&&<span style={S.wishBadge}>{unreadCount}</span>}
-                </button>
-                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{ load2FAFactors(); setView("editprofile"); }}>PROFILE</button>
                 <button className="hbtn" style={S.hBtn} onClick={()=>setView("add")}>LIST IT →</button>
-                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={handleSignOut}>OUT</button>
+
+                {/* DESKTOP / IPAD: profile icon with hover dropdown holding the rest */}
+                <div className="nav-dropdown-wrap" style={S.navDropWrap} onMouseEnter={()=>setNavMenuOpen(true)} onMouseLeave={()=>setNavMenuOpen(false)}>
+                  <button className="hbtn" style={S.navIconBtn} aria-label="Account menu"><User width={18} height={18} style={{verticalAlign:"middle"}}/></button>
+                  {navMenuOpen&&(
+                    <div style={S.navDropdown}>
+                      {navMenuItems.map((it,i)=>(
+                        <button key={it.label} className={`nav-drop-item${it.danger?" nav-drop-item-danger":""}`} style={{...S.navDropItem,borderBottom:i===navMenuItems.length-1?"none":"1px solid #111",...(it.danger?S.navDropItemDanger:{})}} onClick={()=>runNavItem(it)}>{it.label}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* MOBILE: hamburger opens the full-width slide-in menu */}
+                <button className="nav-hamburger hbtn" style={S.navIconBtn} aria-label="Open menu" onClick={()=>setMobileNavOpen(true)}><Menu width={20} height={20} style={{verticalAlign:"middle"}}/></button>
               </>
             ):(
               <>
@@ -959,6 +986,19 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* MOBILE NAV MENU — full-width slide-in, only reachable via the hamburger */}
+      {user&&mobileNavOpen&&(
+        <div style={S.mobileNav}>
+          <div style={S.mobileNavHead}>
+            <span style={S.mobileNavTitle}>MENU</span>
+            <button style={S.mobileNavClose} aria-label="Close menu" onClick={()=>setMobileNavOpen(false)}><X width={26} height={26}/></button>
+          </div>
+          {navMenuItems.map(it=>(
+            <button key={it.label} className="nav-mob-item" style={{...S.mobileNavItem,...(it.danger?S.navDropItemDanger:{})}} onClick={()=>runNavItem(it)}>{it.label}</button>
+          ))}
+        </div>
+      )}
 
       <div style={S.ticker}><div style={S.tickerInner}>{Array(4).fill("STITCH'D \u00a0·\u00a0 PRE-LOVED SOUTH ASIAN FASHION \u00a0·\u00a0 BUY. SELL. STYLE. \u00a0·\u00a0 MEASURED FITS ONLY \u00a0·\u00a0 ").join("")}</div></div>
 
