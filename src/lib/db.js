@@ -95,6 +95,48 @@ export const db = {
   // back to a plain select if the embed isn't available on this deployment.
   async getAllDisputes(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/disputes?select=*,orders(id,listing_id,status)&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/disputes?order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
   async updateDispute(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/disputes?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  // ── Phase 11 — Verified seller badges ─────────────────────────────────────
+  // The set of sellers flagged verified=true on their profile, so cards/Detail
+  // can show the VERIFIED SELLER badge (and the search filter can hide everyone
+  // else) without a per-card profile fetch. Mirrors getFastSellers/getVacationSellers.
+  async getVerifiedSellers(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?verified=eq.true&select=id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // A seller submitting a verification application. Self-heals like insertDispute:
+  // if the schema is missing an optional column (e.g. selling_experience,
+  // instagram_handle, admin_notes) drop it and retry so the application still records.
+  async insertVerificationApplication(app,t){
+    const url=`${SUPABASE_URL}/rest/v1/verification_applications`; let payload={...app};
+    for(let i=0;i<10;i++){
+      const r=await fetch(url,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+      if(r.ok){ const d=await r.json(); return d[0]; }
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&col!=="full_name"&&col!=="reason"&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't submit the verification application.");
+  },
+  // The signed-in seller's latest application — its reviewed_at backs the
+  // "reapply after 30 days" rule shown when an application was rejected.
+  async getMyVerificationApplication(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/verification_applications?user_id=eq.${uid}&order=created_at.desc&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
+  // Patch the verification columns on a profile (apply → pending, approve →
+  // verified, reject → rejected). Self-heals: drop any column the schema is
+  // missing (e.g. verified_at) and retry so the rest of the patch still lands.
+  async updateProfileVerification(uid,patch,t){
+    const url=`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}`; let payload={...patch};
+    for(let i=0;i<10;i++){
+      const r=await fetch(url,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+      if(r.ok) return r.json();
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't update verification status.");
+  },
+  // Admin panel — every verification application (all statuses), newest first.
+  async getVerificationApplications(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/verification_applications?order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async updateVerificationApplication(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/verification_applications?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  // Resolve applicant profiles (all columns) so the admin panel can show the
+  // applicant's @username and email where the profiles row carries one.
+  async getProfilesFullByIds(ids,t){ if(!ids.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${ids.join(",")})&select=*`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getConversations(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/conversations?or=(buyer_id.eq.${uid},seller_id.eq.${uid})&order=last_message_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async findConversation(buyerId,sellerId,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/conversations?buyer_id=eq.${buyerId}&seller_id=eq.${sellerId}&listing_id=eq.${listingId}&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   async createConversation(conv,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/conversations`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(conv)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },

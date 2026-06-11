@@ -1,8 +1,8 @@
 import React from "react";
-import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink } from "lucide-react";
+import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock } from "lucide-react";
 import { CARD_COLORS, catEmoji, currencySymbol, lookListings, lookTotal } from "../lib/constants";
 import { S } from "../styles";
-import { Sec, F, Thumb } from "../components/Shared";
+import { Sec, F, Thumb, VerifiedBadge } from "../components/Shared";
 import Analytics from "./Analytics";
 
 // Phase 10d — public URL for a listing, used by Share (copy link / socials) and
@@ -79,6 +79,10 @@ export default function Dashboard({
   // Admin panel (Phase 11)
   adminReports = [], adminDisputes = [], adminNames = {},
   markReportResolved = () => {}, updateDisputeStatus = () => {},
+  // Verified seller badges (Phase 11)
+  myVerificationApp = null, verificationBusy = false, submitVerification = () => {},
+  adminApplications = [], adminApplicants = {},
+  approveVerification = () => {}, rejectVerification = () => {},
 }) {
   // Split listings into ACTIVE vs SOLD (issue PART 4 — sold listings move to a
   // separate SOLD tab in the seller dashboard).
@@ -96,6 +100,17 @@ export default function Dashboard({
   const [relistItem,setRelistItem]=React.useState(null);  // listing shown in relist confirm
   const [relistBusy,setRelistBusy]=React.useState(false);
   const [copied,setCopied]=React.useState(false);
+
+  // ── Phase 11 — verified seller badges ────────────────────────────────────────
+  const [verifyModal,setVerifyModal]=React.useState(false);  // APPLY FOR VERIFICATION modal
+  const [verifyForm,setVerifyForm]=React.useState({full_name:"",reason:"",selling_experience:"Less than 6 months",instagram_handle:""});
+  const [adminAppTab,setAdminAppTab]=React.useState("pending"); // admin PENDING/APPROVED/REJECTED
+  const [rejectApp,setRejectApp]=React.useState(null);       // application being rejected
+  const [rejectNotes,setRejectNotes]=React.useState("");
+
+  const openVerifyModal=()=>{ setVerifyForm({full_name:profile?.full_name||"",reason:"",selling_experience:"Less than 6 months",instagram_handle:""}); setVerifyModal(true); };
+  const submitVerifyForm=async()=>{ const ok=await submitVerification(verifyForm); if(ok) setVerifyModal(false); };
+  const confirmReject=async()=>{ if(!rejectApp) return; await rejectVerification(rejectApp,rejectNotes.trim()); setRejectApp(null); setRejectNotes(""); };
 
   const activeItems=myItems.filter(i=>!i.sold);
   const allActiveSelected=activeItems.length>0&&selectedIds.length===activeItems.length;
@@ -145,7 +160,7 @@ export default function Dashboard({
         <main style={S.main}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
           <div style={S.dashHeader}>
-            <div><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:8}}>YOUR CLOSET</p><h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1}}>MY DROPS</h2></div>
+            <div><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:8}}>YOUR CLOSET</p><h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1}}>MY DROPS</h2>{profile?.verified&&<div style={{marginTop:10}}><VerifiedBadge/></div>}</div>
             <div style={S.dashStats}>
               <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#FF1493"}}>{myItems.length}</div><div style={S.dashStatLabel}>TOTAL</div></div>
               <div style={S.dashStat}><div style={{...S.dashStatNum,color:"#34C759"}}>{myItems.filter(i=>!i.sold).length}</div><div style={S.dashStatLabel}>LIVE</div></div>
@@ -204,8 +219,68 @@ export default function Dashboard({
                 openDetail={openDetail} messageBuyer={startOrderConversation}
               />
             ):dashTab==="tools"?(
-              /* ── TOOLS TAB (Vacation mode + Promote) ──────────────────────────── */
+              /* ── TOOLS TAB (Verification + Vacation mode + Promote) ───────────── */
               <div style={{display:"flex",flexDirection:"column",gap:3,maxWidth:680}}>
+                {/* Phase 11 — VERIFICATION. The body switches on verification_status:
+                    unverified → GET VERIFIED apply CTA; pending → under review;
+                    verified → the badge + verified-since date; rejected → reapply
+                    after 30 days from the application's reviewed_at. */}
+                {(()=>{
+                  const status=profile?.verification_status||"unverified";
+                  const reviewedAt=myVerificationApp?.reviewed_at?new Date(myVerificationApp.reviewed_at):null;
+                  const daysSince=reviewedAt?Math.floor((Date.now()-reviewedAt.getTime())/86400000):null;
+                  const canReapply=daysSince==null||daysSince>=30;
+                  const verifiedDate=profile?.verified_at?new Date(profile.verified_at).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}):null;
+                  const H=({children})=> <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>{children}</h3>;
+                  const Desc=({children})=> <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>{children}</p>;
+                  return (
+                    <div style={{border:"2px solid #111",padding:"24px"}}>
+                      {status==="verified"?(
+                        <>
+                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,flexWrap:"wrap"}}>
+                            <VerifiedBadge/>
+                            <H>YOU'RE VERIFIED</H>
+                          </div>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",lineHeight:1.4}}>Your verified badge now appears on your profile and every listing.{verifiedDate?` Verified since ${verifiedDate}.`:""}</p>
+                        </>
+                      ):status==="pending"?(
+                        <>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                            <Clock width={20} height={20} color="#00E5CC"/>
+                            <H>APPLICATION UNDER REVIEW</H>
+                          </div>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",lineHeight:1.4}}>We'll notify you within 3 working days.</p>
+                        </>
+                      ):status==="rejected"?(
+                        <>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                            <AlertCircle width={20} height={20} color="#FF1493"/>
+                            <H>APPLICATION UNSUCCESSFUL</H>
+                          </div>
+                          <Desc>You can reapply after 30 days.{!canReapply&&daysSince!=null?` (${30-daysSince} day${30-daysSince!==1?"s":""} to go)`:""}</Desc>
+                          {canReapply&&(
+                            <button className="hbtn" style={{...S.hBtn,background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,fontSize:13,padding:"12px 22px",display:"inline-flex",alignItems:"center",gap:7}} onClick={openVerifyModal}><BadgeCheck width={16} height={16}/> REAPPLY</button>
+                          )}
+                        </>
+                      ):(
+                        <>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                            <BadgeCheck width={20} height={20} color="#00E5CC"/>
+                            <H>GET VERIFIED</H>
+                          </div>
+                          <Desc>Verified sellers get a badge on their profile and listings, building trust with buyers.</Desc>
+                          <div style={{display:"flex",flexDirection:"column",gap:9,marginBottom:20}}>
+                            {["Verified badge on all your listings","Priority placement in search results","Increased buyer trust and conversions"].map(b=>(
+                              <span key={b} style={{display:"flex",alignItems:"center",gap:10,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:0.5,color:"#111",lineHeight:1.2}}><Check width={16} height={16} color="#00E5CC" style={{flexShrink:0}}/> {b}</span>
+                            ))}
+                          </div>
+                          <button className="hbtn" style={{...S.hBtn,background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,fontSize:13,padding:"12px 22px",display:"inline-flex",alignItems:"center",gap:7}} onClick={openVerifyModal}><BadgeCheck width={16} height={16}/> APPLY FOR VERIFICATION</button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* Shop the Look — create & manage curated outfits (Phase 10e) */}
                 <div style={{border:"2px solid #111",padding:"24px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
@@ -354,6 +429,57 @@ export default function Dashboard({
                     </div>
                   )}
                 </div>
+                {/* VERIFICATION APPLICATIONS (Phase 11) */}
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:10,borderBottom:"2px solid #111"}}>
+                    <BadgeCheck width={18} height={18} color="#00E5CC"/>
+                    <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>VERIFICATION APPLICATIONS</h3>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#bbb",letterSpacing:1}}>({adminApplications.length})</span>
+                  </div>
+                  {/* PENDING / APPROVED / REJECTED sub-tabs */}
+                  <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+                    {[["pending","PENDING"],["approved","APPROVED"],["rejected","REJECTED"]].map(([v,l])=>{
+                      const n=adminApplications.filter(a=>(a.status||"pending")===v).length;
+                      return <button key={v} className="hbtn" style={{...S.hBtn,background:adminAppTab===v?"#111":"#fff",color:adminAppTab===v?"#fff":"#111",border:"2px solid #111",fontSize:12,padding:"8px 18px"}} onClick={()=>setAdminAppTab(v)}>{l} ({n})</button>;
+                    })}
+                  </div>
+                  {(()=>{
+                    const apps=adminApplications.filter(a=>(a.status||"pending")===adminAppTab);
+                    if(apps.length===0) return <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",letterSpacing:1}}>No {adminAppTab} applications.</p>;
+                    return (
+                      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                        {apps.map(a=>{
+                          const prof=adminApplicants[a.user_id]||{};
+                          const email=prof.email||"";
+                          const uname=prof.username?`@${prof.username}`:"";
+                          const date=a.created_at?new Date(a.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase():"";
+                          const igRaw=(a.instagram_handle||"").trim();
+                          const igHandle=igRaw.replace(/^@/,"");
+                          return(
+                            <div key={a.id} style={{border:"2px solid #111",padding:"14px 16px",fontFamily:"'Barlow Condensed',sans-serif"}}>
+                              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
+                                <span style={{background:a.status==="approved"?"#34C759":a.status==="rejected"?"#FF1493":"#FF9500",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5}}>{(a.status||"pending").toUpperCase()}</span>
+                                <span style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{date}</span>
+                              </div>
+                              <p style={{fontSize:17,fontWeight:900,color:"#111",marginBottom:2,display:"inline-flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>{a.full_name||"Applicant"}{uname&&<span style={{fontSize:13,fontWeight:700,color:"#888"}}>{uname}</span>}</p>
+                              {email&&<p style={{fontSize:13,color:"#888",letterSpacing:0.3,marginBottom:6}}>{email}</p>}
+                              <p style={{fontSize:14,color:"#444",marginBottom:6,lineHeight:1.45}}><span style={{fontWeight:800,color:"#FF1493"}}>Reason: </span>{a.reason}</p>
+                              {a.selling_experience&&<p style={{fontSize:13,color:"#666",marginBottom:6}}><span style={{fontWeight:800}}>Selling experience: </span>{a.selling_experience}</p>}
+                              {igHandle&&<p style={{fontSize:13,marginBottom:8}}><a href={`https://instagram.com/${igHandle}`} target="_blank" rel="noreferrer" style={{color:"#FF1493",fontWeight:800,textDecoration:"none",display:"inline-flex",alignItems:"center",gap:5}}><Instagram width={13} height={13}/> @{igHandle}</a></p>}
+                              {a.admin_notes&&<p style={{fontSize:12,color:"#888",marginBottom:8,fontStyle:"italic"}}>Notes: {a.admin_notes}</p>}
+                              {(a.status||"pending")==="pending"&&(
+                                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:4}}>
+                                  <button className="hbtn" style={{...S.dashBtn,background:"#34C759",color:"#fff",display:"inline-flex",alignItems:"center",gap:4}} onClick={()=>approveVerification(a)}><Check width={12} height={12}/> APPROVE</button>
+                                  <button className="hbtn" style={{...S.dashBtn,background:"#fff",color:"#FF1493",border:"1.5px solid #FF1493",display:"inline-flex",alignItems:"center",gap:4}} onClick={()=>{setRejectApp(a);setRejectNotes("");}}><X width={12} height={12}/> REJECT</button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             ):tabItems.length===0?(
               <div style={{textAlign:"center",padding:"48px 20px"}}><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#bbb",letterSpacing:1}}>{dashTab==="sold"?"NO SALES YET.":"NO ACTIVE LISTINGS."}</p></div>
@@ -498,6 +624,49 @@ export default function Dashboard({
                     <a className="hbtn" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(listingUrl(shareItem.id))}&text=${encodeURIComponent("Check out this listing on Stitch'd")}`} target="_blank" rel="noreferrer" style={{...S.hBtn,flex:1,padding:"11px",fontSize:12,background:"#000",border:"none",textDecoration:"none",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6}}><Twitter width={15} height={15}/> X</a>
                   </div>
                   <p style={{fontSize:11,color:"#aaa",marginTop:10,textAlign:"center"}}>Instagram has no direct share API — the link is copied to your clipboard to paste in your story or bio.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* APPLY FOR VERIFICATION MODAL (Phase 11) */}
+          {verifyModal&&(()=>{
+            const canSubmit=!!verifyForm.full_name.trim()&&!!verifyForm.reason.trim()&&!verificationBusy;
+            return (
+            <div style={S.modalOverlay} onClick={()=>!verificationBusy&&setVerifyModal(false)}>
+              <div style={{background:"#fff",border:"2px solid #111",borderRadius:0,padding:28,maxWidth:480,width:"100%",maxHeight:"88vh",overflowY:"auto",fontFamily:"'Barlow Condensed',sans-serif"}} onClick={e=>e.stopPropagation()}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                  <h3 style={{fontSize:26,fontWeight:900,letterSpacing:0.5,display:"inline-flex",alignItems:"center",gap:10}}><BadgeCheck width={22} height={22} color="#00E5CC"/> APPLY FOR VERIFICATION</h3>
+                  <button aria-label="Close" style={{background:"none",border:"none",cursor:"pointer",padding:2}} onClick={()=>setVerifyModal(false)}><X width={20} height={20}/></button>
+                </div>
+                <p style={{fontSize:15,color:"#888",marginBottom:20}}>Tell us a little about your selling on Stitch'd.</p>
+                <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                  <F l="Full name *"><input style={S.inp} placeholder="e.g. Nasreen Ahmed" value={verifyForm.full_name} onChange={e=>setVerifyForm(f=>({...f,full_name:e.target.value}))}/></F>
+                  <F l="Why do you want to be verified? *"><textarea style={{...S.inp,height:90,resize:"vertical"}} placeholder="Tell us why you'd make a great verified seller..." value={verifyForm.reason} onChange={e=>setVerifyForm(f=>({...f,reason:e.target.value}))}/></F>
+                  <F l="How long have you been selling South Asian fashion?">
+                    <select style={S.inp} value={verifyForm.selling_experience} onChange={e=>setVerifyForm(f=>({...f,selling_experience:e.target.value}))}>
+                      {["Less than 6 months","6-12 months","1-2 years","2+ years"].map(o=><option key={o}>{o}</option>)}
+                    </select>
+                  </F>
+                  <F l="Instagram handle (optional)"><input style={S.inp} placeholder="@yourhandle" value={verifyForm.instagram_handle} onChange={e=>setVerifyForm(f=>({...f,instagram_handle:e.target.value}))}/></F>
+                </div>
+                <button type="button" onClick={submitVerifyForm} disabled={!canSubmit} style={{width:"100%",marginTop:20,background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px",fontSize:15,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",cursor:canSubmit?"pointer":"not-allowed",opacity:canSubmit?1:0.4,textTransform:"uppercase"}}>{verificationBusy?"SUBMITTING…":"Submit application"}</button>
+                <button type="button" onClick={()=>setVerifyModal(false)} disabled={verificationBusy} style={{display:"block",margin:"14px auto 0",background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#888",textTransform:"uppercase",textDecoration:"underline"}}>Cancel</button>
+              </div>
+            </div>
+            );
+          })()}
+
+          {/* REJECT APPLICATION MODAL (Phase 11 — admin) */}
+          {rejectApp&&(
+            <div style={S.modalOverlay} onClick={()=>setRejectApp(null)}>
+              <div style={{background:"#fff",border:"2px solid #111",borderRadius:0,padding:28,maxWidth:420,width:"100%",fontFamily:"'Barlow Condensed',sans-serif"}} onClick={e=>e.stopPropagation()}>
+                <h3 style={{fontSize:22,fontWeight:900,marginBottom:6}}>REJECT APPLICATION</h3>
+                <p style={{fontSize:14,color:"#666",marginBottom:16}}>Add optional notes for {rejectApp.full_name||"this applicant"}. They'll be told they can reapply after 30 days.</p>
+                <textarea style={{...S.inp,height:90,resize:"vertical",fontFamily:"'Barlow Condensed',sans-serif"}} placeholder="Admin notes (optional)..." value={rejectNotes} onChange={e=>setRejectNotes(e.target.value)}/>
+                <div style={{display:"flex",gap:10,marginTop:16}}>
+                  <button className="hbtn" style={{...S.hBtn,flex:1,padding:"12px",fontSize:14,background:"#FF1493",border:"2px solid #111"}} onClick={confirmReject}>CONFIRM REJECT</button>
+                  <button className="hbtn" style={{...S.hBtn,flex:1,padding:"12px",fontSize:14,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>setRejectApp(null)}>CANCEL</button>
                 </div>
               </div>
             </div>

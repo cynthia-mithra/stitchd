@@ -2,7 +2,7 @@ import React from "react";
 import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock } from "lucide-react";
 import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure } from "../lib/constants";
 import { S } from "../styles";
-import { Thumb, Stars } from "../components/Shared";
+import { Thumb, Stars, VerifiedBadge } from "../components/Shared";
 
 export default function Detail({
   view, setView, sel,
@@ -17,6 +17,7 @@ export default function Detail({
   openEdit, markSold, relist, del,
   similarItems, openDetail,
   fastSellers = new Set(),
+  verifiedSellers = new Set(),
 }) {
   // Buyer-side unit toggle — converts on the fly, never writes back (PART 2a).
   const [dispUnit, setDispUnit] = React.useState("cm");
@@ -98,7 +99,12 @@ export default function Detail({
                   <span style={S.guaranteePoint}><Clock width={16} height={16} color="#00E5CC" style={{flexShrink:0}}/> Report an issue within 48 hours of delivery</span>
                 </div>
               </div>
-              {fastSellers.has(sel.user_id)&&<div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#007AFF",color:"#fff",padding:"4px 12px",fontSize:11,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",marginBottom:16}}><Zap width={14} height={14} fill="currentColor"/> FAST SELLER</div>}
+              {(verifiedSellers.has(sel.user_id)||fastSellers.has(sel.user_id))&&(
+                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:16}}>
+                  {verifiedSellers.has(sel.user_id)&&<VerifiedBadge/>}
+                  {fastSellers.has(sel.user_id)&&<div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#007AFF",color:"#fff",padding:"4px 12px",fontSize:11,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif"}}><Zap width={14} height={14} fill="currentColor"/> FAST SELLER</div>}
+                </div>
+              )}
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20,flexWrap:"wrap"}}>
                 <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:wishlist.includes(sel.id)?"#FF1493":"#fff",color:wishlist.includes(sel.id)?"#fff":"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>toggleWishlist(sel.id)}><Heart width={15} height={15} fill={wishlist.includes(sel.id)?"currentColor":"none"}/> {wishlist.includes(sel.id)?"SAVED":"SAVE"}</button>
                 <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>shareItem(sel)}><Share2 width={15} height={15}/> SHARE</button>

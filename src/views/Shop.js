@@ -1,12 +1,12 @@
 import React from "react";
-import { Search, Scissors, Zap, Heart, Bell, Ruler, Eye, ArrowDown, ArrowRight, Sparkles, TrendingDown, Flame, Shirt } from "lucide-react";
+import { Search, Scissors, Zap, Heart, Bell, Ruler, Eye, ArrowDown, ArrowRight, Sparkles, TrendingDown, Flame, Shirt, BadgeCheck } from "lucide-react";
 import {
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, ALL_CATEGORIES,
   CONDITIONS, SIZES, OCC_COLOR, CARD_COLORS,
   catEmoji, currencySymbol,
 } from "../lib/constants";
 import { S } from "../styles";
-import { Thumb, Stars } from "../components/Shared";
+import { Thumb, Stars, VerifiedBadge } from "../components/Shared";
 import { LookCard } from "./Looks";
 
 export default function Shop({
@@ -21,12 +21,14 @@ export default function Shop({
   catFilter, setCatFilter, sizeFilter, setSizeFilter,
   minPrice, setMinPrice, maxPrice, setMaxPrice,
   showSizeMatch, setShowSizeMatch,
+  showVerifiedOnly = false, setShowVerifiedOnly = () => {},
   loadTailorMarket,
   visible, loading, error, fetchItems,
   openDetail, fitsMe, wishlist, toggleWishlist,
   newListings, priceDrops, trendingItems,
   sellerRatings = {},
   fastSellers = new Set(),
+  verifiedSellers = new Set(),
   wishlistCounts = {},
   myWishlist = new Set(),
   toggleFavourite = () => {},
@@ -42,6 +44,10 @@ export default function Shop({
     fastSellers.has(sellerId)
       ? <div style={{...S.fastBadge,...(raised?{bottom:40}:{}),display:"inline-flex",alignItems:"center",gap:5}}><Zap width={12} height={12} fill="currentColor"/> FAST SELLER</div>
       : null;
+  // Phase 11 — small VERIFIED SELLER badge shown on a card when its seller is
+  // verified. Renders nothing for everyone else.
+  const VerifiedSellerBadge = ({ sellerId }) =>
+    verifiedSellers.has(sellerId) ? <VerifiedBadge size="sm" style={{marginBottom:10}}/> : null;
   // Seller rating chip — sits in the price/views row. Shows up to five #FF1493
   // stars filled proportionally to the seller's average, with the review count in
   // brackets (e.g. ★★★★★ (3)). Renders nothing when the seller has no reviews so
@@ -150,6 +156,7 @@ export default function Shop({
         ):null}
         {showFilters&&(
           <div style={S.filterPanel}>
+            <div style={S.filterGroup}><div style={S.filterLabel}>SELLER</div><div style={S.filterPills}><button className="fpill" onClick={()=>setShowVerifiedOnly(v=>!v)} style={{...S.pill,...(showVerifiedOnly?{background:"#00E5CC",border:"1.5px solid #111",color:"#111"}:{}),display:"inline-flex",alignItems:"center",gap:6}}><BadgeCheck width={13} height={13}/> VERIFIED SELLERS ONLY</button></div></div>
             <div style={S.filterGroup}><div style={S.filterLabel}>TYPE</div><div style={S.filterPills}>{["All","Clothing","Jewellery","Shoes"].map(t=><button key={t} className="fpill" onClick={()=>setTypeFilter(t)} style={{...S.pill,...(typeFilter===t?S.pillOn:{})}}>{t}</button>)}</div></div>
             <div style={S.filterGroup}><div style={S.filterLabel}>CONDITION</div><div style={S.filterPills}>{["All",...CONDITIONS].map(c=><button key={c} className="fpill" onClick={()=>setCondFilter(c)} style={{...S.pill,...(condFilter===c?S.pillOn:{})}}>{c}</button>)}</div></div>
             <div style={S.filterGroup}><div style={S.filterLabel}>CATEGORY</div><div style={S.filterPills}>{["All",...(typeFilter==="Jewellery"?JEWELLERY_CATS:typeFilter==="Shoes"?SHOE_CATS:typeFilter==="Clothing"?CATEGORIES:ALL_CATEGORIES)].map(c=><button key={c} className="fpill" onClick={()=>setCatFilter(c)} style={{...S.pill,...(catFilter===c?S.pillOn:{})}}>{c}</button>)}</div></div>
@@ -190,6 +197,7 @@ export default function Shop({
                   <div style={S.cardBody} className="card-body">
                     <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()} · {(item.material||item.fabric)?.toUpperCase()}</p>
                     <p style={S.cardName} className="card-name">{item.name}</p>
+                    <VerifiedSellerBadge sellerId={item.user_id}/>
                     {(item.occasions||[]).length>0&&<div style={S.occRow}>{item.occasions.slice(0,3).map(o=><span key={o} style={{...S.occChip,background:OCC_COLOR[o]||"#999",color:"#fff"}}>{o.toUpperCase()}</span>)}</div>}
                     <div style={S.measRow}>
                       {item.size&&item.size!=="Free Size"&&<span style={S.mTag}>{item.size}</span>}

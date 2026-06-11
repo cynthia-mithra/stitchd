@@ -136,6 +136,18 @@ export default function App() {
   const [vacationSellers,setVacationSellers]=useState(()=>new Set());
   const [vacationSaving,setVacationSaving]=useState(false);
   const [promoteNotified,setPromoteNotified]=useState(false);
+  // Phase 11 — verified sellers. `verifiedSellers` is the set of seller ids
+  // flagged verified=true (drives the badge on cards/Detail + the "Verified
+  // sellers only" filter). `myVerificationApp` is the signed-in seller's latest
+  // application (its reviewed_at backs the reapply-after-30-days rule).
+  const [verifiedSellers,setVerifiedSellers]=useState(()=>new Set());
+  const [showVerifiedOnly,setShowVerifiedOnly]=useState(false);
+  const [myVerificationApp,setMyVerificationApp]=useState(null);
+  const [verificationBusy,setVerificationBusy]=useState(false);
+  // Admin panel — every verification application + applicant profiles (id->profile
+  // for name/email/username), loaded alongside reports + disputes for an admin.
+  const [adminApplications,setAdminApplications]=useState([]);
+  const [adminApplicants,setAdminApplicants]=useState({});
   // DB-backed wishlist/favourite counts (Phase 10b). `wishlistCounts` maps
   // listing_id -> how many users saved it; `myWishlist` is the set of listing_ids
   // the signed-in user has saved (drives the filled heart). This is separate from
@@ -329,8 +341,12 @@ export default function App() {
       db.getNotifications(user.id,token).then(setNotifications);
       loadSavedSearches();
       loadMyWishlist();
+      // Phase 11 — the seller's latest verification application (for the rejected
+      // → reapply-after-30-days rule in the dashboard GET VERIFIED section).
+      db.getMyVerificationApplication(user.id,token).then(setMyVerificationApp).catch(()=>{});
     } else {
       setMyWishlist(new Set());
+      setMyVerificationApp(null);
     }
   },[user,token]);
 
@@ -355,8 +371,10 @@ export default function App() {
     // has deactivated via bulk edit (status='inactive'). Applies to shop & search.
     const matchVacation=!vacationSellers.has(i.user_id);
     const matchActive=i.status!=="inactive";
-    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchVacation&&matchActive;
-  }),[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,showSizeMatch,vacationSellers]);
+    // Phase 11 — "Verified sellers only" filter: keep listings from verified sellers.
+    const matchVerified=!showVerifiedOnly||verifiedSellers.has(i.user_id);
+    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchVacation&&matchActive&&matchVerified;
+  }),[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers]);
 
   function flash(m,dur=3500){ setToast(m); setTimeout(()=>setToast(""),dur); }
 
@@ -432,8 +450,8 @@ export default function App() {
   },[user,token]);
 
   function togOcc(o){ setForm(f=>({...f,occasions:f.occasions.includes(o)?f.occasions.filter(x=>x!==o):[...f.occasions,o]})); }
-  function clearFilters(){ setSearch(""); setCatFilter("All"); setSizeFilter("All"); setMinPrice(""); setMaxPrice(""); setTypeFilter("All"); setCondFilter("All"); }
-  const hasFilters = search||catFilter!=="All"||sizeFilter!=="All"||minPrice||maxPrice||typeFilter!=="All"||condFilter!=="All";
+  function clearFilters(){ setSearch(""); setCatFilter("All"); setSizeFilter("All"); setMinPrice(""); setMaxPrice(""); setTypeFilter("All"); setCondFilter("All"); setShowVerifiedOnly(false); }
+  const hasFilters = search||catFilter!=="All"||sizeFilter!=="All"||minPrice||maxPrice||typeFilter!=="All"||condFilter!=="All"||showVerifiedOnly;
 
   function toggleWishlist(id){
     setWishlist(prev=>{
@@ -607,13 +625,21 @@ export default function App() {
   // the reporters/buyers referenced. Called when an admin opens the dashboard.
   async function loadAdminData(){
     if(!isAdmin||!token) return;
-    const [reports,disputes]=await Promise.all([db.getAllReports(token),db.getAllDisputes(token)]);
-    setAdminReports(reports); setAdminDisputes(disputes);
+    const [reports,disputes,applications]=await Promise.all([db.getAllReports(token),db.getAllDisputes(token),db.getVerificationApplications(token)]);
+    setAdminReports(reports); setAdminDisputes(disputes); setAdminApplications(applications);
     const ids=[...new Set([...reports.map(r=>r.reporter_id),...disputes.map(d=>d.buyer_id)].filter(Boolean))];
     if(ids.length){
       const profs=await db.getProfilesByIds(ids,token);
       const map={}; profs.forEach(p=>{ map[p.id]=(p.full_name&&p.full_name.trim())||p.username||"A user"; });
       setAdminNames(map);
+    }
+    // Resolve applicant profiles (all columns) so the panel can show @username /
+    // email alongside the name captured on the application itself.
+    const appIds=[...new Set(applications.map(a=>a.user_id).filter(Boolean))];
+    if(appIds.length){
+      const profs=await db.getProfilesFullByIds(appIds,token);
+      const map={}; profs.forEach(p=>{ map[p.id]=p; });
+      setAdminApplicants(map);
     }
   }
   async function markReportResolved(id){
@@ -632,6 +658,36 @@ export default function App() {
       }
       flash(`Dispute marked ${newStatus.replace(/_/g," ").toUpperCase()}.`);
     }catch(e){ flash("Failed to update dispute."); }
+  }
+
+  // Phase 11 — admin: approve a verification application. Flips the seller's
+  // profile to verified, stamps the application approved, notifies the seller, and
+  // keeps the verifiedSellers set in sync so the badge appears immediately.
+  async function approveVerification(app){
+    const now=new Date().toISOString();
+    try{
+      await db.updateProfileVerification(app.user_id,{verified:true,verification_status:"verified",verified_at:now},token);
+      await db.updateVerificationApplication(app.id,{status:"approved",reviewed_at:now},token);
+      setAdminApplications(p=>p.map(a=>a.id===app.id?{...a,status:"approved",reviewed_at:now}:a));
+      setVerifiedSellers(prev=>{ const s=new Set(prev); s.add(app.user_id); return s; });
+      if(app.user_id===user?.id){ setProfile(p=>p?{...p,verified:true,verification_status:"verified",verified_at:now}:p); }
+      await notify(app.user_id,"verification","✅ You're verified!","Congratulations! Your verified seller application has been approved.");
+      flash("Application approved.");
+    }catch(e){ flash("Failed to approve application."); }
+  }
+
+  // Reject a verification application with optional admin notes. Sets the seller's
+  // status to rejected (so the dashboard shows APPLICATION UNSUCCESSFUL) and notifies them.
+  async function rejectVerification(app,notes){
+    const now=new Date().toISOString();
+    try{
+      await db.updateProfileVerification(app.user_id,{verification_status:"rejected"},token);
+      await db.updateVerificationApplication(app.id,{status:"rejected",admin_notes:notes||null,reviewed_at:now},token);
+      setAdminApplications(p=>p.map(a=>a.id===app.id?{...a,status:"rejected",admin_notes:notes||null,reviewed_at:now}:a));
+      if(app.user_id===user?.id){ setProfile(p=>p?{...p,verification_status:"rejected"}:p); }
+      await notify(app.user_id,"verification","Verification update","Your verified seller application was unsuccessful this time. You can reapply after 30 days.");
+      flash("Application rejected.");
+    }catch(e){ flash("Failed to reject application."); }
   }
 
   async function loadBundles(){
@@ -862,6 +918,14 @@ export default function App() {
     setVacationSellers(new Set(rows.map(r=>r.id)));
   }
   useEffect(()=>{ loadVacationSellers(); },[]);
+
+  // Phase 11 — load the set of verified sellers so cards/Detail can show the
+  // VERIFIED SELLER badge and the search filter can hide everyone else.
+  async function loadVerifiedSellers(){
+    const rows=await db.getVerifiedSellers(token);
+    setVerifiedSellers(new Set(rows.map(r=>r.id)));
+  }
+  useEffect(()=>{ loadVerifiedSellers(); },[]);
 
   async function loadTailors(){
     const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_tailor=eq.true`,{headers:hdrs(token)});
@@ -1313,6 +1377,32 @@ export default function App() {
       setPromoteNotified(true);
       flash("🔔 We'll let you know when Promote launches!");
     }catch(e){ flash("Couldn't save your interest — try again."); }
+  }
+
+  // Phase 11 — seller submits a verification application. Inserts the application,
+  // flips the profile to 'pending', and mirrors both into local state so the
+  // dashboard GET VERIFIED section switches to APPLICATION UNDER REVIEW. Returns
+  // true on success so the dashboard can close its modal.
+  async function submitVerification(formData){
+    if(!user){ setAuthMode("login"); setView("auth"); return false; }
+    if(!formData.full_name.trim()||!formData.reason.trim()){ flash("Please fill in your name and reason."); return false; }
+    setVerificationBusy(true);
+    try{
+      const app=await db.insertVerificationApplication({
+        user_id:user.id,
+        full_name:formData.full_name.trim(),
+        reason:formData.reason.trim(),
+        selling_experience:formData.selling_experience||null,
+        instagram_handle:formData.instagram_handle?.trim()||null,
+        status:"pending",
+      },token);
+      await db.updateProfileVerification(user.id,{verification_status:"pending"},token);
+      setMyVerificationApp(app||{...formData,status:"pending",created_at:new Date().toISOString()});
+      setProfile(p=>p?{...p,verification_status:"pending"}:p);
+      flash("Application submitted! We'll review it within 3 working days.");
+      return true;
+    }catch(e){ flash(`Couldn't submit application: ${errMsg(e)}`,9000); return false; }
+    finally{ setVerificationBusy(false); }
   }
 
   // ── Phase 10e — Shop the Look ─────────────────────────────────────────────
@@ -2197,6 +2287,9 @@ export default function App() {
         myLooks={myLooks} isAdmin={isAdmin} openCreateLook={openCreateLook} editLook={editLook} deleteLook={deleteLook}
         adminReports={adminReports} adminDisputes={adminDisputes} adminNames={adminNames}
         markReportResolved={markReportResolved} updateDisputeStatus={updateDisputeStatus}
+        myVerificationApp={myVerificationApp} verificationBusy={verificationBusy} submitVerification={submitVerification}
+        adminApplications={adminApplications} adminApplicants={adminApplicants}
+        approveVerification={approveVerification} rejectVerification={rejectVerification}
       />
 
       {/* FEED */}
@@ -2244,11 +2337,12 @@ export default function App() {
         catFilter={catFilter} setCatFilter={setCatFilter} sizeFilter={sizeFilter} setSizeFilter={setSizeFilter}
         minPrice={minPrice} setMinPrice={setMinPrice} maxPrice={maxPrice} setMaxPrice={setMaxPrice}
         showSizeMatch={showSizeMatch} setShowSizeMatch={setShowSizeMatch}
+        showVerifiedOnly={showVerifiedOnly} setShowVerifiedOnly={setShowVerifiedOnly}
         loadTailorMarket={loadTailorMarket}
         visible={visible} loading={loading} error={error} fetchItems={fetchItems}
         openDetail={openDetail} fitsMe={fitsMe} wishlist={wishlist} toggleWishlist={toggleWishlist}
         newListings={newListings} priceDrops={priceDrops} trendingItems={trendingItems}
-        sellerRatings={sellerRatings} fastSellers={fastSellers}
+        sellerRatings={sellerRatings} fastSellers={fastSellers} verifiedSellers={verifiedSellers}
         wishlistCounts={wishlistCounts} myWishlist={myWishlist} toggleFavourite={toggleFavourite}
         looks={looks} openLook={openLook}
       />
@@ -2290,7 +2384,7 @@ export default function App() {
         reviews={reviews}
         openEdit={openEdit} markSold={markSold} relist={relist} del={del}
         similarItems={similarItems} openDetail={openDetail}
-        fastSellers={fastSellers}
+        fastSellers={fastSellers} verifiedSellers={verifiedSellers}
       />
 
       {/* ADD / EDIT */}

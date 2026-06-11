@@ -1,5 +1,26 @@
 import React from "react";
-import { Star } from "lucide-react";
+import { Star, BadgeCheck } from "lucide-react";
+
+// Phase 11 — reusable VERIFIED SELLER badge. Shown anywhere a verified seller's
+// name appears (listing cards, listing detail, seller profile, order cards,
+// dashboard header). Design system: #00E5CC teal fill, #111 ink + 2px #111
+// border, square corners, Barlow Condensed bold. `size="sm"` is the compact
+// variant used on cards; the default is the larger badge for headers/profiles.
+export function VerifiedBadge({ size = "md", style }) {
+  const sm = size === "sm";
+  return (
+    <span style={{
+      display:"inline-flex",alignItems:"center",gap:sm?4:6,
+      background:"#00E5CC",color:"#111",border:"2px solid #111",borderRadius:0,
+      padding:sm?"2px 7px":"4px 11px",
+      fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,
+      letterSpacing:sm?0.5:1,fontSize:sm?10:13,lineHeight:1.2,whiteSpace:"nowrap",
+      ...style,
+    }}>
+      <BadgeCheck width={sm?12:16} height={sm?12:16}/> VERIFIED SELLER
+    </span>
+  );
+}
 
 // Proportional 5-star rating. Each position is a faint outline star with a
 // horizontally-clipped filled copy laid over it, so a 4.3 average shows four
