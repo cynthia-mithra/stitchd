@@ -121,6 +121,12 @@ export default function App() {
   const [reviews,      setReviews]      = useState([]);
   const [sellerRatings,setSellerRatings]= useState({});
   const [fastSellers,  setFastSellers]  = useState(()=>new Set());
+  // Phase 10d — seller ids with vacation_mode=true; their listings are hidden
+  // from the shop/search grid. `vacationSaving` guards the dashboard toggle and
+  // `promoteNotified` flips once the seller has registered Promote interest.
+  const [vacationSellers,setVacationSellers]=useState(()=>new Set());
+  const [vacationSaving,setVacationSaving]=useState(false);
+  const [promoteNotified,setPromoteNotified]=useState(false);
   // DB-backed wishlist/favourite counts (Phase 10b). `wishlistCounts` maps
   // listing_id -> how many users saved it; `myWishlist` is the set of listing_ids
   // the signed-in user has saved (drives the filled heart). This is separate from
@@ -278,8 +284,12 @@ export default function App() {
     const matchFit  = !showSizeMatch||fitsMe(i)===true;
     const q=search.toLowerCase();
     const matchSearch=!q||i.name?.toLowerCase().includes(q)||i.description?.toLowerCase().includes(q)||i.fabric?.toLowerCase().includes(q)||i.category?.toLowerCase().includes(q)||i.origin?.toLowerCase().includes(q)||i.material?.toLowerCase().includes(q);
-    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond;
-  }),[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter]);
+    // Phase 10d — hide listings whose seller is on vacation, and any the seller
+    // has deactivated via bulk edit (status='inactive'). Applies to shop & search.
+    const matchVacation=!vacationSellers.has(i.user_id);
+    const matchActive=i.status!=="inactive";
+    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchVacation&&matchActive;
+  }),[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,showSizeMatch,vacationSellers]);
 
   function flash(m,dur=3500){ setToast(m); setTimeout(()=>setToast(""),dur); }
 
@@ -694,6 +704,14 @@ export default function App() {
 
   useEffect(()=>{ loadFastSellers(); },[]);
 
+  // Phase 10d — load the set of sellers currently on vacation so their listings
+  // can be filtered out of the shop/search grid.
+  async function loadVacationSellers(){
+    const rows=await db.getVacationSellers(token);
+    setVacationSellers(new Set(rows.map(r=>r.id)));
+  }
+  useEffect(()=>{ loadVacationSellers(); },[]);
+
   async function loadTailors(){
     const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_tailor=eq.true`,{headers:hdrs(token)});
     if(r.ok) setTailorProfiles(await r.json());
@@ -1093,6 +1111,58 @@ export default function App() {
   async function markReserved(id,cur){ try{ await db.update(id,{reserved:!cur},token); setItems(p=>p.map(i=>i.id===id?{...i,reserved:!i.reserved}:i)); if(sel?.id===id)setSel(s=>({...s,reserved:!s.reserved})); flash(cur?"Reservation removed.":"🔖 Marked as reserved!"); }catch(e){flash("Update failed.");} }
   async function relist(id){ try{ await db.update(id,{sold:false,reserved:false},token); setItems(p=>p.map(i=>i.id===id?{...i,sold:false,reserved:false}:i)); if(sel?.id===id)setSel(s=>({...s,sold:false,reserved:false})); flash("🔄 Relisted!"); }catch(e){flash("Relist failed.");} }
   async function del(id){ try{ await db.remove(id,token); setItems(p=>p.filter(i=>i.id!==id)); setView("shop"); flash("Listing deleted."); }catch(e){flash("Delete failed.");} }
+
+  // ── Phase 10d — seller tools ────────────────────────────────────────────────
+  // Bulk edit: patch every selected listing at once, then mirror the change into
+  // local state so the dashboard updates without a refetch. Returns true on success
+  // so the dashboard can clear its selection / close the price modal.
+  async function bulkUpdateListings(ids,patch){
+    if(!ids.length) return false;
+    try{
+      await db.bulkUpdate(ids,patch,token);
+      setItems(p=>p.map(i=>ids.includes(i.id)?{...i,...patch}:i));
+      return true;
+    }catch(e){ flash("Bulk update failed."); return false; }
+  }
+
+  // Relist: create a brand-new active listing copying the sold item's fields. The
+  // original sold listing is left untouched. Strips identity/sale columns so the
+  // copy is a fresh active piece (sold_at/stripe_session_id null, views reset).
+  async function relistCopy(item){
+    try{
+      const {id,created_at,updated_at,sold_at,stripe_session_id,prev_price,views,reserved,payment_status,paid_at,...rest}=item;
+      const copy={...rest,sold:false,reserved:false,status:"active",sold_at:null,stripe_session_id:null,views:0};
+      const created=await db.insert(copy,token);
+      const row=Array.isArray(created)?created[0]:created;
+      if(row) setItems(p=>[row,...p]);
+      flash("Listing relisted successfully");
+      return true;
+    }catch(e){ flash("Relist failed."); return false; }
+  }
+
+  // Vacation mode: flip the seller's profile flag, then keep the vacation-sellers
+  // set in sync so the shop/search filter (in `visible`) reacts immediately.
+  async function toggleVacation(on){
+    if(!user) return;
+    setVacationSaving(true);
+    try{
+      await db.setVacationMode(user.id,on,token);
+      setProfile(p=>p?{...p,vacation_mode:on}:p);
+      setVacationSellers(prev=>{ const s=new Set(prev); if(on)s.add(user.id); else s.delete(user.id); return s; });
+      flash(on?"You're on vacation — your listings are now hidden.":"Welcome back! Your listings are visible again.");
+    }catch(e){ flash("Couldn't update vacation mode."); }
+    finally{ setVacationSaving(false); }
+  }
+
+  // Promote (coming soon): record the seller's interest so we can notify them at launch.
+  async function notifyPromote(){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    try{
+      await db.insertFeatureInterest({user_id:user.id,feature:"promote"},token);
+      setPromoteNotified(true);
+      flash("🔔 We'll let you know when Promote launches!");
+    }catch(e){ flash("Couldn't save your interest — try again."); }
+  }
 
   function openDetail(item){
     setSel(item); setSelImgIdx(0); setView("detail");
@@ -1790,6 +1860,10 @@ export default function App() {
         sellerRatings={sellerRatings}
         myOrders={myOrders} wishlistCounts={wishlistCounts} openDetail={openDetail} startOrderConversation={startOrderConversation}
         setSel={setSel} openEdit={openEdit} markSold={markSold} relist={relist} del={del}
+        profile={profile} flash={flash}
+        bulkUpdateListings={bulkUpdateListings} relistCopy={relistCopy}
+        toggleVacation={toggleVacation} vacationSaving={vacationSaving}
+        notifyPromote={notifyPromote} promoteNotified={promoteNotified}
         bundles={bundles} bundleItems={bundleItems} loadBundles={loadBundles} deleteBundle={deleteBundle}
         bundleForm={bundleForm} setBundleForm={setBundleForm} toggleBundleListing={toggleBundleListing} createBundle={createBundle}
       />
