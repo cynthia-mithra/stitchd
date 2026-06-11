@@ -1,5 +1,5 @@
 import React from "react";
-import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers } from "lucide-react";
+import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink } from "lucide-react";
 import { CARD_COLORS, catEmoji, currencySymbol, lookListings, lookTotal } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Thumb } from "../components/Shared";
@@ -76,6 +76,9 @@ export default function Dashboard({
   bundleForm, setBundleForm, toggleBundleListing, createBundle,
   // Shop the Look (Phase 10e)
   myLooks = [], isAdmin = false, openCreateLook = () => {}, editLook = () => {}, deleteLook = () => {},
+  // Admin panel (Phase 11)
+  adminReports = [], adminDisputes = [], adminNames = {},
+  markReportResolved = () => {}, updateDisputeStatus = () => {},
 }) {
   // Split listings into ACTIVE vs SOLD (issue PART 4 — sold listings move to a
   // separate SOLD tab in the seller dashboard).
@@ -176,6 +179,8 @@ export default function Dashboard({
               <TabBtn l="ANALYTICS" v="analytics" n={null} activeBg="#FF1493"/>
               {/* Phase 10d — TOOLS tab. */}
               <TabBtn l="TOOLS" v="tools" n={null} activeBg="#00E5CC"/>
+              {/* Phase 11 — ADMIN tab, only for the Stitch'd admin. */}
+              {isAdmin&&<TabBtn l="ADMIN" v="admin" n={null} activeBg="#FF1493"/>}
             </div>
 
             {/* Phase 10d — BULK EDIT toolbar above the ACTIVE grid. */}
@@ -267,6 +272,87 @@ export default function Dashboard({
                     <button disabled style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,fontSize:13,padding:"12px 22px",background:"#e8e8e8",color:"#aaa",border:"2px solid #ddd",borderRadius:0,cursor:"not-allowed"}}>PROMOTE</button>
                     <button className="hbtn" disabled={promoteNotified} style={{...S.hBtn,background:promoteNotified?"#fff":"#111",color:promoteNotified?"#34C759":"#fff",border:`2px solid ${promoteNotified?"#34C759":"#111"}`,fontSize:13,padding:"12px 22px",display:"inline-flex",alignItems:"center",gap:7,opacity:promoteNotified?1:1}} onClick={notifyPromote}>{promoteNotified?<><Check width={15} height={15}/> WE'LL NOTIFY YOU</>:<><Bell width={15} height={15}/> NOTIFY ME</>}</button>
                   </div>
+                </div>
+              </div>
+            ):dashTab==="admin"?(
+              /* ── ADMIN TAB (Phase 11 — reports + disputes) ───────────────────── */
+              <div style={{display:"flex",flexDirection:"column",gap:32,maxWidth:860}}>
+                {/* REPORTS */}
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:10,borderBottom:"2px solid #111"}}>
+                    <Flag width={18} height={18} color="#FF1493"/>
+                    <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>REPORTS</h3>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#bbb",letterSpacing:1}}>({adminReports.length})</span>
+                  </div>
+                  {adminReports.length===0?(
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",letterSpacing:1}}>No reports.</p>
+                  ):(
+                    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                      {adminReports.map(r=>{
+                        const resolved=r.status==="resolved";
+                        const title=r.listings?.name||"Listing";
+                        const date=r.created_at?new Date(r.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase():"";
+                        return(
+                          <div key={r.id} style={{border:"2px solid #111",padding:"14px 16px",fontFamily:"'Barlow Condensed',sans-serif"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
+                              <span style={{background:resolved?"#34C759":"#FF9500",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5}}>{(r.status||"pending").toUpperCase()}</span>
+                              <span style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{date}</span>
+                            </div>
+                            <p style={{fontSize:17,fontWeight:900,color:"#111",marginBottom:2}}>{title}</p>
+                            <p style={{fontSize:14,fontWeight:700,color:"#FF1493",marginBottom:2}}>{r.reason}</p>
+                            {r.details&&<p style={{fontSize:13,color:"#666",marginBottom:4,lineHeight:1.4}}>{r.details}</p>}
+                            <p style={{fontSize:12,color:"#888",letterSpacing:0.5,marginBottom:10}}>Reported by {adminNames[r.reporter_id]||"a user"}</p>
+                            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                              <button className="hbtn" disabled={resolved} style={{...S.dashBtn,background:resolved?"#e5e5e5":"#34C759",color:resolved?"#999":"#fff",cursor:resolved?"default":"pointer",display:"inline-flex",alignItems:"center",gap:4}} onClick={()=>!resolved&&markReportResolved(r.id)}><Check width={12} height={12}/> {resolved?"RESOLVED":"MARK RESOLVED"}</button>
+                              {r.listing_id&&<a className="hbtn" href={`/?listing=${r.listing_id}`} style={{...S.dashBtn,background:"#fff",color:"#111",border:"1.5px solid #111",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:4}}><ExternalLink width={12} height={12}/> VIEW LISTING</a>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                {/* DISPUTES */}
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:10,borderBottom:"2px solid #111"}}>
+                    <AlertCircle width={18} height={18} color="#FF1493"/>
+                    <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>DISPUTES</h3>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#bbb",letterSpacing:1}}>({adminDisputes.length})</span>
+                  </div>
+                  {adminDisputes.length===0?(
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",letterSpacing:1}}>No disputes.</p>
+                  ):(
+                    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                      {adminDisputes.map(d=>{
+                        const ref=`#${String(d.order_id||"").slice(-8).toUpperCase()}`;
+                        const date=d.created_at?new Date(d.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase():"";
+                        const STATUSES=[["open","OPEN"],["under_review","UNDER REVIEW"],["resolved","RESOLVED"],["refunded","REFUNDED"]];
+                        const cur=(d.status||"open").toLowerCase();
+                        return(
+                          <div key={d.id} style={{border:"2px solid #111",padding:"14px 16px",fontFamily:"'Barlow Condensed',sans-serif"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
+                              <span style={{background:"#111",color:"#fff",padding:"3px 10px",fontSize:11,fontWeight:800,letterSpacing:1}}>{ref}</span>
+                              <span style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{date}</span>
+                            </div>
+                            <p style={{fontSize:16,fontWeight:900,color:"#FF1493",marginBottom:2}}>{d.problem_type}</p>
+                            <p style={{fontSize:12,color:"#888",letterSpacing:0.5,marginBottom:6}}>Raised by {adminNames[d.buyer_id]||"a buyer"}</p>
+                            {d.details&&<p style={{fontSize:14,color:"#444",marginBottom:10,lineHeight:1.45}}>{d.details}</p>}
+                            {d.photo_url&&(
+                              <a href={d.photo_url} target="_blank" rel="noreferrer" style={{display:"inline-block",marginBottom:10,border:"2px solid #111",width:88,height:88,overflow:"hidden"}}>
+                                <img src={d.photo_url} alt="dispute evidence" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                              </a>
+                            )}
+                            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                              <label style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#888"}}>STATUS</label>
+                              <select value={cur} onChange={e=>updateDisputeStatus(d.id,e.target.value)} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1,padding:"8px 12px",border:"2px solid #111",borderRadius:0,background:"#fff",color:"#111",cursor:"pointer"}}>
+                                {STATUSES.map(([v,l])=><option key={v} value={v}>{l}</option>)}
+                              </select>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             ):tabItems.length===0?(

@@ -10,9 +10,9 @@ import {
 } from "./lib/constants";
 import { db } from "./lib/db";
 import { startCheckout, verifySession } from "./lib/checkout";
-import { auth, uploadImage, uploadLookImage, isTokenExpired, decodeJWT } from "./lib/auth";
+import { auth, uploadImage, uploadLookImage, uploadDisputeImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle } from "lucide-react";
 import { Sec, F, Tog, Thumb } from "./components/Shared";
 import Tailors from "./views/Tailors";
 import Detail from "./views/Detail";
@@ -147,6 +147,19 @@ export default function App() {
   const [reviewForm,   setReviewForm]   = useState({rating:5,comment:""});
   const [showReport,   setShowReport]   = useState(false);
   const [reportReason, setReportReason] = useState("");
+  const [reportDetails,setReportDetails]= useState("");
+  const [reportDone,   setReportDone]   = useState(false);
+  // Phase 11 — dispute resolution. `disputeOrder` is the order a buyer is raising a
+  // problem with (null = modal closed); `disputeForm` holds the form state.
+  const [disputeOrder, setDisputeOrder] = useState(null);
+  const [disputeForm,  setDisputeForm]  = useState({problem_type:"",details:"",photoFile:null,photoPreview:""});
+  const [disputeBusy,  setDisputeBusy]  = useState(false);
+  const [disputeDone,  setDisputeDone]  = useState(false);
+  // Phase 11 — admin panel data (reports + disputes), loaded when an admin opens
+  // the dashboard. `adminNames` maps user_id -> display name for reporters/buyers.
+  const [adminReports, setAdminReports] = useState([]);
+  const [adminDisputes,setAdminDisputes]= useState([]);
+  const [adminNames,   setAdminNames]   = useState({});
   const [conversations,  setConversations]  = useState([]);
   const [activeConv,     setActiveConv]     = useState(null);
   const [messages,       setMessages]       = useState([]);
@@ -545,9 +558,80 @@ export default function App() {
   async function submitReport(){
     if(!user||!sel||!reportReason)return;
     try{
-      await db.insertReport({listing_id:sel.id,reporter_id:user.id,reason:reportReason},token);
-      setShowReport(false); setReportReason(""); flash("🚩 Reported. We'll review this listing.");
+      // Free-text `details` only when the reporter picked "Other".
+      const details=reportReason==="Other"?(reportDetails.trim()||null):null;
+      await db.insertReport({listing_id:sel.id,reporter_id:user.id,reason:reportReason,details},token);
+      // Show the success state in-modal, then auto-close after 2s (issue PART 1).
+      setReportDone(true);
+      setTimeout(()=>{ setShowReport(false); setReportDone(false); setReportReason(""); setReportDetails(""); },2000);
     }catch(e){ flash("Failed to submit report."); }
+  }
+
+  // Phase 11 — open the "Report a problem" modal for an order (buyer side).
+  function openDispute(order){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    setDisputeForm({problem_type:"",details:"",photoFile:null,photoPreview:""});
+    setDisputeDone(false);
+    setDisputeOrder(order);
+  }
+  function closeDispute(){ setDisputeOrder(null); setDisputeDone(false); }
+  function setDisputePhoto(file){
+    if(!file){ setDisputeForm(f=>({...f,photoFile:null,photoPreview:""})); return; }
+    setDisputeForm(f=>({...f,photoFile:file,photoPreview:URL.createObjectURL(file)}));
+  }
+
+  // Submit a dispute: optionally upload the evidence photo, insert the dispute row,
+  // notify every Stitch'd admin, then show the success state and auto-close (PART 2).
+  async function submitDispute(){
+    if(!disputeOrder||!disputeForm.problem_type||!disputeForm.details.trim()||disputeBusy) return;
+    setDisputeBusy(true);
+    try{
+      let photo_url=null;
+      if(disputeForm.photoFile){
+        try{ photo_url=await withFreshToken(tok=>uploadDisputeImage(disputeForm.photoFile,tok)); }
+        catch(e){ /* a failed photo upload shouldn't block the dispute itself */ }
+      }
+      const o=disputeOrder;
+      await db.insertDispute({order_id:o.id,buyer_id:user.id,seller_id:o.seller_id||null,problem_type:disputeForm.problem_type,details:disputeForm.details.trim(),photo_url,status:"open"},token);
+      // Notify the Stitch'd admin(s) — type='dispute', routed to each is_admin user.
+      const title=items.find(i=>i.id===o.listing_id)?.name||"an order";
+      const admins=await db.getAdmins(token);
+      await Promise.all((admins||[]).map(a=>notify(a.id,"dispute","⚠️ New dispute raised",`A buyer reported a problem with "${title}": ${disputeForm.problem_type}`,o.listing_id)));
+      setDisputeDone(true);
+      setTimeout(()=>{ closeDispute(); },2000);
+    }catch(e){ flash("Failed to submit dispute."); }
+    finally{ setDisputeBusy(false); }
+  }
+
+  // Phase 11 — admin panel: load all reports + disputes plus the display names of
+  // the reporters/buyers referenced. Called when an admin opens the dashboard.
+  async function loadAdminData(){
+    if(!isAdmin||!token) return;
+    const [reports,disputes]=await Promise.all([db.getAllReports(token),db.getAllDisputes(token)]);
+    setAdminReports(reports); setAdminDisputes(disputes);
+    const ids=[...new Set([...reports.map(r=>r.reporter_id),...disputes.map(d=>d.buyer_id)].filter(Boolean))];
+    if(ids.length){
+      const profs=await db.getProfilesByIds(ids,token);
+      const map={}; profs.forEach(p=>{ map[p.id]=(p.full_name&&p.full_name.trim())||p.username||"A user"; });
+      setAdminNames(map);
+    }
+  }
+  async function markReportResolved(id){
+    try{ await db.updateReport(id,{status:"resolved"},token); setAdminReports(p=>p.map(r=>r.id===id?{...r,status:"resolved"}:r)); }
+    catch(e){ flash("Failed to update report."); }
+  }
+  // Updating a dispute's status notifies the buyer of the new state (issue PART 4).
+  async function updateDisputeStatus(id,newStatus){
+    const d=adminDisputes.find(x=>x.id===id);
+    try{
+      await db.updateDispute(id,{status:newStatus},token);
+      setAdminDisputes(p=>p.map(x=>x.id===id?{...x,status:newStatus}:x));
+      if(d&&d.buyer_id){
+        const label=newStatus.replace(/_/g," ").toUpperCase();
+        await notify(d.buyer_id,"dispute","⚖️ Dispute update",`Your dispute has been updated to: ${label}`,d.order_id);
+      }
+      flash(`Dispute marked ${newStatus.replace(/_/g," ").toUpperCase()}.`);
+    }catch(e){ flash("Failed to update dispute."); }
   }
 
   async function loadBundles(){
@@ -1340,6 +1424,10 @@ export default function App() {
   // Phase 10e — the Stitch'd admin: profiles.is_admin, or an email match to the
   // configured ADMIN_EMAIL. Admin-created looks show "Curated by Stitch'd".
   const isAdmin  = !!(profile?.is_admin) || (!!ADMIN_EMAIL && user?.email===ADMIN_EMAIL);
+  // Phase 11 — load the admin panel's reports + disputes whenever an admin opens
+  // the dashboard. Declared after `isAdmin` so it isn't read in the TDZ.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(()=>{ if(view==="dashboard"&&isAdmin) loadAdminData(); },[view,isAdmin]);
   const selImages= sel?(sel.images&&sel.images.length>0?sel.images:[sel.image_url].filter(Boolean)):[];
   const similarItems = sel ? items.filter(i=>i.id!==sel.id&&(i.category===sel.category||i.fabric===sel.fabric||i.origin===sel.origin)).slice(0,4) : [];
   const recentItems  = items.filter(i=>recentlyViewed.includes(i.id)&&(!sel||i.id!==sel.id)).slice(0,4);
@@ -1696,24 +1784,104 @@ export default function App() {
         </div>
       )}
 
-      {/* REPORT MODAL */}
-      {showReport&&(
-        <div style={S.modalOverlay} onClick={()=>setShowReport(false)}>
-          <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
-              <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,display:"inline-flex",alignItems:"center",gap:10}}><Flag width={24} height={24}/> REPORT LISTING</h3>
-              <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowReport(false)}>✕</button>
-            </div>
-            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:14}}>WHY ARE YOU REPORTING THIS?</p>
-            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
-              {["Fake or misleading photos","Wrong measurements","Item already sold","Suspicious seller","Inappropriate content","Other"].map(r=>(
-                <button key={r} type="button" className="hbtn" style={{...S.hBtn,background:reportReason===r?"#FF1493":"#fff",color:reportReason===r?"#fff":"#111",border:`2px solid ${reportReason===r?"#FF1493":"#e0e0e0"}`,padding:"10px 16px",fontSize:12,letterSpacing:1,textAlign:"left"}} onClick={()=>setReportReason(r)}>{r.toUpperCase()}</button>
-              ))}
-            </div>
-            <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"14px",fontSize:14,borderRadius:0,letterSpacing:3,opacity:reportReason?1:0.4}} onClick={submitReport} disabled={!reportReason}>SUBMIT REPORT →</button>
+      {/* REPORT MODAL (issue PART 1) — white box, 2px #111 border, no radius,
+          Barlow Condensed, #FF1493 selected radios. */}
+      {showReport&&(()=>{
+        const closeReport=()=>{ setShowReport(false); setReportDone(false); setReportReason(""); setReportDetails(""); };
+        const REASONS=["Item is not as described","Suspected counterfeit or fake","Inappropriate or offensive content","Seller is being abusive or harassing","Other"];
+        return (
+        <div style={S.modalOverlay} onClick={closeReport}>
+          <div style={{background:"#fff",border:"2px solid #111",borderRadius:0,padding:28,maxWidth:480,width:"100%",maxHeight:"85vh",overflowY:"auto",fontFamily:"'Barlow Condensed',sans-serif"}} onClick={e=>e.stopPropagation()}>
+            {reportDone?(
+              <div style={{textAlign:"center",padding:"24px 8px"}}>
+                <div style={{display:"flex",justifyContent:"center",marginBottom:14}}><Check width={44} height={44} color="#FF1493"/></div>
+                <p style={{fontSize:18,fontWeight:800,color:"#111",lineHeight:1.4}}>Thank you for your report. Our team will review it within 24 hours.</p>
+              </div>
+            ):(
+            <>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                <h3 style={{fontSize:26,fontWeight:900,letterSpacing:0.5,display:"inline-flex",alignItems:"center",gap:10}}><Flag width={22} height={22}/> REPORT THIS LISTING</h3>
+                <button aria-label="Close" style={{background:"none",border:"none",cursor:"pointer",padding:2}} onClick={closeReport}><X width={20} height={20}/></button>
+              </div>
+              <p style={{fontSize:15,color:"#888",marginBottom:20}}>Help us keep Stitch'd safe and trustworthy</p>
+              <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:16}}>
+                {REASONS.map(r=>{
+                  const on=reportReason===r;
+                  return (
+                    <button key={r} type="button" onClick={()=>setReportReason(r)} style={{display:"flex",alignItems:"center",gap:12,background:"#fff",border:"none",borderBottom:"1px solid #f0f0f0",padding:"12px 4px",cursor:"pointer",textAlign:"left",fontFamily:"'Barlow Condensed',sans-serif"}}>
+                      <span style={{width:20,height:20,flexShrink:0,borderRadius:"50%",border:`2px solid ${on?"#FF1493":"#bbb"}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        {on&&<span style={{width:10,height:10,borderRadius:"50%",background:"#FF1493"}}/>}
+                      </span>
+                      <span style={{fontSize:16,fontWeight:on?800:600,color:"#111"}}>{r}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {reportReason==="Other"&&(
+                <textarea value={reportDetails} onChange={e=>setReportDetails(e.target.value)} placeholder="Please tell us more..." style={{...S.inp,height:90,resize:"vertical",marginBottom:16,fontFamily:"'Barlow Condensed',sans-serif"}}/>
+              )}
+              <button type="button" onClick={submitReport} disabled={!reportReason} style={{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px",fontSize:15,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",cursor:reportReason?"pointer":"not-allowed",opacity:reportReason?1:0.4,textTransform:"uppercase"}}>Submit report</button>
+              <button type="button" onClick={closeReport} style={{display:"block",margin:"14px auto 0",background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#888",textTransform:"uppercase",textDecoration:"underline"}}>Cancel</button>
+            </>
+            )}
           </div>
         </div>
-      )}
+        );
+      })()}
+
+      {/* REPORT A PROBLEM MODAL (issue PART 2) — buyer dispute on an order. */}
+      {disputeOrder&&(()=>{
+        const PROBLEMS=["Item not received","Item is significantly not as described","Item is damaged","Wrong item received","Other"];
+        const canSubmit=!!disputeForm.problem_type&&!!disputeForm.details.trim()&&!disputeBusy;
+        return (
+        <div style={S.modalOverlay} onClick={()=>!disputeBusy&&closeDispute()}>
+          <div style={{background:"#fff",border:"2px solid #111",borderRadius:0,padding:28,maxWidth:480,width:"100%",maxHeight:"88vh",overflowY:"auto",fontFamily:"'Barlow Condensed',sans-serif"}} onClick={e=>e.stopPropagation()}>
+            {disputeDone?(
+              <div style={{textAlign:"center",padding:"24px 8px"}}>
+                <div style={{display:"flex",justifyContent:"center",marginBottom:14}}><Check width={44} height={44} color="#FF1493"/></div>
+                <p style={{fontSize:18,fontWeight:800,color:"#111",lineHeight:1.4}}>Your dispute has been submitted. We'll review it and get back to you within 48 hours.</p>
+              </div>
+            ):(
+            <>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                <h3 style={{fontSize:26,fontWeight:900,letterSpacing:0.5,display:"inline-flex",alignItems:"center",gap:10}}><AlertCircle width={22} height={22}/> REPORT A PROBLEM</h3>
+                <button aria-label="Close" style={{background:"none",border:"none",cursor:"pointer",padding:2}} onClick={closeDispute}><X width={20} height={20}/></button>
+              </div>
+              <p style={{fontSize:15,color:"#888",marginBottom:20}}>We're sorry to hear something went wrong.</p>
+              <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:16}}>
+                {PROBLEMS.map(p=>{
+                  const on=disputeForm.problem_type===p;
+                  return (
+                    <button key={p} type="button" onClick={()=>setDisputeForm(f=>({...f,problem_type:p}))} style={{display:"flex",alignItems:"center",gap:12,background:"#fff",border:"none",borderBottom:"1px solid #f0f0f0",padding:"12px 4px",cursor:"pointer",textAlign:"left",fontFamily:"'Barlow Condensed',sans-serif"}}>
+                      <span style={{width:20,height:20,flexShrink:0,borderRadius:"50%",border:`2px solid ${on?"#FF1493":"#bbb"}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        {on&&<span style={{width:10,height:10,borderRadius:"50%",background:"#FF1493"}}/>}
+                      </span>
+                      <span style={{fontSize:16,fontWeight:on?800:600,color:"#111"}}>{p}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <textarea value={disputeForm.details} onChange={e=>setDisputeForm(f=>({...f,details:e.target.value}))} placeholder="Please describe the issue in detail..." style={{...S.inp,height:100,resize:"vertical",marginBottom:16,fontFamily:"'Barlow Condensed',sans-serif"}}/>
+              <div style={{marginBottom:20}}>
+                <p style={{fontSize:13,fontWeight:800,letterSpacing:1,color:"#888",marginBottom:8,textTransform:"uppercase"}}>Add a photo (optional)</p>
+                {disputeForm.photoPreview?(
+                  <div style={{position:"relative",width:96,height:96,border:"2px solid #111"}}>
+                    <img src={disputeForm.photoPreview} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    <button type="button" aria-label="Remove photo" onClick={()=>setDisputePhoto(null)} style={{position:"absolute",top:2,right:2,background:"#111",color:"#fff",border:"none",cursor:"pointer",padding:"2px 6px",fontSize:11,fontWeight:800,fontFamily:"'Barlow Condensed',sans-serif"}}>✕</button>
+                  </div>
+                ):(
+                  <button type="button" onClick={()=>document.getElementById("dispute-photo-input").click()} style={{display:"inline-flex",alignItems:"center",gap:8,background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"10px 16px",fontSize:13,fontWeight:800,letterSpacing:1,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif"}}><Camera width={16} height={16}/> ADD PHOTO</button>
+                )}
+                <input id="dispute-photo-input" type="file" accept="image/*" style={{display:"none"}} onChange={e=>{ if(e.target.files&&e.target.files[0]) setDisputePhoto(e.target.files[0]); }}/>
+              </div>
+              <button type="button" onClick={submitDispute} disabled={!canSubmit} style={{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px",fontSize:15,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",cursor:canSubmit?"pointer":"not-allowed",opacity:canSubmit?1:0.4,textTransform:"uppercase"}}>{disputeBusy?"SUBMITTING…":"Submit"}</button>
+              <button type="button" onClick={closeDispute} disabled={disputeBusy} style={{display:"block",margin:"14px auto 0",background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#888",textTransform:"uppercase",textDecoration:"underline"}}>Cancel</button>
+            </>
+            )}
+          </div>
+        </div>
+        );
+      })()}
 
       {/* SIZE GUIDE MODAL */}
       {showSizeGuide&&(
@@ -2027,6 +2195,8 @@ export default function App() {
         bundles={bundles} bundleItems={bundleItems} loadBundles={loadBundles} deleteBundle={deleteBundle}
         bundleForm={bundleForm} setBundleForm={setBundleForm} toggleBundleListing={toggleBundleListing} createBundle={createBundle}
         myLooks={myLooks} isAdmin={isAdmin} openCreateLook={openCreateLook} editLook={editLook} deleteLook={deleteLook}
+        adminReports={adminReports} adminDisputes={adminDisputes} adminNames={adminNames}
+        markReportResolved={markReportResolved} updateDisputeStatus={updateDisputeStatus}
       />
 
       {/* FEED */}
@@ -2058,6 +2228,7 @@ export default function App() {
         orderProfiles={orderProfiles}
         updateOrderStatus={updateOrderStatus}
         startOrderConversation={startOrderConversation}
+        openDispute={openDispute}
       />
 
       {/* SHOP VIEW */}

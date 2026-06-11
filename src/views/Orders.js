@@ -1,5 +1,5 @@
 import React from "react";
-import { Package, Mail } from "lucide-react";
+import { Package, Mail, AlertCircle } from "lucide-react";
 import { S } from "../styles";
 
 // Post-purchase order history (issue PART 2 & PART 5).
@@ -28,6 +28,7 @@ export default function Orders({
   ordersTab, setOrdersTab, ordersLoading, myOrders,
   orderProfiles = {},
   updateOrderStatus, startOrderConversation,
+  openDispute = () => {},
 }) {
   if (view !== "orders") return null;
   if (!user) return null;
@@ -103,6 +104,13 @@ export default function Orders({
                     {isBuyer && startOrderConversation && (
                       <button className="hbtn" style={{ ...S.hBtn, background: "#fff", color: "#111", border: "2px solid #111", borderRadius: 0, fontSize: 11, padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => startOrderConversation(order)}>
                         <Mail width={14} height={14} /> MESSAGE SELLER
+                      </button>
+                    )}
+                    {/* BUYER → report a problem (dispute). Only once the item has been
+                        dispatched/delivered — i.e. status is not PENDING (issue PART 2). */}
+                    {isBuyer && status !== "pending" && (
+                      <button className="hbtn" style={{ ...S.hBtn, background: "#fff", color: "#111", border: "2px solid #111", borderRadius: 0, fontSize: 11, padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => openDispute(order)}>
+                        <AlertCircle width={14} height={14} /> REPORT A PROBLEM
                       </button>
                     )}
                     {/* SELLER → status dropdown + message the buyer */}
