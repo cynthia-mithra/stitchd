@@ -48,7 +48,9 @@ BEGIN
     CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='profiles' AND policyname='Users can update own profile') THEN
-    CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+    -- WITH CHECK as well as USING: an upsert (INSERT … ON CONFLICT DO UPDATE)
+    -- validates the post-update row against the UPDATE policy's WITH CHECK.
+    CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
   END IF;
 END $$;
 
