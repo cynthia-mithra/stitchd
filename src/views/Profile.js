@@ -1,5 +1,5 @@
 import React from "react";
-import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag } from "lucide-react";
+import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Plane } from "lucide-react";
 import { SIZES, CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Tog, Stars } from "../components/Shared";
@@ -138,6 +138,12 @@ export default function Profile({
       {view==="profile"&&viewedProfile&&(
         <main style={S.main}>
           <button style={S.back} onClick={()=>setView(prevView||"shop")}>← BACK</button>
+          {/* Phase 10d — vacation banner. Shown when the seller has vacation_mode on. */}
+          {viewedProfile.vacation_mode&&(
+            <div style={{display:"flex",alignItems:"center",gap:10,background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px 16px",marginBottom:24,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:0.5,fontSize:15}}>
+              <Plane width={20} height={20} color="#FF1493"/> This seller is currently on vacation and not accepting orders.
+            </div>
+          )}
           <div style={S.profileHeader} className="profile-header">
             <div style={S.profileAvatarWrap}>
               {viewedProfile.avatar_url?<img src={viewedProfile.avatar_url} alt={viewedProfile.full_name||viewedProfile.username} style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<div style={S.profileAvatar}>{(viewedProfile.full_name||viewedProfile.username||"S")[0].toUpperCase()}</div>}

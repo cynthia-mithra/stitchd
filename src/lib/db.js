@@ -36,6 +36,28 @@ export const db = {
   async getReviews(sellerId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?seller_id=eq.${sellerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getAllReviewStats(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?select=seller_id,rating`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getFastSellers(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?fast_seller=eq.true&select=id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // Phase 10d — seller tools.
+  // Sellers flagged vacation_mode=true on their profile; their active listings are
+  // filtered out of the shop/search grid (see `visible` in App.js). One request
+  // feeds the whole grid, mirroring getFastSellers.
+  async getVacationSellers(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?vacation_mode=eq.true&select=id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async setVacationMode(uid,on,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({vacation_mode:on})}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  // Bulk-patch many listings at once (bulk edit: price / mark sold / deactivate).
+  // Self-heals like sendHealing: if the schema is missing one of the patched
+  // columns (e.g. `status`), drop it and retry so the rest of the patch still lands.
+  async bulkUpdate(ids,patch,t){
+    const url=`${SUPABASE_URL}/rest/v1/listings?id=in.(${ids.join(",")})`; let payload={...patch};
+    for(let i=0;i<10;i++){
+      const r=await fetch(url,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+      if(r.ok) return r.json();
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't update the selected listings.");
+  },
+  // "Notify me" interest for the coming-soon Promote feature.
+  async insertFeatureInterest(rec,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/feature_interest`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(rec)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   // Wishlists / favourites. getAllWishlists returns one row per save (listing_id
   // only) for the whole grid — counted client-side into a listing_id->count map,
   // mirroring getAllReviewStats. getMyWishlist returns just the current user's
