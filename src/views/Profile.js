@@ -7,7 +7,7 @@ import { Sec, F, Tog, Stars } from "../components/Shared";
 export default function Profile({
   view, setView, prevView, user,
   // editprofile
-  profForm, setProfForm, saveProfile, profSaving,
+  profForm, setProfForm, saveProfile, profSaving, profError,
   twoFAStep, setTwoFAStep, twoFAData, setTwoFAData, twoFACode, setTwoFACode,
   twoFAFactors, twoFALoading, confirm2FA, disable2FA, load2FAFactors, setup2FA,
   // profile
@@ -59,6 +59,12 @@ export default function Profile({
                 })}
               </div>
             </Sec>
+            {profError&&(
+              <div style={{background:"#FFF0F3",border:"2px solid #FF1493",borderRadius:0,padding:"14px 16px",marginBottom:14,color:"#B00046",fontFamily:"'Barlow',sans-serif",fontSize:14,lineHeight:1.5,overflowWrap:"anywhere"}}>
+                <strong style={{fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,display:"block",marginBottom:4}}>⚠️ PROFILE NOT SAVED</strong>
+                {profError}
+              </div>
+            )}
             <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:profSaving?0.5:1}} onClick={saveProfile}>{profSaving?"SAVING...":"SAVE PROFILE →"}</button>
             <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #007AFF",paddingLeft:12,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><Ruler width={16} height={16}/> MY MEASUREMENTS</div>

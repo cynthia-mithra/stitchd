@@ -97,6 +97,10 @@ export default function App() {
   const [profile,   setProfile]   = useState(null);
   const [profForm,  setProfForm]  = useState({username:"",full_name:"",location:"",region:"",currency:"USD",bio:"",specialises_in:[],avatar_url:"",avatarFile:null,avatarPreview:"",bust:"",waist:"",hips:"",height:"",preferred_size:"",is_tailor:false,tailor_services:[],tailor_price_from:"",accepting_clients:true});
   const [profSaving,setProfSaving]= useState(false);
+  // Persistent, on-screen profile-save error (in addition to the toast). The
+  // toast auto-dismisses and can be hard to read on mobile; this renders the
+  // exact reason right in the profile editor so it can be read on any device.
+  const [profError, setProfError] = useState("");
   const [viewedProfile,setViewedProfile]=useState(null);
   const [profileListings,setProfileListings]=useState([]);
   const [search,    setSearch]    = useState("");
@@ -1024,23 +1028,32 @@ export default function App() {
   }
 
   async function saveProfile(){
-    if(!user)return; setProfSaving(true);
+    if(!user)return; setProfSaving(true); setProfError("");
     try{
+      // Wrap BOTH the avatar upload and the upsert in withFreshToken — exactly
+      // like the (working) listing save in add(). The profile save previously
+      // used the raw `token`, so an expired access token made EVERY profile save
+      // fail with a 401/"JWT expired" while listings self-healed by refreshing.
       let avatar_url=profForm.avatar_url||"";
-      if(profForm.avatarFile) avatar_url=await uploadImage(profForm.avatarFile,token);
+      if(profForm.avatarFile) avatar_url=await withFreshToken(tok=>uploadImage(profForm.avatarFile,tok));
       const p={id:user.id,username:profForm.username,full_name:profForm.full_name,location:profForm.location,region:profForm.region,currency:profForm.currency,bio:profForm.bio||null,specialises_in:profForm.specialises_in,avatar_url,bust:profForm.bust||null,waist:profForm.waist||null,hips:profForm.hips||null,height:profForm.height||null,preferred_size:profForm.preferred_size||null,is_tailor:profForm.is_tailor,tailor_services:profForm.tailor_services,tailor_price_from:profForm.tailor_price_from||null,accepting_clients:profForm.accepting_clients};
-      const [saved]=await db.upsertProfile(p,token);
-      setProfile(saved); setProfForm(f=>({...f,avatar_url,avatarFile:null,avatarPreview:avatar_url}));
+      const [saved]=await withFreshToken(tok=>db.upsertProfile(p,tok));
+      setProfile(saved); setProfForm(f=>({...f,avatar_url,avatarFile:null,avatarPreview:avatar_url})); setProfError("");
       flash("✓ Profile saved!");
     }catch(e){
       console.error("Profile save failed:",e);
       const raw=errMsg(e), low=raw.toLowerCase();
-      // Translate the two causes the JS can't fix on its own into plain English.
+      // Translate the causes the JS can't fix on its own into plain English.
       let msg=`Failed to save profile: ${raw}`;
-      if(/row-level security|not authorized|permission denied|violates .*policy/.test(low))
+      if(/session has expired|sign (in|out)|jwt expired|exp claim|invalid jwt/.test(low))
+        msg="Your sign-in session has expired. Please sign out and sign back in, then save your profile again.";
+      else if(/row-level security|not authorized|permission denied|violates .*policy/.test(low))
         msg="Couldn't save: the database is blocking profile writes (row-level security). The fix needs the migration in PR #98 applied to Supabase — see the steps on that PR.";
       else if(low.includes("duplicate key")||(low.includes("unique")&&low.includes("username")))
         msg="That username is already taken — please choose a different one.";
+      // Show it BOTH as a toast and as a persistent banner in the editor, so the
+      // exact reason is readable on any device (e.g. iPad, no console available).
+      setProfError(msg);
       flash(msg,9000);
     }
     finally{ setProfSaving(false); }
@@ -1980,7 +1993,7 @@ export default function App() {
       {/* PROFILE (edit + seller) */}
       <Profile
         view={view} setView={setView} prevView={prevView} user={user}
-        profForm={profForm} setProfForm={setProfForm} saveProfile={saveProfile} profSaving={profSaving}
+        profForm={profForm} setProfForm={setProfForm} saveProfile={saveProfile} profSaving={profSaving} profError={profError}
         twoFAStep={twoFAStep} setTwoFAStep={setTwoFAStep} twoFAData={twoFAData} setTwoFAData={setTwoFAData}
         twoFACode={twoFACode} setTwoFACode={setTwoFACode} twoFAFactors={twoFAFactors} twoFALoading={twoFALoading}
         confirm2FA={confirm2FA} disable2FA={disable2FA} load2FAFactors={load2FAFactors} setup2FA={setup2FA}
