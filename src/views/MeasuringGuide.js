@@ -29,6 +29,9 @@ const GARMENTS = {
     {
       key: "lehenga",
       name: "Lehenga",
+      // Custom measurement image replaces the SVG diagram + numbered legend.
+      // The image already includes the numbered legend.
+      image: "/Images/lehenga-measurements.png",
       marks: [
         ["Waist", "Around the natural waist", 100, 146],
         ["Hip", "Around the fullest part of the hips, 8 inches below waist", 100, 182],
