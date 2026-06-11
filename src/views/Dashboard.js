@@ -3,10 +3,13 @@ import { Shirt, Gift, Eye, Check, Star } from "lucide-react";
 import { CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Thumb } from "../components/Shared";
+import Analytics from "./Analytics";
 
 export default function Dashboard({
   view, setView, user, myItems,
   sellerRatings = {},
+  // analytics (Phase 10c)
+  myOrders = [], wishlistCounts = {}, openDetail, startOrderConversation,
   // dashboard
   setSel, openEdit, markSold, relist, del,
   bundles, bundleItems, loadBundles, deleteBundle,
@@ -47,12 +50,20 @@ export default function Dashboard({
             const tabItems=myItems.filter(i=>dashTab==="sold"?i.sold:!i.sold);
             return (
             <>
-            <div style={{display:"flex",gap:8,marginBottom:20}}>
+            <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
               {[["ACTIVE","active",myItems.filter(i=>!i.sold).length],["SOLD","sold",myItems.filter(i=>i.sold).length]].map(([l,v,n])=>(
                 <button key={v} className="hbtn" style={{...S.hBtn,background:dashTab===v?"#111":"#fff",color:dashTab===v?"#fff":"#111",border:"2px solid #111",fontSize:12,padding:"8px 18px"}} onClick={()=>setDashTab(v)}>{l} ({n})</button>
               ))}
+              {/* Phase 10c — ANALYTICS sits alongside ACTIVE / SOLD; active state uses the pink accent. */}
+              <button key="analytics" className="hbtn" style={{...S.hBtn,background:dashTab==="analytics"?"#FF1493":"#fff",color:dashTab==="analytics"?"#fff":"#111",border:"2px solid #111",fontSize:12,padding:"8px 18px"}} onClick={()=>setDashTab("analytics")}>ANALYTICS</button>
             </div>
-            {tabItems.length===0?(
+            {dashTab==="analytics"?(
+              <Analytics
+                user={user} myItems={myItems} orders={myOrders}
+                wishlistCounts={wishlistCounts} sellerRatings={sellerRatings}
+                openDetail={openDetail} messageBuyer={startOrderConversation}
+              />
+            ):tabItems.length===0?(
               <div style={{textAlign:"center",padding:"48px 20px"}}><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#bbb",letterSpacing:1}}>{dashTab==="sold"?"NO SALES YET.":"NO ACTIVE LISTINGS."}</p></div>
             ):(
             <div style={S.dashGrid} className="dash-grid">
