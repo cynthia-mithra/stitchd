@@ -47,6 +47,7 @@ const GARMENTS = {
     {
       key: "salwar",
       name: "Salwar Kameez / Suit",
+      image: "/Images/salwar-kameez-measurements.png",
       marks: [
         ["Bust", "Around the fullest part of the chest", 100, 92],
         ["Waist", "Around the natural waist", 100, 140],
@@ -60,6 +61,7 @@ const GARMENTS = {
     {
       key: "anarkali",
       name: "Anarkali",
+      image: "/Images/anarkali-measurements.png",
       marks: [
         ["Bust", "Around the fullest part of the chest", 100, 92],
         ["Waist", "Around the natural waist", 100, 140],
@@ -71,6 +73,7 @@ const GARMENTS = {
     {
       key: "sharara",
       name: "Sharara / Gharara",
+      image: "/Images/sharara-measurements.png",
       marks: [
         ["Waist", "Around the natural waist", 100, 140],
         ["Hip", "Around the fullest part of the hips", 100, 178],
@@ -82,6 +85,7 @@ const GARMENTS = {
     {
       key: "dupatta",
       name: "Dupatta / Stole",
+      image: "/Images/dupatta-measurements.png",
       marks: [
         ["Length", "End to end", 30, 150],
         ["Width", "Selvage to selvage", 100, 70],
@@ -90,6 +94,7 @@ const GARMENTS = {
     {
       key: "dress",
       name: "Dress / Gown",
+      image: "/Images/dress-gown-measurements.png",
       marks: [
         ["Bust", "Around the fullest part of the chest", 100, 92],
         ["Waist", "Around the natural waist", 100, 140],
@@ -103,6 +108,7 @@ const GARMENTS = {
     {
       key: "sherwani",
       name: "Sherwani",
+      image: "/Images/sherwani-measurements.png",
       marks: [
         ["Chest", "Around the fullest part of the chest, arms relaxed", 100, 96],
         ["Waist", "Around the natural waist", 100, 150],
@@ -117,6 +123,7 @@ const GARMENTS = {
     {
       key: "kurta",
       name: "Kurta / Kurta Pyjama",
+      image: "/Images/kurta-measurements.png",
       marks: [
         ["Chest", "Around the fullest part of the chest", 100, 96],
         ["Waist", "Around the natural waist", 100, 150],
@@ -131,6 +138,7 @@ const GARMENTS = {
     {
       key: "nehru",
       name: "Nehru Jacket / Waistcoat",
+      image: "/Images/nehru-jacket-measurements.png",
       marks: [
         ["Chest", "Around the fullest part of the chest", 100, 96],
         ["Waist", "Around the natural waist", 100, 150],
@@ -141,6 +149,7 @@ const GARMENTS = {
     {
       key: "indo",
       name: "Indo-Western Suit",
+      image: "/Images/indo-western-measurements.png",
       marks: [
         ["Chest", "Around the fullest part of the chest", 100, 96],
         ["Waist", "Around the natural waist", 100, 150],
@@ -155,6 +164,7 @@ const GARMENTS = {
     {
       key: "dhoti",
       name: "Dhoti / Lungi",
+      image: "/Images/dhoti-measurements.png",
       marks: [
         ["Waist", "Around the natural waist", 100, 150],
         ["Length", "Waist to ankle", 124, 340],
@@ -263,7 +273,6 @@ function NumBadge({ n }) {
 }
 
 function GarmentSection({ gender, garment, open, onToggle }) {
-  const [imgError, setImgError] = useState(false);
   return (
     <div style={{ border: "2px solid #111", marginBottom: 14, background: "#fff" }}>
       <button
@@ -293,27 +302,11 @@ function GarmentSection({ gender, garment, open, onToggle }) {
       {open && (
         garment.image ? (
           <div style={{ padding: "20px 18px", borderTop: "2px solid #111" }}>
-            {imgError ? (
-              <div
-                style={{
-                  border: `2px dashed ${PINK}`,
-                  padding: 24,
-                  textAlign: "center",
-                  fontFamily: BC,
-                  fontWeight: 700,
-                  color: PINK,
-                }}
-              >
-                Image failed to load (404): <code>{garment.image}</code>
-              </div>
-            ) : (
-              <img
-                src={garment.image}
-                alt={`How to measure a ${garment.name}`}
-                onError={() => setImgError(true)}
-                style={{ width: "100%", maxWidth: "800px", height: "auto", display: "block", margin: "0 auto" }}
-              />
-            )}
+            <img
+              src={garment.image}
+              alt={`How to measure a ${garment.name.toLowerCase()} — labelled measurement diagram`}
+              style={{ width: "100%", maxWidth: "800px", height: "auto", display: "block", margin: "0 auto" }}
+            />
           </div>
         ) : (
         <div

@@ -11,7 +11,7 @@ import { db } from "./lib/db";
 import { startCheckout, verifySession } from "./lib/checkout";
 import { auth, uploadImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft } from "lucide-react";
 import { Sec, F, Tog, Thumb } from "./components/Shared";
 import Tailors from "./views/Tailors";
 import Detail from "./views/Detail";
@@ -1209,7 +1209,7 @@ export default function App() {
           </div>
           {notifications.length===0?(
             <div style={{padding:"32px",textAlign:"center"}}>
-              <p style={{fontSize:28,marginBottom:8}}>🔔</p>
+              <p style={{display:"flex",justifyContent:"center",marginBottom:8}}><Bell width={28} height={28} color="#ccc"/></p>
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#bbb"}}>NO NOTIFICATIONS YET</p>
             </div>
           ):(
@@ -1286,14 +1286,14 @@ export default function App() {
           <div style={S.modalOverlay} onClick={()=>setShowPayment(false)}>
             <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
-                <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,letterSpacing:-0.5}}>
-                  {paymentStep==="success"?"🎉 PAYMENT DONE!":"💳 BUY THIS PIECE"}
+                <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,letterSpacing:-0.5,display:"inline-flex",alignItems:"center",gap:10}}>
+                  {paymentStep==="success"?<><PartyPopper width={24} height={24}/> PAYMENT DONE!</>:<><CreditCard width={24} height={24}/> BUY THIS PIECE</>}
                 </h3>
                 <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowPayment(false)}>✕</button>
               </div>
               {paymentStep==="success"?(
                 <div style={{textAlign:"center",padding:"32px 0"}}>
-                  <p style={{fontSize:60,marginBottom:16}}>🎉</p>
+                  <p style={{display:"flex",justifyContent:"center",marginBottom:16}}><PartyPopper width={60} height={60} color="#FF1493"/></p>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>PAYMENT SUCCESSFUL!</p>
                   <p style={{fontSize:14,color:"#888",marginBottom:24}}>The seller has been notified and will be in touch about shipping.</p>
                   <button className="hbtn" style={{...S.hBtn,padding:"12px 28px",fontSize:14}} onClick={()=>{setShowPayment(false);setPaymentStep("summary");}}>DONE →</button>
@@ -1309,7 +1309,7 @@ export default function App() {
                     </div>
                   </div>
                   <div style={{marginBottom:24}}>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12}}>📬 DELIVERY ADDRESS</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12,display:"inline-flex",alignItems:"center",gap:6}}><Mail width={16} height={16}/> DELIVERY ADDRESS</p>
                     {!showAddressForm&&deliveryAddress.line1?(
                       <div style={{border:"2px solid #34C759",padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                         <div>
@@ -1327,12 +1327,12 @@ export default function App() {
                           <F l="CITY"><input style={S.inp} placeholder="London" value={deliveryAddress.city} onChange={e=>setDeliveryAddress(a=>({...a,city:e.target.value}))}/></F>
                           <F l="POSTCODE"><input style={S.inp} placeholder="E1 6RF" value={deliveryAddress.postcode} onChange={e=>setDeliveryAddress(a=>({...a,postcode:e.target.value}))}/></F>
                         </div>
-                        {deliveryAddress.line1&&<button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",fontSize:11,padding:"10px"}} onClick={()=>setShowAddressForm(false)}>✓ SAVE ADDRESS</button>}
+                        {deliveryAddress.line1&&<button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",fontSize:11,padding:"10px",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6}} onClick={()=>setShowAddressForm(false)}><Check width={16} height={16}/> SAVE ADDRESS</button>}
                       </div>
                     )}
                   </div>
                   <div style={{marginBottom:24}}>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12}}>📦 CHOOSE YOUR DELIVERY</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12,display:"inline-flex",alignItems:"center",gap:6}}><Package width={16} height={16}/> CHOOSE YOUR DELIVERY</p>
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
                       {POSTAGE_OPTIONS.map(carrier=>(
                         <div key={carrier.id}>
@@ -1341,14 +1341,14 @@ export default function App() {
                             const isSelected=selectedPostage?.optId===optId;
                             return(
                               <div key={optId} style={{border:`2px solid ${isSelected?"#FF1493":"#e0e0e0"}`,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:4,background:isSelected?"#fff8fc":"#fff"}} onClick={()=>setSelectedPostage({...carrier,selectedPrice:price,optId})}>
-                                <span style={{fontSize:20}}>{carrier.emoji}</span>
+                                <span style={{display:"inline-flex",alignItems:"center"}}><carrier.Icon width={20} height={20}/></span>
                                 <div style={{flex:1}}>
                                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#111"}}>{carrier.name}</p>
                                   <p style={{fontSize:12,color:"#888"}}>{price.label}</p>
                                 </div>
                                 <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#FF1493"}}>+£{price.price}</span>
                                 <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${isSelected?"#FF1493":"#ccc"}`,background:isSelected?"#FF1493":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                                  {isSelected&&<span style={{color:"#fff",fontSize:10,fontWeight:900}}>✓</span>}
+                                  {isSelected&&<Check width={12} height={12} color="#fff"/>}
                                 </div>
                               </div>
                             );
@@ -1356,15 +1356,15 @@ export default function App() {
                         </div>
                       ))}
                       {paymentListing.accepts_collection&&(
-                        <div style={{border:`2px solid ${selectedPostage?.id==="collection"?"#34C759":"#e0e0e0"}`,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,background:selectedPostage?.id==="collection"?"#f0fff4":"#fff"}} onClick={()=>setSelectedPostage({id:"collection",name:"Collection in Person",emoji:"🤝",selectedPrice:{price:0,label:"Arrange with seller"},optId:"collection"})}>
-                          <span style={{fontSize:20}}>🤝</span>
+                        <div style={{border:`2px solid ${selectedPostage?.id==="collection"?"#34C759":"#e0e0e0"}`,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,background:selectedPostage?.id==="collection"?"#f0fff4":"#fff"}} onClick={()=>setSelectedPostage({id:"collection",name:"Collection in Person",Icon:Handshake,selectedPrice:{price:0,label:"Arrange with seller"},optId:"collection"})}>
+                          <span style={{display:"inline-flex",alignItems:"center"}}><Handshake width={20} height={20}/></span>
                           <div style={{flex:1}}>
                             <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800}}>Collection in Person</p>
                             <p style={{fontSize:12,color:"#888"}}>Arrange with seller directly</p>
                           </div>
                           <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#34C759"}}>FREE</span>
                           <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${selectedPostage?.id==="collection"?"#34C759":"#ccc"}`,background:selectedPostage?.id==="collection"?"#34C759":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            {selectedPostage?.id==="collection"&&<span style={{color:"#fff",fontSize:10,fontWeight:900}}>✓</span>}
+                            {selectedPostage?.id==="collection"&&<Check width={12} height={12} color="#fff"/>}
                           </div>
                         </div>
                       )}
@@ -1377,7 +1377,7 @@ export default function App() {
                       <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700}}>{sym}{amount}</span>
                     </div>
                     {selectedPostage&&postageAmount>0&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                      <span style={{fontSize:13,color:"#555"}}>{selectedPostage.emoji} {selectedPostage.name}</span>
+                      <span style={{fontSize:13,color:"#555",display:"inline-flex",alignItems:"center",gap:6}}>{selectedPostage.Icon&&<selectedPostage.Icon width={14} height={14}/>} {selectedPostage.name}</span>
                       <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700}}>{sym}{postageAmount}</span>
                     </div>}
                     <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
@@ -1396,13 +1396,13 @@ export default function App() {
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12}}>PAY WITH</p>
                   <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
                     <button className="hbtn" style={{...S.hBtn,background:"#111",border:"none",width:"100%",padding:"14px",fontSize:14,letterSpacing:1,display:"flex",alignItems:"center",justifyContent:"center",gap:10}} onClick={()=>setPaymentStep("card")}>
-                      <span style={{fontSize:18}}>🍎</span> APPLE PAY / GOOGLE PAY
+                      <Wallet width={18} height={18}/> APPLE PAY / GOOGLE PAY
                     </button>
-                    <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",width:"100%",padding:"14px",fontSize:14,letterSpacing:1}} onClick={()=>setPaymentStep("card")}>
-                      💳 PAY BY CARD
+                    <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",width:"100%",padding:"14px",fontSize:14,letterSpacing:1,display:"flex",alignItems:"center",justifyContent:"center",gap:10}} onClick={()=>setPaymentStep("card")}>
+                      <CreditCard width={18} height={18}/> PAY BY CARD
                     </button>
                   </div>
-                  <p style={{fontSize:11,color:"#bbb",textAlign:"center",lineHeight:1.6}}>🔒 Payments are processed securely via Stripe.<br/>Seller will be notified immediately after payment.</p>
+                  <p style={{fontSize:11,color:"#bbb",textAlign:"center",lineHeight:1.6}}><Lock width={12} height={12} style={{verticalAlign:"middle"}}/> Payments are processed securely via Stripe.<br/>Seller will be notified immediately after payment.</p>
                 </>
               )}
               {paymentStep==="card"&&(
@@ -1411,7 +1411,7 @@ export default function App() {
                   <div style={{padding:24,border:"2px solid #f0f0f0",marginBottom:16}}>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:16}}>CARD DETAILS</p>
                     <div id="stripe-card-element" style={{padding:"14px",border:"2px solid #e0e0e0",marginBottom:16,minHeight:44}}/>
-                    <p style={{fontSize:12,color:"#bbb",marginBottom:16}}>💡 In test mode, use card number <strong>4242 4242 4242 4242</strong>, any future date, any CVC.</p>
+                    <p style={{fontSize:12,color:"#bbb",marginBottom:16}}><Lightbulb width={14} height={14} style={{verticalAlign:"middle"}}/> In test mode, use card number <strong>4242 4242 4242 4242</strong>, any future date, any CVC.</p>
                     <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",width:"100%",padding:"14px",fontSize:14,letterSpacing:2}}
                       onClick={async()=>{
                         if(!window.Stripe){ const s=document.createElement("script"); s.src="https://js.stripe.com/v3/"; await new Promise(r=>{s.onload=r;document.head.appendChild(s);}); }
@@ -1453,7 +1453,7 @@ export default function App() {
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:10}}>RATING</p>
               <div style={{display:"flex",gap:8}}>
                 {[1,2,3,4,5].map(n=>(
-                  <button key={n} type="button" style={{fontSize:28,background:"none",border:"none",cursor:"pointer",opacity:n<=reviewForm.rating?1:0.25}} onClick={()=>setReviewForm(f=>({...f,rating:n}))}>⭐</button>
+                  <button key={n} type="button" style={{background:"none",border:"none",cursor:"pointer",padding:0,lineHeight:0,color:"#FF9500",opacity:n<=reviewForm.rating?1:0.25}} onClick={()=>setReviewForm(f=>({...f,rating:n}))}><Star width={28} height={28} fill="currentColor"/></button>
                 ))}
               </div>
             </div>
@@ -1471,7 +1471,7 @@ export default function App() {
         <div style={S.modalOverlay} onClick={()=>setShowReport(false)}>
           <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
-              <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>🚩 REPORT LISTING</h3>
+              <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,display:"inline-flex",alignItems:"center",gap:10}}><Flag width={24} height={24}/> REPORT LISTING</h3>
               <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowReport(false)}>✕</button>
             </div>
             <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:14}}>WHY ARE YOU REPORTING THIS?</p>
@@ -1490,7 +1490,7 @@ export default function App() {
         <div style={S.modalOverlay} onClick={()=>setShowSizeGuide(false)}>
           <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
-              <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,letterSpacing:-0.5}}>📏 SIZE GUIDE</h3>
+              <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,letterSpacing:-0.5,display:"inline-flex",alignItems:"center",gap:10}}><Ruler width={24} height={24}/> SIZE GUIDE</h3>
               <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowSizeGuide(false)}>✕</button>
             </div>
             <div style={{overflowX:"auto"}}>
@@ -1651,7 +1651,7 @@ export default function App() {
               </div>
               {conversations.length===0?(
                 <div style={{padding:32,textAlign:"center"}}>
-                  <p style={{fontSize:32,marginBottom:8}}>💬</p>
+                  <p style={{display:"flex",justifyContent:"center",marginBottom:8}}><MessageCircle width={32} height={32} color="#ccc"/></p>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#bbb",letterSpacing:1}}>NO MESSAGES YET</p>
                 </div>
               ):(
@@ -1681,7 +1681,7 @@ export default function App() {
             <div style={S.msgMain}>
               {!activeConv?(
                 <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:12}}>
-                  <p style={{fontSize:48}}>✉️</p>
+                  <Mail width={48} height={48} color="#ccc"/>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,letterSpacing:1,color:"#bbb"}}>SELECT A CONVERSATION</p>
                 </div>
               ):(()=>{
@@ -1711,7 +1711,7 @@ export default function App() {
                             {isOffer?(
                               <div style={{...S.offerCard,border:`2px solid ${msg.offer_status==="accepted"?"#34C759":msg.offer_status==="declined"?"#FF3B30":"#FF1493"}`,maxWidth:"80%"}}>
                                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                                  <span style={{fontSize:20}}>🏷️</span>
+                                  <span style={{display:"inline-flex",alignItems:"center"}}><Tag width={20} height={20}/></span>
                                   <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:900,letterSpacing:1}}>{msg.offer_percent}% OFF OFFER</span>
                                   <span style={{...S.offerStatusBadge,background:msg.offer_status==="accepted"?"#34C759":msg.offer_status==="declined"?"#FF3B30":"#FF1493"}}>{msg.offer_status?.toUpperCase()}</span>
                                 </div>
@@ -1719,9 +1719,9 @@ export default function App() {
                                 <p style={{fontSize:11,color:"#888",marginBottom:canRespond?12:0}}>Original: {currencySymbol(listing?.currency)}{listing?.price}</p>
                                 {canRespond&&showCounterOffer!==msg.id&&(
                                   <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                                    <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",padding:"8px 16px",fontSize:11}} onClick={()=>respondToOffer(msg.id,"accepted")}>✓ ACCEPT</button>
-                                    <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",padding:"8px 16px",fontSize:11}} onClick={()=>respondToOffer(msg.id,"declined")}>✗ DECLINE</button>
-                                    <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"8px 16px",fontSize:11}} onClick={()=>setShowCounterOffer(msg.id)}>↩️ COUNTER</button>
+                                    <button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",padding:"8px 16px",fontSize:11,display:"inline-flex",alignItems:"center",gap:5}} onClick={()=>respondToOffer(msg.id,"accepted")}><Check width={14} height={14}/> ACCEPT</button>
+                                    <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",padding:"8px 16px",fontSize:11,display:"inline-flex",alignItems:"center",gap:5}} onClick={()=>respondToOffer(msg.id,"declined")}><X width={14} height={14}/> DECLINE</button>
+                                    <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"8px 16px",fontSize:11,display:"inline-flex",alignItems:"center",gap:5}} onClick={()=>setShowCounterOffer(msg.id)}><CornerUpLeft width={14} height={14}/> COUNTER</button>
                                   </div>
                                 )}
                                 {canRespond&&showCounterOffer===msg.id&&(
