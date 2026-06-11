@@ -15,6 +15,9 @@ export const CSS=`
   .nav-hamburger{display:none !important;}
   .fpill{transition:all .14s !important;}
   .fpill:hover{background:#111 !important;color:#fff !important;}
+  /* Footer links turn pink on hover. */
+  .footer-link{transition:color .14s ease !important;}
+  .footer-link:hover{color:#FF1493 !important;}
   @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
   @keyframes floatbob{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-14px) rotate(5deg)}}
@@ -361,4 +364,15 @@ export const S={
   bagEmpty:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",gap:20,padding:"40px 0"},
   bagEmptyText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2,color:"#111",textTransform:"uppercase"},
   bagBrowseBtn:{background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px 28px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,textTransform:"uppercase"},
+
+  // SITE FOOTER — black band, white Barlow Condensed, 2px pink top border,
+  // no border-radius. Links go pink on hover (see .footer-link in CSS).
+  footer:{background:"#111",color:"#fff",borderTop:"2px solid #FF1493",borderRadius:0,padding:"32px 24px 24px",marginTop:64},
+  footerRow:{maxWidth:1200,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,flexWrap:"wrap"},
+  footerWordmark:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,letterSpacing:2,color:"#fff"},
+  footerLinks:{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",justifyContent:"center"},
+  footerLink:{background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:1,color:"#fff",textDecoration:"none",textTransform:"none"},
+  footerSep:{color:"#666",fontSize:14},
+  footerCopy:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#bbb"},
+  footerFine:{maxWidth:1200,margin:"18px auto 0",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:600,letterSpacing:1,color:"#888",lineHeight:1.5},
 };

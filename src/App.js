@@ -24,6 +24,8 @@ import Feed from "./views/Feed";
 import Orders from "./views/Orders";
 import Looks from "./views/Looks";
 import CreateLook from "./views/CreateLook";
+import Legal from "./views/Legal";
+import Footer from "./components/Footer";
 
 // Pull the human-readable reason out of a thrown Supabase/PostgREST error.
 // db.* throws `new Error(await r.text())` where the text is usually JSON like
@@ -242,6 +244,32 @@ export default function App() {
   },[]);
 
   useEffect(()=>{ fetchItems(); },[]);
+
+  // Legal pages (/terms, /privacy, /returns) are real URLs — vercel.json
+  // rewrites them to index.html, so resolve the path to a view on load and
+  // keep the in-app `view` in sync with the browser back/forward buttons.
+  useEffect(()=>{
+    const pathToView=()=>{
+      const p=window.location.pathname;
+      if(p.startsWith("/terms"))   return "terms";
+      if(p.startsWith("/privacy")) return "privacy";
+      if(p.startsWith("/returns")) return "returns";
+      return null;
+    };
+    const initial=pathToView();
+    if(initial) setView(initial);
+    const onPop=()=>{ const v=pathToView(); setView(v||"shop"); };
+    window.addEventListener("popstate",onPop);
+    return ()=>window.removeEventListener("popstate",onPop);
+  },[]);
+
+  // Footer link → switch to a legal view AND push the matching URL so the page
+  // is shareable/refreshable and the back button works.
+  function goLegal(v){
+    window.history.pushState({},"",`/${v}`);
+    setView(v);
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
 
   // Stripe redirects back to /order-success?session_id=… after a paid checkout.
   // Detect that path on load, verify the session server-side (via Edge Function),
@@ -2067,6 +2095,9 @@ export default function App() {
         editingLook={editingLook} flash={flash}
       />
 
+      {/* LEGAL PAGES — /terms, /privacy, /returns */}
+      <Legal view={view} setView={setView} />
+
       {/* DETAIL */}
       <Detail
         view={view} setView={setView} sel={sel}
@@ -2193,6 +2224,11 @@ export default function App() {
           </div>
         </main>
       )}
+
+      {/* SITE FOOTER — on every page. It lives at the document bottom of the
+          root, so fixed-position modals/overlays (bag, notifications, payment)
+          render above it, and the Stripe checkout is an external hosted page. */}
+      <Footer onNavigate={goLegal} />
     </div>
   );
 }
