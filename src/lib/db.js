@@ -30,7 +30,25 @@ export const db = {
   async remove(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   async getProfile(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   async getProfilesByIds(ids,t){ if(!ids.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${ids.join(",")})&select=id,full_name,username`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  async upsertProfile(profile,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation,resolution=merge-duplicates"},body:JSON.stringify(profile)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  // Self-heals like sendHealing (used for listings): PostgREST rejects the WHOLE
+  // upsert with PGRST204 "Could not find the 'X' column of 'profiles'" if the
+  // payload names any column the table lacks — which silently failed EVERY
+  // profile save (display name, avatar, the lot) when one field column was
+  // missing. Drop the absent column and retry so the profile still saves with
+  // whatever columns the schema actually has. `id` is the conflict target and is
+  // never dropped. The bundled migration adds the missing columns so nothing is
+  // dropped on an up-to-date schema; this keeps saves working on older ones.
+  async upsertProfile(profile,t){
+    let payload={...profile}; const dropped=[];
+    for(let i=0;i<60;i++){
+      const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation,resolution=merge-duplicates"},body:JSON.stringify(payload)});
+      if(r.ok){ if(dropped.length)console.warn(`Profile saved after dropping column(s) missing from your 'profiles' table: ${dropped.join(", ")}. Add them in Supabase to persist these fields.`); return r.json(); }
+      const text=await r.text(); const col=missingColumn(text);
+      if(col&&col!=="id"&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; dropped.push(col); continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't save: too many columns are missing from the 'profiles' table.");
+  },
   async getListingsByUser(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async incrementViews(id,views,t){ await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({views:(views||0)+1})}); },
   async getReviews(sellerId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?seller_id=eq.${sellerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
