@@ -37,43 +37,63 @@ export const db = {
   async remove(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   async getProfile(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   async getProfilesByIds(ids,t){ if(!ids.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${ids.join(",")})&select=id,full_name,username`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  // Self-heals like sendHealing (used for listings): PostgREST rejects the WHOLE
-  // upsert with PGRST204 "Could not find the 'X' column of 'profiles'" if the
-  // payload names any column the table lacks — which silently failed EVERY
-  // profile save (display name, avatar, the lot) when one field column was
-  // missing. Drop the absent column and retry so the profile still saves with
-  // whatever columns the schema actually has. `id` is the conflict target and is
-  // never dropped. The bundled migration adds the missing columns so nothing is
-  // dropped on an up-to-date schema; this keeps saves working on older ones.
+  // Saves a profile by UPDATING the existing row first, and only INSERTing when no
+  // row exists yet — mirroring the (working) listing save, which uses a plain POST
+  // for new rows and a PATCH for existing ones.
+  //
+  // It previously did a single POST upsert (`Prefer: resolution=merge-duplicates`,
+  // i.e. INSERT … ON CONFLICT DO UPDATE). That was the real "fails on every change"
+  // bug: a Supabase `profiles` table almost always has RLS enabled with a SELECT
+  // and an UPDATE policy, but NO INSERT policy — rows are created by the
+  // `handle_new_user` signup trigger, not by the client. An upsert ALWAYS runs the
+  // INSERT path (even when the row already exists, which it does after signup), and
+  // RLS validates that path against the missing INSERT policy → 42501
+  // "new row violates row-level security policy" on EVERY edit. A plain PATCH only
+  // needs the UPDATE policy, which is present, so it just works. (Listings were
+  // unaffected: that table has an INSERT policy, and its save PATCHes existing rows.)
+  //
+  // Both paths self-heal like sendHealing: PostgREST rejects the WHOLE write with
+  // PGRST204 "Could not find the 'X' column of 'profiles'" / a NOT NULL / a type
+  // error if the payload names a column the table can't store — drop that column
+  // and retry so the profile still saves with whatever columns the schema has.
   async upsertProfile(profile,t){
-    // The columns a basic profile edit always sets. If the save fails for a
-    // reason we can't pin to a single droppable column (e.g. an optional column
-    // has the wrong type and we can't parse its name), we retry ONCE with just
-    // these so a problem with a tailor / measurement / array column can never
-    // block saving a name, avatar or bio. `id` is the conflict target.
+    // The columns a basic profile edit always sets. If a write fails for a reason
+    // we can't pin to a single droppable column (e.g. an optional column has the
+    // wrong type and we can't parse its name), we retry ONCE with just these so a
+    // problem with a tailor / measurement / array column can never block saving a
+    // name, avatar or bio.
     const CORE=["id","username","full_name","avatar_url","bio","location","region","currency"];
-    let payload={...profile}; const dropped=[]; let triedCore=false;
-    const has=k=>Object.prototype.hasOwnProperty.call(payload,k);
-    for(let i=0;i<60;i++){
-      const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation,resolution=merge-duplicates"},body:JSON.stringify(payload)});
-      if(r.ok){ if(dropped.length)console.warn(`Profile saved after dropping field(s) your 'profiles' table can't store: ${dropped.join(", ")}. Apply the migration in Supabase to persist these.`); return r.json(); }
-      const text=await r.text();
-      // 1) A missing column (PGRST204) — drop it and retry.
-      const miss=missingColumn(text);
-      if(miss&&miss!=="id"&&has(miss)){ delete payload[miss]; dropped.push(miss); continue; }
-      // 2) A NOT NULL / type error that names a non-core column — drop it so the
-      //    rest still saves (a NOT NULL column then falls back to its DB default).
-      const bad=recoverableColumn(text);
-      if(bad&&!CORE.includes(bad)&&has(bad)){ delete payload[bad]; dropped.push(bad); continue; }
-      // 3) Last resort: anything else that isn't clearly auth/RLS — retry once
-      //    with only the core columns, in case an optional column is the culprit.
-      if(!triedCore&&!/(row-level security|permission|not authorized|JWT|policy)/i.test(text)){
-        triedCore=true; const core={}; CORE.forEach(k=>{ if(Object.prototype.hasOwnProperty.call(profile,k)) core[k]=profile[k]; });
-        if(Object.keys(core).length<Object.keys(payload).length){ payload=core; dropped.push("optional profile fields"); continue; }
+    // Self-healing send for one method+url. Returns the parsed representation array.
+    const heal=async(method,url,initial)=>{
+      let payload={...initial}; const dropped=[]; let triedCore=false;
+      const has=k=>Object.prototype.hasOwnProperty.call(payload,k);
+      for(let i=0;i<60;i++){
+        const r=await fetch(url,{method,headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+        if(r.ok){ if(dropped.length)console.warn(`Profile saved after dropping field(s) your 'profiles' table can't store: ${dropped.join(", ")}. Apply the migration in Supabase to persist these.`); return r.json(); }
+        const text=await r.text();
+        // 1) A missing column (PGRST204) — drop it and retry.
+        const miss=missingColumn(text);
+        if(miss&&miss!=="id"&&has(miss)){ delete payload[miss]; dropped.push(miss); continue; }
+        // 2) A NOT NULL / type error that names a non-core column — drop it so the
+        //    rest still saves (a NOT NULL column then falls back to its DB default).
+        const bad=recoverableColumn(text);
+        if(bad&&!CORE.includes(bad)&&has(bad)){ delete payload[bad]; dropped.push(bad); continue; }
+        // 3) Last resort: anything else that isn't clearly auth/RLS — retry once
+        //    with only the core columns, in case an optional column is the culprit.
+        if(!triedCore&&!/(row-level security|permission|not authorized|JWT|policy)/i.test(text)){
+          triedCore=true; const core={}; CORE.forEach(k=>{ if(Object.prototype.hasOwnProperty.call(initial,k)) core[k]=initial[k]; });
+          if(Object.keys(core).length<Object.keys(payload).length){ payload=core; dropped.push("optional profile fields"); continue; }
+        }
+        throw new Error(text);
       }
-      throw new Error(text);
-    }
-    throw new Error("Couldn't save: too many columns are missing from the 'profiles' table.");
+      throw new Error("Couldn't save: too many columns are missing from the 'profiles' table.");
+    };
+    // UPDATE the existing row first (needs only the UPDATE policy). A PATCH that
+    // matches no row returns [] with 200, so an empty result means there's no row
+    // yet → fall through to INSERT (needed only for a brand-new profile).
+    const updated=await heal("PATCH",`${SUPABASE_URL}/rest/v1/profiles?id=eq.${profile.id}`,profile);
+    if(Array.isArray(updated)&&updated.length) return updated;
+    return heal("POST",`${SUPABASE_URL}/rest/v1/profiles`,profile);
   },
   async getListingsByUser(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async incrementViews(id,views,t){ await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({views:(views||0)+1})}); },
