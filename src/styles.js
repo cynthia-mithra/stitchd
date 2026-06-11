@@ -23,6 +23,15 @@ export const CSS=`
   input:focus,select:focus,textarea:focus{border-color:#FF1493 !important;box-shadow:0 0 0 3px rgba(255,20,147,0.1) !important;outline:none;}
   ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#eee;border-radius:2px}
   ::selection{background:#FF149333}
+  /* SHOP THE LOOK — desktop is a 3-up grid; the homepage rail turns into a
+     horizontal swipe-scroll on phones (cards ~78% wide so the next one peeks). */
+  .looks-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .looks-page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+  @media(max-width:600px){
+    .looks-rail{display:flex !important;overflow-x:auto;gap:12px;scroll-snap-type:x mandatory;padding-bottom:6px;}
+    .looks-rail > *{flex:0 0 78% !important;scroll-snap-align:start;}
+    .looks-page-grid{grid-template-columns:1fr 1fr !important;gap:10px !important;}
+  }
   @media(max-width:600px){
     /* PROBLEM 1 — keep the hero SIDE-BY-SIDE on mobile (like desktop): the writing
        takes the LEFT and the bubbles sit to the RIGHT, but instead of a neat wrapping

@@ -45,15 +45,22 @@ export function isTokenExpired(token,skewMs=60000){
   return claims.exp*1000 < Date.now()+skewMs;
 }
 
-export async function uploadImage(file,t){
+// Upload a file to a public Storage bucket and return its public URL. The
+// bucket defaults to "listings" (every listing photo goes there); Shop the Look
+// cover images pass bucket="looks" instead (see uploadLookImage). Both buckets
+// must exist and be public in Supabase Storage.
+export async function uploadImage(file,t,bucket="listings"){
   const ext=file.name.split(".").pop();
   const path=`${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const r=await fetch(`${SUPABASE_URL}/storage/v1/object/listings/${path}`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t||SUPABASE_KEY}`,"Content-Type":file.type||"application/octet-stream","x-upsert":"true"},body:file});
+  const r=await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t||SUPABASE_KEY}`,"Content-Type":file.type||"application/octet-stream","x-upsert":"true"},body:file});
   if(!r.ok){
     let detail="";
     try{ const j=await r.clone().json(); detail=j.message||j.error||j.msg||JSON.stringify(j); }
     catch{ try{ detail=await r.text(); }catch{ detail=""; } }
     throw new Error(`Image upload failed (HTTP ${r.status}): ${detail||r.statusText}`);
   }
-  return `${SUPABASE_URL}/storage/v1/object/public/listings/${path}`;
+  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 }
+
+// Shop the Look cover images live in a separate "looks" storage bucket.
+export const uploadLookImage=(file,t)=>uploadImage(file,t,"looks");
