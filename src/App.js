@@ -1053,7 +1053,9 @@ export default function App() {
         msg="That username is already taken — please choose a different one.";
       // Show it BOTH as a toast and as a persistent banner in the editor, so the
       // exact reason is readable on any device (e.g. iPad, no console available).
-      setProfError(msg);
+      // `detail` carries the verbatim server response so the banner can offer a
+      // one-tap COPY — the friendly `text` may mask the precise wording I need.
+      setProfError({text:msg,detail:raw});
       flash(msg,9000);
     }
     finally{ setProfSaving(false); }

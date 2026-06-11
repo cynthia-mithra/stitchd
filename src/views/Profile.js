@@ -62,7 +62,16 @@ export default function Profile({
             {profError&&(
               <div style={{background:"#FFF0F3",border:"2px solid #FF1493",borderRadius:0,padding:"14px 16px",marginBottom:14,color:"#B00046",fontFamily:"'Barlow',sans-serif",fontSize:14,lineHeight:1.5,overflowWrap:"anywhere"}}>
                 <strong style={{fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,display:"block",marginBottom:4}}>⚠️ PROFILE NOT SAVED</strong>
-                {profError}
+                {profError.text||profError}
+                {profError.detail&&(
+                  <div style={{marginTop:12}}>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:1,marginBottom:6,color:"#B00046"}}>EXACT ERROR — TAP COPY, THEN PASTE IT ON THE PR FOR CLAUDE:</p>
+                    <div style={{display:"flex",alignItems:"stretch",gap:8,flexWrap:"wrap"}}>
+                      <code style={{flex:1,minWidth:0,background:"#fff",border:"1px solid #FFB3CC",padding:"8px 10px",fontFamily:"monospace",fontSize:12,color:"#111",overflowWrap:"anywhere",whiteSpace:"pre-wrap"}}>{profError.detail}</code>
+                      <button type="button" className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",padding:"8px 16px",fontSize:11,letterSpacing:1}} onClick={()=>{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(profError.detail).then(()=>{},()=>{}); } }}>COPY</button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:profSaving?0.5:1}} onClick={saveProfile}>{profSaving?"SAVING...":"SAVE PROFILE →"}</button>
