@@ -262,6 +262,7 @@ function NumBadge({ n }) {
 }
 
 function GarmentSection({ gender, garment, open, onToggle }) {
+  const [imgError, setImgError] = useState(false);
   return (
     <div style={{ border: "2px solid #111", marginBottom: 14, background: "#fff" }}>
       <button
@@ -292,11 +293,28 @@ function GarmentSection({ gender, garment, open, onToggle }) {
         garment.key === "saree" ? (
           // Saree uses a custom image that already includes the numbered legend.
           <div style={{ padding: "20px 18px", borderTop: "2px solid #111" }}>
-            <img
-              src={SAREE_MEASUREMENTS}
-              alt="How to measure a saree — blouse bust, waist, length, saree length, sleeve length"
-              style={{ width: "100%", maxWidth: 800, height: "auto", display: "block", margin: "0 auto" }}
-            />
+            {imgError ? (
+              <div
+                style={{
+                  padding: "24px 18px",
+                  textAlign: "center",
+                  fontFamily: BC,
+                  fontSize: 16,
+                  color: PINK,
+                  border: "2px dashed " + PINK,
+                }}
+              >
+                Saree guide image failed to load (404). The static file isn’t being
+                served at <code>{SAREE_MEASUREMENTS}</code>.
+              </div>
+            ) : (
+              <img
+                src={SAREE_MEASUREMENTS}
+                alt="How to measure a saree — blouse bust, waist, length, saree length, sleeve length"
+                onError={() => setImgError(true)}
+                style={{ width: "100%", maxWidth: 800, height: "auto", display: "block", margin: "0 auto" }}
+              />
+            )}
           </div>
         ) : (
           <div
