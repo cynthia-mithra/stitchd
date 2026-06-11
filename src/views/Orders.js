@@ -1,6 +1,7 @@
 import React from "react";
 import { Package, Mail, AlertCircle } from "lucide-react";
 import { S } from "../styles";
+import { VerifiedBadge } from "../components/Shared";
 
 // Post-purchase order history (issue PART 2 & PART 5).
 //
@@ -94,8 +95,10 @@ export default function Orders({
                     <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, color: "#bbb", letterSpacing: 1 }}>{isBuyer ? "BUYING" : "SELLING"}{dateStr ? ` · ${dateStr}` : ""}</span>
                   </div>
                   <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 900, marginBottom: 4 }}>{listing?.name || "Item"}</p>
-                  <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, color: "#888", letterSpacing: 0.5, marginBottom: 2 }}>
+                  <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, color: "#888", letterSpacing: 0.5, marginBottom: 2, display: "inline-flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     {isBuyer ? `from ${sellerName(order.seller_id, listing)}` : `to ${firstName(order.buyer_id)}`}
+                    {/* Phase 11 — verified badge beside the seller name in buyer order history. */}
+                    {isBuyer && orderProfiles[order.seller_id]?.verified && <VerifiedBadge size="sm" />}
                   </p>
                   <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18, fontWeight: 900, color: "#FF1493", marginBottom: 10 }}>£{amount.toFixed(2)}</p>
 

@@ -2,7 +2,7 @@ import React from "react";
 import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Plane } from "lucide-react";
 import { SIZES, CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
 import { S } from "../styles";
-import { Sec, F, Tog, Stars } from "../components/Shared";
+import { Sec, F, Tog, Stars, VerifiedBadge } from "../components/Shared";
 
 export default function Profile({
   view, setView, prevView, user,
@@ -150,7 +150,9 @@ export default function Profile({
             </div>
             <div style={{flex:1}}>
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:4}}>SELLER PROFILE</p>
-              <h2 style={S.profileName}>{viewedProfile.full_name||viewedProfile.username||"Seller"}{viewedProfile.verified&&<span style={{...S.verifiedBadge,display:"inline-flex",alignItems:"center",gap:4}}><Check width={12} height={12}/> VERIFIED</span>}</h2>
+              <h2 style={S.profileName}>{viewedProfile.full_name||viewedProfile.username||"Seller"}</h2>
+              {/* Phase 11 — verified badge sits prominently below the seller name. */}
+              {viewedProfile.verified&&<div style={{marginBottom:10}}><VerifiedBadge/></div>}
               {viewedProfile.location&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:10,display:"flex",alignItems:"center",gap:5}}><MapPin width={14} height={14}/> {viewedProfile.location}</p>}
               <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:14}}>
                 {viewedProfile.id_verified&&<span style={{background:"#007AFF",color:"#fff",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",display:"inline-flex",alignItems:"center",gap:5}}><BadgeCheck width={12} height={12}/> ID VERIFIED</span>}
