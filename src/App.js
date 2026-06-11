@@ -1120,7 +1120,7 @@ export default function App() {
   // they remain always-visible in the navbar. Each onClick also closes whichever
   // menu was open so navigating dismisses the overlay.
   const navMenuItems = [
-    {label:"MY DROPS",       run:()=>{loadBundles();setView("dashboard");}},
+    {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();setView("dashboard");}},
     {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
     {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
     {label:"MESSAGES",       run:openMessages},
@@ -1788,6 +1788,7 @@ export default function App() {
       <Dashboard
         view={view} setView={setView} user={user} myItems={myItems}
         sellerRatings={sellerRatings}
+        myOrders={myOrders} wishlistCounts={wishlistCounts} openDetail={openDetail} startOrderConversation={startOrderConversation}
         setSel={setSel} openEdit={openEdit} markSold={markSold} relist={relist} del={del}
         bundles={bundles} bundleItems={bundleItems} loadBundles={loadBundles} deleteBundle={deleteBundle}
         bundleForm={bundleForm} setBundleForm={setBundleForm} toggleBundleListing={toggleBundleListing} createBundle={createBundle}
