@@ -11,6 +11,8 @@ export const CSS=`
   .nav-drop-item-danger:hover{color:#FF0000 !important;}
   /* Mobile menu rows go pink on tap. */
   .nav-mob-item:active{color:#FF1493 !important;background:#fff5fa !important;}
+  /* Footer links (T&Cs, Privacy, Returns, Contact) turn pink on hover. */
+  .footer-link:hover{color:#FF1493 !important;}
   /* The hamburger is mobile-only; the profile-icon dropdown is desktop/iPad-only. */
   .nav-hamburger{display:none !important;}
   .fpill{transition:all .14s !important;}

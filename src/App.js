@@ -24,6 +24,12 @@ import Feed from "./views/Feed";
 import Orders from "./views/Orders";
 import Looks from "./views/Looks";
 import CreateLook from "./views/CreateLook";
+import Legal, { LEGAL_VIEWS } from "./views/Legal";
+import Footer from "./components/Footer";
+
+// URL path → view for the static legal pages, derived from the views Legal.js
+// owns so the two never drift (e.g. "/terms" → "terms").
+const LEGAL_PATHS = Object.fromEntries(LEGAL_VIEWS.map(v => [`/${v}`, v]));
 
 // Pull the human-readable reason out of a thrown Supabase/PostgREST error.
 // db.* throws `new Error(await r.text())` where the text is usually JSON like
@@ -270,6 +276,36 @@ export default function App() {
         setOrderResult({status:"error"});
       }
     }).catch(()=>setOrderResult({status:"error"}));
+  },[]);
+
+  // LEGAL PAGES (/terms, /privacy, /returns) — hardcoded static pages reachable
+  // from the footer on every page. We map the URL path to a `view` on first load
+  // (so a hard load / shared link of /terms lands on the right page) and keep the
+  // browser Back/Forward buttons in sync via a popstate listener.
+  useEffect(()=>{
+    const path=window.location.pathname.replace(/\/+$/,"");
+    const v=LEGAL_PATHS[path];
+    if(v) setView(v);
+    const onPop=()=>{
+      const p=window.location.pathname.replace(/\/+$/,"");
+      setView(LEGAL_PATHS[p]||"shop");
+    };
+    window.addEventListener("popstate",onPop);
+    return ()=>window.removeEventListener("popstate",onPop);
+  },[]);
+
+  // Footer navigation: switch to a legal `view` without a full reload and push the
+  // matching path so the URL + Back button reflect it. Scrolls to top on navigate.
+  const goLegal=useCallback((v,path)=>{
+    window.history.pushState({},"",path);
+    setView(v);
+    window.scrollTo(0,0);
+  },[]);
+  // Leaving a legal page back to the shop — restore the "/" URL so it doesn't
+  // stay stuck on /terms etc. (replaceState: no extra history entry).
+  const exitLegal=useCallback(()=>{
+    if(LEGAL_PATHS[window.location.pathname.replace(/\/+$/,"")]) window.history.replaceState({},"","/");
+    setView("shop");
   },[]);
 
   useEffect(()=>{
@@ -2067,6 +2103,9 @@ export default function App() {
         editingLook={editingLook} flash={flash}
       />
 
+      {/* LEGAL PAGES — Terms / Privacy / Returns (hardcoded static content) */}
+      <Legal view={view} setView={setView} onBack={exitLegal} />
+
       {/* DETAIL */}
       <Detail
         view={view} setView={setView} sel={sel}
@@ -2193,6 +2232,10 @@ export default function App() {
           </div>
         </main>
       )}
+
+      {/* GLOBAL FOOTER — appears on every page (modals/overlays render on top and
+          are unaffected; the Stripe checkout is an external hosted page). */}
+      <Footer onNav={goLegal} />
     </div>
   );
 }
