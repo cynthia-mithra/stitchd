@@ -136,3 +136,39 @@ export const waLink   = (n,name,price)=>`https://wa.me/${n.replace(/\D/g,"")}?te
 // legacy currency code stored on a listing/profile. Payment-processing currency
 // is handled separately in the Stripe call sites and is intentionally untouched.
 export const currencySymbol = ()=>"£";
+
+// ── Phase 10e — Shop the Look helpers ─────────────────────────────────────────
+// The Stitch'd admin account. Looks created by this account (or any profile with
+// is_admin=true) are stamped created_by_type='admin' and show "Curated by
+// Stitch'd". Set this to the admin's email to also recognise them by email; the
+// is_admin profile flag is the primary mechanism (see the migration).
+export const ADMIN_EMAIL = "";
+
+// A look row comes back with its items embedded as `look_items`, each carrying an
+// embedded `listings` row. Pull those listings out, ordered by `position`.
+export function lookListings(look){
+  if(!look||!Array.isArray(look.look_items)) return [];
+  return [...look.look_items]
+    .sort((a,b)=>(a.position??0)-(b.position??0))
+    .map(li=>li.listings)
+    .filter(Boolean);
+}
+
+// Total price of a look. `onlyAvailable` sums just the non-sold pieces (used for
+// the "GET THE FULL LOOK" total and ADD ALL TO BAG); otherwise every piece.
+export function lookTotal(listings,onlyAvailable=false){
+  return (listings||[]).reduce((sum,l)=>(onlyAvailable&&l.sold)?sum:sum+(parseFloat(l.price)||0),0);
+}
+
+// Which genders a look covers, for the WOMEN / MEN filter on the /looks page.
+// Uses each listing's measurements.gender when present, else infers from its
+// category (Sherwani / Kurta read as men's; everything else women's).
+const MEN_CATEGORIES = ["Sherwani","Kurta"];
+export function listingGender(l){
+  const g=parseMeasurements(l)?.gender;
+  if(g==="men"||g==="women") return g;
+  return MEN_CATEGORIES.includes(l.category)?"men":"women";
+}
+export function lookGenders(listings){
+  return new Set((listings||[]).map(listingGender));
+}

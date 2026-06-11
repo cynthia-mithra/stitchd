@@ -6,10 +6,11 @@ import {
   OCCASIONS, SIZES, OCC_COLOR, CARD_COLORS, EMPTY_FORM, POSTAGE_OPTIONS,
   catEmoji, currencySymbol, buildPaymentSummary,
   garmentTypesFor, garmentFieldsFor, defaultGarmentFor, parseMeasurements, buildMeasPayload,
+  ADMIN_EMAIL, lookListings,
 } from "./lib/constants";
 import { db } from "./lib/db";
 import { startCheckout, verifySession } from "./lib/checkout";
-import { auth, uploadImage, isTokenExpired, decodeJWT } from "./lib/auth";
+import { auth, uploadImage, uploadLookImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft } from "lucide-react";
 import { Sec, F, Tog, Thumb } from "./components/Shared";
@@ -21,6 +22,8 @@ import Profile from "./views/Profile";
 import Dashboard from "./views/Dashboard";
 import Feed from "./views/Feed";
 import Orders from "./views/Orders";
+import Looks from "./views/Looks";
+import CreateLook from "./views/CreateLook";
 
 // Pull the human-readable reason out of a thrown Supabase/PostgREST error.
 // db.* throws `new Error(await r.text())` where the text is usually JSON like
@@ -188,6 +191,21 @@ export default function App() {
   const [paymentListing, setPaymentListing] = useState(null);
   const [paymentStep,    setPaymentStep]    = useState("summary");
   const [selectedPostage,setSelectedPostage]= useState(null);
+  // Phase 10e — Shop the Look. `looks` are active, published looks (homepage rail
+  // + /looks page); `myLooks` are the signed-in seller/admin's own looks (drafts
+  // included) for the TOOLS tab. `selLook`/`selLookCreator` back the detail view.
+  // The create flow uses `lookForm`/`lookStep` + the search picker state.
+  const [looks,          setLooks]          = useState([]);
+  const [myLooks,        setMyLooks]        = useState([]);
+  const [lookFilter,     setLookFilter]     = useState("ALL");
+  const [selLook,        setSelLook]        = useState(null);
+  const [selLookCreator, setSelLookCreator] = useState(null);
+  const [lookForm,       setLookForm]       = useState({title:"",description:"",coverFile:null,coverPreview:"",cover_image_url:"",items:[]});
+  const [lookStep,       setLookStep]       = useState(1);
+  const [lookSaving,     setLookSaving]     = useState(false);
+  const [editingLook,    setEditingLook]    = useState(null);
+  const [lookSearch,     setLookSearch]     = useState("");
+  const [lookSearchResults,setLookSearchResults]=useState([]);
 
   const token = session?.access_token;
   const user  = session?.user;
@@ -641,6 +659,19 @@ export default function App() {
   }
 
   useEffect(()=>{ loadHomeSections(); },[]);
+
+  // Phase 10e — load active, published looks (with their items + listings
+  // embedded) for the homepage rail and the /looks page.
+  async function loadLooks(){
+    try{ setLooks(await db.getActiveLooks(token)); }catch(e){ /* non-fatal: section just hides */ }
+  }
+  useEffect(()=>{ loadLooks(); },[]);
+
+  // The signed-in user's own looks (drafts included) for the TOOLS tab.
+  async function loadMyLooks(){
+    if(!user||!token){ setMyLooks([]); return; }
+    try{ setMyLooks(await db.getLooksByUser(user.id,token)); }catch(e){ setMyLooks([]); }
+  }
 
   // Fetch every review once (only seller_id + rating columns) and aggregate into a
   // seller_id -> {average, count} lookup. One request for the whole grid beats a
@@ -1164,6 +1195,96 @@ export default function App() {
     }catch(e){ flash("Couldn't save your interest — try again."); }
   }
 
+  // ── Phase 10e — Shop the Look ─────────────────────────────────────────────
+  // Open a look's detail view. The look already carries its items + listings
+  // embedded; we additionally resolve the curator's profile (unless it's an
+  // admin look, which always reads "Curated by Stitch'd").
+  async function openLook(look){
+    setSelLook(look); setSelLookCreator(null); setView("lookdetail");
+    if(look.created_by_type!=="admin"&&look.created_by){
+      try{ const p=await db.getProfile(look.created_by,token); setSelLookCreator(p); }catch(e){}
+    }
+  }
+
+  // ADD ALL TO BAG — add every non-sold piece of a look to the bag at once,
+  // skipping any already there (each piece is one-of-a-kind). Mirrors toggleBag's
+  // snapshot shape so the bag panel renders without a refetch.
+  function addLookToBag(look){
+    if(!user){ flash("Sign in to add to your bag!"); setAuthMode("login"); setView("auth"); return; }
+    const available=lookListings(look).filter(l=>!l.sold);
+    if(!available.length){ flash("Everything in this look is sold."); return; }
+    let addedCount=0;
+    setBag(prev=>{
+      const have=new Set(prev.map(b=>b.id));
+      const additions=available.filter(l=>!have.has(l.id)).map(l=>({
+        id:l.id,name:l.name,price:l.price,currency:l.currency,
+        image:l.image_url||(l.images&&l.images[0])||"",emoji:l.emoji||catEmoji(l.category),
+        seller:l.seller_username||l.seller_name||l.username||"",sold:!!l.sold,
+      }));
+      addedCount=additions.length;
+      const next=[...prev,...additions];
+      localStorage.setItem("stitchd_bag",JSON.stringify(next));
+      return next;
+    });
+    setShowBag(true);
+    flash(addedCount?`🛍️ Added ${addedCount} piece${addedCount!==1?"s":""} to bag!`:"Those pieces are already in your bag.");
+  }
+
+  // Create-a-look listing picker — searches listings by title across ALL sellers.
+  async function searchLookListings(q){
+    if(!q||q.trim().length<2){ setLookSearchResults([]); return; }
+    try{ setLookSearchResults(await db.searchListings(q.trim(),token)); }catch(e){ setLookSearchResults([]); }
+  }
+  function addListingToLook(item){ setLookForm(f=>(f.items.some(i=>i.id===item.id)||f.items.length>=8)?f:{...f,items:[...f.items,item]}); }
+  function removeListingFromLook(id){ setLookForm(f=>({...f,items:f.items.filter(i=>i.id!==id)})); }
+
+  function openCreateLook(){
+    setEditingLook(null);
+    setLookForm({title:"",description:"",coverFile:null,coverPreview:"",cover_image_url:"",items:[]});
+    setLookStep(1); setLookSearch(""); setLookSearchResults([]);
+    setView("createlook");
+  }
+  function editLook(look){
+    setEditingLook(look);
+    setLookForm({title:look.title||"",description:look.description||"",coverFile:null,coverPreview:"",cover_image_url:look.cover_image_url||"",items:lookListings(look)});
+    setLookStep(1); setLookSearch(""); setLookSearchResults([]);
+    setView("createlook");
+  }
+  async function deleteLook(id){
+    try{ await db.deleteLook(id,token); setMyLooks(p=>p.filter(l=>l.id!==id)); setLooks(p=>p.filter(l=>l.id!==id)); flash("Look deleted."); }
+    catch(e){ flash("Failed to delete look."); }
+  }
+
+  // Publish (active=true) or save-as-draft (active=false). Uploads the cover to
+  // the looks/ bucket, upserts the look row, then replaces its items wholesale so
+  // edits stay in sync. created_by_type is 'admin' for the Stitch'd admin account.
+  async function publishLook(active){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    if(!lookForm.title.trim()){ flash("Add a title."); setLookStep(1); return; }
+    if(!lookForm.coverPreview&&!lookForm.cover_image_url){ flash("Add a cover image."); setLookStep(1); return; }
+    if(lookForm.items.length<2){ flash("Add at least 2 pieces."); setLookStep(2); return; }
+    setLookSaving(true);
+    try{
+      let cover=lookForm.cover_image_url||"";
+      if(lookForm.coverFile) cover=await withFreshToken(tok=>uploadLookImage(lookForm.coverFile,tok));
+      const payload={title:lookForm.title.trim(),description:lookForm.description||null,cover_image_url:cover,active,created_by:user.id,created_by_type:isAdmin?"admin":"seller"};
+      let lookId;
+      if(editingLook){
+        await withFreshToken(tok=>db.updateLook(editingLook.id,payload,tok));
+        lookId=editingLook.id;
+        await withFreshToken(tok=>db.clearLookItems(lookId,tok));
+      }else{
+        const created=await withFreshToken(tok=>db.createLook(payload,tok));
+        lookId=created.id;
+      }
+      await Promise.all(lookForm.items.map((l,i)=>withFreshToken(tok=>db.addLookItem({look_id:lookId,listing_id:l.id,position:i},tok))));
+      flash(active?"🩷 Look published!":"Saved as draft.");
+      await loadLooks(); await loadMyLooks();
+      setView("dashboard");
+    }catch(e){ console.error("Look save failed:",e); flash(`Couldn't save look: ${errMsg(e)}`,9000); }
+    finally{ setLookSaving(false); }
+  }
+
   function openDetail(item){
     setSel(item); setSelImgIdx(0); setView("detail");
     db.incrementViews(item.id,item.views,token);
@@ -1180,6 +1301,9 @@ export default function App() {
   const selColor = CARD_COLORS[Math.max(0,selIdx)%CARD_COLORS.length];
   const isOwner  = (item)=>user&&item.user_id===user.id;
   const myItems  = items.filter(i=>i.user_id===user?.id);
+  // Phase 10e — the Stitch'd admin: profiles.is_admin, or an email match to the
+  // configured ADMIN_EMAIL. Admin-created looks show "Curated by Stitch'd".
+  const isAdmin  = !!(profile?.is_admin) || (!!ADMIN_EMAIL && user?.email===ADMIN_EMAIL);
   const selImages= sel?(sel.images&&sel.images.length>0?sel.images:[sel.image_url].filter(Boolean)):[];
   const similarItems = sel ? items.filter(i=>i.id!==sel.id&&(i.category===sel.category||i.fabric===sel.fabric||i.origin===sel.origin)).slice(0,4) : [];
   const recentItems  = items.filter(i=>recentlyViewed.includes(i.id)&&(!sel||i.id!==sel.id)).slice(0,4);
@@ -1190,7 +1314,7 @@ export default function App() {
   // they remain always-visible in the navbar. Each onClick also closes whichever
   // menu was open so navigating dismisses the overlay.
   const navMenuItems = [
-    {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();setView("dashboard");}},
+    {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();setView("dashboard");}},
     {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
     {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
     {label:"MESSAGES",       run:openMessages},
@@ -1866,6 +1990,7 @@ export default function App() {
         notifyPromote={notifyPromote} promoteNotified={promoteNotified}
         bundles={bundles} bundleItems={bundleItems} loadBundles={loadBundles} deleteBundle={deleteBundle}
         bundleForm={bundleForm} setBundleForm={setBundleForm} toggleBundleListing={toggleBundleListing} createBundle={createBundle}
+        myLooks={myLooks} isAdmin={isAdmin} openCreateLook={openCreateLook} editLook={editLook} deleteLook={deleteLook}
       />
 
       {/* FEED */}
@@ -1918,6 +2043,28 @@ export default function App() {
         newListings={newListings} priceDrops={priceDrops} trendingItems={trendingItems}
         sellerRatings={sellerRatings} fastSellers={fastSellers}
         wishlistCounts={wishlistCounts} myWishlist={myWishlist} toggleFavourite={toggleFavourite}
+        looks={looks} openLook={openLook}
+      />
+
+      {/* SHOP THE LOOK — /looks page + look detail */}
+      <Looks
+        view={view} setView={setView}
+        looks={looks} lookFilter={lookFilter} setLookFilter={setLookFilter}
+        openLook={openLook}
+        selLook={selLook} selLookCreator={selLookCreator}
+        openDetail={openDetail} addLookToBag={addLookToBag}
+      />
+
+      {/* CREATE / EDIT A LOOK */}
+      <CreateLook
+        view={view} setView={setView} user={user} isAdmin={isAdmin}
+        lookForm={lookForm} setLookForm={setLookForm}
+        lookStep={lookStep} setLookStep={setLookStep}
+        lookSearch={lookSearch} setLookSearch={setLookSearch}
+        lookSearchResults={lookSearchResults} searchLookListings={searchLookListings}
+        addListingToLook={addListingToLook} removeListingFromLook={removeListingFromLook}
+        publishLook={publishLook} lookSaving={lookSaving}
+        editingLook={editingLook} flash={flash}
       />
 
       {/* DETAIL */}

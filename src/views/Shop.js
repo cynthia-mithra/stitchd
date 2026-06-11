@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Scissors, Zap, Heart, Bell, Ruler, Eye, ArrowDown, Sparkles, TrendingDown, Flame, Shirt } from "lucide-react";
+import { Search, Scissors, Zap, Heart, Bell, Ruler, Eye, ArrowDown, ArrowRight, Sparkles, TrendingDown, Flame, Shirt } from "lucide-react";
 import {
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, ALL_CATEGORIES,
   CONDITIONS, SIZES, OCC_COLOR, CARD_COLORS,
@@ -7,6 +7,7 @@ import {
 } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb, Stars } from "../components/Shared";
+import { LookCard } from "./Looks";
 
 export default function Shop({
   view,
@@ -29,6 +30,8 @@ export default function Shop({
   wishlistCounts = {},
   myWishlist = new Set(),
   toggleFavourite = () => {},
+  looks = [],
+  openLook = () => {},
 }) {
   if(view!=="shop") return null;
   // Small "⚡ FAST SELLER" badge for sellers flagged fast_seller=true on their profile.
@@ -221,6 +224,24 @@ export default function Shop({
           </div>
         )}
       </div>
+
+      {/* SHOP THE LOOK — curated outfit collections. Hidden entirely when no
+          looks exist or while the buyer is filtering/searching the grid. The rail
+          scrolls horizontally on mobile and is a 3-up grid on desktop. */}
+      {!hasFilters&&looks.length>0&&(
+        <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
+          <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:16,marginBottom:20,flexWrap:"wrap"}}>
+            <div>
+              <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(28px,5vw,40px)",fontWeight:900,letterSpacing:-0.5,lineHeight:1,color:"#111"}}>SHOP THE LOOK</h2>
+              <p style={{fontFamily:"'Barlow',sans-serif",fontSize:14,color:"#888",marginTop:4}}>Complete outfits, all pre-loved</p>
+            </div>
+            <button className="hbtn" style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#FF1493",textTransform:"uppercase",display:"inline-flex",alignItems:"center",gap:6,padding:0}} onClick={()=>setView("looks")}>VIEW ALL <ArrowRight width={15} height={15}/></button>
+          </div>
+          <div className="looks-grid looks-rail">
+            {looks.slice(0,6).map(look=><LookCard key={look.id} look={look} onOpen={openLook}/>)}
+          </div>
+        </div>
+      )}
 
       {/* NEW IN */}
       {!hasFilters&&newListings.length>0&&(

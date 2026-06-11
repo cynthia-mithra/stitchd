@@ -1,6 +1,6 @@
 import React from "react";
-import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square } from "lucide-react";
-import { CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
+import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers } from "lucide-react";
+import { CARD_COLORS, catEmoji, currencySymbol, lookListings, lookTotal } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Thumb } from "../components/Shared";
 import Analytics from "./Analytics";
@@ -74,6 +74,8 @@ export default function Dashboard({
   bundles, bundleItems, loadBundles, deleteBundle,
   // createbundle
   bundleForm, setBundleForm, toggleBundleListing, createBundle,
+  // Shop the Look (Phase 10e)
+  myLooks = [], isAdmin = false, openCreateLook = () => {}, editLook = () => {}, deleteLook = () => {},
 }) {
   // Split listings into ACTIVE vs SOLD (issue PART 4 — sold listings move to a
   // separate SOLD tab in the seller dashboard).
@@ -199,6 +201,39 @@ export default function Dashboard({
             ):dashTab==="tools"?(
               /* ── TOOLS TAB (Vacation mode + Promote) ──────────────────────────── */
               <div style={{display:"flex",flexDirection:"column",gap:3,maxWidth:680}}>
+                {/* Shop the Look — create & manage curated outfits (Phase 10e) */}
+                <div style={{border:"2px solid #111",padding:"24px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                    <Layers width={20} height={20} color="#FF1493"/>
+                    <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>SHOP THE LOOK</h3>
+                    {isAdmin&&<span style={{background:"#111",color:"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:900,letterSpacing:1,padding:"3px 8px"}}>ADMIN · STITCH'D</span>}
+                  </div>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>Curate an outfit from pieces across Stitch'd. Shoppers can add the whole look to their bag in one tap.</p>
+                  <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"2px solid #111",borderRadius:0,fontSize:13,padding:"12px 22px",display:"inline-flex",alignItems:"center",gap:7}} onClick={openCreateLook}><Plus width={16} height={16}/> CREATE A LOOK</button>
+                  {myLooks.length>0&&(
+                    <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:20}}>
+                      {myLooks.map(look=>{
+                        const listings=lookListings(look);
+                        return(
+                          <div key={look.id} style={{border:"2px solid #111",padding:"10px 12px",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                            <div style={{width:48,height:48,flexShrink:0,border:"2px solid #111",overflow:"hidden"}}>
+                              <Thumb src={look.cover_image_url||listings[0]?.image_url||(listings[0]?.images&&listings[0].images[0])||""} emoji={<Layers width={20} height={20}/>} accent="#fafafa" style={{width:"100%",height:"100%"}} emojiStyle={{color:"#111"}}/>
+                            </div>
+                            <div style={{flex:1,minWidth:120}}>
+                              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,color:"#111",lineHeight:1.1,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>{look.title} {!look.active&&<span style={{background:"#FF9500",color:"#fff",fontSize:10,fontWeight:800,letterSpacing:1,padding:"2px 6px"}}>DRAFT</span>}</p>
+                              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:"#999",letterSpacing:1}}>{listings.length} {listings.length===1?"PIECE":"PIECES"} · {currencySymbol()}{lookTotal(listings)}</p>
+                            </div>
+                            <div style={{display:"flex",gap:6}}>
+                              <button className="hbtn" style={{...S.dashBtn,background:"#111",color:"#fff"}} onClick={()=>editLook(look)}>EDIT</button>
+                              <button className="hbtn" style={{...S.dashBtn,background:"#fff",color:"#FF1493",border:"1.5px solid #FF1493"}} onClick={()=>deleteLook(look.id)}>DELETE</button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 {/* Tool 2 — Vacation mode */}
                 <div style={{border:"2px solid #111",padding:"24px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>

@@ -111,4 +111,24 @@ export const db = {
   async createTailorBooking(b,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_bookings`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
   async getMyTailorBookings(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_bookings?or=(tailor_id.eq.${uid},buyer_id.eq.${uid})&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async updateTailorBooking(id,patch,t){ await fetch(`${SUPABASE_URL}/rest/v1/tailor_bookings?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify(patch)}); },
+
+  // ── Phase 10e — Shop the Look ─────────────────────────────────────────────
+  // Each look is fetched WITH its items embedded, and each item WITH its listing
+  // embedded, in a single PostgREST request via the look_items / listings FKs.
+  // That gives the card everything it needs (piece count, total price, cover) and
+  // the detail view every listing — no per-item round-trips. Items are ordered by
+  // `position` client-side after the fetch.
+  async getActiveLooks(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/looks?active=eq.true&select=*,look_items(*,listings(*))&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async getLook(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/looks?id=eq.${id}&select=*,look_items(*,listings(*))&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
+  // A seller/admin's own looks (drafts included) for the TOOLS tab.
+  async getLooksByUser(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/looks?created_by=eq.${uid}&select=*,look_items(*,listings(*))&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async createLook(look,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/looks`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(look)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
+  async updateLook(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/looks?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
+  async deleteLook(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/looks?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
+  async addLookItem(item,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/look_items`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(item)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  // Replace a look's items wholesale (used on edit): delete then re-insert.
+  async clearLookItems(lookId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/look_items?look_id=eq.${lookId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
+  // Search listings by title across ALL sellers (case-insensitive, available
+  // only) for the create-a-look listing picker.
+  async searchListings(q,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?name=ilike.*${encodeURIComponent(q)}*&sold=eq.false&order=created_at.desc&limit=20`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
 };
