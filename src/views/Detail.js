@@ -150,7 +150,6 @@ export default function Detail({
               {!isOwner(sel)&&user&&(
                 <div style={{display:"flex",gap:10,marginBottom:24,flexWrap:"wrap"}}>
                   <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#FF9500",border:"2px solid #FF9500",fontSize:11,padding:"8px 14px"}} onClick={()=>setShowReview(true)}><Star width={14} height={14} fill="currentColor"/> LEAVE A REVIEW</button>
-                  <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#888",border:"2px solid #e0e0e0",fontSize:11,padding:"8px 14px"}} onClick={()=>setShowReport(true)}><Flag width={14} height={14}/> REPORT</button>
                 </div>
               )}
               {reviews.length>0&&(
@@ -203,6 +202,15 @@ export default function Detail({
                   );
                 })}
               </div>
+            </div>
+          )}
+          {/* REPORT THIS LISTING — small, unobtrusive link at the very bottom of the
+              page. Logged-in users only (issue PART 1). */}
+          {user&&(
+            <div style={{display:"flex",justifyContent:"center",marginTop:40}}>
+              <button type="button" onClick={()=>setShowReport(true)} style={{display:"inline-flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:0.5,color:"#999",padding:6}}>
+                <Flag width={14} height={14}/> Report this listing
+              </button>
             </div>
           )}
         </main>

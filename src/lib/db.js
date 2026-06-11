@@ -69,6 +69,32 @@ export const db = {
   async removeWishlist(uid,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?user_id=eq.${uid}&listing_id=eq.${listingId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   async insertReview(review,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(review)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async insertReport(report,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reports`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(report)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  // ── Phase 11 — Report a listing + dispute resolution ──────────────────────
+  // The Stitch'd admin account(s) — profiles flagged is_admin=true. Dispute
+  // notifications are routed to every admin id this returns.
+  async getAdmins(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_admin=eq.true&select=id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // Buyer raising a problem with an order. Self-heals like the listing insert: if
+  // the schema is missing an optional column (e.g. photo_url, seller_id) drop it
+  // and retry so the dispute still records rather than failing wholesale.
+  async insertDispute(dispute,t){
+    const url=`${SUPABASE_URL}/rest/v1/disputes`; let payload={...dispute};
+    for(let i=0;i<10;i++){
+      const r=await fetch(url,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+      if(r.ok){ const d=await r.json(); return d[0]; }
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&col!=="problem_type"&&col!=="details"&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't submit the dispute.");
+  },
+  // Admin panel reads. Reports embed their listing (title) via the listing_id FK;
+  // reporter/buyer names are resolved separately with getProfilesByIds.
+  async getAllReports(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reports?select=*,listings(id,name)&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/reports?order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
+  async updateReport(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  // Embed the order (for its listing_id) where the FK is known to PostgREST; fall
+  // back to a plain select if the embed isn't available on this deployment.
+  async getAllDisputes(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/disputes?select=*,orders(id,listing_id,status)&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/disputes?order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
+  async updateDispute(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/disputes?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async getConversations(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/conversations?or=(buyer_id.eq.${uid},seller_id.eq.${uid})&order=last_message_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async findConversation(buyerId,sellerId,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/conversations?buyer_id=eq.${buyerId}&seller_id=eq.${sellerId}&listing_id=eq.${listingId}&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   async createConversation(conv,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/conversations`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(conv)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
