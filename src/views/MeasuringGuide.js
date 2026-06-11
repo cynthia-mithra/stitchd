@@ -1,10 +1,5 @@
 import React, { useState } from "react";
 
-// Saree measurement guide image. Served from /public like every other image in
-// the app (e.g. Shop.js uses /Images/*.png). PUBLIC_URL keeps the path correct
-// regardless of where the app is deployed.
-const SAREE_MEASUREMENTS = `${process.env.PUBLIC_URL || ""}/Images/saree-measurements.png`;
-
 /* ------------------------------------------------------------------ *
  * How to Measure — gender toggle, garment-specific accordions,
  * inline SVG body diagrams with numbered measurement markers.
@@ -23,6 +18,9 @@ const GARMENTS = {
     {
       key: "saree",
       name: "Saree",
+      // Custom measurement image replaces the SVG diagram + numbered legend.
+      // The image already includes the numbered legend.
+      image: "/Images/saree-measurements.png",
       marks: [
         ["Blouse bust", "Around the fullest part of the chest", 100, 92],
         ["Blouse waist", "Around the natural waist", 100, 126],
@@ -34,6 +32,9 @@ const GARMENTS = {
     {
       key: "lehenga",
       name: "Lehenga",
+      // Custom measurement image replaces the SVG diagram + numbered legend.
+      // The image already includes the numbered legend.
+      image: "/Images/lehenga-measurements.png",
       marks: [
         ["Waist", "Around the natural waist", 100, 146],
         ["Hip", "Around the fullest part of the hips, 8 inches below waist", 100, 182],
@@ -262,7 +263,6 @@ function NumBadge({ n }) {
 }
 
 function GarmentSection({ gender, garment, open, onToggle }) {
-  const [imgError, setImgError] = useState(false);
   return (
     <div style={{ border: "2px solid #111", marginBottom: 14, background: "#fff" }}>
       <button
@@ -290,70 +290,52 @@ function GarmentSection({ gender, garment, open, onToggle }) {
         <span style={{ color: PINK, fontSize: 26, lineHeight: 1 }}>{open ? "–" : "+"}</span>
       </button>
       {open && (
-        garment.key === "saree" ? (
-          // Saree uses a custom image that already includes the numbered legend.
+        garment.image ? (
           <div style={{ padding: "20px 18px", borderTop: "2px solid #111" }}>
-            {imgError ? (
-              <div
-                style={{
-                  padding: "24px 18px",
-                  textAlign: "center",
-                  fontFamily: BC,
-                  fontSize: 16,
-                  color: PINK,
-                  border: "2px dashed " + PINK,
-                }}
-              >
-                Saree guide image failed to load (404). The static file isn’t being
-                served at <code>{SAREE_MEASUREMENTS}</code>.
-              </div>
-            ) : (
-              <img
-                src={SAREE_MEASUREMENTS}
-                alt="How to measure a saree — blouse bust, waist, length, saree length, sleeve length"
-                onError={() => setImgError(true)}
-                style={{ width: "100%", maxWidth: 800, height: "auto", display: "block", margin: "0 auto" }}
-              />
-            )}
+            <img
+              src={garment.image}
+              alt="How to measure a lehenga — waist, hip, lehenga length, blouse bust, blouse waist, blouse length"
+              style={{ width: "100%", maxWidth: "800px", height: "auto", display: "block", margin: "0 auto" }}
+            />
           </div>
         ) : (
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 24,
-              padding: "20px 18px",
-              borderTop: "2px solid #111",
-            }}
-          >
-            <div style={{ flex: "1 1 200px", minWidth: 180, maxWidth: 260 }}>
-              <BodyDiagram gender={gender} marks={garment.marks} />
-            </div>
-            <ol style={{ flex: "2 1 280px", listStyle: "none", margin: 0, padding: 0 }}>
-              {garment.marks.map((m, i) => (
-                <li
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 12,
-                    padding: "10px 0",
-                    borderBottom: i < garment.marks.length - 1 ? "1px solid #f0f0f0" : "none",
-                  }}
-                >
-                  <NumBadge n={i + 1} />
-                  <span style={{ paddingTop: 1 }}>
-                    <span style={{ fontFamily: BC, fontSize: 17, fontWeight: 800, color: "#111" }}>
-                      {m[0]}
-                    </span>
-                    <span style={{ fontSize: 13.5, color: "#666", display: "block", lineHeight: 1.4 }}>
-                      {m[1]}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ol>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 24,
+            padding: "20px 18px",
+            borderTop: "2px solid #111",
+          }}
+        >
+          <div style={{ flex: "1 1 200px", minWidth: 180, maxWidth: 260 }}>
+            <BodyDiagram gender={gender} marks={garment.marks} />
           </div>
+          <ol style={{ flex: "2 1 280px", listStyle: "none", margin: 0, padding: 0 }}>
+            {garment.marks.map((m, i) => (
+              <li
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 12,
+                  padding: "10px 0",
+                  borderBottom: i < garment.marks.length - 1 ? "1px solid #f0f0f0" : "none",
+                }}
+              >
+                <NumBadge n={i + 1} />
+                <span style={{ paddingTop: 1 }}>
+                  <span style={{ fontFamily: BC, fontSize: 17, fontWeight: 800, color: "#111" }}>
+                    {m[0]}
+                  </span>
+                  <span style={{ fontSize: 13.5, color: "#666", display: "block", lineHeight: 1.4 }}>
+                    {m[1]}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
         )
       )}
     </div>
