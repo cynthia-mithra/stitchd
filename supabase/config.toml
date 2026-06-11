@@ -1,0 +1,20 @@
+# Supabase project config.
+# `project_id` is the project ref these functions deploy to. After `supabase
+# link --project-ref zhstooqgkyuzxseylsbk`, the CLI reads the [functions.*]
+# blocks below so each deploy applies the correct JWT setting automatically.
+project_id = "zhstooqgkyuzxseylsbk"
+
+# Stripe calls this endpoint with a Stripe signature, NOT a Supabase JWT, so JWT
+# verification must be OFF or every webhook delivery returns 401. (Auth here is
+# the Stripe signature check inside the function.)
+[functions.stripe-webhook]
+verify_jwt = false
+
+# Called from the browser before the user is necessarily signed in; it does its
+# own price lookups server-side, so it doesn't rely on the caller's JWT.
+[functions.stripe-checkout]
+verify_jwt = false
+
+# Called from the /order-success page with just the Stripe session_id.
+[functions.verify-session]
+verify_jwt = false
