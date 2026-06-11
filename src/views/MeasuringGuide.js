@@ -18,6 +18,9 @@ const GARMENTS = {
     {
       key: "saree",
       name: "Saree",
+      // Custom measurement image replaces the SVG diagram + numbered legend.
+      // The image already includes the numbered legend.
+      image: "/Images/saree-measurements.png",
       marks: [
         ["Blouse bust", "Around the fullest part of the chest", 100, 92],
         ["Blouse waist", "Around the natural waist", 100, 126],
