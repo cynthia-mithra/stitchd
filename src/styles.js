@@ -154,7 +154,12 @@ export const S={
   mobileNavItem:{background:"#fff",border:"none",borderBottom:"2px solid #111",textAlign:"left",minHeight:48,padding:"0 20px",fontSize:18,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,color:"#111",textTransform:"uppercase",display:"flex",alignItems:"center"},
   ticker:{background:"#FF1493",overflow:"hidden",borderBottom:"2px solid #111",height:36,display:"flex",alignItems:"center"},
   tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2.5,color:"#fff",animation:"ticker 22s linear infinite",paddingLeft:"100%"},
-  toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"12px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,zIndex:999,borderRadius:0,whiteSpace:"nowrap",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"},
+  // letterSpacing is kept tight (1) and the toast is allowed to WRAP: error toasts
+  // append the real PostgREST reason (e.g. "…violates row-level security policy"),
+  // and the old whiteSpace:"nowrap" + letterSpacing:3 made long messages overflow
+  // off both edges of the centred toast — leaving only the middle ("Failed to save
+  // profile") on screen and hiding the actual cause. maxWidth + word wrap keep it visible.
+  toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"12px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,zIndex:999,borderRadius:0,maxWidth:"min(90vw,520px)",textAlign:"center",lineHeight:1.4,overflowWrap:"anywhere",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"},
   hero:{borderBottom:"3px solid #111",display:"flex",minHeight:"80vh",overflow:"hidden"},
   heroLeft:{flex:"0 0 55%",padding:"40px 32px",borderRight:"3px solid #111",display:"flex",flexDirection:"column",justifyContent:"center"},
   heroTag:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:20},
