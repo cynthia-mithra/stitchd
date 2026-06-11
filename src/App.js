@@ -1032,7 +1032,7 @@ export default function App() {
       const [saved]=await db.upsertProfile(p,token);
       setProfile(saved); setProfForm(f=>({...f,avatar_url,avatarFile:null,avatarPreview:avatar_url}));
       flash("✓ Profile saved!");
-    }catch(e){ console.error("Profile save failed:",e); flash(`Failed to save profile: ${errMsg(e)}`); }
+    }catch(e){ console.error("Profile save failed:",e); flash(`Failed to save profile: ${errMsg(e)}`,9000); }
     finally{ setProfSaving(false); }
   }
 
