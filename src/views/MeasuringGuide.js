@@ -304,7 +304,7 @@ function GarmentSection({ gender, garment, open, onToggle }) {
           <div style={{ padding: "20px 18px", borderTop: "2px solid #111" }}>
             <img
               src={garment.image}
-              alt={`How to measure a ${garment.name.toLowerCase()} — labelled measurement diagram`}
+              alt="How to measure a lehenga — waist, hip, lehenga length, blouse bust, blouse waist, blouse length"
               style={{ width: "100%", maxWidth: "800px", height: "auto", display: "block", margin: "0 auto" }}
             />
           </div>
