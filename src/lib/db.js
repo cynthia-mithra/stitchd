@@ -10,6 +10,13 @@ import { SUPABASE_URL, hdrs } from "./constants";
 // grid thumbnail falls back to `images`), which is a far better outcome than a
 // total save failure for a non-technical user who can't run migrations.
 const missingColumn=msg=>{ const m=/Could not find the '([^']+)' column/.exec(msg||""); return m?m[1]:null; };
+// A column PostgREST/Postgres names in a *non*-missing error we can recover from
+// by dropping it: a NOT NULL violation on a column we sent as null, or a type
+// mismatch (e.g. the table has `specialises_in text` but we send a text[]).
+// Postgres phrases these as `null value in column "X" …` / `column "X" is of
+// type … but expression is of type …`. RLS / permission errors never name a
+// column this way, so this never masks an auth failure.
+const recoverableColumn=msg=>{ const m=/column "([^"]+)"/.exec(msg||""); return m?m[1]:null; };
 async function sendHealing(url,method,body,t){
   let payload={...body}; const dropped=[];
   // Cap iterations well above the column count so a pathological response can't loop forever.
@@ -39,12 +46,31 @@ export const db = {
   // never dropped. The bundled migration adds the missing columns so nothing is
   // dropped on an up-to-date schema; this keeps saves working on older ones.
   async upsertProfile(profile,t){
-    let payload={...profile}; const dropped=[];
+    // The columns a basic profile edit always sets. If the save fails for a
+    // reason we can't pin to a single droppable column (e.g. an optional column
+    // has the wrong type and we can't parse its name), we retry ONCE with just
+    // these so a problem with a tailor / measurement / array column can never
+    // block saving a name, avatar or bio. `id` is the conflict target.
+    const CORE=["id","username","full_name","avatar_url","bio","location","region","currency"];
+    let payload={...profile}; const dropped=[]; let triedCore=false;
+    const has=k=>Object.prototype.hasOwnProperty.call(payload,k);
     for(let i=0;i<60;i++){
       const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation,resolution=merge-duplicates"},body:JSON.stringify(payload)});
-      if(r.ok){ if(dropped.length)console.warn(`Profile saved after dropping column(s) missing from your 'profiles' table: ${dropped.join(", ")}. Add them in Supabase to persist these fields.`); return r.json(); }
-      const text=await r.text(); const col=missingColumn(text);
-      if(col&&col!=="id"&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; dropped.push(col); continue; }
+      if(r.ok){ if(dropped.length)console.warn(`Profile saved after dropping field(s) your 'profiles' table can't store: ${dropped.join(", ")}. Apply the migration in Supabase to persist these.`); return r.json(); }
+      const text=await r.text();
+      // 1) A missing column (PGRST204) — drop it and retry.
+      const miss=missingColumn(text);
+      if(miss&&miss!=="id"&&has(miss)){ delete payload[miss]; dropped.push(miss); continue; }
+      // 2) A NOT NULL / type error that names a non-core column — drop it so the
+      //    rest still saves (a NOT NULL column then falls back to its DB default).
+      const bad=recoverableColumn(text);
+      if(bad&&!CORE.includes(bad)&&has(bad)){ delete payload[bad]; dropped.push(bad); continue; }
+      // 3) Last resort: anything else that isn't clearly auth/RLS — retry once
+      //    with only the core columns, in case an optional column is the culprit.
+      if(!triedCore&&!/(row-level security|permission|not authorized|JWT|policy)/i.test(text)){
+        triedCore=true; const core={}; CORE.forEach(k=>{ if(Object.prototype.hasOwnProperty.call(profile,k)) core[k]=profile[k]; });
+        if(Object.keys(core).length<Object.keys(payload).length){ payload=core; dropped.push("optional profile fields"); continue; }
+      }
       throw new Error(text);
     }
     throw new Error("Couldn't save: too many columns are missing from the 'profiles' table.");

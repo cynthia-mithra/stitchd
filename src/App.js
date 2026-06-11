@@ -1032,7 +1032,17 @@ export default function App() {
       const [saved]=await db.upsertProfile(p,token);
       setProfile(saved); setProfForm(f=>({...f,avatar_url,avatarFile:null,avatarPreview:avatar_url}));
       flash("✓ Profile saved!");
-    }catch(e){ console.error("Profile save failed:",e); flash(`Failed to save profile: ${errMsg(e)}`,9000); }
+    }catch(e){
+      console.error("Profile save failed:",e);
+      const raw=errMsg(e), low=raw.toLowerCase();
+      // Translate the two causes the JS can't fix on its own into plain English.
+      let msg=`Failed to save profile: ${raw}`;
+      if(/row-level security|not authorized|permission denied|violates .*policy/.test(low))
+        msg="Couldn't save: the database is blocking profile writes (row-level security). The fix needs the migration in PR #98 applied to Supabase — see the steps on that PR.";
+      else if(low.includes("duplicate key")||(low.includes("unique")&&low.includes("username")))
+        msg="That username is already taken — please choose a different one.";
+      flash(msg,9000);
+    }
     finally{ setProfSaving(false); }
   }
 
