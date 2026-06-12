@@ -18,3 +18,11 @@ verify_jwt = false
 # Called from the /order-success page with just the Stripe session_id.
 [functions.verify-session]
 verify_jwt = false
+
+# Phase 12 — transactional email sender. Called from the browser data layer
+# (db.js fireEmail) and from other Edge Functions, neither of which presents a
+# Supabase JWT, so verification must be OFF. The function does its own auth: the
+# raw {to,subject,html} path requires the service-role bearer; the templated path
+# only ever sends predefined brand templates to server-resolved recipients.
+[functions.send-email]
+verify_jwt = false
