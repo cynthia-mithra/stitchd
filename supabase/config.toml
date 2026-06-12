@@ -26,3 +26,11 @@ verify_jwt = false
 # only ever sends predefined brand templates to server-resolved recipients.
 [functions.send-email]
 verify_jwt = false
+
+# Phase 12 — saved-search alert sweep. Invoked by the pg_cron schedule (every 6h)
+# and fire-and-forget from the browser data layer right after a listing is
+# published — neither presents a Supabase JWT, so verification must be OFF. It
+# only ever sends predefined brand templates to server-resolved recipients and
+# reads/writes via the service role.
+[functions.saved-search-alerts]
+verify_jwt = false

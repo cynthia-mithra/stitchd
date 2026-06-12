@@ -1,9 +1,9 @@
 import React from "react";
-import { Search, Scissors, Zap, Heart, Bell, Ruler, Eye, ArrowDown, ArrowRight, Sparkles, TrendingDown, Flame, Shirt, BadgeCheck } from "lucide-react";
+import { Search, Scissors, Zap, Heart, Ruler, Eye, ArrowDown, ArrowRight, Sparkles, TrendingDown, Flame, Shirt, BadgeCheck, Bookmark } from "lucide-react";
 import {
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, ALL_CATEGORIES,
   CONDITIONS, SIZES, OCCASIONS, COLOURS, OCC_COLOR, CARD_COLORS,
-  catEmoji, currencySymbol, colourSwatchBg,
+  catEmoji, currencySymbol, colourSwatchBg, filterSummary,
 } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, ColourSwatches } from "../components/Shared";
@@ -15,7 +15,7 @@ export default function Shop({
   search, setSearch, handleSearchInput,
   searchSuggestions, showSuggestions, setShowSuggestions,
   savedSearches, showSavedSearches, setShowSavedSearches,
-  applySearch, saveCurrentSearch, deleteSavedSearch,
+  applySearch, applySavedSearch = () => {}, openSaveSearch = () => {}, deleteSavedSearch,
   showFilters, setShowFilters, hasFilters, clearFilters,
   typeFilter, setTypeFilter, condFilter, setCondFilter,
   catFilter, setCatFilter, sizeFilter, setSizeFilter,
@@ -141,10 +141,13 @@ export default function Shop({
               onBlur={()=>setTimeout(()=>{ setShowSuggestions(false); setShowSavedSearches(false); },200)}
             />
             {search&&<button style={S.searchClear} onClick={()=>{setSearch("");setShowSuggestions(false);}}>✕</button>}
-            {search&&user&&<button style={{...S.searchClear,color:"#FF1493",fontSize:10,fontWeight:800,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,whiteSpace:"nowrap",paddingRight:12}} onClick={saveCurrentSearch}><span style={{display:"inline-flex",alignItems:"center",gap:4}}><Bell width={12} height={12}/> SAVE</span></button>}
           </div>
           <button className="hbtn search-action-btn" style={{...S.filterBtn,background:showFilters?"#FF1493":"#fff",color:showFilters?"#fff":"#111"}} onClick={()=>setShowFilters(f=>!f)}>FILTERS {hasFilters?"●":""}</button>
           {user&&profile?.bust&&<button className="hbtn search-action-btn" style={{...S.filterBtn,background:showSizeMatch?"#34C759":"#fff",color:showSizeMatch?"#fff":"#111"}} onClick={()=>setShowSizeMatch(f=>!f)}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Ruler width={16} height={16}/> FIT</span></button>}
+          {/* Phase 12 — SAVE THIS SEARCH. Appears once any filter or query is
+              active. Logged-out buyers are prompted to log in on tap (handled in
+              openSaveSearch). Outlined, 2px #111, no radius, Barlow Condensed. */}
+          {hasFilters&&<button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={openSaveSearch}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Bookmark width={15} height={15}/> SAVE THIS SEARCH</span></button>}
           <button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailorMarket();setView("tailors");}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Scissors width={16} height={16}/> TAILORS</span></button>
         </div>
         {(showSuggestions&&searchSuggestions.length>0)||(showSavedSearches&&savedSearches.length>0)?(
@@ -154,8 +157,8 @@ export default function Shop({
                 <div style={{padding:"8px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:900,letterSpacing:2,color:"#bbb",borderBottom:"1px solid #f0f0f0"}}>SAVED SEARCHES</div>
                 {savedSearches.map(s=>(
                   <div key={s.id} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderBottom:"1px solid #f5f5f5",cursor:"pointer",gap:10}}>
-                    <span style={{display:"flex",alignItems:"center",color:"#FF1493"}}><Bell width={15} height={15}/></span>
-                    <span style={{flex:1,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#111"}} onClick={()=>applySearch(s.query)}>{s.query}</span>
+                    <span style={{display:"flex",alignItems:"center",color:"#FF1493"}}><Bookmark width={15} height={15} fill={s.email_alerts!==false?"#FF1493":"none"}/></span>
+                    <span style={{flex:1,minWidth:0,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} onMouseDown={()=>applySavedSearch(s)}>{(s.name&&s.name.trim())||filterSummary(s.filters)||s.query}</span>
                     <button style={{background:"none",border:"none",color:"#bbb",cursor:"pointer",fontSize:12,fontWeight:900,padding:"2px 6px"}} onClick={()=>deleteSavedSearch(s.id)}>✕</button>
                   </div>
                 ))}

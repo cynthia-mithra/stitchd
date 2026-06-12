@@ -6,14 +6,14 @@ import {
   OCCASIONS, SIZES, OCC_COLOR, CARD_COLORS, EMPTY_FORM, POSTAGE_OPTIONS,
   catEmoji, currencySymbol, buildPaymentSummary,
   garmentTypesFor, garmentFieldsFor, defaultGarmentFor, parseMeasurements, buildMeasPayload,
-  ADMIN_EMAIL, lookListings,
+  ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary,
 } from "./lib/constants";
 import { db } from "./lib/db";
 import { startCheckout, verifySession } from "./lib/checkout";
 import { startIdentityVerification } from "./lib/identity";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import Tailors from "./views/Tailors";
 import Detail from "./views/Detail";
@@ -25,6 +25,7 @@ import Feed from "./views/Feed";
 import Orders from "./views/Orders";
 import Looks from "./views/Looks";
 import CreateLook from "./views/CreateLook";
+import SavedSearches from "./views/SavedSearches";
 import Legal, { LEGAL_VIEWS } from "./views/Legal";
 import Footer from "./components/Footer";
 
@@ -114,6 +115,11 @@ export default function App() {
   const [showSuggestions,   setShowSuggestions]   = useState(false);
   const [savedSearches,     setSavedSearches]     = useState([]);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
+  // Phase 12 — the "SAVE THIS SEARCH" modal (name + email-alert toggle).
+  const [showSaveSearch,    setShowSaveSearch]    = useState(false);
+  const [saveSearchName,    setSaveSearchName]    = useState("");
+  const [saveSearchAlerts,  setSaveSearchAlerts]  = useState(true);
+  const [savingSearch,      setSavingSearch]      = useState(false);
   const [catFilter, setCatFilter] = useState("All");
   const [sizeFilter,setSizeFilter]= useState("All");
   // Phase 12 — multi-select occasion + colour filters. Each is an array of the
@@ -343,6 +349,29 @@ export default function App() {
     };
     window.addEventListener("popstate",onPop);
     return ()=>window.removeEventListener("popstate",onPop);
+  },[]);
+
+  // Phase 12 — deep links from the saved-search alert email. "SEE ALL MATCHES"
+  // carries the saved filters as a base64url `sf` param so the shop pre-applies
+  // them on a cold load; "Manage your saved searches" lands on /saved-searches.
+  // Both clear the param/path afterwards so a refresh doesn't re-trigger.
+  useEffect(()=>{
+    const path=window.location.pathname.replace(/\/+$/,"");
+    const params=new URLSearchParams(window.location.search);
+    const sf=params.get("sf");
+    if(sf){
+      try{
+        const bin=atob(sf.replace(/-/g,"+").replace(/_/g,"/"));
+        const json=decodeURIComponent(Array.prototype.map.call(bin,c=>"%"+("00"+c.charCodeAt(0).toString(16)).slice(-2)).join(""));
+        const filters=JSON.parse(json);
+        if(filters&&typeof filters==="object") applySavedSearch({filters});
+      }catch{ /* malformed link — ignore, land on the shop */ }
+      window.history.replaceState({},"","/");
+    } else if(path==="/saved-searches"){
+      setView("saved-searches");
+      window.history.replaceState({},"","/saved-searches");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
   // Footer navigation: switch to a legal `view` without a full reload and push the
@@ -797,18 +826,63 @@ export default function App() {
     setSavedSearches(searches);
   }
 
-  async function saveCurrentSearch(){
-    if(!search.trim()||!user){ flash("Sign in to save searches!"); return; }
+  // The live shop filter state captured into the saved_searches `filters` shape.
+  const currentFilters = ()=>buildSearchFilters({query:search,catFilter,sizeFilter,minPrice,maxPrice,typeFilter,condFilter,occFilter,colourFilter,verifiedOnly:showVerifiedOnly});
+
+  // Open the SAVE THIS SEARCH modal (issue PART 2). Logged-out buyers are sent to
+  // log in first; there must be at least one active filter/query to save.
+  function openSaveSearch(){
+    if(!user){ flash("Log in to save searches and get alerts!"); setAuthMode("login"); setView("auth"); return; }
+    if(!hasFilters){ flash("Apply a filter or type a search first, then save it."); return; }
+    setSaveSearchName(""); setSaveSearchAlerts(true); setShowSaveSearch(true);
+    setShowSuggestions(false); setShowSavedSearches(false);
+  }
+
+  // Persist the current filters as a saved search with the chosen name + alert
+  // preference. `query` is kept as a top-level column for the legacy quick-pick
+  // dropdown; the full criteria live in `filters` (what the alert function reads).
+  async function confirmSaveSearch(){
+    if(!user||!token){ flash("Log in to save searches!"); return; }
+    setSavingSearch(true);
     try{
-      await db.saveSearch({user_id:user.id,query:search,filters:{catFilter,sizeFilter,minPrice,maxPrice,typeFilter}},token);
+      await db.saveSearch({user_id:user.id,name:saveSearchName.trim()||null,query:search||"",filters:currentFilters(),email_alerts:saveSearchAlerts},token);
       await loadSavedSearches();
-      flash("🔔 Search saved! We'll notify you of new matches.");
+      setShowSaveSearch(false);
+      flash(saveSearchAlerts?"🔖 Search saved! We'll email you when new listings match.":"🔖 Search saved!");
     }catch(e){ flash("Failed to save search."); }
+    finally{ setSavingSearch(false); }
   }
 
   async function deleteSavedSearch(id){
-    try{ await db.deleteSavedSearch(id,token); setSavedSearches(p=>p.filter(s=>s.id!==id)); }
+    try{ await db.deleteSavedSearch(id,token); setSavedSearches(p=>p.filter(s=>s.id!==id)); flash("Saved search removed."); }
     catch(e){ flash("Failed to delete."); }
+  }
+
+  // Toggle a saved search's email alerts on/off from the saved-searches page.
+  // Optimistic: flip locally, then PATCH; revert + toast on failure.
+  async function toggleSavedSearchAlerts(id,on){
+    setSavedSearches(p=>p.map(s=>s.id===id?{...s,email_alerts:on}:s));
+    try{ await db.updateSavedSearch(id,{email_alerts:on},token); }
+    catch(e){ setSavedSearches(p=>p.map(s=>s.id===id?{...s,email_alerts:!on}:s)); flash("Couldn't update alerts."); }
+  }
+
+  // Restore a saved search's filters back onto the shop and navigate there
+  // (SEARCH NOW / quick-pick dropdown). Accepts the full row; falls back to the
+  // legacy `query`-only string for the oldest saved rows.
+  function applySavedSearch(s){
+    const f=(s&&typeof s==="object"&&s.filters&&typeof s.filters==="object")?s.filters:(typeof s==="string"?{query:s}:{});
+    setSearch(f.query||"");
+    setCatFilter(f.category||"All");
+    setTypeFilter(f.type||"All");
+    setSizeFilter(f.size||"All");
+    setCondFilter(f.condition||"All");
+    setMinPrice(f.min_price!=null?String(f.min_price):"");
+    setMaxPrice(f.max_price!=null?String(f.max_price):"");
+    setOccFilter(Array.isArray(f.occasion)?[...f.occasion]:[]);
+    setColourFilter(Array.isArray(f.colour)?[...f.colour]:[]);
+    setShowVerifiedOnly(!!f.verified_only);
+    setShowSuggestions(false); setSearchSuggestions([]); setShowSavedSearches(false);
+    setView("shop"); window.scrollTo(0,0);
   }
 
   function applySearch(q){ setSearch(q); setShowSuggestions(false); setSearchSuggestions([]); }
@@ -1312,6 +1386,10 @@ export default function App() {
       if(urls.length&&!created.image_url){ flash("⚠️ Listed — but the photo couldn't be saved: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase so photos persist.",11000); }
       else{ flash("🩷 Listed!"); }
       setView("shop");
+      // Phase 12 PART 5 — kick the saved-search alert sweep so buyers whose saved
+      // filters match this fresh listing are emailed within minutes rather than
+      // waiting up to 6 hours for the cron run. Fire-and-forget; never blocks.
+      if(created?.id) db.triggerSavedSearchAlerts(created.id);
       // The listing is already saved at this point. Notifying followers is a
       // best-effort extra — if it throws (e.g. a follows/notifications RLS issue)
       // it must NOT fall into the catch below and show a false "Couldn't save
@@ -1638,6 +1716,7 @@ export default function App() {
     {label:"✦ NEW ARRIVALS", run:()=>{clearFilters();setView("newarrivals");}},
     {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();setView("dashboard");}},
     {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
+    {label:"SAVED SEARCHES",  run:()=>{loadSavedSearches();setView("saved-searches");}},
     {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
     {label:"MESSAGES",       run:openMessages},
     {label:"MY PROFILE",     run:()=>{load2FAFactors();setView("editprofile");}},
@@ -2081,6 +2160,49 @@ export default function App() {
         );
       })()}
 
+      {/* SAVE THIS SEARCH MODAL (issue PART 2) — name the search + choose whether
+          to get email alerts, with a summary of the filters being saved. */}
+      {showSaveSearch&&(()=>{
+        const summary=filterSummary(currentFilters());
+        return (
+        <div style={S.modalOverlay} onClick={()=>!savingSearch&&setShowSaveSearch(false)}>
+          <div style={{background:"#fff",border:"3px solid #111",borderRadius:0,padding:28,maxWidth:460,width:"100%",maxHeight:"88vh",overflowY:"auto",fontFamily:"'Barlow Condensed',sans-serif"}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+              <h3 style={{fontSize:26,fontWeight:900,letterSpacing:0.5,display:"inline-flex",alignItems:"center",gap:10,margin:0}}><Bookmark width={22} height={22}/> SAVE THIS SEARCH</h3>
+              <button aria-label="Close" style={{background:"none",border:"none",cursor:"pointer",padding:2}} onClick={()=>setShowSaveSearch(false)}><X width={20} height={20}/></button>
+            </div>
+            <p style={{fontSize:14,color:"#888",margin:"0 0 18px"}}>We'll keep an eye out and email you when new listings match.</p>
+
+            <label style={{display:"block",fontSize:12,fontWeight:800,letterSpacing:1.5,color:"#111",marginBottom:6,textTransform:"uppercase"}}>Give this search a name (optional)</label>
+            <input
+              value={saveSearchName}
+              onChange={e=>setSaveSearchName(e.target.value)}
+              placeholder="e.g. Pink wedding lehengas under £200"
+              maxLength={80}
+              style={{...S.inp,fontFamily:"'Barlow Condensed',sans-serif",marginBottom:18}}
+            />
+
+            {/* Filter summary being saved */}
+            <div style={{border:"2px solid #111",borderRadius:0,background:"#fafafa",padding:"12px 14px",marginBottom:18}}>
+              <div style={{fontSize:10,fontWeight:900,letterSpacing:2,color:"#bbb",marginBottom:4}}>SAVING</div>
+              <div style={{fontSize:16,fontWeight:800,color:"#111",letterSpacing:0.3,lineHeight:1.3}}>{summary}</div>
+            </div>
+
+            {/* Email-alert toggle — #FF1493 active state */}
+            <button type="button" onClick={()=>setSaveSearchAlerts(v=>!v)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",background:"none",border:"none",cursor:"pointer",padding:0,marginBottom:22,fontFamily:"'Barlow Condensed',sans-serif"}}>
+              <span style={{fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.5,display:"inline-flex",alignItems:"center",gap:8}}><Bell width={16} height={16}/> Email me when new listings match</span>
+              <span style={{width:48,height:26,borderRadius:0,border:"2px solid #111",background:saveSearchAlerts?"#FF1493":"#fff",position:"relative",flexShrink:0,transition:"background .15s"}}>
+                <span style={{position:"absolute",top:2,left:saveSearchAlerts?24:2,width:18,height:18,background:saveSearchAlerts?"#fff":"#111",transition:"left .15s"}}/>
+              </span>
+            </button>
+
+            <button type="button" onClick={confirmSaveSearch} disabled={savingSearch} style={{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px",fontSize:15,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",cursor:savingSearch?"not-allowed":"pointer",opacity:savingSearch?0.5:1,textTransform:"uppercase"}}>{savingSearch?"SAVING…":"SAVE"}</button>
+            <button type="button" onClick={()=>setShowSaveSearch(false)} style={{display:"block",margin:"14px auto 0",background:"none",border:"none",color:"#999",fontSize:13,fontWeight:800,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase"}}>Cancel</button>
+          </div>
+        </div>
+        );
+      })()}
+
       {/* SIZE GUIDE MODAL */}
       {showSizeGuide&&(
         <div style={S.modalOverlay} onClick={()=>setShowSizeGuide(false)}>
@@ -2441,7 +2563,7 @@ export default function App() {
         search={search} setSearch={setSearch} handleSearchInput={handleSearchInput}
         searchSuggestions={searchSuggestions} showSuggestions={showSuggestions} setShowSuggestions={setShowSuggestions}
         savedSearches={savedSearches} showSavedSearches={showSavedSearches} setShowSavedSearches={setShowSavedSearches}
-        applySearch={applySearch} saveCurrentSearch={saveCurrentSearch} deleteSavedSearch={deleteSavedSearch}
+        applySearch={applySearch} applySavedSearch={applySavedSearch} openSaveSearch={openSaveSearch} deleteSavedSearch={deleteSavedSearch}
         showFilters={showFilters} setShowFilters={setShowFilters} hasFilters={hasFilters} clearFilters={clearFilters}
         typeFilter={typeFilter} setTypeFilter={setTypeFilter} condFilter={condFilter} setCondFilter={setCondFilter}
         catFilter={catFilter} setCatFilter={setCatFilter} sizeFilter={sizeFilter} setSizeFilter={setSizeFilter}
@@ -2457,6 +2579,15 @@ export default function App() {
         sellerRatings={sellerRatings} fastSellers={fastSellers} verifiedSellers={verifiedSellers}
         wishlistCounts={wishlistCounts} myWishlist={myWishlist} toggleFavourite={toggleFavourite}
         looks={looks} openLook={openLook}
+      />
+
+      {/* MY SAVED SEARCHES */}
+      <SavedSearches
+        view={view} setView={setView} user={user} setAuthMode={setAuthMode}
+        savedSearches={savedSearches}
+        applySavedSearch={applySavedSearch}
+        toggleSavedSearchAlerts={toggleSavedSearchAlerts}
+        deleteSavedSearch={deleteSavedSearch}
       />
 
       {/* SHOP THE LOOK — /looks page + look detail */}
