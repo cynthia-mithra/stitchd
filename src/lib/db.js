@@ -1,4 +1,35 @@
-import { SUPABASE_URL, hdrs } from "./constants";
+import { SUPABASE_URL, SUPABASE_KEY, hdrs } from "./constants";
+
+// ── Phase 12 — transactional email triggers ───────────────────────────────────
+// Fire-and-forget POST to the send-email Edge Function. The browser never has
+// the recipient's email (it lives on auth.users), so we send only the event +
+// ids and the function resolves the address, renders the brand template, and
+// honours the unsubscribe flag server-side. Failures are swallowed — a missing
+// email must never break the user action that triggered it.
+export function fireEmail(payload){
+  try{
+    fetch(`${SUPABASE_URL}/functions/v1/send-email`,{
+      method:"POST",
+      headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},
+      body:JSON.stringify(payload),
+      keepalive:true,
+    }).catch(()=>{});
+  }catch{ /* never throw from a notification side-effect */ }
+}
+
+// Stamp profiles.last_active_at so new-message emails can skip users who are
+// currently online (the "active in the last 10 minutes" rule). Best-effort: if
+// the column is missing (migration not yet run) PostgREST 400s and we ignore it.
+function touchActive(uid,t){
+  if(!uid) return;
+  try{
+    fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}`,{
+      method:"PATCH",
+      headers:{...hdrs(t),Prefer:"return=minimal"},
+      body:JSON.stringify({last_active_at:new Date().toISOString()}),
+    }).catch(()=>{});
+  }catch{ /* ignore */ }
+}
 
 // PostgREST rejects an ENTIRE insert/update if the payload names a column the
 // table doesn't have, e.g. PGRST204 "Could not find the 'image_url' column of
@@ -30,7 +61,11 @@ export const db = {
   async remove(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   async getProfile(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   async getProfilesByIds(ids,t){ if(!ids.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${ids.join(",")})&select=id,full_name,username`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  async upsertProfile(profile,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation,resolution=merge-duplicates"},body:JSON.stringify(profile)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  async upsertProfile(profile,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation,resolution=merge-duplicates"},body:JSON.stringify(profile)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json();
+    // Email 7 — welcome. Fired on every upsert; send-email dedupes via the
+    // welcome_email_sent flag so a returning user is only ever welcomed once.
+    if(profile&&profile.id) fireEmail({type:"welcome",userId:profile.id});
+    return d; },
   async getListingsByUser(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async incrementViews(id,views,t){ await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({views:(views||0)+1})}); },
   async getReviews(sellerId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?seller_id=eq.${sellerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
@@ -137,7 +172,11 @@ export const db = {
   },
   // Admin panel — every verification application (all statuses), newest first.
   async getVerificationApplications(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/verification_applications?order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  async updateVerificationApplication(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/verification_applications?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  async updateVerificationApplication(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/verification_applications?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json();
+    // Email 6 — verification approved. send-email resolves the seller from the
+    // application id and respects their unsubscribe preference.
+    if((patch.status||"")==="approved") fireEmail({type:"verification_approved",applicationId:id});
+    return d; },
   // Resolve applicant profiles (all columns) so the admin panel can show the
   // applicant's @username and email where the profiles row carries one.
   async getProfilesFullByIds(ids,t){ if(!ids.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${ids.join(",")})&select=*`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
@@ -145,7 +184,14 @@ export const db = {
   async findConversation(buyerId,sellerId,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/conversations?buyer_id=eq.${buyerId}&seller_id=eq.${sellerId}&listing_id=eq.${listingId}&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   async createConversation(conv,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/conversations`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(conv)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
   async getMessages(convId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/messages?conversation_id=eq.${convId}&order=created_at.asc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  async sendMessage(msg,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/messages`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(msg)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  async sendMessage(msg,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/messages`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(msg)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json();
+    // Sender is by definition active right now; stamp it so a reply back to them
+    // is suppressed while they're online.
+    touchActive(msg.sender_id,t);
+    // Email 5 — new message. send-email finds the recipient from the conversation,
+    // skips them if active in the last 10 minutes, and trims the preview to 100 chars.
+    fireEmail({type:"new_message",conversationId:msg.conversation_id,senderId:msg.sender_id,content:msg.content});
+    return d; },
   async updateMessage(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async getBundles(sellerId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/bundles?seller_id=eq.${sellerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getAllBundles(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/bundles?order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
@@ -159,7 +205,7 @@ export const db = {
   async follow(followerId,followingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/follows`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({follower_id:followerId,following_id:followingId})}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async unfollow(followerId,followingId,t){ await fetch(`${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${followerId}&following_id=eq.${followingId}`,{method:"DELETE",headers:hdrs(t)}); },
   async getFeedListings(followingIds,t){ if(!followingIds.length)return []; const ids=followingIds.map(id=>`user_id.eq.${id}`).join(","); const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?or=(${ids})&order=created_at.desc&limit=40`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  async getNotifications(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${uid}&order=created_at.desc&limit=30`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async getNotifications(uid,t){ touchActive(uid,t); const r=await fetch(`${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${uid}&order=created_at.desc&limit=30`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async insertNotification(n,t){ await fetch(`${SUPABASE_URL}/rest/v1/notifications`,{method:"POST",headers:hdrs(t),body:JSON.stringify(n)}); },
   async markNotifRead(id,t){ await fetch(`${SUPABASE_URL}/rest/v1/notifications?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({read:true})}); },
   async markAllNotifsRead(uid,t){ await fetch(`${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${uid}&read=eq.false`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({read:true})}); },
@@ -171,7 +217,13 @@ export const db = {
   async saveSearch(s,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/saved_searches`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(s)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async deleteSavedSearch(id,t){ await fetch(`${SUPABASE_URL}/rest/v1/saved_searches?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); },
   async getMyOrders(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders?or=(buyer_id.eq.${uid},seller_id.eq.${uid})&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  async updateOrder(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  async updateOrder(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json();
+    // Emails 3 & 4 — seller moving the order through DISPATCHED / DELIVERED. The
+    // function looks up the buyer + listing from the order id.
+    const st=(patch.status||"").toLowerCase();
+    if(st==="dispatched") fireEmail({type:"order_dispatched",orderId:id});
+    else if(st==="delivered") fireEmail({type:"order_delivered",orderId:id});
+    return d; },
   async getNewListings(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?sold=eq.false&order=created_at.desc&limit=12`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getPriceDrops(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?sold=eq.false&prev_price=not.is.null&order=updated_at.desc&limit=12`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getTrending(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?sold=eq.false&order=views.desc&limit=12`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },

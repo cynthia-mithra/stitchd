@@ -19,6 +19,13 @@
 // listening for `checkout.session.completed`.
 
 import Stripe from "https://esm.sh/stripe@17.5.0?target=deno";
+import {
+  emailForUser,
+  firstName,
+  getProfile,
+  render,
+  sendViaResend,
+} from "../_shared/email.ts";
 
 const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
 const WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
@@ -161,11 +168,32 @@ Deno.serve(async (req) => {
     // Re-fetch authoritative listing data (price + seller) for the order rows.
     const ids = listingIds.map((id) => `"${id}"`).join(",");
     const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/listings?id=in.(${ids})&select=id,name,price,user_id`,
+      `${SUPABASE_URL}/rest/v1/listings?id=in.(${ids})&select=id,name,price,user_id,image_url,images`,
       { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
     );
-    const listings: Array<{ id: string; name: string; price: string | number; user_id: string }> =
-      r.ok ? await r.json() : [];
+    const listings: Array<{
+      id: string;
+      name: string;
+      price: string | number;
+      user_id: string;
+      image_url?: string;
+      images?: unknown;
+    }> = r.ok ? await r.json() : [];
+
+    // Phase 12 — buyer details for the order-confirmation + sale emails. The buyer
+    // email comes straight off the Stripe session (works even for guest checkout);
+    // the first name is best-effort from the Stripe customer name.
+    const buyerEmail = session.customer_details?.email || session.customer_email || "";
+    const buyerName = firstName(session.customer_details?.name || "");
+    const orderRef = stripeSessionId.slice(-8);
+    const listingThumb = (l: { image_url?: string; images?: unknown }): string | undefined => {
+      if (l.image_url) return l.image_url;
+      const imgs = l.images;
+      if (Array.isArray(imgs) && imgs.length) {
+        return typeof imgs[0] === "string" ? imgs[0] : (imgs[0] as { url?: string })?.url;
+      }
+      return undefined;
+    };
 
     for (const l of listings) {
       const pence = Math.round(parseFloat(String(l.price)) * 100);
@@ -188,7 +216,7 @@ Deno.serve(async (req) => {
         status: "paid",
       });
 
-      // 3. Notify the seller.
+      // 3. Notify the seller (in-app).
       await insertHealing("notifications", {
         user_id: l.user_id,
         type: "sale",
@@ -197,6 +225,41 @@ Deno.serve(async (req) => {
         link_id: l.id,
         read: false,
       });
+
+      // 4. Phase 12 — transactional emails. Wrapped so an email failure never
+      //    blocks the order processing the webhook is really responsible for.
+      try {
+        const priceStr = `£${parseFloat(String(l.price)).toFixed(2)}`;
+        const image = listingThumb(l);
+
+        // Email 1 — order confirmation (buyer). Honour unsubscribe when the buyer
+        // is a known user; guests (no buyer_id) always get the receipt.
+        const buyerProfile = buyerId ? await getProfile(buyerId) : null;
+        if (buyerEmail && buyerProfile?.email_notifications !== false) {
+          const { subject, html } = await render(
+            "order_confirmation",
+            { title: l.name, image, price: priceStr, orderRef },
+            buyerId,
+          );
+          await sendViaResend(buyerEmail, subject, html);
+        }
+
+        // Email 2 — sale notification (seller).
+        const sellerProfile = await getProfile(l.user_id);
+        if (sellerProfile?.email_notifications !== false) {
+          const sellerEmail = await emailForUser(l.user_id);
+          if (sellerEmail) {
+            const { subject, html } = await render(
+              "sale",
+              { title: l.name, image, price: priceStr, buyerFirstName: buyerName },
+              l.user_id,
+            );
+            await sendViaResend(sellerEmail, subject, html);
+          }
+        }
+      } catch (e) {
+        console.error("Phase 12 email send error:", (e as Error).message);
+      }
     }
 
     return new Response(JSON.stringify({ received: true, processed: listings.length }), {
