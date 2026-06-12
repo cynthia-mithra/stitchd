@@ -1,5 +1,5 @@
 import React from "react";
-import { Star, BadgeCheck } from "lucide-react";
+import { Star, BadgeCheck, ShieldCheck } from "lucide-react";
 
 // Phase 11 — reusable VERIFIED SELLER badge. Shown anywhere a verified seller's
 // name appears (listing cards, listing detail, seller profile, order cards,
@@ -18,6 +18,27 @@ export function VerifiedBadge({ size = "md", style }) {
       ...style,
     }}>
       <BadgeCheck width={sm?12:16} height={sm?12:16}/> VERIFIED SELLER
+    </span>
+  );
+}
+
+// Phase 11 — ID VERIFIED badge. Separate from the VERIFIED SELLER badge: this one
+// means the seller passed Stripe Identity. Shown on the seller profile and the
+// listing detail (and the dashboard IDENTITY VERIFICATION section). Design system:
+// #111 black fill, white text, 2px #111 border, square corners, Barlow Condensed
+// bold. `size="sm"` is the compact variant used inline next to a seller name.
+export function IDVerifiedBadge({ size = "md", style }) {
+  const sm = size === "sm";
+  return (
+    <span style={{
+      display:"inline-flex",alignItems:"center",gap:sm?4:6,
+      background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,
+      padding:sm?"2px 7px":"4px 11px",
+      fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,
+      letterSpacing:sm?0.5:1,fontSize:sm?10:13,lineHeight:1.2,whiteSpace:"nowrap",
+      ...style,
+    }}>
+      <ShieldCheck width={sm?12:16} height={sm?12:16}/> ID VERIFIED
     </span>
   );
 }

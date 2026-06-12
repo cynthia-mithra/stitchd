@@ -100,6 +100,10 @@ export const db = {
   // can show the VERIFIED SELLER badge (and the search filter can hide everyone
   // else) without a per-card profile fetch. Mirrors getFastSellers/getVacationSellers.
   async getVerifiedSellers(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?verified=eq.true&select=id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // Phase 11 — the set of sellers who passed Stripe Identity (identity_verified=true),
+  // so cards/Detail can show the ID VERIFIED badge without a per-card profile fetch.
+  // Mirrors getVerifiedSellers. Returns [] if the column doesn't exist yet.
+  async getIdentityVerifiedSellers(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?identity_verified=eq.true&select=id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   // A seller submitting a verification application. Self-heals like insertDispute:
   // if the schema is missing an optional column (e.g. selling_experience,
   // instagram_handle, admin_notes) drop it and retry so the application still records.

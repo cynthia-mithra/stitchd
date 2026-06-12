@@ -1,8 +1,8 @@
 import React from "react";
-import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock } from "lucide-react";
+import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock, ShieldCheck } from "lucide-react";
 import { CARD_COLORS, catEmoji, currencySymbol, lookListings, lookTotal } from "../lib/constants";
 import { S } from "../styles";
-import { Sec, F, Thumb, VerifiedBadge } from "../components/Shared";
+import { Sec, F, Thumb, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 import Analytics from "./Analytics";
 
 // Phase 10d — public URL for a listing, used by Share (copy link / socials) and
@@ -83,10 +83,16 @@ export default function Dashboard({
   myVerificationApp = null, verificationBusy = false, submitVerification = () => {},
   adminApplications = [], adminApplicants = {},
   approveVerification = () => {}, rejectVerification = () => {},
+  // ID verification (Phase 11 — Stripe Identity)
+  verifyIdentity = () => {}, identityBusy = false,
+  requestTab = null, clearRequestTab = () => {},
 }) {
   // Split listings into ACTIVE vs SOLD (issue PART 4 — sold listings move to a
   // separate SOLD tab in the seller dashboard).
   const [dashTab,setDashTab]=React.useState("active");
+  // Phase 11 — allow other views to deep-link to a tab (e.g. the listing form's
+  // over-£200 prompt jumps straight to TOOLS for identity verification).
+  React.useEffect(()=>{ if(requestTab){ setDashTab(requestTab); clearRequestTab(); } },[requestTab,clearRequestTab]);
   // The seller's own overall rating, shown as a stat tile when they have reviews.
   const myRating = user ? sellerRatings[user.id] : null;
 
@@ -275,6 +281,57 @@ export default function Dashboard({
                             ))}
                           </div>
                           <button className="hbtn" style={{...S.hBtn,background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,fontSize:13,padding:"12px 22px",display:"inline-flex",alignItems:"center",gap:7}} onClick={openVerifyModal}><BadgeCheck width={16} height={16}/> APPLY FOR VERIFICATION</button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Phase 11 — IDENTITY VERIFICATION (Stripe Identity). Separate from
+                    the verified-seller badge above. Body switches on
+                    identity_verification_status: unverified → CTA; pending → in
+                    progress; verified → badge + date; failed → try again. */}
+                {(()=>{
+                  const istatus=profile?.identity_verification_status||(profile?.identity_verified?"verified":"unverified");
+                  const idDate=profile?.identity_verified_at?new Date(profile.identity_verified_at).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}):null;
+                  const H=({children})=> <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>{children}</h3>;
+                  const Desc=({children})=> <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>{children}</p>;
+                  const idBtn={background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,padding:"12px 22px",display:"inline-flex",alignItems:"center",gap:7,cursor:identityBusy?"not-allowed":"pointer",opacity:identityBusy?0.5:1,textTransform:"uppercase"};
+                  return (
+                    <div style={{border:"2px solid #111",padding:"24px"}}>
+                      {istatus==="verified"?(
+                        <>
+                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,flexWrap:"wrap"}}>
+                            <IDVerifiedBadge/>
+                            <H>IDENTITY VERIFIED</H>
+                          </div>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",lineHeight:1.4}}>Your ID VERIFIED badge is live on your profile and listings.{idDate?` Verified on ${idDate}.`:""}</p>
+                        </>
+                      ):istatus==="pending"?(
+                        <>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                            <Clock width={20} height={20} color="#111"/>
+                            <H>VERIFICATION IN PROGRESS</H>
+                          </div>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",lineHeight:1.4}}>This usually takes a few minutes.</p>
+                        </>
+                      ):istatus==="failed"?(
+                        <>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                            <AlertCircle width={20} height={20} color="#FF1493"/>
+                            <H>VERIFICATION FAILED</H>
+                          </div>
+                          <Desc>Please try again or contact support.</Desc>
+                          <button type="button" className="hbtn" style={idBtn} onClick={()=>!identityBusy&&verifyIdentity()} disabled={identityBusy}><ShieldCheck width={16} height={16}/> {identityBusy?"STARTING…":"TRY AGAIN"}</button>
+                        </>
+                      ):(
+                        <>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                            <ShieldCheck width={20} height={20} color="#111"/>
+                            <H>VERIFY YOUR IDENTITY</H>
+                          </div>
+                          <Desc>Add an extra layer of trust by verifying your identity. Required for selling items over £200.</Desc>
+                          <button type="button" className="hbtn" style={idBtn} onClick={()=>!identityBusy&&verifyIdentity()} disabled={identityBusy}><ShieldCheck width={16} height={16}/> {identityBusy?"STARTING…":"VERIFY MY IDENTITY"}</button>
                         </>
                       )}
                     </div>

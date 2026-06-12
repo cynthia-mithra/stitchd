@@ -10,9 +10,10 @@ import {
 } from "./lib/constants";
 import { db } from "./lib/db";
 import { startCheckout, verifySession } from "./lib/checkout";
+import { startIdentityVerification } from "./lib/identity";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck } from "lucide-react";
 import { Sec, F, Tog, Thumb } from "./components/Shared";
 import Tailors from "./views/Tailors";
 import Detail from "./views/Detail";
@@ -144,6 +145,14 @@ export default function App() {
   const [showVerifiedOnly,setShowVerifiedOnly]=useState(false);
   const [myVerificationApp,setMyVerificationApp]=useState(null);
   const [verificationBusy,setVerificationBusy]=useState(false);
+  // Phase 11 — ID verification (Stripe Identity). `identityVerifiedSellers` drives
+  // the ID VERIFIED badge on cards/Detail; `identityBusy` disables the dashboard
+  // button while the verification session is being created; `dashTabRequest` lets
+  // other views (e.g. the listing form's over-£200 prompt, or the return from
+  // Stripe) deep-link straight to the dashboard TOOLS tab.
+  const [identityVerifiedSellers,setIdentityVerifiedSellers]=useState(()=>new Set());
+  const [identityBusy,setIdentityBusy]=useState(false);
+  const [dashTabRequest,setDashTabRequest]=useState(null);
   // Admin panel — every verification application + applicant profiles (id->profile
   // for name/email/username), loaded alongside reports + disputes for an admin.
   const [adminApplications,setAdminApplications]=useState([]);
@@ -285,6 +294,14 @@ export default function App() {
     if(window.location.pathname.includes("/bag")){
       window.history.replaceState({},document.title,"/");
       setShowBag(true);
+    }
+    // Phase 11 — return from the Stripe Identity hosted flow (return_url is
+    // /dashboard?verified=true). Land on the dashboard TOOLS tab; the profile
+    // reload (user/token effect) picks up the webhook-driven status change.
+    if(window.location.pathname.replace(/\/+$/,"").endsWith("/dashboard")||new URLSearchParams(window.location.search).get("verified")==="true"){
+      window.history.replaceState({},document.title,"/");
+      setDashTabRequest("tools");
+      setView("dashboard");
     }
     if(!window.location.pathname.includes("order-success")) return;
     setView("order-success");
@@ -927,6 +944,14 @@ export default function App() {
   }
   useEffect(()=>{ loadVerifiedSellers(); },[]);
 
+  // Phase 11 — load the set of identity-verified sellers (Stripe Identity) so
+  // cards/Detail can show the ID VERIFIED badge. Mirrors loadVerifiedSellers.
+  async function loadIdentityVerifiedSellers(){
+    const rows=await db.getIdentityVerifiedSellers(token);
+    setIdentityVerifiedSellers(new Set(rows.map(r=>r.id)));
+  }
+  useEffect(()=>{ loadIdentityVerifiedSellers(); },[]);
+
   async function loadTailors(){
     const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_tailor=eq.true`,{headers:hdrs(token)});
     if(r.ok) setTailorProfiles(await r.json());
@@ -1232,6 +1257,11 @@ export default function App() {
   async function add(){
     if(!form.name||!form.price)return;
     if(!user){setView("auth");return;}
+    // Phase 11 — items over £200 require ID verification (also gated in the UI).
+    if(parseFloat(form.price)>200&&!(profile?.identity_verified)){
+      flash("Items over £200 require identity verification. Verify your identity in the dashboard TOOLS tab first.",8000);
+      return;
+    }
     setSaving(true);
     let urls=[];
     try{
@@ -1271,7 +1301,13 @@ export default function App() {
   }
 
   async function saveEdit(){
-    if(!form.name||!form.price)return; setSaving(true);
+    if(!form.name||!form.price)return;
+    // Phase 11 — items over £200 require ID verification (also gated in the UI).
+    if(parseFloat(form.price)>200&&!(profile?.identity_verified)){
+      flash("Items over £200 require identity verification. Verify your identity in the dashboard TOOLS tab first.",8000);
+      return;
+    }
+    setSaving(true);
     let newUrls=[];
     try{
       newUrls=await withFreshToken(tok=>Promise.all(form.imageFiles.map(f=>uploadImage(f,tok))));
@@ -1404,6 +1440,27 @@ export default function App() {
     }catch(e){ flash(`Couldn't submit application: ${errMsg(e)}`,9000); return false; }
     finally{ setVerificationBusy(false); }
   }
+
+  // Phase 11 — start (or retry) Stripe Identity verification. Calls the
+  // create-verification-session Edge Function and redirects the seller to the
+  // Stripe-hosted flow. The function also flips the profile to 'pending'; we
+  // mirror that locally so the dashboard reflects it if the redirect is slow.
+  // The pass/fail result lands later on the stripe-webhook function.
+  async function verifyIdentity(){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    setIdentityBusy(true);
+    try{
+      setProfile(p=>p?{...p,identity_verification_status:"pending"}:p);
+      await startIdentityVerification(user.id); // redirects on success
+    }catch(e){
+      setProfile(p=>p?{...p,identity_verification_status:profile?.identity_verification_status||"unverified"}:p);
+      flash(errMsg(e),9000);
+      setIdentityBusy(false);
+    }
+  }
+  // Deep-link helper used by the listing form's over-£200 prompt: jump to the
+  // dashboard TOOLS tab where the IDENTITY VERIFICATION section lives.
+  const goVerifyIdentity=()=>{ setDashTabRequest("tools"); setView("dashboard"); window.scrollTo(0,0); };
 
   // ── Phase 10e — Shop the Look ─────────────────────────────────────────────
   // Open a look's detail view. The look already carries its items + listings
@@ -2290,6 +2347,8 @@ export default function App() {
         myVerificationApp={myVerificationApp} verificationBusy={verificationBusy} submitVerification={submitVerification}
         adminApplications={adminApplications} adminApplicants={adminApplicants}
         approveVerification={approveVerification} rejectVerification={rejectVerification}
+        verifyIdentity={verifyIdentity} identityBusy={identityBusy}
+        requestTab={dashTabRequest} clearRequestTab={()=>setDashTabRequest(null)}
       />
 
       {/* FEED */}
@@ -2385,6 +2444,7 @@ export default function App() {
         openEdit={openEdit} markSold={markSold} relist={relist} del={del}
         similarItems={similarItems} openDetail={openDetail}
         fastSellers={fastSellers} verifiedSellers={verifiedSellers}
+        identityVerifiedSellers={identityVerifiedSellers}
       />
 
       {/* ADD / EDIT */}
@@ -2491,9 +2551,23 @@ export default function App() {
             <Sec label="DESCRIBE IT">
               <textarea style={{...S.inp,height:110,resize:"vertical",width:"100%"}} placeholder="Fabric feel, embroidery, wear history, any flaws…" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}/>
             </Sec>
-            <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"18px",fontSize:17,borderRadius:0,letterSpacing:3,opacity:(!form.name||!form.price||saving)?0.45:1,cursor:(!form.name||!form.price||saving)?"not-allowed":"pointer"}} onClick={view==="edit"?saveEdit:add} disabled={!form.name||!form.price||saving}>
-              {saving?"SAVING...":view==="edit"?"SAVE CHANGES →":"PUBLISH LISTING →"}
-            </button>
+            {/* Phase 11 — items over £200 require ID verification. Show a prompt and
+                block publishing until the seller is identity-verified. */}
+            {(()=>{
+              const idGate=parseFloat(form.price)>200&&!(profile?.identity_verified);
+              return (<>
+                {idGate&&(
+                  <div style={{border:"2px solid #111",background:"#fff8fc",padding:"18px 20px",marginBottom:16}}>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:17,fontWeight:900,letterSpacing:0.5,color:"#111",display:"flex",alignItems:"center",gap:8,marginBottom:6}}><ShieldCheck width={18} height={18}/> IDENTITY VERIFICATION REQUIRED</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",lineHeight:1.4,marginBottom:14}}>Items over £200 require identity verification.</p>
+                    <button type="button" className="hbtn" style={{background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,padding:"12px 22px",display:"inline-flex",alignItems:"center",gap:7,cursor:"pointer"}} onClick={goVerifyIdentity}><ShieldCheck width={16} height={16}/> VERIFY MY IDENTITY</button>
+                  </div>
+                )}
+                <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"18px",fontSize:17,borderRadius:0,letterSpacing:3,opacity:(!form.name||!form.price||saving||idGate)?0.45:1,cursor:(!form.name||!form.price||saving||idGate)?"not-allowed":"pointer"}} onClick={view==="edit"?saveEdit:add} disabled={!form.name||!form.price||saving||idGate}>
+                  {saving?"SAVING...":view==="edit"?"SAVE CHANGES →":"PUBLISH LISTING →"}
+                </button>
+              </>);
+            })()}
           </div>
         </main>
       )}

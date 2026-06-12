@@ -2,7 +2,7 @@ import React from "react";
 import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock } from "lucide-react";
 import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure } from "../lib/constants";
 import { S } from "../styles";
-import { Thumb, Stars, VerifiedBadge } from "../components/Shared";
+import { Thumb, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 
 export default function Detail({
   view, setView, sel,
@@ -18,6 +18,7 @@ export default function Detail({
   similarItems, openDetail,
   fastSellers = new Set(),
   verifiedSellers = new Set(),
+  identityVerifiedSellers = new Set(),
 }) {
   // Buyer-side unit toggle — converts on the fly, never writes back (PART 2a).
   const [dispUnit, setDispUnit] = React.useState("cm");
@@ -99,9 +100,10 @@ export default function Detail({
                   <span style={S.guaranteePoint}><Clock width={16} height={16} color="#00E5CC" style={{flexShrink:0}}/> Report an issue within 48 hours of delivery</span>
                 </div>
               </div>
-              {(verifiedSellers.has(sel.user_id)||fastSellers.has(sel.user_id))&&(
+              {(verifiedSellers.has(sel.user_id)||identityVerifiedSellers.has(sel.user_id)||fastSellers.has(sel.user_id))&&(
                 <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:16}}>
                   {verifiedSellers.has(sel.user_id)&&<VerifiedBadge/>}
+                  {identityVerifiedSellers.has(sel.user_id)&&<IDVerifiedBadge size="sm"/>}
                   {fastSellers.has(sel.user_id)&&<div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#007AFF",color:"#fff",padding:"4px 12px",fontSize:11,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif"}}><Zap width={14} height={14} fill="currentColor"/> FAST SELLER</div>}
                 </div>
               )}
