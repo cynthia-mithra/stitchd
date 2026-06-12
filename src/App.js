@@ -32,6 +32,9 @@ import Footer from "./components/Footer";
 // owns so the two never drift (e.g. "/terms" → "terms").
 const LEGAL_PATHS = Object.fromEntries(LEGAL_VIEWS.map(v => [`/${v}`, v]));
 
+// Issue #115 — a listing may have at most this many photos (and at least 1).
+const MAX_LISTING_IMAGES = 8;
+
 // Pull the human-readable reason out of a thrown Supabase/PostgREST error.
 // db.* throws `new Error(await r.text())` where the text is usually JSON like
 // {"code":"42501","message":"new row violates row-level security policy", ...}.
@@ -1206,7 +1209,11 @@ export default function App() {
   }
 
   function addImageFiles(files){
-    const arr=Array.from(files).slice(0,5-form.imagePreviews.length);
+    const remaining=MAX_LISTING_IMAGES-form.imagePreviews.length;
+    const incoming=Array.from(files);
+    if(incoming.length>remaining){ flash(`Maximum ${MAX_LISTING_IMAGES} photos per listing`); }
+    const arr=incoming.slice(0,Math.max(0,remaining));
+    if(!arr.length) return;
     const previews=arr.map(f=>URL.createObjectURL(f));
     setForm(f=>({...f,imageFiles:[...f.imageFiles,...arr],imagePreviews:[...f.imagePreviews,...previews]}));
   }
@@ -1274,6 +1281,7 @@ export default function App() {
   async function add(){
     if(!form.name||!form.price)return;
     if(!user){setView("auth");return;}
+    if(!form.imagePreviews.length){ flash("Add at least one photo to publish your listing."); return; }
     // Phase 11 — items over £200 require ID verification (also gated in the UI).
     if(parseFloat(form.price)>200&&!(profile?.identity_verified)){
       flash("Items over £200 require identity verification. Verify your identity in the dashboard TOOLS tab first.",8000);
@@ -1319,6 +1327,7 @@ export default function App() {
 
   async function saveEdit(){
     if(!form.name||!form.price)return;
+    if(!form.imagePreviews.length){ flash("Add at least one photo to publish your listing."); return; }
     // Phase 11 — items over £200 require ID verification (also gated in the UI).
     if(parseFloat(form.price)>200&&!(profile?.identity_verified)){
       flash("Items over £200 require identity verification. Verify your identity in the dashboard TOOLS tab first.",8000);
@@ -2497,7 +2506,7 @@ export default function App() {
           <button style={S.back} onClick={()=>setView(view==="edit"?"detail":"shop")}>← BACK</button>
           <div style={S.formCard} className="form-card">
             <div style={S.formHero}><h2 style={S.formTitle}>{view==="edit"?"EDIT YOUR\nPIECE.":"LIST YOUR\nPIECE."}</h2><p style={S.formSub}>Real measurements. Real fit info. Real buyers.</p></div>
-            <Sec label="PHOTOS (UP TO 5)">
+            <Sec label={`PHOTOS (UP TO ${MAX_LISTING_IMAGES})`}>
               <div style={S.multiUploadGrid}>
                 {form.imagePreviews.map((src,i)=>(
                   <div key={i} style={S.uploadThumb}>
@@ -2506,12 +2515,13 @@ export default function App() {
                     {i===0&&<div style={S.mainImgBadge}>MAIN</div>}
                   </div>
                 ))}
-                {form.imagePreviews.length<5&&(
+                {form.imagePreviews.length<MAX_LISTING_IMAGES&&(
                   <div style={S.uploadZone} onClick={()=>document.getElementById("img-input").click()}>
                     <div style={S.uploadPlaceholder}><div style={{...S.uploadIcon,display:"flex",justifyContent:"center"}}><Camera width={24} height={24}/></div><p style={S.uploadText}>ADD PHOTO</p></div>
                   </div>
                 )}
               </div>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#999",marginTop:8,letterSpacing:0.5}}>{form.imagePreviews.length} / {MAX_LISTING_IMAGES} photos added</p>
               <input id="img-input" type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>addImageFiles(e.target.files)}/>
             </Sec>
             <Sec label="THE BASICS">
