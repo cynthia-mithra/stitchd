@@ -142,6 +142,48 @@ export const POSTAGE_OPTIONS = [
   {id:"dpd",name:"DPD",Icon:Truck,prices:[{label:"Next day delivery",price:4.99},{label:"Two day delivery",price:3.99}]},
 ];
 
+// ── Phase 12 — Saved searches ──────────────────────────────────────────────────
+// A saved search persists the buyer's live shop filters as a `filters` jsonb blob
+// (see the phase12 saved_searches migration). buildSearchFilters snapshots the
+// current filter state into that shape — omitting "All"/empty values so the blob
+// only carries the criteria the buyer actually set. filterSummary renders a blob
+// back into the "Lehenga · Pink · Wedding · Under £200" chip shown in the save
+// modal, on the saved-searches page and inside the alert email (the Edge Function
+// has its own copy of this so it stays dependency-free).
+export function buildSearchFilters({ query, catFilter, sizeFilter, minPrice, maxPrice, typeFilter, condFilter, occFilter, colourFilter, verifiedOnly }) {
+  const f = {};
+  if (query && String(query).trim()) f.query = String(query).trim();
+  if (catFilter && catFilter !== "All") f.category = catFilter;
+  if (typeFilter && typeFilter !== "All") f.type = typeFilter;
+  if (sizeFilter && sizeFilter !== "All") f.size = sizeFilter;
+  if (condFilter && condFilter !== "All") f.condition = condFilter;
+  if (minPrice !== "" && minPrice != null && !isNaN(Number(minPrice))) f.min_price = Number(minPrice);
+  if (maxPrice !== "" && maxPrice != null && !isNaN(Number(maxPrice))) f.max_price = Number(maxPrice);
+  if (Array.isArray(occFilter) && occFilter.length) f.occasion = [...occFilter];
+  if (Array.isArray(colourFilter) && colourFilter.length) f.colour = [...colourFilter];
+  if (verifiedOnly) f.verified_only = true;
+  return f;
+}
+
+export function filterSummary(filters) {
+  if (!filters || typeof filters !== "object") return "All listings";
+  const parts = [];
+  if (filters.query) parts.push(`“${filters.query}”`);
+  if (filters.category) parts.push(filters.category);
+  if (filters.type) parts.push(filters.type);
+  if (filters.size) parts.push(filters.size);
+  if (filters.condition) parts.push(filters.condition);
+  (filters.colour || []).forEach(c => parts.push(c));
+  (filters.occasion || []).forEach(o => parts.push(o));
+  if (filters.verified_only) parts.push("Verified sellers");
+  const hasMin = filters.min_price != null && filters.min_price !== "";
+  const hasMax = filters.max_price != null && filters.max_price !== "";
+  if (hasMin && hasMax) parts.push(`£${filters.min_price}–£${filters.max_price}`);
+  else if (hasMax) parts.push(`Under £${filters.max_price}`);
+  else if (hasMin) parts.push(`Over £${filters.min_price}`);
+  return parts.length ? parts.join(" · ") : "All listings";
+}
+
 export const catEmoji = c=>({"Saree":"🥻","Salwar Kameez":"👘","Lehenga":"👗","Sherwani":"🧥","Kurta":"👕","Co-ord Set":"✨","Dupatta":"🧣","Accessories":"💍","Necklace":"📿","Earrings":"✨","Maang Tikka":"👑","Jhumka":"🔮","Bangles":"💛","Bracelet":"📿","Ring":"💍","Nose Ring":"✦","Anklet":"🦶","Haar":"📿","Choker":"📿","Full Set":"👑","Other Jewellery":"💎","Heels":"👠","Flats":"🥿","Sandals":"👡","Juttis":"✨","Khussa":"✨","Boots":"👢","Trainers":"👟","Wedges":"👠","Platforms":"👠","Other Shoes":"👠","Other":"🛍️"}[c]||"💎");
 export const waLink   = (n,name,price)=>`https://wa.me/${n.replace(/\D/g,"")}?text=${encodeURIComponent(`Hi! I saw "${name}" (£${price}) on Stitch'd — still available?`)}`;
 // Stitch'd is UK-only: all prices are displayed in GBP (£), regardless of any

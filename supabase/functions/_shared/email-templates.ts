@@ -224,6 +224,32 @@ export const templates = {
     };
   },
 
+  // 8 — Saved-search alert (buyer). New listings matched a saved search.
+  // `summary` is the human filter chip (e.g. "Lehenga · Pink · Under £200");
+  // `matchUrl` deep-links the shop with the saved filters pre-applied; `listings`
+  // are up to 4 matching cards.
+  saved_search_alert(
+    d: { name?: string; summary?: string; matchUrl?: string; total?: number; listings?: Array<{ title?: string; price?: string; image?: string }> },
+    ctx: BuildCtx,
+  ) {
+    const cards = (d.listings || []).slice(0, 4).map((l) => listingCard({ image: l.image, title: l.title, price: l.price })).join("");
+    const label = d.name || d.summary || "your saved search";
+    const more = d.total && d.total > 4 ? p(`<span style="color:#888;">…and ${d.total - 4} more.</span>`) : "";
+    return {
+      subject: "New listings match your saved search — Stitch'd",
+      html: baseTemplate({
+        heading: "New matches for you.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`New listings just landed for <strong>${esc(label)}</strong>${d.summary && d.name ? ` <span style="color:#888;">(${esc(d.summary)})</span>` : ""}.`) +
+          cards +
+          more +
+          button("See all matches", d.matchUrl || `${ctx.site}/shop`) +
+          p(`<a href="${esc(`${ctx.site}/saved-searches`)}" target="_blank" style="color:#FF1493;font-weight:700;text-decoration:none;">Manage your saved searches</a>`),
+      }),
+    };
+  },
+
   // 7 — Welcome (new user)
   welcome(_d: Record<string, unknown>, ctx: BuildCtx) {
     return {

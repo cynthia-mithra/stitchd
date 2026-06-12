@@ -216,6 +216,36 @@ export const db = {
   async getSavedSearches(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/saved_searches?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async saveSearch(s,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/saved_searches`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(s)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async deleteSavedSearch(id,t){ await fetch(`${SUPABASE_URL}/rest/v1/saved_searches?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); },
+  // Patch a saved search (toggling email_alerts on/off from the saved-searches
+  // page). Self-heals like the other patches: if the schema predates a column
+  // (e.g. email_alerts on a legacy query-only table) drop it and retry so the
+  // rest of the patch still lands.
+  async updateSavedSearch(id,patch,t){
+    const url=`${SUPABASE_URL}/rest/v1/saved_searches?id=eq.${id}`; let payload={...patch};
+    for(let i=0;i<10;i++){
+      const r=await fetch(url,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+      if(r.ok) return r.json();
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't update the saved search.");
+  },
+  // Fire-and-forget kick of the saved-search-alerts Edge Function right after a
+  // listing is published, so matching buyers are emailed within minutes rather
+  // than waiting up to 6 hours for the cron sweep (issue PART 5). Best-effort:
+  // the function dedupes on last_alerted_at and failures must never break the
+  // listing flow.
+  triggerSavedSearchAlerts(listingId){
+    try{
+      fetch(`${SUPABASE_URL}/functions/v1/saved-search-alerts`,{
+        method:"POST",
+        headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},
+        body:JSON.stringify({listingId,trigger:"new_listing"}),
+        keepalive:true,
+      }).catch(()=>{});
+    }catch{ /* never throw from a notification side-effect */ }
+  },
   async getMyOrders(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders?or=(buyer_id.eq.${uid},seller_id.eq.${uid})&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async updateOrder(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json();
     // Emails 3 & 4 — seller moving the order through DISPATCHED / DELIVERED. The

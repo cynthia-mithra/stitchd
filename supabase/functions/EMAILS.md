@@ -101,6 +101,48 @@ the Stripe dashboard against the redeployed `stripe-webhook`.
 A successful templated call returns `{"ok":true,"sent":"<type>"}`; a deliberately
 suppressed one returns `{"skipped":"unsubscribed"|"recipient active"|…}`.
 
+## Saved-search alerts (Phase 12 — saved searches)
+
+Buyers save shop filters (`saved_searches` table) and get a **NEW MATCHES FOR
+YOU** email when fresh listings match. The `saved-search-alerts` Edge Function
+runs the sweep:
+
+```
+ pg_cron (every 6h) ─┐
+                     ├─► saved-search-alerts ─► _shared/email.ts ─► Resend ─► inbox
+ new listing ────────┘   (filters listings, renders saved_search_alert template)
+ (db.triggerSavedSearchAlerts, fire-and-forget)
+```
+
+It reuses the shared brand template + Resend helper (no extra hop), honours the
+same `email_notifications` unsubscribe flag, and stamps `last_alerted_at` so the
+same listing is never emailed twice.
+
+### Setup
+
+```bash
+# 1. Migrations (saved_searches table + every-6h cron)
+supabase db push
+
+# 2. Deploy (verify_jwt=false is pinned in config.toml)
+supabase functions deploy saved-search-alerts
+
+# 3. Schedule (cron migration). Needs pg_cron + pg_net enabled and the
+#    service-role key reachable from SQL. Enable the extensions in
+#    Dashboard → Database → Extensions, then provide the key once:
+#      select vault.create_secret('<service_role_key>', 'service_role_key');
+#    and re-run: supabase db push   (the cron migration is idempotent).
+```
+
+No new secrets — it reuses `RESEND_API_KEY` / `SITE_URL` and the auto-injected
+service-role key. Test on demand:
+
+```bash
+curl -X POST https://zhstooqgkyuzxseylsbk.supabase.co/functions/v1/saved-search-alerts \
+  -H 'Content-Type: application/json' -d '{}'
+# → {"ok":true,"searches":<n>,"results":{"sent":x,"no-match":y,…}}
+```
+
 ## Unsubscribe
 
 Every footer carries a signed link to
