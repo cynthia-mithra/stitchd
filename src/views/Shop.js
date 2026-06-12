@@ -2,11 +2,11 @@ import React from "react";
 import { Search, Scissors, Zap, Heart, Bell, Ruler, Eye, ArrowDown, ArrowRight, Sparkles, TrendingDown, Flame, Shirt, BadgeCheck } from "lucide-react";
 import {
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, ALL_CATEGORIES,
-  CONDITIONS, SIZES, OCC_COLOR, CARD_COLORS,
-  catEmoji, currencySymbol,
+  CONDITIONS, SIZES, OCCASIONS, COLOURS, OCC_COLOR, CARD_COLORS,
+  catEmoji, currencySymbol, colourSwatchBg,
 } from "../lib/constants";
 import { S } from "../styles";
-import { Thumb, Stars, VerifiedBadge } from "../components/Shared";
+import { Thumb, Stars, VerifiedBadge, ColourSwatches } from "../components/Shared";
 import { LookCard } from "./Looks";
 
 export default function Shop({
@@ -22,8 +22,11 @@ export default function Shop({
   minPrice, setMinPrice, maxPrice, setMaxPrice,
   showSizeMatch, setShowSizeMatch,
   showVerifiedOnly = false, setShowVerifiedOnly = () => {},
+  occFilter = [], togOccFilter = () => {},
+  colourFilter = [], togColourFilter = () => {},
   loadTailorMarket,
   visible, loading, error, fetchItems,
+  newArrivals = false, homeArrivals = [], goNewArrivals = () => {},
   openDetail, fitsMe, wishlist, toggleWishlist,
   newListings, priceDrops, trendingItems,
   sellerRatings = {},
@@ -35,7 +38,7 @@ export default function Shop({
   looks = [],
   openLook = () => {},
 }) {
-  if(view!=="shop") return null;
+  if(view!=="shop"&&view!=="newarrivals") return null;
   // Small "⚡ FAST SELLER" badge for sellers flagged fast_seller=true on their profile.
   // Reuses the same overlay badge style as RESERVED / NEW / FITS YOU. On the main grid
   // it stacks above the FITS YOU badge (which also sits bottom-left) so the two never
@@ -81,6 +84,17 @@ export default function Shop({
   };
   return (
     <>
+      {/* NEW ARRIVALS page header — replaces the hero when this view is the
+          /new-arrivals page. The search bar + filters + grid below are shared
+          with the main shop, so every filter works here too. */}
+      {newArrivals&&(
+        <section style={{maxWidth:1300,margin:"0 auto",padding:"36px 24px 8px"}}>
+          <button style={{...S.back,marginBottom:18}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
+          <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(40px,8vw,72px)",fontWeight:900,letterSpacing:-1,lineHeight:0.95,color:"#111",margin:0,display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}><Sparkles width={44} height={44}/> NEW ARRIVALS</h1>
+          <p style={{fontFamily:"'Barlow',sans-serif",fontSize:16,color:"#888",marginTop:10}}>Fresh drops. Updated daily.</p>
+        </section>
+      )}
+      {!newArrivals&&(
       <section style={S.hero} className="hero-section">
         <div style={S.heroLeft} className="hero-left">
           <p style={S.heroTag}>THE MARKETPLACE FOR</p>
@@ -113,6 +127,7 @@ export default function Shop({
           ))}
         </div>
       </section>
+      )}
 
       {/* SEARCH BAR */}
       <div style={{...S.searchBar,position:"relative"}} id="grid-anchor">
@@ -161,6 +176,22 @@ export default function Shop({
             <div style={S.filterGroup}><div style={S.filterLabel}>CONDITION</div><div style={S.filterPills}>{["All",...CONDITIONS].map(c=><button key={c} className="fpill" onClick={()=>setCondFilter(c)} style={{...S.pill,...(condFilter===c?S.pillOn:{})}}>{c}</button>)}</div></div>
             <div style={S.filterGroup}><div style={S.filterLabel}>CATEGORY</div><div style={S.filterPills}>{["All",...(typeFilter==="Jewellery"?JEWELLERY_CATS:typeFilter==="Shoes"?SHOE_CATS:typeFilter==="Clothing"?CATEGORIES:ALL_CATEGORIES)].map(c=><button key={c} className="fpill" onClick={()=>setCatFilter(c)} style={{...S.pill,...(catFilter===c?S.pillOn:{})}}>{c}</button>)}</div></div>
             <div style={S.filterGroup}><div style={S.filterLabel}>SIZE</div><div style={S.filterPills}>{["All",...SIZES].map(sz=><button key={sz} className="fpill" onClick={()=>setSizeFilter(sz)} style={{...S.pill,...(sizeFilter===sz?S.pillOn:{})}}>{sz}</button>)}</div></div>
+            {/* Phase 12 — OCCASION. Multi-select pink pills (2px #111 border, no
+                radius, Barlow Condensed). Wrapped grid; selected = #FF1493. */}
+            <div style={S.filterGroup}>
+              <div style={S.filterLabel}>OCCASION</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                {OCCASIONS.map(o=>{const on=occFilter.includes(o);return(
+                  <button key={o} type="button" onClick={()=>togOccFilter(o)} style={{background:on?"#FF1493":"#fff",color:on?"#fff":"#111",border:"2px solid #111",borderRadius:0,padding:"7px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:on?800:700,fontSize:12,letterSpacing:1,cursor:"pointer",whiteSpace:"nowrap"}}>{o.toUpperCase()}</button>
+                );})}
+              </div>
+            </div>
+            {/* Phase 12 — COLOUR. Circular 24px swatches; selected gets a 2px #111
+                ring. Shares the ColourSwatches component with the listing form. */}
+            <div style={S.filterGroup}>
+              <div style={S.filterLabel}>COLOUR</div>
+              <ColourSwatches selected={colourFilter} onToggle={togColourFilter}/>
+            </div>
             <div style={S.filterGroup}>
               <div style={S.filterLabel}>PRICE RANGE</div>
               <div style={{display:"flex",gap:10,alignItems:"center"}}>
@@ -233,10 +264,44 @@ export default function Shop({
         )}
       </div>
 
+      {/* NEW ARRIVALS — the 4 most recent listings (last 14 days). Horizontal
+          scroll rail on mobile, grid on desktop. Hidden on the new-arrivals page
+          itself, while filtering, and when there are no recent listings. */}
+      {!newArrivals&&!hasFilters&&homeArrivals.length>0&&(
+        <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
+          <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:16,marginBottom:20,flexWrap:"wrap"}}>
+            <div>
+              <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(28px,5vw,40px)",fontWeight:900,letterSpacing:-0.5,lineHeight:1,color:"#111",display:"flex",alignItems:"center",gap:10}}><Sparkles width={28} height={28}/> NEW ARRIVALS</h2>
+              <p style={{fontFamily:"'Barlow',sans-serif",fontSize:14,color:"#888",marginTop:4}}>Fresh drops. Updated daily.</p>
+            </div>
+            <button className="hbtn" style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#FF1493",textTransform:"uppercase",display:"inline-flex",alignItems:"center",gap:6,padding:0}} onClick={goNewArrivals}>VIEW ALL <ArrowRight width={15} height={15}/></button>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
+            {homeArrivals.map((item,idx)=>{
+              const accent=CARD_COLORS[idx%CARD_COLORS.length];
+              return(
+                <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
+                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
+                    <div style={{position:"absolute",top:12,left:12,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
+                    <FastBadge sellerId={item.user_id}/>
+                  </Thumb>
+                  <div style={S.cardBody} className="card-body">
+                    <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
+                    <p style={S.cardName} className="card-name">{item.name}</p>
+                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span><span style={{display:"flex",alignItems:"center",gap:8}}><WishCount item={item}/><SellerRating sellerId={item.user_id}/></span></div>
+                  </div>
+                  <div style={{...S.accentBar,background:accent}}/>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* SHOP THE LOOK — curated outfit collections. Hidden entirely when no
           looks exist or while the buyer is filtering/searching the grid. The rail
           scrolls horizontally on mobile and is a 3-up grid on desktop. */}
-      {!hasFilters&&looks.length>0&&(
+      {!newArrivals&&!hasFilters&&looks.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:16,marginBottom:20,flexWrap:"wrap"}}>
             <div>
@@ -252,7 +317,7 @@ export default function Shop({
       )}
 
       {/* NEW IN */}
-      {!hasFilters&&newListings.length>0&&(
+      {!newArrivals&&!hasFilters&&newListings.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><Sparkles width={16} height={16}/> NEW IN — LAST 48 HOURS</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
@@ -278,7 +343,7 @@ export default function Shop({
       )}
 
       {/* PRICE DROPS */}
-      {!hasFilters&&priceDrops.length>0&&(
+      {!newArrivals&&!hasFilters&&priceDrops.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><TrendingDown width={16} height={16}/> PRICE DROPS</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
@@ -311,7 +376,7 @@ export default function Shop({
       )}
 
       {/* TRENDING */}
-      {!hasFilters&&trendingItems.length>0&&(
+      {!newArrivals&&!hasFilters&&trendingItems.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 48px",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #BF5AF2",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><Flame width={16} height={16}/> TRENDING — MOST VIEWED</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">

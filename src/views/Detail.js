@@ -1,6 +1,6 @@
 import React from "react";
 import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock } from "lucide-react";
-import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure } from "../lib/constants";
+import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure, colourSwatchBg } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 
@@ -15,7 +15,7 @@ export default function Detail({
   setShowReview, setShowReport,
   reviews,
   openEdit, markSold, relist, del,
-  similarItems, openDetail,
+  similarItems, recentItems = [], openDetail,
   fastSellers = new Set(),
   verifiedSellers = new Set(),
   identityVerifiedSellers = new Set(),
@@ -116,6 +116,17 @@ export default function Detail({
               {(sel.occasions||[]).length>0&&(
                 <div style={S.dBlock}><p style={{...S.dBlockTitle,borderColor:selColor,color:selColor}}>OCCASIONS</p><div style={S.occRow}>{sel.occasions.map(o=><span key={o} style={{...S.occChip,background:OCC_COLOR[o]||"#999",color:"#fff"}}>{o.toUpperCase()}</span>)}</div></div>
               )}
+              {(sel.colours||[]).length>0&&(
+                <div style={S.dBlock}><p style={{...S.dBlockTitle,borderColor:selColor,color:selColor}}>COLOUR</p>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:14}}>
+                    {sel.colours.map(c=>(
+                      <span key={c} style={{display:"inline-flex",alignItems:"center",gap:7,fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#111"}}>
+                        <span style={{width:20,height:20,borderRadius:"50%",background:colourSwatchBg(c),border:"1px solid rgba(0,0,0,0.18)",flexShrink:0}}/> {c.toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               {hasMeas&&(
                 <div style={S.dBlock}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}>
@@ -194,6 +205,32 @@ export default function Detail({
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>YOU MIGHT ALSO LIKE</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:3}}>
                 {similarItems.map((item,idx)=>{
+                  const accent=CARD_COLORS[idx%CARD_COLORS.length];
+                  return(
+                    <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
+                      <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={{...S.cardTop,height:160}} emojiStyle={{fontSize:56}}>
+                        {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
+                      </Thumb>
+                      <div style={{...S.cardBody,padding:"12px 14px 10px"}}>
+                        <p style={{...S.cardCatLabel,color:accent,marginBottom:2}}>{item.category?.toUpperCase()}</p>
+                        <p style={{...S.cardName,fontSize:16,marginBottom:8}}>{item.name}</p>
+                        <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent,fontSize:20}}>{currencySymbol(item.currency)}{item.price}</span></div>
+                      </div>
+                      <div style={{...S.accentBar,background:accent}}/>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {/* RECENTLY VIEWED — Phase 12. Listings the user has opened before (from
+              localStorage, newest first, excluding the current one). Same card
+              style as YOU MIGHT ALSO LIKE. Hidden when there's nothing to show. */}
+          {recentItems.length>0&&(
+            <div style={{marginTop:48}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #00E5CC",paddingLeft:12,marginBottom:20}}>RECENTLY VIEWED</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:3}}>
+                {recentItems.map((item,idx)=>{
                   const accent=CARD_COLORS[idx%CARD_COLORS.length];
                   return(
                     <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>

@@ -14,7 +14,7 @@ import { startIdentityVerification } from "./lib/identity";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck } from "lucide-react";
-import { Sec, F, Tog, Thumb } from "./components/Shared";
+import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import Tailors from "./views/Tailors";
 import Detail from "./views/Detail";
 import Shop from "./views/Shop";
@@ -113,6 +113,12 @@ export default function App() {
   const [showSavedSearches, setShowSavedSearches] = useState(false);
   const [catFilter, setCatFilter] = useState("All");
   const [sizeFilter,setSizeFilter]= useState("All");
+  // Phase 12 — multi-select occasion + colour filters. Each is an array of the
+  // selected tag names; a listing matches when it carries ANY of them (OR within
+  // a group). Untagged listings (null/empty array) are never hidden by either
+  // filter so nothing already listed gets buried.
+  const [occFilter,    setOccFilter]    = useState([]);
+  const [colourFilter, setColourFilter] = useState([]);
   const [minPrice,  setMinPrice]  = useState("");
   const [maxPrice,  setMaxPrice]  = useState("");
   const [showFilters,setShowFilters]=useState(false);
@@ -390,8 +396,15 @@ export default function App() {
     const matchActive=i.status!=="inactive";
     // Phase 11 — "Verified sellers only" filter: keep listings from verified sellers.
     const matchVerified=!showVerifiedOnly||verifiedSellers.has(i.user_id);
-    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchVacation&&matchActive&&matchVerified;
-  }),[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers]);
+    // Phase 12 — occasion + colour filters. Multi-select, OR within a group. An
+    // untagged listing (no occasions/colours) is never hidden by that filter so
+    // existing listings show under every selection.
+    const occ=i.occasions||[];
+    const matchOcc=occFilter.length===0||occ.length===0||occFilter.some(o=>occ.includes(o));
+    const col=i.colours||[];
+    const matchColour=colourFilter.length===0||col.length===0||colourFilter.some(c=>col.includes(c));
+    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchVacation&&matchActive&&matchVerified&&matchOcc&&matchColour;
+  }),[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers,occFilter,colourFilter]);
 
   function flash(m,dur=3500){ setToast(m); setTimeout(()=>setToast(""),dur); }
 
@@ -467,8 +480,12 @@ export default function App() {
   },[user,token]);
 
   function togOcc(o){ setForm(f=>({...f,occasions:f.occasions.includes(o)?f.occasions.filter(x=>x!==o):[...f.occasions,o]})); }
-  function clearFilters(){ setSearch(""); setCatFilter("All"); setSizeFilter("All"); setMinPrice(""); setMaxPrice(""); setTypeFilter("All"); setCondFilter("All"); setShowVerifiedOnly(false); }
-  const hasFilters = search||catFilter!=="All"||sizeFilter!=="All"||minPrice||maxPrice||typeFilter!=="All"||condFilter!=="All"||showVerifiedOnly;
+  function togColour(c){ setForm(f=>({...f,colours:(f.colours||[]).includes(c)?f.colours.filter(x=>x!==c):[...(f.colours||[]),c]})); }
+  // Phase 12 — toggle one occasion/colour in the shop filter (multi-select).
+  function togOccFilter(o){ setOccFilter(prev=>prev.includes(o)?prev.filter(x=>x!==o):[...prev,o]); }
+  function togColourFilter(c){ setColourFilter(prev=>prev.includes(c)?prev.filter(x=>x!==c):[...prev,c]); }
+  function clearFilters(){ setSearch(""); setCatFilter("All"); setSizeFilter("All"); setMinPrice(""); setMaxPrice(""); setTypeFilter("All"); setCondFilter("All"); setShowVerifiedOnly(false); setOccFilter([]); setColourFilter([]); }
+  const hasFilters = search||catFilter!=="All"||sizeFilter!=="All"||minPrice||maxPrice||typeFilter!=="All"||condFilter!=="All"||showVerifiedOnly||occFilter.length>0||colourFilter.length>0;
 
   function toggleWishlist(id){
     setWishlist(prev=>{
@@ -1277,7 +1294,7 @@ export default function App() {
       const image_url=urls[0]||"";
       const meas=buildMeasPayload(form);
       const cat=meas.category||form.category;
-      const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
+      const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
       const [created]=await withFreshToken(tok=>db.insert(payload,tok));
       setItems(p=>[created,...p]); setForm(EMPTY_FORM);
       // The photo uploaded fine but didn't come back on the saved row — the
@@ -1324,7 +1341,7 @@ export default function App() {
       const image_url=allUrls[0]||sel.image_url||"";
       const meas=buildMeasPayload(form);
       const cat=meas.category||form.category;
-      const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
+      const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
       const [updated]=await withFreshToken(tok=>db.update(sel.id,patch,tok));
       setItems(p=>p.map(i=>i.id===sel.id?updated:i)); setSel(updated);
       if(allUrls.length&&!updated.image_url){ flash("⚠️ Saved — but the photo couldn't be stored: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase.",11000); }
@@ -1354,7 +1371,7 @@ export default function App() {
     const meas_unit=pm?.unit||item.measurements_unit||"inches";
     let meas=pm?.values?{...pm.values}:{};
     if(!pm){ garmentFieldsFor(gender,garment_type).forEach(l=>{ const col=({"Bust":"bust","Chest":"bust","Blouse bust":"bust","Waist":"waist","Hip":"hips","Hips":"hips","Length":"length","Length (floor to shoulder)":"length","Saree length":"length","Lehenga length":"length","Sherwani length":"length","Kurta length":"length","Sleeve length":"sleeve_length","Blouse sleeve length":"sleeve_length","Shoulder width":"shoulder","Inseam":"inseam"})[l]; if(col&&item[col]) meas[l]=item[col]; }); }
-    setForm({name:item.name||"",price:item.price||"",condition:item.condition||"Like New",listing_type:item.listing_type||"Clothing",category:item.category||"Saree",origin:item.origin||"Indian",fabric:item.fabric||"Silk",material:item.material||"",size:item.size||"Free Size",occasions:item.occasions||[],gender,meas_unit,garment_type,meas,additional_measurements:item.additional_measurements||item.measurement_notes||"",bust:item.bust||"",waist:item.waist||"",hips:item.hips||"",length:item.length||"",underbust:item.underbust||"",shoulder:item.shoulder||"",high_hip:item.high_hip||"",sleeve_length:item.sleeve_length||"",inseam:item.inseam||"",measurement_notes:item.measurement_notes||"",can_take_in:item.can_take_in||false,spare_fabric:item.spare_fabric||false,description:item.description||"",imageFiles:[],imagePreviews:item.images||[item.image_url].filter(Boolean),postage_options:item.postage_options||[],accepts_collection:item.accepts_collection||false});
+    setForm({name:item.name||"",price:item.price||"",condition:item.condition||"Like New",listing_type:item.listing_type||"Clothing",category:item.category||"Saree",origin:item.origin||"Indian",fabric:item.fabric||"Silk",material:item.material||"",size:item.size||"Free Size",occasions:item.occasions||[],colours:item.colours||[],gender,meas_unit,garment_type,meas,additional_measurements:item.additional_measurements||item.measurement_notes||"",bust:item.bust||"",waist:item.waist||"",hips:item.hips||"",length:item.length||"",underbust:item.underbust||"",shoulder:item.shoulder||"",high_hip:item.high_hip||"",sleeve_length:item.sleeve_length||"",inseam:item.inseam||"",measurement_notes:item.measurement_notes||"",can_take_in:item.can_take_in||false,spare_fabric:item.spare_fabric||false,description:item.description||"",imageFiles:[],imagePreviews:item.images||[item.image_url].filter(Boolean),postage_options:item.postage_options||[],accepts_collection:item.accepts_collection||false});
     setView("edit");
   }
 
@@ -1557,7 +1574,7 @@ export default function App() {
     db.incrementViews(item.id,item.views,token);
     setItems(p=>p.map(i=>i.id===item.id?{...i,views:(i.views||0)+1}:i));
     setRecentlyViewed(prev=>{
-      const next=[item.id,...prev.filter(x=>x!==item.id)].slice(0,8);
+      const next=[item.id,...prev.filter(x=>x!==item.id)].slice(0,10);
       localStorage.setItem("stitchd_recent",JSON.stringify(next));
       return next;
     });
@@ -1577,7 +1594,31 @@ export default function App() {
   useEffect(()=>{ if(view==="dashboard"&&isAdmin) loadAdminData(); },[view,isAdmin]);
   const selImages= sel?(sel.images&&sel.images.length>0?sel.images:[sel.image_url].filter(Boolean)):[];
   const similarItems = sel ? items.filter(i=>i.id!==sel.id&&(i.category===sel.category||i.fabric===sel.fabric||i.origin===sel.origin)).slice(0,4) : [];
-  const recentItems  = items.filter(i=>recentlyViewed.includes(i.id)&&(!sel||i.id!==sel.id)).slice(0,4);
+  // Phase 12 — recently viewed, in view order (newest first), excluding the
+  // current listing, capped at 6 for the Detail "RECENTLY VIEWED" rail.
+  const recentItems  = recentlyViewed
+    .filter(id=>!sel||id!==sel.id)
+    .map(id=>items.find(i=>i.id===id))
+    .filter(Boolean)
+    .slice(0,6);
+  // Phase 12 — listings created in the last 14 days (newest first), for the
+  // /new-arrivals page and the homepage NEW ARRIVALS rail. `visible` already
+  // applies every active shop filter and is ordered created_at.desc, so the
+  // /new-arrivals grid honours the filters for free.
+  const NEW_ARRIVAL_MS = 14*24*60*60*1000;
+  const isNewArrivals  = view==="newarrivals";
+  const newArrivalItems = useMemo(()=>{
+    const cutoff=Date.now()-NEW_ARRIVAL_MS;
+    return visible.filter(i=>i.created_at&&new Date(i.created_at).getTime()>=cutoff);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[visible]);
+  // The homepage rail wants the 4 most recent *available* arrivals, independent
+  // of the shop filters (it only renders when no filter is active anyway).
+  const homeArrivals = useMemo(()=>{
+    const cutoff=Date.now()-NEW_ARRIVAL_MS;
+    return items.filter(i=>!i.sold&&i.status!=="inactive"&&!vacationSellers.has(i.user_id)&&i.created_at&&new Date(i.created_at).getTime()>=cutoff).slice(0,4);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[items,vacationSellers]);
   const wishlistItems= items.filter(i=>wishlist.includes(i.id));
 
   // Items collapsed behind the desktop hover-dropdown / mobile hamburger menu.
@@ -1585,6 +1626,7 @@ export default function App() {
   // they remain always-visible in the navbar. Each onClick also closes whichever
   // menu was open so navigating dismisses the overlay.
   const navMenuItems = [
+    {label:"✦ NEW ARRIVALS", run:()=>{clearFilters();setView("newarrivals");}},
     {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();setView("dashboard");}},
     {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
     {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
@@ -2397,8 +2439,10 @@ export default function App() {
         minPrice={minPrice} setMinPrice={setMinPrice} maxPrice={maxPrice} setMaxPrice={setMaxPrice}
         showSizeMatch={showSizeMatch} setShowSizeMatch={setShowSizeMatch}
         showVerifiedOnly={showVerifiedOnly} setShowVerifiedOnly={setShowVerifiedOnly}
+        occFilter={occFilter} togOccFilter={togOccFilter} colourFilter={colourFilter} togColourFilter={togColourFilter}
         loadTailorMarket={loadTailorMarket}
-        visible={visible} loading={loading} error={error} fetchItems={fetchItems}
+        visible={isNewArrivals?newArrivalItems:visible} loading={loading} error={error} fetchItems={fetchItems}
+        newArrivals={isNewArrivals} homeArrivals={homeArrivals} goNewArrivals={()=>{clearFilters();setView("newarrivals");}}
         openDetail={openDetail} fitsMe={fitsMe} wishlist={wishlist} toggleWishlist={toggleWishlist}
         newListings={newListings} priceDrops={priceDrops} trendingItems={trendingItems}
         sellerRatings={sellerRatings} fastSellers={fastSellers} verifiedSellers={verifiedSellers}
@@ -2442,7 +2486,7 @@ export default function App() {
         setShowReview={setShowReview} setShowReport={setShowReport}
         reviews={reviews}
         openEdit={openEdit} markSold={markSold} relist={relist} del={del}
-        similarItems={similarItems} openDetail={openDetail}
+        similarItems={similarItems} recentItems={recentItems} openDetail={openDetail}
         fastSellers={fastSellers} verifiedSellers={verifiedSellers}
         identityVerifiedSellers={identityVerifiedSellers}
       />
@@ -2492,6 +2536,10 @@ export default function App() {
             </Sec>
             <Sec label="OCCASIONS">
               <div style={S.occGrid}>{OCCASIONS.map(o=>{const on=form.occasions.includes(o),col=OCC_COLOR[o];return<button key={o} type="button" onClick={()=>togOcc(o)} style={{...S.occToggle,background:on?col:"#fff",color:on?"#fff":"#111",border:`2px solid ${on?col:"#111"}`,fontWeight:on?800:600}}>{o.toUpperCase()}</button>;})}</div>
+            </Sec>
+            <Sec label="COLOUR">
+              <p style={{fontSize:12,color:"#888",marginBottom:12}}>Optional — tag the main colours so buyers can filter by them.</p>
+              <ColourSwatches selected={form.colours||[]} onToggle={togColour}/>
             </Sec>
             {form.listing_type==="Clothing"&&(()=>{
               const gt=form.garment_type||defaultGarmentFor(form.gender,form.category);
