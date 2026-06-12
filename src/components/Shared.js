@@ -1,5 +1,40 @@
 import React from "react";
 import { Star, BadgeCheck, ShieldCheck } from "lucide-react";
+import { COLOURS, colourSwatchBg } from "../lib/constants";
+
+// Phase 12 — circular colour swatches, used identically by the shop/new-arrivals
+// filter panel and the listing create/edit form. Each swatch is a 24px disc
+// filled with the actual colour; the selected ones get a 2px #111 ring (drawn
+// with box-shadow so toggling never shifts layout). `selected` is an array of
+// chosen colour names; `onToggle(colour)` flips one. Multi-select — tapping a
+// swatch adds/removes it. White/Cream get a faint base border so they read
+// against the white panel.
+export function ColourSwatches({ selected = [], onToggle }) {
+  return (
+    <div style={{display:"flex",flexWrap:"wrap",gap:12}}>
+      {COLOURS.map(c=>{
+        const on=selected.includes(c);
+        return (
+          <button
+            key={c}
+            type="button"
+            onClick={()=>onToggle(c)}
+            title={c}
+            aria-label={c}
+            aria-pressed={on}
+            style={{
+              width:24,height:24,padding:0,borderRadius:"50%",cursor:"pointer",
+              background:colourSwatchBg(c),
+              border:"1px solid rgba(0,0,0,0.18)",
+              boxShadow:on?"0 0 0 2px #fff, 0 0 0 4px #111":"none",
+              flexShrink:0,transition:"box-shadow .12s",
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 // Phase 11 — reusable VERIFIED SELLER badge. Shown anywhere a verified seller's
 // name appears (listing cards, listing detail, seller profile, order cards,

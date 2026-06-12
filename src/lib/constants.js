@@ -26,8 +26,20 @@ export const CONDITIONS = ["Brand New (with tags)","Brand New (without tags)","L
 export const OCCASIONS  = ["Wedding","Eid","Diwali","Mehndi","Nikah","Sangeet","Navratri","Puja","Party","Casual","Graduation","Other"];
 export const SIZES      = ["XS","S","M","L","XL","XXL","Free Size","Custom Stitched"];
 export const OCC_COLOR  = {Wedding:"#FF1493",Eid:"#34C759",Diwali:"#FF9500",Mehndi:"#30D158",Nikah:"#007AFF",Sangeet:"#FF2D55",Navratri:"#FF6B00",Puja:"#FF1493",Party:"#BF5AF2",Casual:"#8E8E93",Graduation:"#0A84FF",Other:"#636366"};
+// ── Phase 12 — Colour filter ──────────────────────────────────────────────────
+// Buyers filter listings by colour and sellers tag a listing with one or more
+// colours. Stored in the `colours` text[] column (see the phase12 migration).
+// COLOUR_HEX is the swatch fill for each colour; Multicolour is rendered as a
+// conic-gradient (see colourSwatchBg) since it has no single hex.
+export const COLOURS    = ["Red","Pink","Orange","Yellow","Green","Blue","Purple","Gold","Silver","White","Black","Cream","Multicolour"];
+export const COLOUR_HEX = {Red:"#E0245E",Pink:"#FF1493",Orange:"#FF9500",Yellow:"#FFD60A",Green:"#34C759",Blue:"#007AFF",Purple:"#BF5AF2",Gold:"#D4AF37",Silver:"#C0C0C0",White:"#FFFFFF",Black:"#111111",Cream:"#F5E6C8",Multicolour:"#999999"};
+// Background for a colour swatch. Multicolour gets a rainbow conic-gradient; every
+// other colour is its flat hex. Used identically by the shop filter and the form.
+export const colourSwatchBg = (c) => c==="Multicolour"
+  ? "conic-gradient(from 90deg,#E0245E,#FF9500,#FFD60A,#34C759,#007AFF,#BF5AF2,#E0245E)"
+  : (COLOUR_HEX[c]||"#999999");
 export const CARD_COLORS= ["#FF1493","#FF9500","#34C759","#007AFF","#BF5AF2","#FF2D55","#FF6B00","#0A84FF"];
-export const EMPTY_FORM = {name:"",price:"",condition:"Like New",listing_type:"Clothing",category:"Saree",origin:"Indian",fabric:"Silk",material:"",size:"Free Size",occasions:[],gender:"women",meas_unit:"cm",garment_type:"",meas:{},additional_measurements:"",bust:"",waist:"",hips:"",length:"",underbust:"",shoulder:"",high_hip:"",sleeve_length:"",inseam:"",measurement_notes:"",can_take_in:false,spare_fabric:false,description:"",imageFiles:[],imagePreviews:[],postage_options:[],accepts_collection:false};
+export const EMPTY_FORM = {name:"",price:"",condition:"Like New",listing_type:"Clothing",category:"Saree",origin:"Indian",fabric:"Silk",material:"",size:"Free Size",occasions:[],colours:[],gender:"women",meas_unit:"cm",garment_type:"",meas:{},additional_measurements:"",bust:"",waist:"",hips:"",length:"",underbust:"",shoulder:"",high_hip:"",sleeve_length:"",inseam:"",measurement_notes:"",can_take_in:false,spare_fabric:false,description:"",imageFiles:[],imagePreviews:[],postage_options:[],accepts_collection:false};
 
 // ── Garment-specific measurement fields ───────────────────────────────────────
 // Which measurement fields show depends on gender + garment type. Field labels
