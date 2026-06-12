@@ -2,7 +2,7 @@ import React from "react";
 import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Plane } from "lucide-react";
 import { SIZES, CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
 import { S } from "../styles";
-import { Sec, F, Tog, Stars, VerifiedBadge } from "../components/Shared";
+import { Sec, F, Tog, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 
 export default function Profile({
   view, setView, prevView, user,
@@ -151,11 +151,17 @@ export default function Profile({
             <div style={{flex:1}}>
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:4}}>SELLER PROFILE</p>
               <h2 style={S.profileName}>{viewedProfile.full_name||viewedProfile.username||"Seller"}</h2>
-              {/* Phase 11 — verified badge sits prominently below the seller name. */}
-              {viewedProfile.verified&&<div style={{marginBottom:10}}><VerifiedBadge/></div>}
+              {/* Phase 11 — verified-seller + ID-verified badges sit prominently below
+                  the seller name. They're independent: a seller can have either, both,
+                  or neither. */}
+              {(viewedProfile.verified||viewedProfile.identity_verified)&&(
+                <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:10}}>
+                  {viewedProfile.verified&&<VerifiedBadge/>}
+                  {viewedProfile.identity_verified&&<IDVerifiedBadge/>}
+                </div>
+              )}
               {viewedProfile.location&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:10,display:"flex",alignItems:"center",gap:5}}><MapPin width={14} height={14}/> {viewedProfile.location}</p>}
               <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:14}}>
-                {viewedProfile.id_verified&&<span style={{background:"#007AFF",color:"#fff",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",display:"inline-flex",alignItems:"center",gap:5}}><BadgeCheck width={12} height={12}/> ID VERIFIED</span>}
                 {viewedProfile.total_sales>0&&<span style={{background:"#FF950022",color:"#FF9500",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",border:"1px solid #FF950044",display:"inline-flex",alignItems:"center",gap:5}}><ShoppingBag width={12} height={12}/> {viewedProfile.total_sales} SALES</span>}
               </div>
               <p style={{...S.profileMeta,display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>{profileListings.length} listings · {profileListings.filter(i=>i.sold).length} sold{reviews.length>0&&<span style={{display:"inline-flex",alignItems:"center",gap:6}}> · <Stars value={reviews.reduce((a,r)=>a+r.rating,0)/reviews.length} size={14} color="#FF1493"/> <span style={{color:"#111",fontWeight:800}}>{(reviews.reduce((a,r)=>a+r.rating,0)/reviews.length).toFixed(1)}</span> ({reviews.length} review{reviews.length!==1?"s":""})</span>}</p>

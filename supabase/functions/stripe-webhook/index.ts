@@ -82,6 +82,72 @@ Deno.serve(async (req) => {
     return new Response(`Webhook Error: ${(e as Error).message}`, { status: 400 });
   }
 
+  // ── Phase 11 — Stripe Identity results ──────────────────────────────────────
+  // The identity flow is started by the create-verification-session function,
+  // which stamps the session id onto the seller's profile. Here we resolve the
+  // async pass/fail: `verified` → ID VERIFIED badge goes live; `requires_input`
+  // (Stripe's "needs another attempt") → mark failed so the dashboard offers a
+  // retry. Add both events to the Stripe webhook endpoint in the dashboard.
+  if (
+    event.type === "identity.verification_session.verified" ||
+    event.type === "identity.verification_session.requires_input"
+  ) {
+    const vs = event.data.object as Stripe.Identity.VerificationSession;
+    try {
+      // Find the profile this session belongs to — primary link is the session id
+      // we stored at creation, with metadata.user_id as a fallback.
+      let userId = (vs.metadata?.user_id as string) || null;
+      const pr = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?stripe_verification_session_id=eq.${vs.id}&select=id`,
+        { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
+      );
+      if (pr.ok) {
+        const rows: Array<{ id: string }> = await pr.json();
+        if (rows[0]?.id) userId = rows[0].id;
+      }
+      if (!userId) {
+        console.error("Identity webhook: no profile for session", vs.id);
+        return new Response(JSON.stringify({ received: true }), { status: 200 });
+      }
+
+      if (event.type === "identity.verification_session.verified") {
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+          method: "PATCH",
+          headers: sbHeaders,
+          body: JSON.stringify({
+            identity_verified: true,
+            identity_verification_status: "verified",
+            identity_verified_at: new Date().toISOString(),
+          }),
+        }).catch(() => {});
+        await insertHealing("notifications", {
+          user_id: userId,
+          type: "identity",
+          title: "🛡️ Identity verified",
+          body: "Your identity has been verified. Your ID VERIFIED badge is now live on your profile.",
+          read: false,
+        });
+      } else {
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+          method: "PATCH",
+          headers: sbHeaders,
+          body: JSON.stringify({ identity_verification_status: "failed" }),
+        }).catch(() => {});
+        await insertHealing("notifications", {
+          user_id: userId,
+          type: "identity",
+          title: "Identity verification unsuccessful",
+          body: "Your identity verification was unsuccessful. Please try again from your dashboard.",
+          read: false,
+        });
+      }
+    } catch (e) {
+      console.error("Identity webhook processing error:", (e as Error).message);
+    }
+    // 200 so Stripe doesn't retry forever on a non-recoverable data issue.
+    return new Response(JSON.stringify({ received: true }), { status: 200 });
+  }
+
   if (event.type !== "checkout.session.completed") {
     return new Response(JSON.stringify({ received: true }), { status: 200 });
   }
