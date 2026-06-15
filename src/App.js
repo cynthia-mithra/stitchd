@@ -14,7 +14,7 @@ import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2 } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import PricingGuide from "./components/PricingGuide";
 import Tailors from "./views/Tailors";
@@ -29,6 +29,8 @@ import Orders from "./views/Orders";
 import Looks from "./views/Looks";
 import CreateLook from "./views/CreateLook";
 import SavedSearches from "./views/SavedSearches";
+import PublicWishlist from "./views/PublicWishlist";
+import ShareWishlistModal from "./components/ShareWishlistModal";
 import Legal, { LEGAL_VIEWS } from "./views/Legal";
 import Footer from "./components/Footer";
 
@@ -38,6 +40,20 @@ const LEGAL_PATHS = Object.fromEntries(LEGAL_VIEWS.map(v => [`/${v}`, v]));
 
 // Issue #115 — a listing may have at most this many photos (and at least 1).
 const MAX_LISTING_IMAGES = 8;
+
+// Phase 14 — shareable wishlist links. Public lists live at stitchd.fit/wishlist/<slug>.
+// `shareSlugUrl` is the full link we copy to the clipboard; `shareSlugDisplay` is
+// the protocol-less form shown in the UI / WhatsApp text (per the issue spec).
+const SHARE_HOST = "stitchd.fit";
+const shareSlugUrl     = (slug) => `https://${SHARE_HOST}/wishlist/${slug}`;
+const shareSlugDisplay = (slug) => `${SHARE_HOST}/wishlist/${slug}`;
+// Build a URL-safe slug from the list name, then App.js appends a random 4-char
+// suffix for uniqueness (e.g. "my-wedding-wishlist-a3f2").
+const slugifyName = (name) => {
+  const base = (name || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  return base || "wishlist";
+};
+const randSuffix = () => Math.random().toString(36).replace(/[^a-z0-9]/g, "").slice(0, 4).padEnd(4, "0");
 
 // Pull the human-readable reason out of a thrown Supabase/PostgREST error.
 // db.* throws `new Error(await r.text())` where the text is usually JSON like
@@ -139,6 +155,26 @@ export default function App() {
   // `wishlists` table alongside `myWishlist` (the Set that drives the filled
   // heart); see loadMyWishlist / toggleFavourite below.
   const [wishlistOrder, setWishlistOrder] = useState([]);
+  // Phase 14 — Shareable wishlists. `myShared` backs the MY SHARED LISTS section
+  // on /wishlist; the share* state drives the create/edit modal; the public*
+  // state backs the no-login /wishlist/<slug> page.
+  const [myShared,        setMyShared]        = useState([]);
+  const [showShareModal,  setShowShareModal]  = useState(false);
+  const [shareMode,       setShareMode]       = useState("create");   // "create" | "edit"
+  const [shareStep,       setShareStep]       = useState("form");     // "form" | "success"
+  const [shareName,       setShareName]       = useState("");
+  const [shareSelected,   setShareSelected]   = useState(new Set());
+  const [sharePublic,     setSharePublic]     = useState(true);
+  const [shareSaving,     setShareSaving]     = useState(false);
+  const [shareResult,     setShareResult]     = useState(null);       // the created/edited list row
+  const [shareCopied,     setShareCopied]     = useState(false);
+  const [editingShared,   setEditingShared]   = useState(null);       // list being edited (edit mode)
+  const [publicSlug,      setPublicSlug]      = useState(null);
+  const [publicList,      setPublicList]      = useState(null);
+  const [publicOwnerName, setPublicOwnerName] = useState("");
+  const [publicLoading,   setPublicLoading]   = useState(false);
+  const [publicCopied,    setPublicCopied]    = useState(false);
+  const [myCopiedId,      setMyCopiedId]      = useState(null);       // which MY SHARED LISTS card just copied
   // Shopping bag holds lightweight snapshots of bagged listings ({id,name,price,
   // currency,image,seller,sold}) so the panel renders without re-fetching. Stored
   // in localStorage (per-device) so it survives refresh AND logging in, like the
@@ -422,6 +458,27 @@ export default function App() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
+
+  // Phase 14 — public shared wishlist deep link (/wishlist/<slug>). A shared link
+  // lands here on a cold load with no login required; we detect the slug, switch
+  // to the public-wishlist view and fetch the list. The URL is left intact so a
+  // refresh / re-share still works (it's cleared only when the viewer navigates
+  // away via exitPublicWishlist).
+  useEffect(()=>{
+    const m=window.location.pathname.replace(/\/+$/,"").match(/^\/wishlist\/([^/]+)$/);
+    if(m&&m[1]){
+      const slug=decodeURIComponent(m[1]);
+      setPublicSlug(slug);
+      setView("public-wishlist");
+      loadPublicWishlist(slug);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  // Refresh the owner's shared lists whenever they open /wishlist, so the MY
+  // SHARED LISTS section is always current after a create/edit/delete.
+  useEffect(()=>{ if(view==="wishlist"&&user) loadMySharedWishlists(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[view,user]);
 
   // Footer navigation: switch to a legal `view` without a full reload and push the
   // matching path so the URL + Back button reflect it. Scrolls to top on navigate.
@@ -1146,6 +1203,139 @@ export default function App() {
     clearFilters();
     if(item.category) setCatFilter(item.category);
     setView("shop");
+  }
+
+  // ── Phase 14 — Shareable wishlists ──────────────────────────────────────────
+  // Load the signed-in user's shared lists for the MY SHARED LISTS section.
+  async function loadMySharedWishlists(){
+    if(!user||!token){ setMyShared([]); return; }
+    const rows=await db.getMySharedWishlists(user.id,token);
+    setMyShared(rows);
+  }
+
+  // Open the create modal from /wishlist. Pre-selects every saved piece (the
+  // issue's "default: all items selected").
+  function openShareModal(){
+    if(!user||!token){ flash("Sign in to share your wishlist!"); setAuthMode("login"); setView("auth"); return; }
+    setShareMode("create"); setShareStep("form"); setEditingShared(null);
+    setShareName(""); setSharePublic(true); setShareResult(null); setShareCopied(false);
+    setShareSelected(new Set(wishlistItems.map(i=>i.id)));
+    setShowShareModal(true);
+  }
+
+  // Open the modal in edit mode for an existing list. Loads the owner's current
+  // wishlist so the selector has every piece, then pre-selects those already in
+  // the list (plus any list pieces no longer wishlisted, so editing never
+  // silently drops them).
+  async function openEditSharedList(list){
+    if(!user||!token||!list) return;
+    await loadMyWishlist();
+    const itemIds=(list.shared_wishlist_items||[]).map(r=>r.listing_id).filter(Boolean);
+    setShareMode("edit"); setShareStep("form"); setEditingShared(list);
+    setShareName(list.name||""); setSharePublic(list.public!==false);
+    setShareResult(list); setShareCopied(false);
+    setShareSelected(new Set(itemIds));
+    setShowShareModal(true);
+  }
+
+  function closeShareModal(){
+    setShowShareModal(false); setShareStep("form"); setShareResult(null);
+    setEditingShared(null); setShareCopied(false);
+  }
+
+  function toggleShareItem(id){
+    setShareSelected(prev=>{ const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
+  }
+  function toggleShareAll(){
+    const all=shareSelectItems.length>0&&shareSelectItems.every(i=>shareSelected.has(i.id));
+    setShareSelected(all?new Set():new Set(shareSelectItems.map(i=>i.id)));
+  }
+
+  // Create OR save (edit) a shareable list. On create we generate a unique slug
+  // (name + random 4-char suffix, retried on the rare UNIQUE collision), insert
+  // the list and its selected items, then flip the modal to the success state.
+  // On edit we rename / re-toggle public and replace the items wholesale.
+  async function submitSharedList(){
+    if(!user||!token) return;
+    const name=shareName.trim();
+    const ids=shareSelectItems.filter(i=>shareSelected.has(i.id)).map(i=>i.id);
+    if(!name){ flash("Give your list a name."); return; }
+    if(!ids.length){ flash("Select at least one piece."); return; }
+    setShareSaving(true);
+    try{
+      if(shareMode==="edit"&&editingShared){
+        await withFreshToken(tok=>db.updateSharedWishlist(editingShared.id,{name,public:sharePublic},tok));
+        await withFreshToken(tok=>db.clearSharedWishlistItems(editingShared.id,tok));
+        await withFreshToken(tok=>db.addSharedWishlistItems(ids.map((lid,i)=>({shared_wishlist_id:editingShared.id,listing_id:lid,position:i})),tok));
+        flash("✓ List updated!");
+        closeShareModal();
+        await loadMySharedWishlists();
+        if(view==="public-wishlist"&&publicList&&publicList.id===editingShared.id) loadPublicWishlist(publicList.slug);
+      }else{
+        let created=null,lastErr=null;
+        for(let i=0;i<4&&!created;i++){
+          const slug=`${slugifyName(name)}-${randSuffix()}`;
+          try{ created=await withFreshToken(tok=>db.createSharedWishlist({user_id:user.id,name,slug,public:sharePublic},tok)); }
+          catch(e){ lastErr=e; if(!/duplicate|unique|409|23505/i.test(errMsg(e))) throw e; }
+        }
+        if(!created) throw lastErr||new Error("Couldn't create the list.");
+        await withFreshToken(tok=>db.addSharedWishlistItems(ids.map((lid,i)=>({shared_wishlist_id:created.id,listing_id:lid,position:i})),tok));
+        setShareResult(created); setShareStep("success");
+        await loadMySharedWishlists();
+      }
+    }catch(e){ flash(`Couldn't save the list: ${errMsg(e)}`,9000); }
+    finally{ setShareSaving(false); }
+  }
+
+  async function deleteSharedList(list){
+    if(!user||!token||!list) return;
+    if(!window.confirm(`Delete "${list.name}"? This can't be undone.`)) return;
+    try{
+      await withFreshToken(tok=>db.deleteSharedWishlist(list.id,tok));
+      setMyShared(prev=>prev.filter(l=>l.id!==list.id));
+      flash("List deleted.");
+      if(view==="public-wishlist"&&publicList&&publicList.id===list.id){ setPublicList(null); }
+    }catch(e){ flash("Couldn't delete the list. Try again."); }
+  }
+
+  // Copy a list's public link to the clipboard, flashing a "Copied!"
+  // confirmation via the passed setter (modal / public page / MY SHARED LISTS
+  // each track their own flag).
+  function copyShareLink(slug,setFlag){
+    const url=shareSlugUrl(slug);
+    const done=()=>{ if(setFlag){ setFlag(true); setTimeout(()=>setFlag(false),2000); } flash("🔗 Link copied!"); };
+    try{ navigator.clipboard.writeText(url).then(done).catch(()=>done()); }
+    catch{ done(); }
+  }
+
+  function whatsappShare(slug){
+    const text=`Check out my wishlist on Stitch'd: ${shareSlugDisplay(slug)}`;
+    window.open(`whatsapp://send?text=${encodeURIComponent(text)}`,"_blank");
+  }
+
+  // Load a public shared list by slug for the no-login /wishlist/<slug> page,
+  // resolving the owner's display name for the heading. Anon key reads are fine
+  // (no RLS); a missing list leaves publicList null → "no longer available".
+  async function loadPublicWishlist(slug){
+    if(!slug) return;
+    setPublicLoading(true); setPublicCopied(false);
+    try{
+      const list=await db.getSharedWishlist(slug,token);
+      setPublicList(list);
+      if(list&&list.user_id){
+        const prof=await db.getProfile(list.user_id,token);
+        setPublicOwnerName(prof?.full_name||prof?.username||"Someone");
+      }else{ setPublicOwnerName("Someone"); }
+    }catch(e){ setPublicList(null); }
+    finally{ setPublicLoading(false); }
+  }
+
+  // Leave the public page back into the SPA, restoring "/" so the URL doesn't
+  // stay stuck on /wishlist/<slug>.
+  function exitPublicWishlist(item){
+    if(window.location.pathname.startsWith("/wishlist/")) window.history.replaceState({},"","/");
+    if(item) openDetail(item); else setView("shop");
+    window.scrollTo(0,0);
   }
 
   // Fetch once the set of seller ids flagged fast_seller=true on their profile, so
@@ -1929,6 +2119,18 @@ export default function App() {
   const wishlistItems = useMemo(()=> wishlistOrder.map(id=>wishlistById.get(id)).filter(Boolean), [wishlistOrder,wishlistById]);
   const liveWishlist = wishlistItems.filter(i=>!i.sold);
   const soldWishlist = wishlistItems.filter(i=>i.sold);
+  // Phase 14 — the pieces shown in the create/edit shareable-list selector. In
+  // create mode that's every wishlisted piece; in edit mode we also fold in any
+  // pieces already in the list that the user has since un-wishlisted, so editing
+  // never silently drops them.
+  const shareSelectItems = useMemo(()=>{
+    if(shareMode==="edit"&&editingShared){
+      const map=new Map(wishlistItems.map(i=>[i.id,i]));
+      (editingShared.shared_wishlist_items||[]).forEach(r=>{ if(r.listings&&!map.has(r.listings.id)) map.set(r.listings.id,r.listings); });
+      return Array.from(map.values());
+    }
+    return wishlistItems;
+  },[shareMode,editingShared,wishlistItems]);
 
   // Items collapsed behind the desktop hover-dropdown / mobile hamburger menu.
   // Favourites, Notifications and LIST IT deliberately stay out of this list —
@@ -2558,7 +2760,15 @@ export default function App() {
               <div style={{marginBottom:36,paddingBottom:24,borderBottom:"3px solid #111"}}>
                 <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>SAVED PIECES</p>
                 <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,display:"flex",alignItems:"center",gap:12,lineHeight:1}}>MY WISHLIST <Heart width={40} height={40} fill="#FF1493" color="#FF1493"/></h2>
-                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:700,letterSpacing:1,color:"#111",marginTop:10}}>{wishlistItems.length} item{wishlistItems.length===1?"":"s"} saved</p>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap",marginTop:10}}>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:700,letterSpacing:1,color:"#111"}}>{wishlistItems.length} item{wishlistItems.length===1?"":"s"} saved</p>
+                  {/* SHARE WISHLIST — only when there's at least one saved piece. */}
+                  {wishlistItems.length>0&&(
+                    <button className="hbtn" onClick={openShareModal} style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"10px 16px",display:"inline-flex",alignItems:"center",gap:8}}>
+                      <Share2 width={16} height={16}/> SHARE WISHLIST
+                    </button>
+                  )}
+                </div>
                 <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#999",marginTop:4}}>Items are not reserved — buy before they're gone</p>
               </div>
 
@@ -2632,6 +2842,42 @@ export default function App() {
                     </div>
                   )}
                 </>
+              )}
+
+              {/* MY SHARED LISTS — Phase 14 PART 4. Hidden entirely when the user
+                  has no shared lists. */}
+              {myShared.length>0&&(
+                <div style={{marginTop:56,paddingTop:28,borderTop:"3px solid #111"}}>
+                  <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,letterSpacing:-0.5,marginBottom:20}}>MY SHARED LISTS</h3>
+                  <div style={{display:"flex",flexDirection:"column",gap:16}}>
+                    {myShared.map(list=>{
+                      const count=(list.shared_wishlist_items||[]).length;
+                      const created=list.created_at?new Date(list.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):"";
+                      const copied=myCopiedId===list.id;
+                      return(
+                        <div key={list.id} style={{border:"2px solid #111",borderRadius:0,background:"#fff",padding:"18px 20px"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,flexWrap:"wrap"}}>
+                            <div style={{minWidth:0}}>
+                              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.3,color:"#111",margin:0,lineHeight:1.1}}>{list.name}</p>
+                              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",margin:"6px 0 0"}}>{count} item{count===1?"":"s"} · {created}{list.public===false?" · PRIVATE":""}</p>
+                            </div>
+                            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                              <button className="hbtn" onClick={()=>copyShareLink(list.slug,(v)=>setMyCopiedId(v?list.id:null))} style={{...S.hBtn,background:copied?"#FF1493":"#fff",color:copied?"#fff":"#111",border:"2px solid #111",display:"inline-flex",alignItems:"center",gap:6}}>
+                                {copied?<Check width={15} height={15}/>:<Copy width={15} height={15}/>} {copied?"COPIED!":"COPY LINK"}
+                              </button>
+                              <button className="hbtn" onClick={()=>openEditSharedList(list)} style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",display:"inline-flex",alignItems:"center",gap:6}}>
+                                <Pencil width={15} height={15}/> EDIT
+                              </button>
+                              <button className="hbtn" onClick={()=>deleteSharedList(list)} style={{...S.hBtn,background:"#fff",color:"#FF0000",border:"2px solid #FF0000",display:"inline-flex",alignItems:"center",gap:6}}>
+                                <Trash2 width={15} height={15}/> DELETE
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </>
           )}
@@ -2881,6 +3127,42 @@ export default function App() {
         applySavedSearch={applySavedSearch}
         toggleSavedSearchAlerts={toggleSavedSearchAlerts}
         deleteSavedSearch={deleteSavedSearch}
+      />
+
+      {/* PUBLIC SHARED WISHLIST — /wishlist/<slug>, no login required */}
+      <PublicWishlist
+        view={view}
+        list={publicList}
+        loading={publicLoading}
+        ownerName={publicOwnerName}
+        isOwner={!!(user&&publicList&&user.id===publicList.user_id)}
+        copied={publicCopied}
+        openDetail={(item)=>exitPublicWishlist(item)}
+        setView={()=>exitPublicWishlist()}
+        onCopyLink={()=>publicList&&copyShareLink(publicList.slug,setPublicCopied)}
+        onEdit={()=>publicList&&openEditSharedList(publicList)}
+        onDelete={()=>publicList&&deleteSharedList(publicList)}
+      />
+
+      {/* CREATE / EDIT SHAREABLE WISHLIST MODAL */}
+      <ShareWishlistModal
+        open={showShareModal}
+        mode={shareMode}
+        step={shareStep}
+        items={shareSelectItems}
+        name={shareName} setName={setShareName}
+        selected={shareSelected}
+        toggleSelect={toggleShareItem}
+        toggleAll={toggleShareAll}
+        isPublic={sharePublic} setIsPublic={setSharePublic}
+        saving={shareSaving}
+        shareUrl={shareResult?shareSlugDisplay(shareResult.slug):""}
+        copied={shareCopied}
+        onCreate={submitSharedList}
+        onCopy={()=>shareResult&&copyShareLink(shareResult.slug,setShareCopied)}
+        onWhatsApp={()=>shareResult&&whatsappShare(shareResult.slug)}
+        onClose={closeShareModal}
+        onDone={closeShareModal}
       />
 
       {/* SHOP THE LOOK — /looks page + look detail */}
