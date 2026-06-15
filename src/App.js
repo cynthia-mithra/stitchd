@@ -15,6 +15,7 @@ import { auth, uploadImage, uploadLookImage, uploadDisputeImage, isTokenExpired,
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
+import PricingGuide from "./components/PricingGuide";
 import Tailors from "./views/Tailors";
 import Detail from "./views/Detail";
 import Shop from "./views/Shop";
@@ -2674,6 +2675,17 @@ export default function App() {
                 <F l="Condition"><select style={S.inp} value={form.condition} onChange={e=>setForm(f=>({...f,condition:e.target.value}))}>{CONDITIONS.map(c=><option key={c}>{c}</option>)}</select></F>
                 {(form.listing_type==="Clothing"||form.listing_type==="Shoes")&&<F l="Size"><select style={S.inp} value={form.size} onChange={e=>setForm(f=>({...f,size:e.target.value}))}>{(form.listing_type==="Shoes"?SHOE_SIZES:SIZES).map(s=><option key={s}>{s}</option>)}</select></F>}
               </div>
+              {/* Phase 13 — pricing suggestion from similar sold listings. Sits below
+                  the price input; collapsed by default on the edit form. The effective
+                  category for Clothing comes from the chosen garment type (the Category
+                  dropdown is hidden for Clothing), matching how `add`/`saveEdit` store it. */}
+              <PricingGuide
+                category={form.listing_type==="Clothing"?buildMeasPayload(form).category:form.category}
+                title={form.name}
+                token={token}
+                collapsible={view==="edit"}
+                onUsePrice={p=>setForm(f=>({...f,price:String(p)}))}
+              />
             </Sec>
             <Sec label="OCCASIONS">
               <div style={S.occGrid}>{OCCASIONS.map(o=>{const on=form.occasions.includes(o),col=OCC_COLOR[o];return<button key={o} type="button" onClick={()=>togOcc(o)} style={{...S.occToggle,background:on?col:"#fff",color:on?"#fff":"#111",border:`2px solid ${on?col:"#111"}`,fontWeight:on?800:600}}>{o.toUpperCase()}</button>;})}</div>

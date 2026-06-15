@@ -285,4 +285,28 @@ export const db = {
   // Search listings by title across ALL sellers (case-insensitive, available
   // only) for the create-a-look listing picker.
   async searchListings(q,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?name=ilike.*${encodeURIComponent(q)}*&sold=eq.false&order=created_at.desc&limit=20`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+
+  // ── Phase 13 — Pricing suggestions ────────────────────────────────────────
+  // Fetch SOLD comparable listings for the pricing-guide panel on the create/edit
+  // form. Returns up to 50 rows ({price}) so the frontend can compute min/max/avg/
+  // count itself — no aggregate Edge Function needed (issue PART 3).
+  //
+  // "Sold" is matched by EITHER signal: status='sold' (set by the stripe-webhook
+  // on a real purchase) OR the legacy sold=true flag (set when a seller manually
+  // marks a piece sold), so both kinds of sale feed the suggestion. `keywords` are
+  // OR'd as case-insensitive title (name) matches; pass an empty array to fall
+  // back to category-only matching. All filters are combined in a single nested
+  // and(...) logic tree so PostgREST applies them together. Returns [] on error so
+  // a missing column / RLS issue degrades to the "not enough data" message rather
+  // than throwing into the form.
+  async getSoldComps(category,keywords,t){
+    if(!category) return [];
+    const sold="or(status.eq.sold,sold.eq.true)";
+    const clauses=[`category.eq.${encodeURIComponent(category)}`,sold];
+    const kws=(keywords||[]).filter(Boolean);
+    if(kws.length) clauses.push(`or(${kws.map(k=>`name.ilike.*${encodeURIComponent(k)}*`).join(",")})`);
+    const url=`${SUPABASE_URL}/rest/v1/listings?and=(${clauses.join(",")})&select=price&limit=50`;
+    try{ const r=await fetch(url,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); }
+    catch{ return []; }
+  },
 };
