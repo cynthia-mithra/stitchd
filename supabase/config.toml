@@ -34,3 +34,14 @@ verify_jwt = false
 # reads/writes via the service role.
 [functions.saved-search-alerts]
 verify_jwt = false
+
+# Phase 13 — promoted listings. create-promotion-session is called from the
+# browser (seller dashboard) and verifies listing ownership server-side via the
+# service role; expire-promotions is invoked by the hourly pg_cron schedule with
+# the service-role bearer. Neither presents a Supabase user JWT, so verification
+# must be OFF.
+[functions.create-promotion-session]
+verify_jwt = false
+
+[functions.expire-promotions]
+verify_jwt = false

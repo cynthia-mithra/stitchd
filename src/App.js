@@ -11,6 +11,7 @@ import {
 import { db } from "./lib/db";
 import { startCheckout, verifySession } from "./lib/checkout";
 import { startIdentityVerification } from "./lib/identity";
+import { startPromotion } from "./lib/promotion";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark } from "lucide-react";
@@ -216,6 +217,11 @@ export default function App() {
   const [showTailorDir,  setShowTailorDir]  = useState(false);
   const [tailorProfiles, setTailorProfiles] = useState([]);
   const [myOrders,       setMyOrders]       = useState([]);
+  // Phase 13 — promoted listings. `myPromotions` backs the dashboard ANALYTICS
+  // PROMOTIONS history; `promoteBusyId` is the listing id whose checkout session
+  // is being created (disables that card's PROMOTE button until the redirect).
+  const [myPromotions,   setMyPromotions]   = useState([]);
+  const [promoteBusyId,  setPromoteBusyId]  = useState(null);
   const [orderProfiles,  setOrderProfiles]  = useState({});
   const [ordersLoading,  setOrdersLoading]  = useState(false);
   const [deliveryAddress,setDeliveryAddress]= useState({name:"",line1:"",line2:"",city:"",postcode:"",country:"UK"});
@@ -338,7 +344,19 @@ export default function App() {
     // Phase 11 — return from the Stripe Identity hosted flow (return_url is
     // /dashboard?verified=true). Land on the dashboard TOOLS tab; the profile
     // reload (user/token effect) picks up the webhook-driven status change.
-    if(window.location.pathname.replace(/\/+$/,"").endsWith("/dashboard")||new URLSearchParams(window.location.search).get("verified")==="true"){
+    // Phase 13 — return from a successful £2.99 promotion checkout
+    // (/dashboard?promoted=true&listing_id=…). Land on the dashboard (ACTIVE tab),
+    // optimistically mark the listing promoted (the webhook does the real update),
+    // and confirm to the seller. Checked before the generic /dashboard→TOOLS rule
+    // so the promotion success doesn't get swallowed by it.
+    const _sp=new URLSearchParams(window.location.search);
+    if(_sp.get("promoted")==="true"){
+      const lid=_sp.get("listing_id");
+      window.history.replaceState({},document.title,"/");
+      if(lid){ const until=new Date(Date.now()+7*86400000).toISOString(); setItems(p=>p.map(i=>i.id===lid?{...i,promoted:true,promoted_until:until,sold:i.sold}:i)); }
+      flash("⚡ Your listing is now promoted for 7 days!");
+      setView("dashboard");
+    } else if(window.location.pathname.replace(/\/+$/,"").endsWith("/dashboard")||_sp.get("verified")==="true"){
       window.history.replaceState({},document.title,"/");
       setDashTabRequest("tools");
       setView("dashboard");
@@ -424,9 +442,12 @@ export default function App() {
       // Phase 11 — the seller's latest verification application (for the rejected
       // → reapply-after-30-days rule in the dashboard GET VERIFIED section).
       db.getMyVerificationApplication(user.id,token).then(setMyVerificationApp).catch(()=>{});
+      // Phase 13 — the seller's promotions for the dashboard ANALYTICS history.
+      db.getMyPromotions(user.id,token).then(setMyPromotions).catch(()=>{});
     } else {
       setMyWishlist(new Set());
       setMyVerificationApp(null);
+      setMyPromotions([]);
     }
   },[user,token]);
 
@@ -437,7 +458,13 @@ export default function App() {
     finally{ setLoading(false); }
   }
 
-  const visible = useMemo(()=>items.filter(i=>{
+  // Phase 13 — a listing counts as "promoted" for sorting only while its boost is
+  // live (promoted flag set AND promoted_until still in the future), so an expired
+  // promotion the cron hasn't swept yet never floats to the top.
+  const visible = useMemo(()=>{
+   const _now=Date.now();
+   const _live=(i)=>!!i.promoted&&!!i.promoted_until&&new Date(i.promoted_until).getTime()>_now;
+   return items.filter(i=>{
     const matchCat  = catFilter==="All"||i.category===catFilter;
     const matchSize = sizeFilter==="All"||i.size===sizeFilter;
     const matchMin  = minPrice===""||i.price>=parseFloat(minPrice);
@@ -461,7 +488,11 @@ export default function App() {
     const col=i.colours||[];
     const matchColour=colourFilter.length===0||col.length===0||colourFilter.some(c=>col.includes(c));
     return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchVacation&&matchActive&&matchVerified&&matchOcc&&matchColour;
-  }),[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers,occFilter,colourFilter]);
+   })
+   // Promoted (in-window) listings float to the top; the source array is already
+   // created_at.desc so a stable sort keeps newest-first order within each group.
+   .sort((a,b)=>(_live(a)?0:1)-(_live(b)?0:1));
+  },[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers,occFilter,colourFilter]);
 
   function flash(m,dur=3500){ setToast(m); setTimeout(()=>setToast(""),dur); }
 
@@ -1599,6 +1630,29 @@ export default function App() {
     }catch(e){ flash("Couldn't save your interest — try again."); }
   }
 
+  // ── Phase 13 — promoted listings ──────────────────────────────────────────
+  // Load the signed-in seller's promotions for the dashboard ANALYTICS history.
+  async function loadMyPromotions(){
+    if(!user||!token) return;
+    try{ setMyPromotions(await db.getMyPromotions(user.id,token)); }catch(e){ /* table may not exist yet */ }
+  }
+
+  // Pay £2.99 to promote a listing for 7 days. Calls the create-promotion-session
+  // Edge Function (lib/promotion) which redirects to Stripe's hosted checkout. The
+  // listing's promoted flag + expiry are set later by the stripe-webhook; on
+  // return the ?promoted=true success handler reflects it locally.
+  async function startPromote(listing){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    if(!listing?.id||promoteBusyId) return;
+    setPromoteBusyId(listing.id);
+    try{
+      await startPromotion(listing.id,user.id); // redirects on success
+    }catch(e){
+      flash(errMsg(e),9000);
+      setPromoteBusyId(null);
+    }
+  }
+
   // Phase 11 — seller submits a verification application. Inserts the application,
   // flips the profile to 'pending', and mirrors both into local state so the
   // dashboard GET VERIFIED section switches to APPLICATION UNDER REVIEW. Returns
@@ -1794,7 +1848,7 @@ export default function App() {
   // menu was open so navigating dismisses the overlay.
   const navMenuItems = [
     {label:"✦ NEW ARRIVALS", run:()=>{clearFilters();setView("newarrivals");}},
-    {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();setView("dashboard");}},
+    {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();loadMyPromotions();setView("dashboard");}},
     {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
     {label:"SAVED SEARCHES",  run:()=>{loadSavedSearches();setView("saved-searches");}},
     {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
@@ -2601,6 +2655,7 @@ export default function App() {
         bulkUpdateListings={bulkUpdateListings} relistCopy={relistCopy}
         toggleVacation={toggleVacation} vacationSaving={vacationSaving}
         notifyPromote={notifyPromote} promoteNotified={promoteNotified}
+        startPromote={startPromote} promoteBusyId={promoteBusyId} myPromotions={myPromotions}
         bundles={bundles} bundleItems={bundleItems} loadBundles={loadBundles} deleteBundle={deleteBundle}
         bundleForm={bundleForm} setBundleForm={setBundleForm} toggleBundleListing={toggleBundleListing} createBundle={createBundle}
         myLooks={myLooks} isAdmin={isAdmin} openCreateLook={openCreateLook} editLook={editLook} deleteLook={deleteLook}

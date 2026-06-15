@@ -127,6 +127,18 @@ export default function Shop({
   // wishlisted the listing, in the price/views row. Filled when the signed-in
   // user has saved it, outline otherwise; clicking toggles the save (or prompts
   // sign-in when logged out). Renders nothing when the count is 0, per spec.
+  // Phase 13 — a listing is "promoted" (shows the PROMOTED label + sorts first)
+  // only while its boost is live: promoted flag set AND promoted_until in the
+  // future. The promoted-first ordering itself is applied in App.js (`visible`).
+  const isPromoted = (item) =>
+    !!item.promoted && !!item.promoted_until && new Date(item.promoted_until).getTime() > Date.now();
+  // Small PROMOTED label for the top-left corner of a promoted card's image.
+  const PromotedLabel = ({ item }) =>
+    isPromoted(item) ? (
+      <div style={{ position: "absolute", top: 12, left: 12, background: "#FF1493", color: "#fff", padding: "3px 8px", fontSize: 9, fontWeight: 800, letterSpacing: 1, fontFamily: "'Barlow Condensed',sans-serif", zIndex: 5, display: "inline-flex", alignItems: "center", gap: 4 }}>
+        <Zap width={11} height={11} fill="currentColor" /> PROMOTED
+      </div>
+    ) : null;
   const WishCount = ({ item }) => {
     const count = wishlistCounts[item.id] || 0;
     if(count <= 0) return null;
@@ -281,6 +293,7 @@ export default function Shop({
                 <article key={item.id} className="scard" style={{...S.card,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
+                    <PromotedLabel item={item}/>
                     {item.reserved&&!item.sold&&<div style={S.reservedBadge}>RESERVED</div>}
                     {item.prev_price>item.price&&<div style={S.priceDropBadge}>PRICE DROP</div>}
                     {fitsMe(item)===true&&<div style={{...S.fitsBadge,display:"inline-flex",alignItems:"center",gap:5}}><Ruler width={11} height={11}/> FITS YOU</div>}

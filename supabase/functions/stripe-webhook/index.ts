@@ -69,6 +69,113 @@ async function insertHealing(table: string, body: Record<string, unknown>) {
   }
 }
 
+// ── Phase 13 — promotion payment ──────────────────────────────────────────────
+// A £2.99 "Promoted Listing" checkout (created by create-promotion-session, tagged
+// metadata.type='promotion') completed. Flip the listing's promoted flag + 7-day
+// expiry, mark the promotions row active, and notify the seller in-app + by email.
+// Kept entirely separate from the sale path below so existing sale logic is
+// untouched (issue PART 4).
+const PROMOTION_DAYS = 7;
+async function handlePromotion(session: Stripe.Checkout.Session) {
+  const listingId = session.metadata?.listing_id || "";
+  const sellerId = session.metadata?.seller_id || "";
+  if (!listingId) {
+    console.error("Promotion webhook: no listing_id in session metadata", session.id);
+    return;
+  }
+  const now = new Date();
+  const expires = new Date(now.getTime() + PROMOTION_DAYS * 86400000);
+  const startedAt = now.toISOString();
+  const expiresAt = expires.toISOString();
+
+  // 1. Promote the listing (set both the flag and the expiry the shop sort reads).
+  await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${listingId}`, {
+    method: "PATCH",
+    headers: sbHeaders,
+    body: JSON.stringify({
+      promoted: true,
+      promoted_until: expiresAt,
+      promotion_stripe_session_id: session.id,
+    }),
+  }).catch(() => {});
+
+  // 2. Flip the pending promotions row → active. If create-promotion-session's
+  //    insert never landed (best-effort), PATCH matches nothing — insert a fresh
+  //    active row so the dashboard history is still complete.
+  const patchRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/promotions?stripe_session_id=eq.${session.id}`,
+    {
+      method: "PATCH",
+      headers: { ...sbHeaders, Prefer: "return=representation" },
+      body: JSON.stringify({ status: "active", started_at: startedAt, expires_at: expiresAt }),
+    },
+  ).catch(() => null);
+  const patched = patchRes && patchRes.ok ? await patchRes.json().catch(() => []) : [];
+  if (!Array.isArray(patched) || patched.length === 0) {
+    await insertHealing("promotions", {
+      listing_id: listingId,
+      seller_id: sellerId,
+      stripe_session_id: session.id,
+      amount_pence: session.amount_total ?? 299,
+      started_at: startedAt,
+      expires_at: expiresAt,
+      status: "active",
+    });
+  }
+
+  // Listing details for the notification + email.
+  const lr = await fetch(
+    `${SUPABASE_URL}/rest/v1/listings?id=eq.${listingId}&select=name,image_url,images&limit=1`,
+    { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
+  ).catch(() => null);
+  const listing = lr && lr.ok ? (await lr.json().catch(() => []))[0] : null;
+  const title = listing?.name || "Your listing";
+  const untilStr = expires.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+  // 3. In-app notification to the seller.
+  if (sellerId) {
+    await insertHealing("notifications", {
+      user_id: sellerId,
+      type: "promotion",
+      title: "⚡ Listing promoted",
+      body: `Your listing "${title}" is now promoted for ${PROMOTION_DAYS} days!`,
+      link_id: listingId,
+      read: false,
+    });
+  }
+
+  // 4. Email the seller (honouring unsubscribe). Wrapped so a send failure never
+  //    blocks the promotion the webhook is responsible for.
+  try {
+    if (sellerId) {
+      const sellerProfile = await getProfile(sellerId);
+      if (sellerProfile?.email_notifications !== false) {
+        const sellerEmail = await emailForUser(sellerId);
+        if (sellerEmail) {
+          const { subject, html } = await render(
+            "promotion_active",
+            { title, image: listingThumb(listing || {}), promotedUntil: untilStr, listingId },
+            sellerId,
+          );
+          await sendViaResend(sellerEmail, subject, html);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Promotion email send error:", (e as Error).message);
+  }
+}
+
+// A listing's display thumbnail: prefer image_url, else the first of images[].
+function listingThumb(l: { image_url?: string; images?: unknown }): string | undefined {
+  if (l.image_url) return l.image_url;
+  const imgs = l.images;
+  if (Array.isArray(imgs) && imgs.length) {
+    return typeof imgs[0] === "string" ? imgs[0] : (imgs[0] as { url?: string })?.url;
+  }
+  return undefined;
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
@@ -160,6 +267,18 @@ Deno.serve(async (req) => {
   }
 
   const session = event.data.object as Stripe.Checkout.Session;
+
+  // Phase 13 — a promotion checkout (metadata.type='promotion') is handled on a
+  // completely separate path; the sale logic below is left exactly as it was.
+  if (session.metadata?.type === "promotion") {
+    try {
+      await handlePromotion(session);
+    } catch (e) {
+      console.error("Promotion processing error:", (e as Error).message);
+    }
+    return new Response(JSON.stringify({ received: true, promotion: true }), { status: 200 });
+  }
+
   const listingIds = (session.metadata?.listing_ids ?? "").split(",").filter(Boolean);
   const buyerId = session.metadata?.buyer_id || null;
   const stripeSessionId = session.id;
