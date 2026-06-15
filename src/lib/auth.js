@@ -74,3 +74,7 @@ export const uploadStorefrontBanner=(file,t)=>uploadImage(file,t,"storefront-ban
 // bucket is kept private the admin panel links out to it (a signed/authorised
 // fetch) rather than embedding it inline.
 export const uploadDisputeImage=(file,t)=>uploadImage(file,t,"disputes");
+
+// Phase 14 — style feed post photos live in their own public "style-posts"
+// bucket (created by the phase14 style-feed migration).
+export const uploadStylePostImage=(file,t)=>uploadImage(file,t,"style-posts");

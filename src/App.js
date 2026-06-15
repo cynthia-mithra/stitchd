@@ -12,9 +12,9 @@ import { db } from "./lib/db";
 import { startCheckout, startOfferCheckout, verifySession } from "./lib/checkout";
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
-import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, isTokenExpired, decodeJWT } from "./lib/auth";
+import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2 } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import PricingGuide from "./components/PricingGuide";
 import Tailors from "./views/Tailors";
@@ -29,6 +29,7 @@ import Orders from "./views/Orders";
 import Offers from "./views/Offers";
 import Looks from "./views/Looks";
 import CreateLook from "./views/CreateLook";
+import StyleFeed from "./views/StyleFeed";
 import SavedSearches from "./views/SavedSearches";
 import PublicWishlist from "./views/PublicWishlist";
 import ShareWishlistModal from "./components/ShareWishlistModal";
@@ -41,6 +42,9 @@ const LEGAL_PATHS = Object.fromEntries(LEGAL_VIEWS.map(v => [`/${v}`, v]));
 
 // Issue #115 — a listing may have at most this many photos (and at least 1).
 const MAX_LISTING_IMAGES = 8;
+
+// Phase 14 — style feed pagination: LOAD MORE pulls this many posts at a time.
+const STYLE_PAGE = 12;
 
 // Phase 14 — shareable wishlist links. Public lists live at stitchd.fit/wishlist/<slug>.
 // `shareSlugUrl` is the full link we copy to the clipboard; `shareSlugDisplay` is
@@ -296,6 +300,28 @@ export default function App() {
   const [feedItems,      setFeedItems]      = useState([]);
   const [feedLoading,    setFeedLoading]    = useState(false);
   const [feedProfiles,   setFeedProfiles]   = useState({});
+  // Phase 14 — STYLE FEED. Two tabs each keep their own paginated post array
+  // (FOR YOU = everyone, FOLLOWING = followed users). `styleProfiles` /
+  // `styleListings` are shared id→object maps accumulated across both tabs so a
+  // card can render its author + tagged pieces. `styleLiked` is the set of post
+  // ids this user has liked; `styleLikeCounts` overrides each post's counter for
+  // optimistic like/unlike. Home* back the homepage STYLE INSPIRATION preview.
+  const [styleFeedTab,     setStyleFeedTab]     = useState("foryou");
+  const [forYouPosts,      setForYouPosts]      = useState([]);
+  const [followingPosts,   setFollowingPosts]   = useState([]);
+  const [styleProfiles,    setStyleProfiles]    = useState({});
+  const [styleListings,    setStyleListings]    = useState({});
+  const [styleLiked,       setStyleLiked]       = useState(new Set());
+  const [styleLikeCounts,  setStyleLikeCounts]  = useState({});
+  const [styleFeedLoading, setStyleFeedLoading] = useState(false);
+  const [hasMoreForYou,    setHasMoreForYou]    = useState(false);
+  const [hasMoreFollowing, setHasMoreFollowing] = useState(false);
+  const [styleLoadedForYou,    setStyleLoadedForYou]    = useState(false);
+  const [styleLoadedFollowing, setStyleLoadedFollowing] = useState(false);
+  const [styleCreateOpen,  setStyleCreateOpen]  = useState(false);
+  const [styleCreating,    setStyleCreating]    = useState(false);
+  const [homeStylePosts,   setHomeStylePosts]   = useState([]);
+  const [homeStyleProfiles,setHomeStyleProfiles]= useState({});
   // Phase 13 — seller storefronts + follow. `followerCount` is the count for the
   // currently-open storefront (kept in sync as you follow/unfollow). `storeForm`
   // backs the EDIT STOREFRONT section in the dashboard TOOLS tab. The MY FOLLOWING
@@ -1771,6 +1797,174 @@ export default function App() {
     finally{ setFeedLoading(false); }
   }
 
+  // ── Phase 14 — STYLE FEED ───────────────────────────────────────────────────
+  // Resolve the author profiles, tagged listings, seed like counts and the
+  // viewer's likes for a freshly-fetched page of posts. Only fetches the bits not
+  // already cached in the shared maps (so LOAD MORE / tab switches stay cheap).
+  async function resolveStyleMeta(posts){
+    if(!posts.length) return;
+    const needProfiles=[...new Set(posts.map(p=>p.user_id).filter(Boolean))].filter(id=>!styleProfiles[id]);
+    if(needProfiles.length){
+      const profs=await db.getProfilesFullByIds(needProfiles,token);
+      setStyleProfiles(prev=>{ const n={...prev}; profs.forEach(p=>{ n[p.id]=p; }); return n; });
+    }
+    const needListings=[...new Set(posts.flatMap(p=>p.listing_ids||[]))].filter(id=>id&&!styleListings[id]);
+    if(needListings.length){
+      const ls=await db.getListingsByIds(needListings,token);
+      setStyleListings(prev=>{ const n={...prev}; ls.forEach(l=>{ n[l.id]=l; }); return n; });
+    }
+    setStyleLikeCounts(prev=>{ const n={...prev}; posts.forEach(p=>{ if(n[p.id]==null) n[p.id]=p.likes_count||0; }); return n; });
+    if(user&&token){
+      const liked=await db.getMyStyleLikes(user.id,posts.map(p=>p.id),token);
+      if(liked.length) setStyleLiked(prev=>{ const n=new Set(prev); liked.forEach(id=>n.add(id)); return n; });
+    }
+  }
+
+  // Fetch one page of a tab. `reset` replaces the array (first load / tab open);
+  // otherwise it appends (LOAD MORE). Offset is derived from the current array.
+  async function loadStyleFeed(tab,reset){
+    setStyleFeedLoading(true);
+    try{
+      const cur = tab==="following" ? followingPosts : forYouPosts;
+      const offset = reset ? 0 : cur.length;
+      let page;
+      if(tab==="following"){
+        const ids=following.map(f=>f.following_id);
+        page = ids.length ? await db.getStylePostsByUsers(ids,STYLE_PAGE,offset,token) : [];
+      } else {
+        page = await db.getStylePosts(STYLE_PAGE,offset,token);
+      }
+      if(tab==="following"){ setFollowingPosts(prev=>reset?page:[...prev,...page]); setHasMoreFollowing(page.length===STYLE_PAGE); setStyleLoadedFollowing(true); }
+      else { setForYouPosts(prev=>reset?page:[...prev,...page]); setHasMoreForYou(page.length===STYLE_PAGE); setStyleLoadedForYou(true); }
+      await resolveStyleMeta(page);
+    }catch(e){ flash("Failed to load the style feed."); }
+    finally{ setStyleFeedLoading(false); }
+  }
+
+  // Open the feed (from nav / homepage / deep link). Defaults to FOR YOU and
+  // loads it once.
+  function openStyleFeed(){
+    setView("stylefeed"); setStyleFeedTab("foryou"); window.scrollTo(0,0);
+    if(!styleLoadedForYou) loadStyleFeed("foryou",true);
+  }
+  function switchStyleTab(k){
+    setStyleFeedTab(k);
+    const loaded = k==="following" ? styleLoadedFollowing : styleLoadedForYou;
+    if(!loaded) loadStyleFeed(k,true);
+  }
+  function loadMoreStyle(){ loadStyleFeed(styleFeedTab,false); }
+
+  // Optimistic like toggle: flip the heart + counter immediately, sync in the
+  // background, roll back on failure. Logged-out taps are routed to sign-in.
+  async function toggleStyleLike(post){
+    if(!user||!token){ flash("Log in to like posts!"); setAuthMode("login"); setView("auth"); return; }
+    const id=post.id, has=styleLiked.has(id);
+    const base = styleLikeCounts[id]!=null ? styleLikeCounts[id] : (post.likes_count||0);
+    setStyleLiked(prev=>{ const n=new Set(prev); has?n.delete(id):n.add(id); return n; });
+    setStyleLikeCounts(prev=>({...prev,[id]:Math.max(0,base+(has?-1:1))}));
+    try{
+      if(has) await db.unlikeStylePost(id,user.id,token);
+      else    await db.likeStylePost(id,user.id,token);
+      db.setStylePostLikes(id,Math.max(0,base+(has?-1:1)),token);
+    }catch(e){
+      setStyleLiked(prev=>{ const n=new Set(prev); has?n.add(id):n.delete(id); return n; });
+      setStyleLikeCounts(prev=>({...prev,[id]:Math.max(0,base)}));
+      flash("Couldn't update like. Try again.");
+    }
+  }
+
+  // Soft-delete the viewer's own post (deleted=true; never hard-deleted). Removes
+  // it from every list it might appear in.
+  async function deleteStylePost(post){
+    if(!user||post.user_id!==user.id) return;
+    if(!window.confirm("Delete this post? This can't be undone.")) return;
+    try{
+      await db.deleteStylePost(post.id,token);
+      setForYouPosts(prev=>prev.filter(p=>p.id!==post.id));
+      setFollowingPosts(prev=>prev.filter(p=>p.id!==post.id));
+      setHomeStylePosts(prev=>prev.filter(p=>p.id!==post.id));
+      flash("Post deleted.");
+    }catch(e){ flash("Couldn't delete the post."); }
+  }
+
+  // Search ACTIVE listings by title for the create-post tag picker (reuses the
+  // Shop-the-Look picker query — case-insensitive, unsold only).
+  async function searchActiveListings(q){
+    if(!q||!q.trim()) return [];
+    try{ return await db.searchListings(q.trim(),token); }catch{ return []; }
+  }
+
+  // Copy a post's shareable URL to the clipboard (Share2 action). Mirrors the
+  // wishlist share host so the link is stable regardless of the current domain.
+  function shareStylePost(post){
+    const url=`https://${SHARE_HOST}/post/${post.id}`;
+    const done=()=>flash("Link copied!");
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(done).catch(()=>{ legacyCopy(url); done(); }); }
+      else { legacyCopy(url); done(); }
+    }catch{ done(); }
+  }
+  function legacyCopy(text){
+    try{ const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); }catch{ /* ignore */ }
+  }
+
+  // Create a post: upload the photo, insert the row, prepend it to FOR YOU + the
+  // homepage rail, then notify each tagged listing's seller. Best-effort
+  // notifications never block the post.
+  async function createStylePost(file,caption,tags){
+    if(!user||!token){ setAuthMode("login"); setView("auth"); return; }
+    if(!file||styleCreating) return;
+    setStyleCreating(true);
+    try{
+      const url=await withFreshToken(tok=>uploadStylePostImage(file,tok));
+      const listingIds=(tags||[]).map(t=>t.id);
+      const created=await db.insertStylePost({user_id:user.id,caption:caption||null,image_url:url,listing_ids:listingIds,likes_count:0,deleted:false},token);
+      setForYouPosts(prev=>[created,...prev]);
+      setHomeStylePosts(prev=>[created,...prev].slice(0,4));
+      setStyleProfiles(prev=> prev[user.id]?prev:{...prev,[user.id]:profile||{id:user.id,username:user.email?.split("@")[0]}});
+      setHomeStyleProfiles(prev=> prev[user.id]?prev:{...prev,[user.id]:profile||{id:user.id,username:user.email?.split("@")[0]}});
+      if(tags&&tags.length) setStyleListings(prev=>{ const n={...prev}; tags.forEach(l=>{ n[l.id]=l; }); return n; });
+      setStyleLikeCounts(prev=>({...prev,[created.id]:0}));
+      const me=(profile?.full_name&&profile.full_name.trim())||profile?.username||user.email?.split("@")[0]||"Someone";
+      (tags||[]).forEach(l=>{ if(l.user_id&&l.user_id!==user.id) notify(l.user_id,"style_feature","✦ Featured in a style post!",`${me} featured your listing "${l.name}" in their style post`,l.id); });
+      setStyleCreateOpen(false);
+      flash("Posted to your feed!");
+    }catch(e){ console.error("Style post failed:",e); flash(errMsg(e),8000); }
+    finally{ setStyleCreating(false); }
+  }
+
+  // Homepage STYLE INSPIRATION preview — 4 newest posts + their authors. Non-fatal.
+  async function loadHomeStylePosts(){
+    try{
+      const posts=await db.getRecentStylePosts(4,token);
+      setHomeStylePosts(posts);
+      const ids=[...new Set(posts.map(p=>p.user_id).filter(Boolean))];
+      if(ids.length){ const profs=await db.getProfilesFullByIds(ids,token); const map={}; profs.forEach(p=>{ map[p.id]=p; }); setHomeStyleProfiles(map); }
+    }catch(e){ /* non-fatal: the section just hides */ }
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(()=>{ loadHomeStylePosts(); },[]);
+
+  // Style post share deep link (/post/<id>) — open the feed and make sure the
+  // shared post is visible (prepended if it's not on the first FOR YOU page).
+  useEffect(()=>{
+    const m=window.location.pathname.replace(/\/+$/,"").match(/^\/post\/([^/]+)$/);
+    if(!m||!m[1]) return;
+    const pid=m[1];
+    setView("stylefeed"); setStyleFeedTab("foryou"); setStyleFeedLoading(true);
+    (async()=>{
+      try{
+        const [page,post]=await Promise.all([db.getStylePosts(STYLE_PAGE,0,token),db.getStylePost(pid,token)]);
+        const posts=(post&&!page.some(p=>p.id===post.id))?[post,...page]:page;
+        setForYouPosts(posts); setStyleLoadedForYou(true); setHasMoreForYou(page.length===STYLE_PAGE);
+        await resolveStyleMeta(posts);
+      }catch(e){ /* ignore — land on an empty feed */ }
+      finally{ setStyleFeedLoading(false); }
+    })();
+    window.history.replaceState({},"","/");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
   async function loadConversations(){
     if(!user||!token)return;
     const convs=await db.getConversations(user.id,token);
@@ -2369,6 +2563,7 @@ export default function App() {
     {label:"MY WISHLIST",    icon:<Heart width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadMyWishlist();setView("wishlist");}},
     {label:"SAVED SEARCHES",  run:()=>{loadSavedSearches();setView("saved-searches");}},
     {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
+    {label:"STYLE FEED",     icon:<Sparkles width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openStyleFeed},
     {label:"MY FOLLOWING",   run:()=>{loadFollowingList();setView("following-list");}},
     {label:"MESSAGES",       run:openMessages},
     {label:"MY PROFILE",     run:()=>{load2FAFactors();setView("editprofile");}},
@@ -3323,6 +3518,24 @@ export default function App() {
         feedLoading={feedLoading} following={following} feedItems={feedItems} openDetail={openDetail}
       />
 
+      {/* STYLE FEED — Phase 14 */}
+      <StyleFeed
+        view={view} setView={setView} user={user} profile={profile}
+        tab={styleFeedTab} setTab={switchStyleTab}
+        posts={styleFeedTab==="following"?followingPosts:forYouPosts}
+        profilesMap={styleProfiles} listingsMap={styleListings}
+        likedSet={styleLiked} likeCounts={styleLikeCounts}
+        loading={styleFeedLoading}
+        hasMore={styleFeedTab==="following"?hasMoreFollowing:hasMoreForYou}
+        loadMore={loadMoreStyle}
+        openProfile={openProfile} openDetail={openDetail}
+        toggleLike={toggleStyleLike} deletePost={deleteStylePost} sharePost={shareStylePost}
+        createOpen={styleCreateOpen} setCreateOpen={setStyleCreateOpen}
+        onCreate={createStylePost} creating={styleCreating}
+        searchActiveListings={searchActiveListings}
+        flash={flash}
+      />
+
       {/* TAILOR MARKETPLACE */}
       <Tailors
         view={view} setView={setView} user={user} profile={profile}
@@ -3386,6 +3599,7 @@ export default function App() {
         looks={looks} openLook={openLook}
         shopTab={shopTab} setShopTab={setShopTab} loadFeed={loadFeed}
         following={following} feedItems={feedItems} feedLoading={feedLoading}
+        homeStylePosts={homeStylePosts} homeStyleProfiles={homeStyleProfiles} openStyleFeed={openStyleFeed}
       />
 
       {/* MY SAVED SEARCHES */}

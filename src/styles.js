@@ -34,6 +34,20 @@ export const CSS=`
     .looks-rail > *{flex:0 0 78% !important;scroll-snap-align:start;}
     .looks-page-grid{grid-template-columns:1fr 1fr !important;gap:10px !important;}
   }
+  /* STYLE FEED — two-column post grid on desktop, single column on mobile. The
+     CREATE POST button sits in the header on desktop and becomes a fixed bottom-
+     right FAB on mobile. The homepage STYLE INSPIRATION rail is a 2x2 grid on
+     desktop and a horizontal swipe-scroll on phones (like the looks rail). */
+  .style-feed-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+  .style-create-fab{display:none;}
+  .style-home-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:600px){
+    .style-feed-grid{grid-template-columns:1fr !important;}
+    .style-create-desktop{display:none !important;}
+    .style-create-fab{display:flex !important;}
+    .style-home-rail{display:flex !important;overflow-x:auto;gap:12px;scroll-snap-type:x mandatory;padding-bottom:6px;}
+    .style-home-rail > *{flex:0 0 70% !important;scroll-snap-align:start;}
+  }
   @media(max-width:600px){
     /* PROBLEM 1 — keep the hero SIDE-BY-SIDE on mobile (like desktop): the writing
        takes the LEFT and the bubbles sit to the RIGHT, but instead of a neat wrapping
