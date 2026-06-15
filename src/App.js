@@ -3806,6 +3806,7 @@ export default function App() {
         tailorPortfolio={tailorPortfolio} addPortfolioImages={addPortfolioImages} deletePortfolioImage={deletePortfolioImage} movePortfolioImage={movePortfolioImage} portfolioBusy={portfolioBusy}
         openTailorPublic={openTailorPublic}
         publicTailor={publicTailor} publicTailorLoading={publicTailorLoading}
+        setAuthMode={setAuthMode}
       />
 
       {/* ORDERS */}
