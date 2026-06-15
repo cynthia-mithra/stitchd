@@ -19,7 +19,7 @@ function timeAgo(ts){
 export default function Detail({
   view, setView, sel,
   selImages, selImgIdx, setSelImgIdx, selColor,
-  wishlist, toggleWishlist, shareItem, setShowSizeGuide,
+  myWishlist = new Set(), toggleFavourite = () => {}, shareItem, setShowSizeGuide,
   inBag = () => false, toggleBag = () => {},
   isOwner, startConversation,
   user, setAuthMode, buyNow = () => {},
@@ -167,7 +167,7 @@ export default function Detail({
                 </div>
               )}
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20,flexWrap:"wrap"}}>
-                <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:wishlist.includes(sel.id)?"#FF1493":"#fff",color:wishlist.includes(sel.id)?"#fff":"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>toggleWishlist(sel.id)}><Heart width={15} height={15} fill={wishlist.includes(sel.id)?"currentColor":"none"}/> {wishlist.includes(sel.id)?"SAVED":"SAVE"}</button>
+                <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:myWishlist.has(sel.id)?"#FF1493":"#fff",color:myWishlist.has(sel.id)?"#fff":"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>toggleFavourite(sel)}><Heart width={15} height={15} fill={myWishlist.has(sel.id)?"currentColor":"none"}/> {myWishlist.has(sel.id)?"SAVED":"SAVE"}</button>
                 <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>shareItem(sel)}><Share2 width={15} height={15}/> SHARE</button>
                 <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>setShowSizeGuide(true)}><Ruler width={15} height={15}/> SIZE GUIDE</button>
               </div>

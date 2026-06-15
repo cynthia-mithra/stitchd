@@ -27,7 +27,7 @@ export default function Shop({
   loadTailorMarket,
   visible, loading, error, fetchItems,
   newArrivals = false, homeArrivals = [], goNewArrivals = () => {},
-  openDetail, fitsMe, wishlist, toggleWishlist,
+  openDetail, fitsMe,
   newListings, priceDrops, trendingItems,
   sellerRatings = {},
   fastSellers = new Set(),
@@ -298,7 +298,7 @@ export default function Shop({
                     {item.prev_price>item.price&&<div style={S.priceDropBadge}>PRICE DROP</div>}
                     {fitsMe(item)===true&&<div style={{...S.fitsBadge,display:"inline-flex",alignItems:"center",gap:5}}><Ruler width={11} height={11}/> FITS YOU</div>}
                     <FastBadge sellerId={item.user_id} raised={fitsMe(item)===true}/>
-                    <button style={{...S.heartBtn,background:wishlist.includes(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}><Heart width={16} height={16} fill={wishlist.includes(item.id)?"#fff":"none"} color={wishlist.includes(item.id)?"#fff":"#111"}/></button>
+                    <button aria-label={myWishlist.has(item.id)?"Remove from wishlist":"Add to wishlist"} style={{...S.heartBtn,background:myWishlist.has(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();toggleFavourite(item);}}><Heart width={16} height={16} fill={myWishlist.has(item.id)?"#fff":"none"} color={myWishlist.has(item.id)?"#fff":"#111"}/></button>
                     <div style={S.cardOrigin}>{item.origin?.toUpperCase()}</div>
                   </Thumb>
                   <div style={S.cardBody} className="card-body">

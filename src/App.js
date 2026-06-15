@@ -134,11 +134,15 @@ export default function App() {
   const [minPrice,  setMinPrice]  = useState("");
   const [maxPrice,  setMaxPrice]  = useState("");
   const [showFilters,setShowFilters]=useState(false);
-  const [wishlist,   setWishlist]   = useState(()=>{ try{return JSON.parse(localStorage.getItem("stitchd_wishlist"))||[];}catch{return[];} });
+  // Phase 14 — the signed-in user's wishlisted listing_ids in most-recently-saved
+  // order (created_at desc), backing the /wishlist page. Derived from the DB
+  // `wishlists` table alongside `myWishlist` (the Set that drives the filled
+  // heart); see loadMyWishlist / toggleFavourite below.
+  const [wishlistOrder, setWishlistOrder] = useState([]);
   // Shopping bag holds lightweight snapshots of bagged listings ({id,name,price,
   // currency,image,seller,sold}) so the panel renders without re-fetching. Stored
-  // in localStorage (per-device) so it survives refresh AND logging in — exactly
-  // like the wishlist above. No Supabase sync in this issue.
+  // in localStorage (per-device) so it survives refresh AND logging in, like the
+  // recently-viewed list below. No Supabase sync in this issue.
   const [bag,        setBag]        = useState(()=>{ try{return JSON.parse(localStorage.getItem("stitchd_bag"))||[];}catch{return[];} });
   const [showBag,    setShowBag]    = useState(false);
   const [checkingOut,setCheckingOut]= useState(false);
@@ -180,9 +184,8 @@ export default function App() {
   const [adminApplicants,setAdminApplicants]=useState({});
   // DB-backed wishlist/favourite counts (Phase 10b). `wishlistCounts` maps
   // listing_id -> how many users saved it; `myWishlist` is the set of listing_ids
-  // the signed-in user has saved (drives the filled heart). This is separate from
-  // the localStorage `wishlist` above, which is a per-device personal list with
-  // its own "MY WISHLIST" view.
+  // the signed-in user has saved (drives the filled heart and the /wishlist page,
+  // ordered by `wishlistOrder` above).
   const [wishlistCounts,setWishlistCounts]= useState({});
   const [myWishlist,    setMyWishlist]    = useState(()=>new Set());
   const [showReview,   setShowReview]   = useState(false);
@@ -449,6 +452,7 @@ export default function App() {
       db.getMyPromotions(user.id,token).then(setMyPromotions).catch(()=>{});
     } else {
       setMyWishlist(new Set());
+      setWishlistOrder([]);
       setMyVerificationApp(null);
       setMyPromotions([]);
     }
@@ -577,14 +581,6 @@ export default function App() {
   function togColourFilter(c){ setColourFilter(prev=>prev.includes(c)?prev.filter(x=>x!==c):[...prev,c]); }
   function clearFilters(){ setSearch(""); setCatFilter("All"); setSizeFilter("All"); setMinPrice(""); setMaxPrice(""); setTypeFilter("All"); setCondFilter("All"); setShowVerifiedOnly(false); setOccFilter([]); setColourFilter([]); }
   const hasFilters = search||catFilter!=="All"||sizeFilter!=="All"||minPrice||maxPrice||typeFilter!=="All"||condFilter!=="All"||showVerifiedOnly||occFilter.length>0||colourFilter.length>0;
-
-  function toggleWishlist(id){
-    setWishlist(prev=>{
-      const next=prev.includes(id)?prev.filter(x=>x!==id):[...prev,id];
-      localStorage.setItem("stitchd_wishlist",JSON.stringify(next));
-      return next;
-    });
-  }
 
   const inBag = (id) => bag.some(b=>b.id===id);
 
@@ -1103,26 +1099,53 @@ export default function App() {
   // The signed-in user's own saved listing_ids, so cards render a filled heart.
   // Cleared on sign-out. Loaded alongside the other per-user data below.
   async function loadMyWishlist(){
-    if(!user||!token){ setMyWishlist(new Set()); return; }
-    const rows=await db.getMyWishlist(user.id,token);
+    if(!user||!token){ setMyWishlist(new Set()); setWishlistOrder([]); return; }
+    const rows=await db.getMyWishlistDetailed(user.id,token);
     setMyWishlist(new Set(rows.map(r=>r.listing_id)));
+    setWishlistOrder(rows.map(r=>r.listing_id));
   }
 
   // Toggle a DB favourite. Logged-out clicks are sent to sign-in. Updates the
-  // count + my-set optimistically and rolls back if the request fails.
+  // count + my-set + recency order optimistically and rolls back if the request
+  // fails. A fresh save jumps to the front of the order (most-recent-first).
   async function toggleFavourite(item){
     if(!user||!token){ flash("Sign in to wishlist this piece!"); setAuthMode("login"); setView("auth"); return; }
     const id=item.id, has=myWishlist.has(id);
     setMyWishlist(prev=>{ const n=new Set(prev); has?n.delete(id):n.add(id); return n; });
     setWishlistCounts(prev=>({...prev,[id]:Math.max(0,(prev[id]||0)+(has?-1:1))}));
+    setWishlistOrder(prev=> has?prev.filter(x=>x!==id):[id,...prev.filter(x=>x!==id)]);
     try{
       if(has) await db.removeWishlist(user.id,id,token);
       else    await db.addWishlist(user.id,id,token);
     }catch(e){
       setMyWishlist(prev=>{ const n=new Set(prev); has?n.add(id):n.delete(id); return n; });
       setWishlistCounts(prev=>({...prev,[id]:Math.max(0,(prev[id]||0)+(has?1:-1))}));
+      setWishlistOrder(prev=> has?[id,...prev.filter(x=>x!==id)]:prev.filter(x=>x!==id));
       flash("Couldn't update wishlist. Try again.");
     }
+  }
+
+  // Phase 14 — clear every SOLD item from the wishlist in one tap (the sold
+  // section's "CLEAR ALL SOLD ITEMS" action). Optimistic across the batch; on any
+  // failure we resync from the table rather than guess which deletes landed.
+  async function clearSoldWishlist(){
+    if(!user||!token) return;
+    const ids=items.filter(i=>i.sold&&myWishlist.has(i.id)).map(i=>i.id);
+    if(!ids.length) return;
+    const idSet=new Set(ids);
+    setMyWishlist(prev=>{ const n=new Set(prev); ids.forEach(id=>n.delete(id)); return n; });
+    setWishlistOrder(prev=>prev.filter(x=>!idSet.has(x)));
+    setWishlistCounts(prev=>{ const n={...prev}; ids.forEach(id=>{ n[id]=Math.max(0,(n[id]||0)-1); }); return n; });
+    try{ await Promise.all(ids.map(id=>db.removeWishlist(user.id,id,token))); }
+    catch(e){ flash("Couldn't clear sold items. Try again."); loadMyWishlist(); }
+  }
+
+  // Phase 14 — "FIND SIMILAR" on a sold wishlist card: clear active filters, pin
+  // the category and drop the buyer on the shop grid showing comparable pieces.
+  function findSimilar(item){
+    clearFilters();
+    if(item.category) setCatFilter(item.category);
+    setView("shop");
   }
 
   // Fetch once the set of seller ids flagged fast_seller=true on their profile, so
@@ -1899,7 +1922,13 @@ export default function App() {
     return items.filter(i=>!i.sold&&i.status!=="inactive"&&!vacationSellers.has(i.user_id)&&i.created_at&&new Date(i.created_at).getTime()>=cutoff).slice(0,4);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[items,vacationSellers]);
-  const wishlistItems= items.filter(i=>wishlist.includes(i.id));
+  // Phase 14 — resolve the wishlisted listing_ids (most-recent-first) to full
+  // listing objects, then split into still-available vs SOLD for the two page
+  // sections. Ids with no matching listing (deleted) are dropped.
+  const wishlistById = useMemo(()=> new Map(items.map(i=>[i.id,i])), [items]);
+  const wishlistItems = useMemo(()=> wishlistOrder.map(id=>wishlistById.get(id)).filter(Boolean), [wishlistOrder,wishlistById]);
+  const liveWishlist = wishlistItems.filter(i=>!i.sold);
+  const soldWishlist = wishlistItems.filter(i=>i.sold);
 
   // Items collapsed behind the desktop hover-dropdown / mobile hamburger menu.
   // Favourites, Notifications and LIST IT deliberately stay out of this list —
@@ -1909,6 +1938,7 @@ export default function App() {
     {label:"✦ NEW ARRIVALS", run:()=>{clearFilters();setView("newarrivals");}},
     {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();loadMyPromotions();setView("dashboard");}},
     {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
+    {label:"MY WISHLIST",    icon:<Heart width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadMyWishlist();setView("wishlist");}},
     {label:"SAVED SEARCHES",  run:()=>{loadSavedSearches();setView("saved-searches");}},
     {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
     {label:"MY FOLLOWING",   run:()=>{loadFollowingList();setView("following-list");}},
@@ -1930,8 +1960,8 @@ export default function App() {
           <div className="nav-category-strip" style={S.hMid}><div style={S.marqueeTrack}><span style={S.marqueeInner}>{Array(4).fill("SOUTH ASIAN PRE-LOVED FASHION \u00a0✦\u00a0 SAREES \u00a0✦\u00a0 LEHENGAS \u00a0✦\u00a0 SHERWANIS \u00a0✦\u00a0 REAL MEASUREMENTS \u00a0✦\u00a0 ").join("")}</span></div></div>
           <div className="nav-right" style={S.hRight}>
             <span style={S.hLive}>{items.filter(i=>!i.sold).length} LIVE</span>
-            <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setView("wishlist")}>
-              <Heart width={18} height={18} style={{verticalAlign:"middle"}}/> {wishlist.length>0&&<span style={S.wishBadge}>{wishlist.length}</span>}
+            <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",position:"relative"}} onClick={()=>{ if(user) loadMyWishlist(); setView("wishlist"); }} aria-label="My wishlist">
+              <Heart width={18} height={18} style={{verticalAlign:"middle"}}/> {myWishlist.size>0&&<span style={S.wishBadge}>{myWishlist.size}</span>}
             </button>
             {user?(
               <>
@@ -1952,7 +1982,7 @@ export default function App() {
                   {navMenuOpen&&(
                     <div style={S.navDropdown}>
                       {navMenuItems.map((it,i)=>(
-                        <button key={it.label} className={`nav-drop-item${it.danger?" nav-drop-item-danger":""}`} style={{...S.navDropItem,borderBottom:i===navMenuItems.length-1?"none":"1px solid #111",...(it.danger?S.navDropItemDanger:{})}} onClick={()=>runNavItem(it)}>{it.label}</button>
+                        <button key={it.label} className={`nav-drop-item${it.danger?" nav-drop-item-danger":""}`} style={{...S.navDropItem,borderBottom:i===navMenuItems.length-1?"none":"1px solid #111",...(it.danger?S.navDropItemDanger:{})}} onClick={()=>runNavItem(it)}>{it.icon}{it.label}</button>
                       ))}
                     </div>
                   )}
@@ -1979,7 +2009,7 @@ export default function App() {
             <button style={S.mobileNavClose} aria-label="Close menu" onClick={()=>setMobileNavOpen(false)}><X width={26} height={26}/></button>
           </div>
           {navMenuItems.map(it=>(
-            <button key={it.label} className="nav-mob-item" style={{...S.mobileNavItem,...(it.danger?S.navDropItemDanger:{})}} onClick={()=>runNavItem(it)}>{it.label}</button>
+            <button key={it.label} className="nav-mob-item" style={{...S.mobileNavItem,...(it.danger?S.navDropItemDanger:{})}} onClick={()=>runNavItem(it)}>{it.icon}{it.label}</button>
           ))}
         </div>
       )}
@@ -2509,44 +2539,101 @@ export default function App() {
         </main>
       )}
 
-      {/* WISHLIST VIEW */}
+      {/* WISHLIST VIEW — Phase 14. DB-backed (the `wishlists` table), logged-in
+          only. Most-recently-saved first; available pieces in the main grid, SOLD
+          ones split out into the ALREADY SOLD section at the bottom. */}
       {view==="wishlist"&&(
         <main style={S.main}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
-          <div style={{marginBottom:36,paddingBottom:24,borderBottom:"3px solid #111",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>SAVED PIECES</p>
-              <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,display:"flex",alignItems:"center",gap:12}}>MY WISHLIST <Heart width={40} height={40} fill="#FF1493" color="#FF1493"/></h2>
-            </div>
-            {wishlistItems.length>0&&<button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493"}} onClick={()=>{setWishlist([]);localStorage.removeItem("stitchd_wishlist");}}>CLEAR ALL</button>}
-          </div>
-          {wishlistItems.length===0?(
-            <div style={{textAlign:"center",padding:"60px 20px"}}>
-              <p style={{display:"flex",justifyContent:"center",marginBottom:12}}><Heart width={48} height={48} color="#ddd"/></p>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>NOTHING SAVED YET.</p>
-              <button className="hbtn" style={S.hBtn} onClick={()=>setView("shop")}>BROWSE DROPS →</button>
+          {!user?(
+            /* NOT LOGGED IN */
+            <div style={{textAlign:"center",padding:"72px 20px"}}>
+              <p style={{display:"flex",justifyContent:"center",marginBottom:16}}><Heart width={64} height={64} color="#ddd"/></p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,letterSpacing:-0.5,marginBottom:20}}>LOG IN TO VIEW YOUR WISHLIST</p>
+              <button className="hbtn" style={{...S.hBtn,fontSize:14,padding:"14px 28px"}} onClick={()=>{setAuthMode("login");setView("auth");}}>LOG IN</button>
             </div>
           ):(
-            <div style={S.grid}>
-              {wishlistItems.map((item,idx)=>{
-                const accent=CARD_COLORS[idx%CARD_COLORS.length];
-                return(
-                  <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}}>
-                    <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
-                      <div style={{position:"absolute",inset:0,zIndex:1}} onClick={()=>openDetail(item)}/>
-                      {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-                      <button style={S.heartBtn} onClick={e=>{e.stopPropagation();toggleWishlist(item.id);}}><Heart width={16} height={16} fill="#FF1493" color="#FF1493"/></button>
-                    </Thumb>
-                    <div style={S.cardBody} onClick={()=>openDetail(item)}>
-                      <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
-                      <p style={S.cardName}>{item.name}</p>
-                      <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span></div>
+            <>
+              {/* HEADER */}
+              <div style={{marginBottom:36,paddingBottom:24,borderBottom:"3px solid #111"}}>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>SAVED PIECES</p>
+                <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,display:"flex",alignItems:"center",gap:12,lineHeight:1}}>MY WISHLIST <Heart width={40} height={40} fill="#FF1493" color="#FF1493"/></h2>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:700,letterSpacing:1,color:"#111",marginTop:10}}>{wishlistItems.length} item{wishlistItems.length===1?"":"s"} saved</p>
+                <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#999",marginTop:4}}>Items are not reserved — buy before they're gone</p>
+              </div>
+
+              {wishlistItems.length===0?(
+                /* EMPTY STATE */
+                <div style={{textAlign:"center",padding:"60px 20px"}}>
+                  <p style={{display:"flex",justifyContent:"center",marginBottom:16}}><Heart width={64} height={64} color="#ddd"/></p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,letterSpacing:-0.5,marginBottom:8}}>YOUR WISHLIST IS EMPTY</p>
+                  <p style={{fontFamily:"'Barlow',sans-serif",fontSize:14,color:"#999",marginBottom:24}}>Save items you love and come back to them later</p>
+                  <button className="hbtn" style={{...S.hBtn,fontSize:14,padding:"14px 28px"}} onClick={()=>setView("shop")}>BROWSE LISTINGS →</button>
+                </div>
+              ):(
+                <>
+                  {/* AVAILABLE PIECES */}
+                  {liveWishlist.length>0&&(
+                    <div style={S.grid} className="shop-grid">
+                      {liveWishlist.map((item,idx)=>{
+                        const accent=CARD_COLORS[idx%CARD_COLORS.length];
+                        return(
+                          <article key={item.id} className="scard" style={{...S.card,borderColor:accent}}>
+                            <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
+                              <div style={{position:"absolute",inset:0,zIndex:1}} onClick={()=>openDetail(item)}/>
+                              <button aria-label="Remove from wishlist" title="Remove from wishlist" style={{position:"absolute",top:12,right:12,background:"#fff",border:"2px solid #111",borderRadius:0,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:6,padding:0}} onClick={e=>{e.stopPropagation();toggleFavourite(item);}}><X width={16} height={16} color="#111"/></button>
+                            </Thumb>
+                            <div style={S.cardBody} onClick={()=>openDetail(item)}>
+                              <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
+                              <p style={S.cardName}>{item.name}</p>
+                              <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span></div>
+                            </div>
+                            <div style={{...S.accentBar,background:accent}}/>
+                          </article>
+                        );
+                      })}
                     </div>
-                    <div style={{...S.accentBar,background:accent}}/>
-                  </article>
-                );
-              })}
-            </div>
+                  )}
+                  {liveWishlist.length===0&&soldWishlist.length>0&&(
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#bbb",letterSpacing:1,padding:"8px 0 4px"}}>Every saved piece has sold — see below.</p>
+                  )}
+
+                  {/* ALREADY SOLD */}
+                  {soldWishlist.length>0&&(
+                    <div style={{marginTop:56,paddingTop:28,borderTop:"3px solid #111"}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap",marginBottom:24}}>
+                        <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,letterSpacing:-0.5,color:"#999"}}>ALREADY SOLD</h3>
+                        <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={clearSoldWishlist}>CLEAR ALL SOLD ITEMS</button>
+                      </div>
+                      <div style={S.grid} className="shop-grid">
+                        {soldWishlist.map((item,idx)=>{
+                          const accent=CARD_COLORS[idx%CARD_COLORS.length];
+                          return(
+                            <article key={item.id} className="scard" style={{...S.card,borderColor:"#ccc",opacity:0.85}}>
+                              <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
+                                <div style={{position:"absolute",inset:0,zIndex:1}} onClick={()=>openDetail(item)}/>
+                                <div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>
+                                <button aria-label="Remove from wishlist" title="Remove from wishlist" style={{position:"absolute",top:12,right:12,background:"#fff",border:"2px solid #111",borderRadius:0,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:6,padding:0}} onClick={e=>{e.stopPropagation();toggleFavourite(item);}}><X width={16} height={16} color="#111"/></button>
+                              </Thumb>
+                              <div style={S.cardBody}>
+                                <p style={{...S.cardCatLabel,color:"#999"}}>{item.category?.toUpperCase()}</p>
+                                <p style={S.cardName}>{item.name}</p>
+                                <p style={{fontFamily:"'Barlow',sans-serif",fontSize:12,color:"#999",margin:"4px 0 12px"}}>This item has been sold</p>
+                                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:"auto"}}>
+                                  <button className="hbtn" style={{...S.hBtn,flex:1,minWidth:120,background:"#fff",color:"#111",border:"2px solid #111",justifyContent:"center",textAlign:"center"}} onClick={()=>findSimilar(item)}>FIND SIMILAR</button>
+                                  <button className="hbtn" style={{...S.hBtn,flex:1,minWidth:90,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",justifyContent:"center",textAlign:"center"}} onClick={()=>toggleFavourite(item)}>REMOVE</button>
+                                </div>
+                              </div>
+                              <div style={{...S.accentBar,background:"#ccc"}}/>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           )}
         </main>
       )}
@@ -2778,7 +2865,7 @@ export default function App() {
         loadTailorMarket={loadTailorMarket}
         visible={isNewArrivals?newArrivalItems:visible} loading={loading} error={error} fetchItems={fetchItems}
         newArrivals={isNewArrivals} homeArrivals={homeArrivals} goNewArrivals={()=>{clearFilters();setView("newarrivals");}}
-        openDetail={openDetail} fitsMe={fitsMe} wishlist={wishlist} toggleWishlist={toggleWishlist}
+        openDetail={openDetail} fitsMe={fitsMe}
         newListings={newListings} priceDrops={priceDrops} trendingItems={trendingItems}
         sellerRatings={sellerRatings} fastSellers={fastSellers} verifiedSellers={verifiedSellers}
         wishlistCounts={wishlistCounts} myWishlist={myWishlist} toggleFavourite={toggleFavourite}
@@ -2824,7 +2911,7 @@ export default function App() {
       <Detail
         view={view} setView={setView} sel={sel}
         selImages={selImages} selImgIdx={selImgIdx} setSelImgIdx={setSelImgIdx} selColor={selColor}
-        wishlist={wishlist} toggleWishlist={toggleWishlist} shareItem={shareItem} setShowSizeGuide={setShowSizeGuide}
+        myWishlist={myWishlist} toggleFavourite={toggleFavourite} shareItem={shareItem} setShowSizeGuide={setShowSizeGuide}
         inBag={inBag} toggleBag={toggleBag}
         isOwner={isOwner} startConversation={startConversation}
         user={user} setAuthMode={setAuthMode} buyNow={buyNow}

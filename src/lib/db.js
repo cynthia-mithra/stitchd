@@ -107,6 +107,10 @@ export const db = {
   // the table's UNIQUE(user_id,listing_id) makes a double-add a harmless 409.
   async getAllWishlists(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?select=listing_id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getMyWishlist(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?user_id=eq.${uid}&select=listing_id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // Phase 14 — the signed-in user's saves with created_at, newest first, so the
+  // /wishlist page can order cards "most recently wishlisted first". Same table,
+  // just selecting the timestamp and ordering on it.
+  async getMyWishlistDetailed(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?user_id=eq.${uid}&select=listing_id,created_at&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async addWishlist(uid,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({user_id:uid,listing_id:listingId})}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async removeWishlist(uid,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?user_id=eq.${uid}&listing_id=eq.${listingId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   async insertReview(review,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(review)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
