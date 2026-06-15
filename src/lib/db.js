@@ -113,6 +113,27 @@ export const db = {
   async getMyWishlistDetailed(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?user_id=eq.${uid}&select=listing_id,created_at&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async addWishlist(uid,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({user_id:uid,listing_id:listingId})}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async removeWishlist(uid,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?user_id=eq.${uid}&listing_id=eq.${listingId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
+  // ── Phase 14 — Shareable wishlists ────────────────────────────────────────
+  // A named, public list of saved pieces reachable at /wishlist/<slug>. The
+  // public page (no login) reads one list by slug WITH its items and each item's
+  // listing embedded in a single PostgREST request via the shared_wishlist_items
+  // / listings FKs — so the grid has every listing with no per-item round-trip.
+  // Items are ordered by `position` client-side. Returns null if the list
+  // doesn't exist (deleted/never created) so the page shows its "no longer
+  // available" state rather than throwing.
+  async getSharedWishlist(slug,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/shared_wishlists?slug=eq.${encodeURIComponent(slug)}&select=*,shared_wishlist_items(*,listings(*))&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
+  // The signed-in user's own shared lists (newest first) for the "MY SHARED
+  // LISTS" section, each with its items embedded so the card can show an item
+  // count. Falls back to a plain select if the embed isn't available, then to []
+  // if the table doesn't exist yet (migration not run) so the section hides.
+  async getMySharedWishlists(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/shared_wishlists?user_id=eq.${uid}&select=*,shared_wishlist_items(id)&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/shared_wishlists?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
+  async createSharedWishlist(row,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/shared_wishlists`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(row)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
+  async updateSharedWishlist(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/shared_wishlists?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
+  async deleteSharedWishlist(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/shared_wishlists?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
+  // Add the selected pieces to a list in one request. `rows` is [{shared_wishlist_id,listing_id,position}].
+  async addSharedWishlistItems(rows,t){ if(!rows.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/shared_wishlist_items`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(rows)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  // Replace a list's items wholesale (used on edit): delete then re-insert.
+  async clearSharedWishlistItems(listId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/shared_wishlist_items?shared_wishlist_id=eq.${listId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   async insertReview(review,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(review)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async insertReport(report,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reports`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(report)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   // ── Phase 14 — Comments on listings (basic, no replies) ───────────────────
