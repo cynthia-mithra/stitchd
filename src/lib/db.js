@@ -202,6 +202,28 @@ export const db = {
   async removeBundleItem(id,t){ await fetch(`${SUPABASE_URL}/rest/v1/bundle_items?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); },
   async getFollowing(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${uid}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getFollowers(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/follows?following_id=eq.${uid}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // ── Phase 13 — Seller storefronts ─────────────────────────────────────────
+  // Patch the storefront columns on a profile (banner/tagline/bio/location/
+  // instagram), saved from the dashboard EDIT STOREFRONT section. Self-heals like
+  // the other patches: if the schema predates a storefront column (migration not
+  // yet run) drop it and retry so the rest of the patch still lands.
+  async updateStorefront(uid,patch,t){
+    const url=`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}`; let payload={...patch};
+    for(let i=0;i<10;i++){
+      const r=await fetch(url,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+      if(r.ok) return r.json();
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't save your storefront.");
+  },
+  // The MY FOLLOWING list needs each followed seller's active-listing count. One
+  // request pulls the (user_id,sold,status) of every listing belonging to the
+  // followed ids; the caller tallies the active (not sold, not inactive) ones per
+  // seller. Mirrors getAllWishlists/getAllReviewStats — count client-side from a
+  // single lightweight select rather than N per-seller requests.
+  async getListingStatesByUsers(ids,t){ if(!ids.length)return []; const or=ids.map(id=>`user_id.eq.${id}`).join(","); const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?or=(${or})&select=user_id,sold,status`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async follow(followerId,followingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/follows`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({follower_id:followerId,following_id:followingId})}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async unfollow(followerId,followingId,t){ await fetch(`${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${followerId}&following_id=eq.${followingId}`,{method:"DELETE",headers:hdrs(t)}); },
   async getFeedListings(followingIds,t){ if(!followingIds.length)return []; const ids=followingIds.map(id=>`user_id.eq.${id}`).join(","); const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?or=(${ids})&order=created_at.desc&limit=40`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },

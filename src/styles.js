@@ -27,6 +27,9 @@ export const CSS=`
   ::selection{background:#FF149333}
   /* SHOP THE LOOK — desktop is a 3-up grid; the homepage rail turns into a
      horizontal swipe-scroll on phones (cards ~78% wide so the next one peeks). */
+  /* PHASE 13 — seller storefront banner: 200px desktop, 140px mobile. */
+  .sf-banner{height:200px;}
+  @media(max-width:600px){ .sf-banner{height:140px !important;} }
   .looks-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
   .looks-page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
   @media(max-width:600px){

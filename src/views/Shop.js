@@ -37,6 +37,7 @@ export default function Shop({
   toggleFavourite = () => {},
   looks = [],
   openLook = () => {},
+  goFollowing = () => {},
 }) {
   if(view!=="shop"&&view!=="newarrivals") return null;
   // Small "⚡ FAST SELLER" badge for sellers flagged fast_seller=true on their profile.
@@ -84,6 +85,14 @@ export default function Shop({
   };
   return (
     <>
+      {/* Phase 13 PART 4 — SHOP / FOLLOWING tabs. Logged-in only; FOLLOWING opens
+          the feed of listings from sellers the user follows. */}
+      {!newArrivals&&user&&(
+        <div style={{display:"flex",gap:8,padding:"12px 10px 0",maxWidth:1300,margin:"0 auto",flexWrap:"wrap"}}>
+          <button className="hbtn" style={{...S.hBtn,background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,fontSize:12,padding:"8px 20px"}}>SHOP</button>
+          <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,fontSize:12,padding:"8px 20px"}} onClick={goFollowing}>FOLLOWING ✦</button>
+        </div>
+      )}
       {/* NEW ARRIVALS page header — replaces the hero when this view is the
           /new-arrivals page. The search bar + filters + grid below are shared
           with the main shop, so every filter works here too. */}

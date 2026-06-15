@@ -22,6 +22,7 @@ import Auth from "./views/Auth";
 import Profile from "./views/Profile";
 import Dashboard from "./views/Dashboard";
 import Feed from "./views/Feed";
+import Following from "./views/Following";
 import Orders from "./views/Orders";
 import Looks from "./views/Looks";
 import CreateLook from "./views/CreateLook";
@@ -238,6 +239,17 @@ export default function App() {
   const [feedItems,      setFeedItems]      = useState([]);
   const [feedLoading,    setFeedLoading]    = useState(false);
   const [feedProfiles,   setFeedProfiles]   = useState({});
+  // Phase 13 — seller storefronts + follow. `viewedFollowerCount` is the live
+  // follower tally for the storefront currently open (updates instantly on
+  // follow/unfollow). `storefrontForm`/`storefrontSaving` back the dashboard EDIT
+  // STOREFRONT section. `myFollowing*` back the MY FOLLOWING nav list — the
+  // followed sellers' profiles plus a user_id->active-listing-count map.
+  const [viewedFollowerCount,setViewedFollowerCount]=useState(0);
+  const [storefrontForm, setStorefrontForm] = useState({banner_url:"",bannerFile:null,bannerPreview:"",tagline:"",bio:"",location:"",instagram:""});
+  const [storefrontSaving,setStorefrontSaving]=useState(false);
+  const [myFollowingProfiles,setMyFollowingProfiles]=useState([]);
+  const [myFollowingCounts,setMyFollowingCounts]=useState({});
+  const [myFollowingLoading,setMyFollowingLoading]=useState(false);
   const [notifications,  setNotifications]  = useState([]);
   const [showNotifs,     setShowNotifs]     = useState(false);
   const [navMenuOpen,    setNavMenuOpen]    = useState(false);
@@ -343,12 +355,18 @@ export default function App() {
     const path=window.location.pathname.replace(/\/+$/,"");
     const v=LEGAL_PATHS[path];
     if(v) setView(v);
+    // Phase 13 — a cold load / shared link of /sellers/:id opens that storefront.
+    const seller=/^\/sellers\/([^/]+)$/.exec(path);
+    if(seller&&seller[1]) openProfile(decodeURIComponent(seller[1]));
     const onPop=()=>{
       const p=window.location.pathname.replace(/\/+$/,"");
+      const s=/^\/sellers\/([^/]+)$/.exec(p);
+      if(s&&s[1]){ openProfile(decodeURIComponent(s[1])); return; }
       setView(LEGAL_PATHS[p]||"shop");
     };
     window.addEventListener("popstate",onPop);
     return ()=>window.removeEventListener("popstate",onPop);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
   // Phase 12 — deep links from the saved-search alert email. "SEE ALL MATCHES"
@@ -390,7 +408,9 @@ export default function App() {
 
   useEffect(()=>{
     if(user&&token){
-      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",bio:p.bio||"",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||"",is_tailor:p.is_tailor||false,tailor_services:p.tailor_services||[],tailor_price_from:p.tailor_price_from||"",accepting_clients:p.accepting_clients!==false});} });
+      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",bio:p.bio||"",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||"",is_tailor:p.is_tailor||false,tailor_services:p.tailor_services||[],tailor_price_from:p.tailor_price_from||"",accepting_clients:p.accepting_clients!==false});
+        // Phase 13 — hydrate the EDIT STOREFRONT form from the saved storefront columns.
+        setStorefrontForm({banner_url:p.storefront_banner_url||"",bannerFile:null,bannerPreview:p.storefront_banner_url||"",tagline:p.storefront_tagline||"",bio:p.storefront_bio||"",location:p.storefront_location||p.location||"",instagram:p.storefront_instagram||""});} });
       loadConversations();
       db.getFollowing(user.id,token).then(setFollowing);
       db.getNotifications(user.id,token).then(setNotifications);
@@ -1163,15 +1183,23 @@ export default function App() {
   async function toggleFollow(targetId){
     if(!user){ setAuthMode("login"); setView("auth"); return; }
     if(targetId===user.id) return;
+    const viewingTarget=viewedProfile&&viewedProfile.id===targetId;
     try{
       if(isFollowing(targetId)){
         await db.unfollow(user.id,targetId,token);
         setFollowing(p=>p.filter(f=>f.following_id!==targetId));
+        if(viewingTarget) setViewedFollowerCount(c=>Math.max(0,c-1));
+        setMyFollowingProfiles(p=>p.filter(s=>s.id!==targetId));
         flash("Unfollowed.");
       } else {
         await db.follow(user.id,targetId,token);
         setFollowing(p=>[...p,{follower_id:user.id,following_id:targetId}]);
+        if(viewingTarget) setViewedFollowerCount(c=>c+1);
         flash("✦ Following!");
+        // Phase 13 PART 7 — NEW_FOLLOWER in-app notification. Best-effort; the
+        // link_id is the follower's id so tapping it opens their profile.
+        const who=profile?.username?`@${profile.username}`:(profile?.full_name||"Someone");
+        notify(targetId,"new_follower",`${who} started following you`,"Tap to see their profile.",user.id);
       }
     }catch(e){ flash("Could not update follow."); }
   }
@@ -1350,6 +1378,57 @@ export default function App() {
     const revs=await loadReviews(userId);
     setViewedProfile(p||{id:userId,username:"Seller",bio:""});
     setProfileListings(listings); setReviews(revs); setView("profile");
+    // Phase 13 — public storefront URL (/sellers/:id) so the page is shareable
+    // and the seller's PREVIEW STOREFRONT link lands here on a cold load.
+    try{ window.history.pushState({},"",`/sellers/${userId}`); }catch{ /* ignore */ }
+    // Live follower count for the storefront.
+    setViewedFollowerCount(0);
+    db.getFollowers(userId,token).then(f=>setViewedFollowerCount(f.length)).catch(()=>{});
+    window.scrollTo(0,0);
+  }
+
+  // Phase 13 — save the seller's storefront (dashboard EDIT STOREFRONT). Uploads
+  // a freshly-picked banner to the storefront-banners bucket, then patches the
+  // storefront columns on the profile. Best-effort, self-healing patch in db.js.
+  async function saveStorefront(){
+    if(!user||!token||storefrontSaving) return;
+    setStorefrontSaving(true);
+    try{
+      let banner_url=storefrontForm.banner_url||"";
+      if(storefrontForm.bannerFile){
+        banner_url=await withFreshToken(tok=>uploadImage(storefrontForm.bannerFile,tok,"storefront-banners"));
+      }
+      const patch={
+        storefront_banner_url:banner_url,
+        storefront_tagline:(storefrontForm.tagline||"").slice(0,80),
+        storefront_bio:(storefrontForm.bio||"").slice(0,300),
+        storefront_location:storefrontForm.location||"",
+        storefront_instagram:storefrontForm.instagram||"",
+      };
+      const saved=await withFreshToken(tok=>db.updateStorefront(user.id,patch,tok));
+      const row=Array.isArray(saved)?saved[0]:saved;
+      if(row) setProfile(row);
+      setStorefrontForm(f=>({...f,banner_url,bannerFile:null,bannerPreview:banner_url}));
+      flash("✓ Storefront saved!");
+    }catch(e){ console.error("Storefront save failed:",e); flash(`Couldn't save storefront: ${errMsg(e)}`,8000); }
+    finally{ setStorefrontSaving(false); }
+  }
+
+  // Phase 13 — load the MY FOLLOWING list: the followed sellers' profiles plus a
+  // user_id->active-listing-count map (active = not sold, not deactivated).
+  async function loadMyFollowing(){
+    if(!user||!token){ setAuthMode("login"); setView("auth"); return; }
+    setMyFollowingLoading(true); setView("following-list"); window.scrollTo(0,0);
+    try{
+      const rows=await db.getFollowing(user.id,token);
+      const ids=[...new Set(rows.map(r=>r.following_id).filter(Boolean))];
+      const profs=(await Promise.all(ids.map(id=>db.getProfile(id,token).then(p=>p||{id,username:"Seller"}).catch(()=>({id,username:"Seller"}))))).filter(Boolean);
+      const states=await db.getListingStatesByUsers(ids,token);
+      const counts={};
+      states.forEach(s=>{ if(!s.sold&&s.status!=="inactive") counts[s.user_id]=(counts[s.user_id]||0)+1; });
+      setMyFollowingProfiles(profs); setMyFollowingCounts(counts);
+    }catch(e){ flash("Couldn't load your following."); setMyFollowingProfiles([]); setMyFollowingCounts({}); }
+    finally{ setMyFollowingLoading(false); }
   }
 
   async function add(){
@@ -1718,6 +1797,7 @@ export default function App() {
     {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
     {label:"SAVED SEARCHES",  run:()=>{loadSavedSearches();setView("saved-searches");}},
     {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
+    {label:"MY FOLLOWING",   run:loadMyFollowing},
     {label:"MESSAGES",       run:openMessages},
     {label:"MY PROFILE",     run:()=>{load2FAFactors();setView("editprofile");}},
     {label:"HOW TO MEASURE", run:()=>{setPrevView(view);setView("measuring");}},
@@ -1811,7 +1891,7 @@ export default function App() {
             <div style={{maxHeight:400,overflowY:"auto"}}>
               {notifications.map(n=>(
                 <div key={n.id} style={{...S.notifItem,background:n.read?"#fff":"#fff8fc",borderLeft:`4px solid ${n.read?"#f0f0f0":"#FF1493"}`}}
-                  onClick={()=>{ markNotifRead(n.id); if(n.link_id){ if(n.type==="message"||n.type==="offer"){ openMessages(); } else { const item=items.find(i=>i.id===n.link_id); if(item)openDetail(item); } } setShowNotifs(false); }}>
+                  onClick={()=>{ markNotifRead(n.id); if(n.link_id){ if(n.type==="message"||n.type==="offer"){ openMessages(); } else if(n.type==="new_follower"){ openProfile(n.link_id); } else { const item=items.find(i=>i.id===n.link_id); if(item)openDetail(item); } } setShowNotifs(false); }}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                     <div>
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:n.read?600:900,color:"#111",marginBottom:2}}>{n.title}</p>
@@ -2500,6 +2580,8 @@ export default function App() {
         confirm2FA={confirm2FA} disable2FA={disable2FA} load2FAFactors={load2FAFactors} setup2FA={setup2FA}
         viewedProfile={viewedProfile} profileListings={profileListings} reviews={reviews}
         isFollowing={isFollowing} toggleFollow={toggleFollow} openDetail={openDetail}
+        followerCount={viewedFollowerCount} verifiedSellers={verifiedSellers} identityVerifiedSellers={identityVerifiedSellers}
+        onBackFromStorefront={()=>{ try{ if(/^\/sellers\//.test(window.location.pathname)) window.history.replaceState({},"","/"); }catch{} }}
       />
 
       {/* DASHBOARD + CREATE BUNDLE */}
@@ -2522,12 +2604,21 @@ export default function App() {
         approveVerification={approveVerification} rejectVerification={rejectVerification}
         verifyIdentity={verifyIdentity} identityBusy={identityBusy}
         requestTab={dashTabRequest} clearRequestTab={()=>setDashTabRequest(null)}
+        storefrontForm={storefrontForm} setStorefrontForm={setStorefrontForm} saveStorefront={saveStorefront} storefrontSaving={storefrontSaving}
       />
 
-      {/* FEED */}
+      {/* FEED — the FOLLOWING tab of the shop */}
       <Feed
         view={view} setView={setView} user={user}
         feedLoading={feedLoading} following={following} feedItems={feedItems} openDetail={openDetail}
+        goShop={()=>{ setView("shop"); window.scrollTo(0,0); }}
+      />
+
+      {/* MY FOLLOWING — the sellers the user follows (nav dropdown) */}
+      <Following
+        view={view} setView={setView} user={user}
+        loading={myFollowingLoading} profiles={myFollowingProfiles} counts={myFollowingCounts}
+        verifiedSellers={verifiedSellers} openProfile={openProfile} toggleFollow={toggleFollow}
       />
 
       {/* TAILOR MARKETPLACE */}
@@ -2579,6 +2670,7 @@ export default function App() {
         sellerRatings={sellerRatings} fastSellers={fastSellers} verifiedSellers={verifiedSellers}
         wishlistCounts={wishlistCounts} myWishlist={myWishlist} toggleFavourite={toggleFavourite}
         looks={looks} openLook={openLook}
+        goFollowing={()=>{loadFeed();setView("feed");}}
       />
 
       {/* MY SAVED SEARCHES */}
