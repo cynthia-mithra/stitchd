@@ -176,6 +176,139 @@ function listingThumb(l: { image_url?: string; images?: unknown }): string | und
   return undefined;
 }
 
+// ── Phase 14 — accepted-offer payment ─────────────────────────────────────────
+// An offer-checkout session (created by create-offer-checkout, tagged
+// metadata.type='offer') completed. The buyer paid the ACCEPTED offer amount, so:
+//   1. mark the listing sold + offers_enabled=false
+//   2. flip the offer to 'completed'
+//   3. write the order row (offer amount, offer_accepted=true)
+//   4. notify the seller + buyer in-app
+//   5. email both — the buyer's regular order confirmation (with a "you saved £X"
+//      note) and the seller's regular sale email (with a "sold via accepted offer"
+//      note).
+// Kept entirely separate from the bag-sale path below so the existing type='sale'
+// logic is untouched (issue constraint).
+async function handleOffer(session: Stripe.Checkout.Session) {
+  const offerId = session.metadata?.offer_id || "";
+  const listingId = session.metadata?.listing_id || "";
+  const buyerId = session.metadata?.buyer_id || null;
+  let sellerId = session.metadata?.seller_id || "";
+  if (!offerId || !listingId) {
+    console.error("Offer webhook: missing offer_id/listing_id in metadata", session.id);
+    return;
+  }
+
+  // Authoritative offer (the paid amount must come from the stored offer, never
+  // the client) + listing (title/thumbnail/list price for the saving note).
+  const or = await fetch(
+    `${SUPABASE_URL}/rest/v1/offers?id=eq.${offerId}&select=id,amount_pence,buyer_id,seller_id,listing_id,status&limit=1`,
+    { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
+  ).catch(() => null);
+  const offer = or && or.ok ? (await or.json().catch(() => []))[0] : null;
+  if (!sellerId && offer?.seller_id) sellerId = offer.seller_id;
+
+  const lr = await fetch(
+    `${SUPABASE_URL}/rest/v1/listings?id=eq.${listingId}&select=name,price,image_url,images&limit=1`,
+    { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
+  ).catch(() => null);
+  const listing = lr && lr.ok ? (await lr.json().catch(() => []))[0] : null;
+  const title = listing?.name || "your listing";
+  const image = listing ? listingThumb(listing) : undefined;
+
+  // The amount actually charged is the offer amount; prefer the stored offer,
+  // fall back to the Stripe session total. Listed price drives the saving.
+  const offerPence = Number(offer?.amount_pence) || session.amount_total || 0;
+  const listedPence = Math.round(parseFloat(String(listing?.price ?? 0)) * 100);
+  const savedPence = listedPence > offerPence ? listedPence - offerPence : 0;
+  const fmt = (pence: number) => `£${(pence / 100).toFixed(2)}`;
+  const fmtTrim = (pence: number) => `£${(pence / 100).toFixed(2).replace(/\.00$/, "")}`;
+
+  // 1. Mark the listing sold + close offers (set both status + legacy flags).
+  await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${listingId}`, {
+    method: "PATCH",
+    headers: sbHeaders,
+    body: JSON.stringify({ status: "sold", sold: true, payment_status: "paid", offers_enabled: false }),
+  }).catch(() => {});
+
+  // 2. Flip the offer to completed.
+  await fetch(`${SUPABASE_URL}/rest/v1/offers?id=eq.${offerId}`, {
+    method: "PATCH",
+    headers: sbHeaders,
+    body: JSON.stringify({ status: "completed" }),
+  }).catch(() => {});
+
+  // 3. Order row — offer amount (NOT the list price), flagged offer_accepted.
+  await insertHealing("orders", {
+    listing_id: listingId,
+    buyer_id: buyerId,
+    seller_id: sellerId || null,
+    amount_pence: offerPence,
+    amount: offerPence / 100,
+    stripe_session_id: session.id,
+    status: "paid",
+    offer_accepted: true,
+  });
+
+  // 4. In-app notifications — seller + buyer.
+  if (sellerId) {
+    await insertHealing("notifications", {
+      user_id: sellerId,
+      type: "sale",
+      title: "💰 You made a sale!",
+      body: `Your listing "${title}" has been sold for ${fmtTrim(offerPence)} via an accepted offer!`,
+      link_id: listingId,
+      read: false,
+    });
+  }
+  if (buyerId) {
+    await insertHealing("notifications", {
+      user_id: buyerId,
+      type: "sale",
+      title: "🩷 Purchase confirmed",
+      body: `Your purchase of "${title}" is confirmed!`,
+      link_id: listingId,
+      read: false,
+    });
+  }
+
+  // 5. Emails — same templates as a regular purchase/sale, with offer notes.
+  try {
+    const buyerEmail = session.customer_details?.email || session.customer_email || "";
+    const buyerName = firstName(session.customer_details?.name || "");
+    const orderRef = session.id.slice(-8);
+    const savingNote = savedPence > 0 ? `You saved ${fmt(savedPence)} with your offer.` : "";
+
+    // Buyer — order confirmation with the saving note.
+    const buyerProfile = buyerId ? await getProfile(buyerId) : null;
+    if (buyerEmail && buyerProfile?.email_notifications !== false) {
+      const { subject, html } = await render(
+        "order_confirmation",
+        { title, image, price: fmt(offerPence), orderRef, note: savingNote },
+        buyerId,
+      );
+      await sendViaResend(buyerEmail, subject, html);
+    }
+
+    // Seller — sale email noting it was via an accepted offer.
+    if (sellerId) {
+      const sellerProfile = await getProfile(sellerId);
+      if (sellerProfile?.email_notifications !== false) {
+        const sellerEmail = await emailForUser(sellerId);
+        if (sellerEmail) {
+          const { subject, html } = await render(
+            "sale",
+            { title, image, price: fmt(offerPence), buyerFirstName: buyerName, note: "Sold via accepted offer." },
+            sellerId,
+          );
+          await sendViaResend(sellerEmail, subject, html);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Offer email send error:", (e as Error).message);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
@@ -277,6 +410,17 @@ Deno.serve(async (req) => {
       console.error("Promotion processing error:", (e as Error).message);
     }
     return new Response(JSON.stringify({ received: true, promotion: true }), { status: 200 });
+  }
+
+  // Phase 14 — an accepted-offer payment (metadata.type='offer') is handled on a
+  // completely separate path; the bag-sale logic below is left exactly as it was.
+  if (session.metadata?.type === "offer") {
+    try {
+      await handleOffer(session);
+    } catch (e) {
+      console.error("Offer processing error:", (e as Error).message);
+    }
+    return new Response(JSON.stringify({ received: true, offer: true }), { status: 200 });
   }
 
   const listingIds = (session.metadata?.listing_ids ?? "").split(",").filter(Boolean);

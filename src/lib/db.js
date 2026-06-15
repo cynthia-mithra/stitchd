@@ -67,6 +67,9 @@ export const db = {
     if(profile&&profile.id) fireEmail({type:"welcome",userId:profile.id});
     return d; },
   async getListingsByUser(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // A single listing by id (used by /offers "make new offer" when the listing
+  // isn't in the cached shop items). Returns the row or null.
+  async getListing(id,t){ if(!id)return null; const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   async incrementViews(id,views,t){ await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({views:(views||0)+1})}); },
   async getReviews(sellerId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?seller_id=eq.${sellerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getAllReviewStats(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?select=seller_id,rating`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
@@ -154,6 +157,11 @@ export const db = {
     if(created&&created.id) fireEmail({type:"new_offer",offerId:created.id});
     return created; },
   async withdrawOffer(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/offers?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({status:"withdrawn"})}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
+  // Phase 14 — every offer THIS buyer has made, newest first, with the listing
+  // (title/thumbnail/price/currency) embedded so the /offers page renders grouped
+  // by status without a per-offer round-trip. Falls back to a plain select where
+  // the embed isn't available, then [] if the offers table doesn't exist yet.
+  async getBuyerOffers(buyerId,t){ if(!buyerId)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/offers?buyer_id=eq.${buyerId}&select=*,listings(id,name,image_url,images,price,currency,sold,status,offers_enabled)&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/offers?buyer_id=eq.${buyerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
   // ── Phase 14 — Seller responds to offers (accept / decline) ───────────────
   // Every offer on the seller's listings, newest first, with the listing
   // (title/thumbnail/price) embedded so the dashboard OFFERS tab renders without
@@ -167,7 +175,17 @@ export const db = {
   // caller can fire their in-app decline notifications. The accept + auto-decline
   // emails fire from here.
   async acceptOffer(offer,t){
-    const r=await fetch(`${SUPABASE_URL}/rest/v1/offers?id=eq.${offer.id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({status:"accepted"})}); if(!r.ok)throw new Error(await r.text());
+    // Stamp accepted_at so the 24h payment window (issue PART 4) is timed from the
+    // acceptance. Self-heals to a plain status flip on a deployment where the
+    // column doesn't exist yet (phase14 offer-checkout migration not run).
+    let r=await fetch(`${SUPABASE_URL}/rest/v1/offers?id=eq.${offer.id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({status:"accepted",accepted_at:new Date().toISOString()})});
+    if(!r.ok){
+      const text=await r.text();
+      if(/accepted_at/.test(text)){
+        r=await fetch(`${SUPABASE_URL}/rest/v1/offers?id=eq.${offer.id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({status:"accepted"})});
+      }
+      if(!r.ok)throw new Error(text);
+    }
     // Pause offers on the listing while we await payment.
     await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${offer.listing_id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({offers_enabled:false})}).catch(()=>{});
     // Find, then decline, the other pending offers on this listing.

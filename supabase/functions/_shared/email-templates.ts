@@ -125,9 +125,16 @@ export interface BuildCtx {
 
 const p = (text: string) => `<p style="margin:0 0 14px 0;">${text}</p>`;
 
+// A pink highlighted note line — used for the offer-purchase "You saved £X"
+// / "Sold via accepted offer" extras layered onto the standard order/sale emails.
+const noteLine = (text: string) =>
+  `<p style="margin:0 0 16px 0;padding:10px 14px;background:#fff0f7;border-left:3px solid ${PINK};font-weight:700;color:${INK};">${esc(text)}</p>`;
+
 export const templates = {
-  // 1 — Order confirmation (buyer)
-  order_confirmation(d: { title?: string; image?: string; price?: string; orderRef?: string }, ctx: BuildCtx) {
+  // 1 — Order confirmation (buyer). Phase 14: optional `note` renders a pink
+  // highlight line (e.g. "You saved £15 with your offer") for offer purchases —
+  // the regular sale path leaves it unset, so the email is unchanged for sales.
+  order_confirmation(d: { title?: string; image?: string; price?: string; orderRef?: string; note?: string }, ctx: BuildCtx) {
     return {
       subject: "Your order is confirmed — Stitch'd",
       html: baseTemplate({
@@ -136,6 +143,7 @@ export const templates = {
         bodyHtml:
           p("Your payment went through and your order is confirmed. Here's what you bought:") +
           listingCard({ image: d.image, title: d.title, price: d.price }) +
+          (d.note ? noteLine(d.note) : "") +
           (d.orderRef ? p(`<strong>Order reference:</strong> ${esc(d.orderRef)}`) : "") +
           p("The seller will be in touch about delivery.") +
           button("View your order", `${ctx.site}/orders`),
@@ -143,8 +151,9 @@ export const templates = {
     };
   },
 
-  // 2 — Sale notification (seller)
-  sale(d: { title?: string; image?: string; price?: string; buyerFirstName?: string }, ctx: BuildCtx) {
+  // 2 — Sale notification (seller). Phase 14: optional `note` (e.g. "Sold via
+  // accepted offer.") is appended for offer sales; unset for regular sales.
+  sale(d: { title?: string; image?: string; price?: string; buyerFirstName?: string; note?: string }, ctx: BuildCtx) {
     return {
       subject: "You've made a sale! — Stitch'd",
       html: baseTemplate({
@@ -153,6 +162,7 @@ export const templates = {
         bodyHtml:
           p(`Great news${d.buyerFirstName ? `, ${esc(d.buyerFirstName)} just bought one of your pieces` : ""}!`) +
           listingCard({ image: d.image, title: d.title, price: d.price }) +
+          (d.note ? noteLine(d.note) : "") +
           p("Message your buyer to arrange delivery.") +
           button("View sale", `${ctx.site}/dashboard`),
       }),
@@ -361,6 +371,32 @@ export const templates = {
             listingCard({ image: d.image, title: d.title }) +
             p("Plenty more pieces where that came from.") +
             button("Browse similar listings", `${ctx.site}/shop`),
+      }),
+    };
+  },
+
+  // 14 — Offer payment reminder (buyer). Phase 14 — sent by the expire-offers
+  // sweep ~12 hours into the 24h payment window if the buyer hasn't paid yet.
+  // `amount` is the accepted price (formatted); `hoursLeft` is the whole hours
+  // remaining. CTA links to /offers where the COMPLETE PURCHASE button lives.
+  offer_reminder(
+    d: { title?: string; image?: string; amount?: string; hoursLeft?: number },
+    ctx: BuildCtx,
+  ) {
+    const hrs = typeof d.hoursLeft === "number" && d.hoursLeft > 0 ? d.hoursLeft : 0;
+    return {
+      subject: "Don't miss out — your offer expires soon",
+      html: baseTemplate({
+        heading: "Your offer expires soon.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p("The seller accepted your offer — but you haven't completed your purchase yet:") +
+          listingCard({ image: d.image, title: d.title }) +
+          (d.amount
+            ? `<div style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount)}</div>`
+            : "") +
+          p(`<strong>You have ${hrs} hour${hrs === 1 ? "" : "s"} left to complete your purchase</strong> before the offer expires and the listing reopens to other buyers.`) +
+          button("Complete purchase", `${ctx.site}/offers`),
       }),
     };
   },
