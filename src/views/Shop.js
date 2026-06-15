@@ -8,6 +8,7 @@ import {
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, ColourSwatches } from "../components/Shared";
 import { LookCard } from "./Looks";
+import { StyleInspiration } from "./StyleFeed";
 
 export default function Shop({
   view,
@@ -44,6 +45,8 @@ export default function Shop({
   // listings only from sellers the logged-in user follows.
   shopTab = "all", setShopTab = () => {}, loadFeed = () => {},
   following = [], feedItems = [], feedLoading = false,
+  // Phase 14 — homepage STYLE INSPIRATION preview (4 most recent style posts).
+  homeStylePosts = [], homeStyleProfiles = {}, openStyleFeed = () => {},
 }) {
   if(view!=="shop"&&view!=="newarrivals") return null;
   const followingActive = !!user && view==="shop" && shopTab==="following";
@@ -406,6 +409,12 @@ export default function Shop({
             {looks.slice(0,6).map(look=><LookCard key={look.id} look={look} onOpen={openLook}/>)}
           </div>
         </div>
+      )}
+
+      {/* STYLE INSPIRATION — homepage style-feed preview. Hidden when no posts
+          exist or while the buyer is filtering/searching the grid. */}
+      {!newArrivals&&!hasFilters&&homeStylePosts.length>0&&(
+        <StyleInspiration posts={homeStylePosts} profilesMap={homeStyleProfiles} onOpen={openStyleFeed} />
       )}
 
       {/* NEW IN */}

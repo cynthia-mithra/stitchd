@@ -460,4 +460,34 @@ export const db = {
     try{ const r=await fetch(url,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); }
     catch{ return []; }
   },
+
+  // ── Phase 14 — Style feed ─────────────────────────────────────────────────
+  // A page of non-deleted posts, newest first. `limit`/`offset` drive the LOAD
+  // MORE pagination (12 at a time). Profiles (avatar/username) and the tagged
+  // listings are resolved separately — style_posts has no PostgREST FK to either
+  // (user_id → auth.users, listing_ids is a uuid[]), so we batch-fetch them with
+  // getProfilesFullByIds / getListingsByIds rather than embedding.
+  async getStylePosts(limit,offset,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/style_posts?deleted=eq.false&order=created_at.desc&limit=${limit}&offset=${offset}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // The FOLLOWING tab — posts authored by the users this person follows, newest
+  // first, paginated. Returns [] when they follow no-one (caller short-circuits).
+  async getStylePostsByUsers(userIds,limit,offset,t){ if(!userIds.length)return []; const ids=userIds.map(id=>`user_id.eq.${id}`).join(","); const r=await fetch(`${SUPABASE_URL}/rest/v1/style_posts?and=(deleted.eq.false,or(${ids}))&order=created_at.desc&limit=${limit}&offset=${offset}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // The N most recent posts for the homepage STYLE INSPIRATION rail.
+  async getRecentStylePosts(limit,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/style_posts?deleted=eq.false&order=created_at.desc&limit=${limit}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // A single post by id (the /post/<id> share deep link). Null if missing/deleted.
+  async getStylePost(id,t){ if(!id)return null; const r=await fetch(`${SUPABASE_URL}/rest/v1/style_posts?id=eq.${id}&deleted=eq.false&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
+  // Batch-fetch listings by id (for a post's tagged pieces). Preserves nothing
+  // about order — the caller maps them by id. Returns [] on error/empty.
+  async getListingsByIds(ids,t){ if(!ids||!ids.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?id=in.(${ids.join(",")})`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // Which of these posts the signed-in user has liked, so hearts render filled.
+  // Returns the liked post_ids (a subset of `postIds`).
+  async getMyStyleLikes(userId,postIds,t){ if(!userId||!postIds||!postIds.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/style_post_likes?user_id=eq.${userId}&post_id=in.(${postIds.join(",")})&select=post_id`,{headers:hdrs(t)}); if(!r.ok)return []; const d=await r.json(); return d.map(x=>x.post_id); },
+  async insertStylePost(post,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/style_posts`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(post)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
+  // Soft delete — own post only. Sets deleted=true; the row is never removed.
+  async deleteStylePost(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/style_posts?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({deleted:true})}); if(!r.ok)throw new Error(await r.text()); },
+  // Like / unlike. The UNIQUE(post_id,user_id) constraint makes a re-like a
+  // harmless 409; the optimistic UI has already flipped the heart either way.
+  async likeStylePost(postId,userId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/style_post_likes`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({post_id:postId,user_id:userId})}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  async unlikeStylePost(postId,userId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/style_post_likes?post_id=eq.${postId}&user_id=eq.${userId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
+  // Sync the denormalised counter after a like/unlike (best-effort background write).
+  async setStylePostLikes(id,count,t){ await fetch(`${SUPABASE_URL}/rest/v1/style_posts?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({likes_count:Math.max(0,count)})}); },
 };
