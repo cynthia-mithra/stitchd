@@ -141,6 +141,38 @@ async function resolveTemplated(
       return { to, userId, data: { username } };
     }
 
+    case "new_offer": {
+      // Phase 14 — a buyer made an offer. Resolve the seller (recipient), the
+      // listing (thumbnail/title), the buyer's name and the formatted amount
+      // from the offer id. The seller-response flow lands in a later issue.
+      const offer = await sbGetOne<{
+        seller_id: string;
+        buyer_id: string;
+        listing_id: string;
+        amount_pence: number;
+        message?: string;
+      }>(
+        `offers?id=eq.${body.offerId}&select=seller_id,buyer_id,listing_id,amount_pence,message&limit=1`,
+      );
+      if (!offer?.seller_id) return { skip: "no seller" };
+      const prof = await getProfile(offer.seller_id);
+      if (prof?.email_notifications === false) return { skip: "unsubscribed" };
+      const to = await emailForUser(offer.seller_id);
+      if (!to) return { skip: "no email" };
+      const listing = await sbGetOne<{ name: string; image_url?: string; images?: unknown; currency?: string }>(
+        `listings?id=eq.${offer.listing_id}&select=name,image_url,images,currency&limit=1`,
+      );
+      const buyer = offer.buyer_id ? await getProfile(offer.buyer_id) : null;
+      const buyerName = buyer?.full_name || buyer?.username || "A buyer";
+      const sym = listing?.currency === "USD" ? "$" : listing?.currency === "EUR" ? "€" : "£";
+      const amount = `${sym}${(offer.amount_pence / 100).toFixed(2).replace(/\.00$/, "")}`;
+      return {
+        to,
+        userId: offer.seller_id,
+        data: { title: listing?.name, image: thumb(listing), amount, buyerName, message: offer.message },
+      };
+    }
+
     case "welcome": {
       const userId: string | null = body.userId ?? null;
       if (!userId) return { skip: "no user" };

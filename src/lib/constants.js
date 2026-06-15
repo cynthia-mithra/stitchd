@@ -39,7 +39,7 @@ export const colourSwatchBg = (c) => c==="Multicolour"
   ? "conic-gradient(from 90deg,#E0245E,#FF9500,#FFD60A,#34C759,#007AFF,#BF5AF2,#E0245E)"
   : (COLOUR_HEX[c]||"#999999");
 export const CARD_COLORS= ["#FF1493","#FF9500","#34C759","#007AFF","#BF5AF2","#FF2D55","#FF6B00","#0A84FF"];
-export const EMPTY_FORM = {name:"",price:"",condition:"Like New",listing_type:"Clothing",category:"Saree",origin:"Indian",fabric:"Silk",material:"",size:"Free Size",occasions:[],colours:[],gender:"women",meas_unit:"cm",garment_type:"",meas:{},additional_measurements:"",bust:"",waist:"",hips:"",length:"",underbust:"",shoulder:"",high_hip:"",sleeve_length:"",inseam:"",measurement_notes:"",can_take_in:false,spare_fabric:false,description:"",imageFiles:[],imagePreviews:[],postage_options:[],accepts_collection:false};
+export const EMPTY_FORM = {name:"",price:"",condition:"Like New",listing_type:"Clothing",category:"Saree",origin:"Indian",fabric:"Silk",material:"",size:"Free Size",occasions:[],colours:[],gender:"women",meas_unit:"cm",garment_type:"",meas:{},additional_measurements:"",bust:"",waist:"",hips:"",length:"",underbust:"",shoulder:"",high_hip:"",sleeve_length:"",inseam:"",measurement_notes:"",can_take_in:false,spare_fabric:false,description:"",imageFiles:[],imagePreviews:[],postage_options:[],accepts_collection:false,offers_enabled:true,minimum_offer:""};
 
 // ── Garment-specific measurement fields ───────────────────────────────────────
 // Which measurement fields show depends on gender + garment type. Field labels

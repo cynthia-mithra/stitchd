@@ -190,6 +190,8 @@ export default function App() {
   // Phase 14 — comments on the open listing, plus the add-comment textarea.
   const [comments,     setComments]     = useState([]);
   const [commentText,  setCommentText]  = useState("");
+  // Phase 14 — the signed-in buyer's pending offer on the open listing (or null).
+  const [myOffer,      setMyOffer]      = useState(null);
   const [sellerRatings,setSellerRatings]= useState({});
   const [fastSellers,  setFastSellers]  = useState(()=>new Set());
   // Phase 10d — seller ids with vacation_mode=true; their listings are hidden
@@ -803,6 +805,31 @@ export default function App() {
       notify(parent.user_id,"comment","Seller replied",`The seller replied to your question on ${sel.name}`,sel.id);
       flash("💬 Reply posted!");
     }catch(e){ flash("Failed to post your reply."); }
+  }
+
+  // ── Phase 14 — Make an offer (buyer side) ─────────────────────────────────
+  // Insert the offer, notify the seller in-app (the email fires from the data
+  // layer), then flip the Detail page to its OFFER PENDING state. `amountPence`
+  // is already validated in the modal. Returns true so the modal can close only
+  // on success. The seller accept/decline flow is a later issue.
+  async function submitOffer(amountPence,message){
+    if(!user||!sel) return false;
+    try{
+      const created=await db.insertOffer({listing_id:sel.id,buyer_id:user.id,seller_id:sel.user_id,amount_pence:amountPence,message:(message||"").trim()||null,status:"pending"},token);
+      setMyOffer(created);
+      const who=(profile?.username||profile?.full_name||"Someone").trim();
+      const amt=`${currencySymbol(sel.currency)}${(amountPence/100).toFixed(2).replace(/\.00$/,"")}`;
+      // type "new_offer" routes the notification to the listing (not messages).
+      notify(sel.user_id,"new_offer",`💸 New offer on "${sel.name}"`,`${who} made an offer of ${amt} on ${sel.name}`,sel.id);
+      flash("Offer sent! The seller has 48 hours to respond.",6000);
+      return true;
+    }catch(e){ console.error("Offer insert failed:",e); flash("Couldn't send your offer. Please try again."); return false; }
+  }
+
+  async function withdrawOffer(){
+    if(!myOffer) return;
+    try{ await db.withdrawOffer(myOffer.id,token); setMyOffer(null); flash("Offer withdrawn."); }
+    catch(e){ flash("Couldn't withdraw your offer."); }
   }
 
   async function submitReport(){
@@ -1733,6 +1760,14 @@ export default function App() {
     db.getFollowers(userId,token).then(f=>setFollowerCount(f.length)).catch(()=>setFollowerCount(0));
   }
 
+  // Phase 14 — the optional minimum-offer floor, in pence, from the form. Only
+  // meaningful when offers are enabled; a blank/invalid value stores null.
+  function offerFloorPence(f){
+    if(f.offers_enabled===false) return null;
+    const v=parseFloat(f.minimum_offer);
+    return Number.isFinite(v)&&v>0?Math.round(v*100):null;
+  }
+
   async function add(){
     if(!form.name||!form.price)return;
     if(!user){setView("auth");return;}
@@ -1757,7 +1792,7 @@ export default function App() {
       const image_url=urls[0]||"";
       const meas=buildMeasPayload(form);
       const cat=meas.category||form.category;
-      const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
+      const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
       const [created]=await withFreshToken(tok=>db.insert(payload,tok));
       setItems(p=>[created,...p]); setForm(EMPTY_FORM);
       // The photo uploaded fine but didn't come back on the saved row — the
@@ -1809,7 +1844,7 @@ export default function App() {
       const image_url=allUrls[0]||sel.image_url||"";
       const meas=buildMeasPayload(form);
       const cat=meas.category||form.category;
-      const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false};
+      const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
       const [updated]=await withFreshToken(tok=>db.update(sel.id,patch,tok));
       setItems(p=>p.map(i=>i.id===sel.id?updated:i)); setSel(updated);
       if(allUrls.length&&!updated.image_url){ flash("⚠️ Saved — but the photo couldn't be stored: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase.",11000); }
@@ -1839,7 +1874,7 @@ export default function App() {
     const meas_unit=pm?.unit||item.measurements_unit||"inches";
     let meas=pm?.values?{...pm.values}:{};
     if(!pm){ garmentFieldsFor(gender,garment_type).forEach(l=>{ const col=({"Bust":"bust","Chest":"bust","Blouse bust":"bust","Waist":"waist","Hip":"hips","Hips":"hips","Length":"length","Length (floor to shoulder)":"length","Saree length":"length","Lehenga length":"length","Sherwani length":"length","Kurta length":"length","Sleeve length":"sleeve_length","Blouse sleeve length":"sleeve_length","Shoulder width":"shoulder","Inseam":"inseam"})[l]; if(col&&item[col]) meas[l]=item[col]; }); }
-    setForm({name:item.name||"",price:item.price||"",condition:item.condition||"Like New",listing_type:item.listing_type||"Clothing",category:item.category||"Saree",origin:item.origin||"Indian",fabric:item.fabric||"Silk",material:item.material||"",size:item.size||"Free Size",occasions:item.occasions||[],colours:item.colours||[],gender,meas_unit,garment_type,meas,additional_measurements:item.additional_measurements||item.measurement_notes||"",bust:item.bust||"",waist:item.waist||"",hips:item.hips||"",length:item.length||"",underbust:item.underbust||"",shoulder:item.shoulder||"",high_hip:item.high_hip||"",sleeve_length:item.sleeve_length||"",inseam:item.inseam||"",measurement_notes:item.measurement_notes||"",can_take_in:item.can_take_in||false,spare_fabric:item.spare_fabric||false,description:item.description||"",imageFiles:[],imagePreviews:item.images||[item.image_url].filter(Boolean),postage_options:item.postage_options||[],accepts_collection:item.accepts_collection||false});
+    setForm({name:item.name||"",price:item.price||"",condition:item.condition||"Like New",listing_type:item.listing_type||"Clothing",category:item.category||"Saree",origin:item.origin||"Indian",fabric:item.fabric||"Silk",material:item.material||"",size:item.size||"Free Size",occasions:item.occasions||[],colours:item.colours||[],gender,meas_unit,garment_type,meas,additional_measurements:item.additional_measurements||item.measurement_notes||"",bust:item.bust||"",waist:item.waist||"",hips:item.hips||"",length:item.length||"",underbust:item.underbust||"",shoulder:item.shoulder||"",high_hip:item.high_hip||"",sleeve_length:item.sleeve_length||"",inseam:item.inseam||"",measurement_notes:item.measurement_notes||"",can_take_in:item.can_take_in||false,spare_fabric:item.spare_fabric||false,description:item.description||"",imageFiles:[],imagePreviews:item.images||[item.image_url].filter(Boolean),postage_options:item.postage_options||[],accepts_collection:item.accepts_collection||false,offers_enabled:item.offers_enabled!==false,minimum_offer:item.minimum_offer_pence?String(item.minimum_offer_pence/100):""});
     setView("edit");
   }
 
@@ -2072,6 +2107,10 @@ export default function App() {
     if(item.user_id) loadReviews(item.user_id).then(setReviews);
     setComments([]); setCommentText("");
     loadComments(item.id).then(setComments);
+    // Phase 14 — does the buyer already have a pending offer on this listing? If
+    // so the Detail page shows OFFER PENDING instead of MAKE AN OFFER.
+    setMyOffer(null);
+    if(user&&item.user_id!==user.id) db.getMyOffer(item.id,user.id,token).then(setMyOffer);
   }
 
   const selIdx   = sel?items.findIndex(i=>i.id===sel.id):0;
@@ -3202,6 +3241,7 @@ export default function App() {
         reviews={reviews}
         comments={comments} commentText={commentText} setCommentText={setCommentText}
         submitComment={submitComment} deleteComment={deleteComment} submitReply={submitReply} profile={profile}
+        myOffer={myOffer} submitOffer={submitOffer} withdrawOffer={withdrawOffer}
         openEdit={openEdit} markSold={markSold} relist={relist} del={del}
         similarItems={similarItems} recentItems={recentItems} openDetail={openDetail}
         fastSellers={fastSellers} verifiedSellers={verifiedSellers}
@@ -3324,6 +3364,22 @@ export default function App() {
             })()}
             <Sec label={<span style={{display:"inline-flex",alignItems:"center",gap:8}}><Package width={16} height={16}/> POSTAGE</span>}>
               <Tog on={form.accepts_collection} onToggle={()=>setForm(f=>({...f,accepts_collection:!f.accepts_collection}))} color="#34C759" label="ACCEPT COLLECTION IN PERSON" sub="Buyer can collect for free"/>
+            </Sec>
+            {/* Phase 14 — OFFERS. Sellers can let buyers make an offer below the
+                asking price (default ON), with an optional minimum-offer floor. */}
+            <Sec label={<span style={{display:"inline-flex",alignItems:"center",gap:8}}><Tag width={16} height={16}/> OFFERS</span>}>
+              <Tog on={form.offers_enabled!==false} onToggle={()=>setForm(f=>({...f,offers_enabled:!(f.offers_enabled!==false)}))} color="#FF1493" label="ACCEPT OFFERS ON THIS LISTING" sub="Buyers can propose a price; you have 48 hours to respond"/>
+              {form.offers_enabled!==false&&(
+                <div style={{marginTop:16}}>
+                  <F l="Minimum offer (optional)">
+                    <div style={{position:"relative"}}>
+                      <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#111",fontFamily:"'Barlow',sans-serif",pointerEvents:"none"}}>£</span>
+                      <input style={{...S.inp,paddingLeft:26}} type="number" min="0" placeholder="e.g. 30" value={form.minimum_offer} onChange={e=>setForm(f=>({...f,minimum_offer:e.target.value}))}/>
+                    </div>
+                  </F>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#999",marginTop:6,letterSpacing:0.5}}>Buyers cannot offer below this amount.</p>
+                </div>
+              )}
             </Sec>
             <Sec label="DESCRIBE IT">
               <textarea style={{...S.inp,height:110,resize:"vertical",width:"100%"}} placeholder="Fabric feel, embroidery, wear history, any flaws…" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}/>
