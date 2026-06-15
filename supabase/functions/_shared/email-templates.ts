@@ -250,6 +250,44 @@ export const templates = {
     };
   },
 
+  // 9 — Promotion active (seller). Sent by the stripe-webhook once a £2.99
+  // promotion payment completes. `listingId` deep-links the public listing.
+  promotion_active(
+    d: { title?: string; image?: string; promotedUntil?: string; listingId?: string },
+    ctx: BuildCtx,
+  ) {
+    const listingLink = d.listingId ? `${ctx.site}/?listing=${d.listingId}` : `${ctx.site}/dashboard`;
+    return {
+      subject: "Your listing is now promoted — Stitch'd",
+      html: baseTemplate({
+        heading: "You're boosted.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p("Your payment went through — your listing is now promoted to the top of search results for 7 days.") +
+          listingCard({ image: d.image, title: d.title }) +
+          (d.promotedUntil ? p(`<strong>Promoted until:</strong> ${esc(d.promotedUntil)}`) : "") +
+          p("Sit back and watch the views roll in.") +
+          button("View your listing", listingLink),
+      }),
+    };
+  },
+
+  // 10 — Promotion expired (seller). Sent by the expire-promotions cron function
+  // when the 7 days are up, with a PROMOTE AGAIN CTA back to the dashboard.
+  promotion_expired(d: { title?: string; image?: string }, ctx: BuildCtx) {
+    return {
+      subject: "Your promotion has ended — Stitch'd",
+      html: baseTemplate({
+        heading: "Your boost has ended.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p("Your 7 days of boosted visibility have ended. Promote again to keep your listing at the top of search results.") +
+          listingCard({ image: d.image, title: d.title }) +
+          button("Promote again", `${ctx.site}/dashboard`),
+      }),
+    };
+  },
+
   // 7 — Welcome (new user)
   welcome(_d: Record<string, unknown>, ctx: BuildCtx) {
     return {

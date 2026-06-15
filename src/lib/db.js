@@ -93,6 +93,13 @@ export const db = {
   },
   // "Notify me" interest for the coming-soon Promote feature.
   async insertFeatureInterest(rec,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/feature_interest`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(rec)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  // ── Phase 13 — Promoted listings ──────────────────────────────────────────
+  // The signed-in seller's promotions (pending / active / expired), newest first,
+  // with the listing name embedded for the dashboard ANALYTICS history. Falls back
+  // to a plain select if the embed isn't available on this deployment, then to []
+  // if the table doesn't exist yet (migration not run) so the section degrades to
+  // its empty state rather than throwing.
+  async getMyPromotions(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/promotions?seller_id=eq.${uid}&select=*,listings(id,name,image_url,images)&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/promotions?seller_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
   // Wishlists / favourites. getAllWishlists returns one row per save (listing_id
   // only) for the whole grid — counted client-side into a listing_id->count map,
   // mirroring getAllReviewStats. getMyWishlist returns just the current user's

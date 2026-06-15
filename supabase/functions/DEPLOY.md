@@ -31,9 +31,12 @@ supabase secrets set SITE_URL=https://stitchd.fit       # used by stripe-checkou
 
 ```bash
 supabase functions deploy stripe-webhook
+# Phase 13 — promoted listings (paid boost):
+supabase functions deploy create-promotion-session
+supabase functions deploy expire-promotions
 ```
 
-`verify_jwt = false` is pinned for this function in `supabase/config.toml`, so
+`verify_jwt = false` is pinned for these functions in `supabase/config.toml`, so
 the CLI applies it automatically. If you deploy without the config file present,
 pass the flag explicitly instead:
 
@@ -62,6 +65,15 @@ In Stripe Dashboard → Developers → Webhooks, the **live-mode** endpoint must
 - and its signing secret must equal the `STRIPE_WEBHOOK_SECRET` you set in
   step 2. A mismatch causes the function to reject deliveries with **400**
   ("Webhook signature verification failed"), not 404.
+
+> **Phase 13 — promoted listings.** The same webhook endpoint and
+> `checkout.session.completed` event also drive promotion payments — the function
+> branches on `session.metadata.type === 'promotion'`, so no extra Stripe event is
+> needed. The hourly expiry sweep (`expire-promotions`) is scheduled by the
+> `20260615130000_phase13_promoted_listings.sql` migration via pg_cron/pg_net; it
+> reuses the `service_role_key` you already set in Vault for the Phase 12
+> saved-search cron. Test the boost with card `4242 4242 4242 4242` before going
+> live.
 
 ## 6. Replay the failed event
 

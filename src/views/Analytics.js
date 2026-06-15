@@ -1,5 +1,5 @@
 import React from "react";
-import { Eye, Heart, Mail, Star, TrendingUp } from "lucide-react";
+import { Eye, Heart, Mail, Star, TrendingUp, Zap } from "lucide-react";
 import { catEmoji, CARD_COLORS } from "../lib/constants";
 import { Thumb, Stars } from "../components/Shared";
 
@@ -181,7 +181,23 @@ function EarningsChart({ buckets }) {
   );
 }
 
-export default function Analytics({ user, myItems = [], orders = [], wishlistCounts = {}, sellerRatings = {}, openDetail, messageBuyer }) {
+// Phase 13 — collapse the promotion lifecycle onto a badge. 'active' only counts
+// while expires_at is still in the future; a stale 'active' the cron hasn't swept
+// reads as expired so the row never lies about being live.
+const promoStatus = (p) => {
+  const s = String(p.status || "").toLowerCase();
+  const live = s === "active" && p.expires_at && new Date(p.expires_at).getTime() > Date.now();
+  if (live) return "active";
+  if (s === "pending") return "pending";
+  return "expired";
+};
+const PROMO_BADGE = {
+  active:  { label: "ACTIVE",  background: "#FF1493", color: "#fff" },
+  pending: { label: "PENDING", background: "#FF9500", color: "#fff" },
+  expired: { label: "EXPIRED", background: "#111",    color: "#fff" },
+};
+
+export default function Analytics({ user, myItems = [], orders = [], wishlistCounts = {}, sellerRatings = {}, openDetail, messageBuyer, promotions = [], onPromoteAgain }) {
   const [period, setPeriod] = React.useState("30");
   const [sortBy, setSortBy] = React.useState("views");
 
@@ -384,6 +400,52 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
                   {messageBuyer && order.buyer_id && (
                     <button className="hbtn" style={{ background: "#fff", color: "#111", border: "2px solid #111", borderRadius: 0, fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: 1.5, padding: "8px 14px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => messageBuyer(order)}>
                       <Mail width={14} height={14} /> MESSAGE BUYER
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* SECTION 6 — PROMOTIONS (Phase 13) */}
+      <div>
+        <div style={ST.sectionLabel}><Zap width={15} height={15} /> PROMOTIONS</div>
+        {promotions.length === 0 ? (
+          <div style={{ border: "2px solid #111", padding: "40px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 1, color: "#bbb" }}>
+            NO PROMOTIONS YET — BOOST A LISTING FROM THE ACTIVE TAB
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {promotions.map(promo => {
+              const status = promoStatus(promo);
+              const badge = PROMO_BADGE[status];
+              const listing = promo.listings || listingById(promo.listing_id) || {};
+              const title = listing.name || "Listing";
+              const amount = promo.amount_pence != null ? gbp(promo.amount_pence / 100) : "£2.99";
+              const fmt = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }).toUpperCase() : null;
+              const start = fmt(promo.started_at) || fmt(promo.created_at);
+              const end = fmt(promo.expires_at);
+              const dateStr = start && end ? `${start} – ${end}` : (start || end || "");
+              const daysLeft = status === "active" && promo.expires_at
+                ? Math.max(0, Math.ceil((new Date(promo.expires_at).getTime() - Date.now()) / 86400000))
+                : null;
+              return (
+                <div key={promo.id} style={{ border: "2px solid #111", padding: 14, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+                  <Thumb src={listing.image_url || (listing.images && listing.images[0]) || ""} emoji={catEmoji(listing.category)} accent="#FF1493" style={{ width: 48, height: 48, flexShrink: 0, border: "2px solid #111" }} emojiStyle={{ fontSize: 22 }} />
+                  <div style={{ flex: 1, minWidth: 160 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                      <span style={{ background: badge.background, color: badge.color, padding: "3px 9px", fontSize: 10, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Barlow Condensed',sans-serif", display: "inline-flex", alignItems: "center", gap: 4 }}><Zap width={11} height={11} fill="currentColor" /> {badge.label}</span>
+                      {daysLeft != null && <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 800, color: "#FF1493", letterSpacing: 1 }}>{daysLeft} DAY{daysLeft === 1 ? "" : "S"} LEFT</span>}
+                      {dateStr && <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 700, color: "#bbb", letterSpacing: 1 }}>{dateStr}</span>}
+                    </div>
+                    <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 900, color: "#111", lineHeight: 1.1 }}>{title}</p>
+                    <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 800, color: "#FF1493" }}>{amount} · 7 days</p>
+                  </div>
+                  {status === "expired" && onPromoteAgain && promo.listing_id && listingById(promo.listing_id) && (
+                    <button className="hbtn" style={{ background: "#FF1493", color: "#fff", border: "2px solid #111", borderRadius: 0, fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: 1.5, padding: "8px 14px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => onPromoteAgain(promo.listing_id)}>
+                      <Zap width={13} height={13} fill="currentColor" /> PROMOTE AGAIN
                     </button>
                   )}
                 </div>

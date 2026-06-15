@@ -1,5 +1,5 @@
 import React from "react";
-import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock, ShieldCheck, Store, Image as ImageIcon, MapPin } from "lucide-react";
+import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock, ShieldCheck, Store, Image as ImageIcon, MapPin, Zap, TrendingUp } from "lucide-react";
 import { CARD_COLORS, catEmoji, currencySymbol, lookListings, lookTotal } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Thumb, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
@@ -71,6 +71,8 @@ export default function Dashboard({
   // seller tools (Phase 10d)
   profile, flash = () => {}, bulkUpdateListings, relistCopy,
   toggleVacation, vacationSaving, notifyPromote, promoteNotified,
+  // Promoted listings (Phase 13)
+  startPromote = () => {}, promoteBusyId = null, myPromotions = [],
   bundles, bundleItems, loadBundles, deleteBundle,
   // createbundle
   bundleForm, setBundleForm, toggleBundleListing, createBundle,
@@ -105,6 +107,7 @@ export default function Dashboard({
   const [bulkPrice,setBulkPrice]=React.useState("");
   const [bulkBusy,setBulkBusy]=React.useState(false);
   const [shareItem,setShareItem]=React.useState(null);    // listing shown in share modal
+  const [promoteItem,setPromoteItem]=React.useState(null);// listing shown in PROMOTE modal (Phase 13)
   const [relistItem,setRelistItem]=React.useState(null);  // listing shown in relist confirm
   const [relistBusy,setRelistBusy]=React.useState(false);
   const [copied,setCopied]=React.useState(false);
@@ -121,6 +124,10 @@ export default function Dashboard({
   const confirmReject=async()=>{ if(!rejectApp) return; await rejectVerification(rejectApp,rejectNotes.trim()); setRejectApp(null); setRejectNotes(""); };
 
   const activeItems=myItems.filter(i=>!i.sold);
+  // Phase 13 — a listing's boost is live only while promoted is set AND
+  // promoted_until is still in the future.
+  const isPromoted=(i)=>!!i.promoted&&!!i.promoted_until&&new Date(i.promoted_until).getTime()>Date.now();
+  const promotedUntilLabel=(i)=>i.promoted_until?new Date(i.promoted_until).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}):"";
   const allActiveSelected=activeItems.length>0&&selectedIds.length===activeItems.length;
 
   const toggleSelect=(id)=>setSelectedIds(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
@@ -225,6 +232,8 @@ export default function Dashboard({
                 user={user} myItems={myItems} orders={myOrders}
                 wishlistCounts={wishlistCounts} sellerRatings={sellerRatings}
                 openDetail={openDetail} messageBuyer={startOrderConversation}
+                promotions={myPromotions}
+                onPromoteAgain={(listingId)=>{ const l=myItems.find(i=>i.id===listingId); if(l) setPromoteItem(l); }}
               />
             ):dashTab==="tools"?(
               /* ── TOOLS TAB (Storefront + Verification + Vacation mode + Promote) ─ */
@@ -608,8 +617,18 @@ export default function Dashboard({
                       {!item.sold&&<button className="hbtn" style={{...S.dashBtn,background:"#111",color:"#fff"}} onClick={()=>markSold(item.id,item.sold)}>MARK SOLD</button>}
                       {item.sold&&<button className="hbtn" style={{...S.dashBtn,background:"#34C759",color:"#fff"}} onClick={()=>setRelistItem(item)}>RELIST</button>}
                       <button className="hbtn" style={{...S.dashBtn,background:"#fff",color:"#111",border:"1.5px solid #111",display:"inline-flex",alignItems:"center",gap:4}} onClick={()=>{setShareItem(item);setCopied(false);}}><Share2 width={12} height={12}/> SHARE</button>
+                      {/* Phase 13 — PROMOTE button (active, unpromoted listings) or
+                          a PROMOTED badge once a boost is live. */}
+                      {!item.sold&&(isPromoted(item)
+                        ? <span style={{...S.dashBtn,background:"#FF1493",color:"#fff",border:"1.5px solid #FF1493",display:"inline-flex",alignItems:"center",gap:4,cursor:"default"}}><Zap width={12} height={12} fill="currentColor"/> PROMOTED</span>
+                        : <button className="hbtn" style={{...S.dashBtn,background:"#fff",color:"#FF1493",border:"2px solid #111",display:"inline-flex",alignItems:"center",gap:4}} onClick={()=>setPromoteItem(item)}><Zap width={12} height={12} color="#FF1493"/> PROMOTE</button>
+                      )}
                       <button className="hbtn" style={{...S.dashBtn,background:"#fff",color:"#FF1493",border:"1.5px solid #FF1493"}} onClick={()=>del(item.id)}>DELETE</button>
                     </div>
+                    {/* Promoted-until expiry line under the actions. */}
+                    {!item.sold&&isPromoted(item)&&(
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,color:"#FF1493",letterSpacing:0.5,marginTop:8,display:"flex",alignItems:"center",gap:5}}><Clock width={12} height={12}/> Promoted until {promotedUntilLabel(item)}</p>
+                    )}
                   </div>
                 </div>
                 );
@@ -728,6 +747,48 @@ export default function Dashboard({
               </div>
             </div>
           )}
+
+          {/* PROMOTE LISTING MODAL (Phase 13) */}
+          {promoteItem&&(()=>{
+            const busy=promoteBusyId===promoteItem.id;
+            const perks=[
+              {Icon:TrendingUp,text:"Featured at the top of search results"},
+              {Icon:Eye,text:"More eyes on your listing"},
+              {Icon:Zap,text:"7 days of boosted visibility"},
+            ];
+            return (
+            <div style={S.modalOverlay} onClick={()=>!busy&&setPromoteItem(null)}>
+              <div style={{background:"#fff",border:"2px solid #111",borderRadius:0,padding:28,maxWidth:440,width:"100%",maxHeight:"90vh",overflowY:"auto",fontFamily:"'Barlow Condensed',sans-serif"}} onClick={e=>e.stopPropagation()}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+                  <h3 style={{fontSize:26,fontWeight:900,letterSpacing:0.5,display:"inline-flex",alignItems:"center",gap:10,lineHeight:1.05}}><Zap width={22} height={22} color="#FF1493" fill="#FF1493"/> PROMOTE THIS LISTING</h3>
+                  <button aria-label="Close" style={{background:"none",border:"none",cursor:"pointer",padding:2}} onClick={()=>!busy&&setPromoteItem(null)}><X width={20} height={20}/></button>
+                </div>
+                {/* Listing thumbnail + title */}
+                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18,paddingBottom:18,borderBottom:"2px solid #111"}}>
+                  <div style={{width:56,height:56,flexShrink:0,border:"2px solid #111",overflow:"hidden"}}>
+                    <Thumb src={promoteItem.image_url||(promoteItem.images&&promoteItem.images[0])||""} emoji={promoteItem.emoji||catEmoji(promoteItem.category)} accent="#FF1493" style={{width:"100%",height:"100%"}} emojiStyle={{fontSize:24}}/>
+                  </div>
+                  <div style={{minWidth:0}}>
+                    <p style={{fontSize:18,fontWeight:900,color:"#111",lineHeight:1.1,overflow:"hidden",textOverflow:"ellipsis"}}>{promoteItem.name}</p>
+                    <p style={{fontSize:15,fontWeight:800,color:"#FF1493"}}>{currencySymbol(promoteItem.currency)}{promoteItem.price}</p>
+                  </div>
+                </div>
+                {/* What you get */}
+                <p style={{fontSize:11,fontWeight:900,letterSpacing:2,color:"#999",textTransform:"uppercase",marginBottom:10}}>What you get</p>
+                <div style={{display:"flex",flexDirection:"column",gap:11,marginBottom:20}}>
+                  {perks.map(({Icon,text})=>(
+                    <span key={text} style={{display:"flex",alignItems:"center",gap:10,fontSize:15,fontWeight:700,letterSpacing:0.3,color:"#111",lineHeight:1.2}}><Icon width={18} height={18} color="#FF1493" style={{flexShrink:0}}/> {text}</span>
+                  ))}
+                </div>
+                {/* Price */}
+                <p style={{fontSize:34,fontWeight:900,color:"#FF1493",letterSpacing:-0.5,marginBottom:16,lineHeight:1}}>£2.99 <span style={{fontSize:18,fontWeight:800,color:"#111"}}>for 7 days</span></p>
+                {/* CTA */}
+                <button type="button" disabled={busy} onClick={()=>startPromote(promoteItem)} style={{width:"100%",background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"15px",fontSize:15,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase",cursor:busy?"wait":"pointer",opacity:busy?0.6:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8}}><Zap width={17} height={17}/> {busy?"REDIRECTING…":"PROMOTE FOR £2.99"}</button>
+                <button type="button" onClick={()=>!busy&&setPromoteItem(null)} style={{display:"block",margin:"14px auto 0",background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#888",textTransform:"uppercase",textDecoration:"underline"}}>Cancel</button>
+              </div>
+            </div>
+            );
+          })()}
 
           {/* APPLY FOR VERIFICATION MODAL (Phase 11) */}
           {verifyModal&&(()=>{
