@@ -37,8 +37,67 @@ export default function Shop({
   toggleFavourite = () => {},
   looks = [],
   openLook = () => {},
+  // Phase 13 — FOLLOWING tab. `shopTab` toggles ALL ↔ FOLLOWING; the feed shows
+  // listings only from sellers the logged-in user follows.
+  shopTab = "all", setShopTab = () => {}, loadFeed = () => {},
+  following = [], feedItems = [], feedLoading = false,
 }) {
   if(view!=="shop"&&view!=="newarrivals") return null;
+  const followingActive = !!user && view==="shop" && shopTab==="following";
+  // Tab bar shown at the top of the shop for logged-in users (not on /new-arrivals).
+  const ShopTabs = () => (!user||newArrivals) ? null : (
+    <div style={{maxWidth:1300,margin:"0 auto",padding:"18px 24px 0",display:"flex",gap:0}}>
+      {[["all","ALL LISTINGS"],["following","FOLLOWING"]].map(([k,l])=>(
+        <button key={k} className="hbtn" onClick={()=>{ setShopTab(k); if(k==="following") loadFeed(); }}
+          style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,padding:"10px 22px",border:"2px solid #111",borderLeft:k==="all"?"2px solid #111":"none",background:shopTab===k?"#FF1493":"#fff",color:shopTab===k?"#fff":"#111",cursor:"pointer",borderRadius:0}}>{l}</button>
+      ))}
+    </div>
+  );
+  // FOLLOWING feed — replaces the hero/grid/rails. Same card grid as the shop.
+  if(followingActive){
+    return (
+      <>
+        <ShopTabs/>
+        <main style={S.main}>
+          <div style={{marginBottom:28,paddingBottom:20,borderBottom:"3px solid #111"}}>
+            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>FROM SELLERS YOU FOLLOW</p>
+            <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:44,fontWeight:900,letterSpacing:-1,lineHeight:1}}>FOLLOWING ✦</h2>
+          </div>
+          {feedLoading&&<div style={S.loadingWrap}><div style={S.spinner}/></div>}
+          {!feedLoading&&following.length===0&&(
+            <div style={{textAlign:"center",padding:"56px 20px"}}>
+              <p style={{display:"flex",justifyContent:"center",marginBottom:12,color:"#ccc"}}><Heart width={48} height={48}/></p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,marginBottom:18}}>Follow sellers to see their latest listings here</p>
+              <button className="hbtn" style={{...S.hBtn,fontSize:13,padding:"12px 22px",border:"2px solid #111"}} onClick={()=>setShopTab("all")}>DISCOVER SELLERS →</button>
+            </div>
+          )}
+          {!feedLoading&&following.length>0&&feedItems.length===0&&(
+            <div style={{textAlign:"center",padding:"56px 20px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:"#bbb"}}>No new listings from sellers you follow yet.</div>
+          )}
+          {!feedLoading&&feedItems.length>0&&(
+            <div style={S.grid} className="shop-grid">
+              {feedItems.map((item,idx)=>{
+                const accent=CARD_COLORS[idx%CARD_COLORS.length];
+                return(
+                  <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
+                    <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
+                      {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
+                    </Thumb>
+                    <div style={S.cardBody} className="card-body">
+                      <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
+                      <p style={S.cardName} className="card-name">{item.name}</p>
+                      <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span></div>
+                    </div>
+                    <div style={{...S.accentBar,background:accent}}/>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </main>
+      </>
+    );
+  }
   // Small "⚡ FAST SELLER" badge for sellers flagged fast_seller=true on their profile.
   // Reuses the same overlay badge style as RESERVED / NEW / FITS YOU. On the main grid
   // it stacks above the FITS YOU badge (which also sits bottom-left) so the two never
@@ -84,6 +143,7 @@ export default function Shop({
   };
   return (
     <>
+      <ShopTabs/>
       {/* NEW ARRIVALS page header — replaces the hero when this view is the
           /new-arrivals page. The search bar + filters + grid below are shared
           with the main shop, so every filter works here too. */}

@@ -1,5 +1,5 @@
 import React from "react";
-import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock, ShieldCheck } from "lucide-react";
+import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock, ShieldCheck, Store, Image as ImageIcon, MapPin } from "lucide-react";
 import { CARD_COLORS, catEmoji, currencySymbol, lookListings, lookTotal } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Thumb, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
@@ -86,6 +86,8 @@ export default function Dashboard({
   // ID verification (Phase 11 — Stripe Identity)
   verifyIdentity = () => {}, identityBusy = false,
   requestTab = null, clearRequestTab = () => {},
+  // Edit storefront (Phase 13)
+  storeForm = {}, setStoreForm = () => {}, saveStorefront = () => {}, storeSaving = false,
 }) {
   // Split listings into ACTIVE vs SOLD (issue PART 4 — sold listings move to a
   // separate SOLD tab in the seller dashboard).
@@ -225,8 +227,49 @@ export default function Dashboard({
                 openDetail={openDetail} messageBuyer={startOrderConversation}
               />
             ):dashTab==="tools"?(
-              /* ── TOOLS TAB (Verification + Vacation mode + Promote) ───────────── */
+              /* ── TOOLS TAB (Storefront + Verification + Vacation mode + Promote) ─ */
               <div style={{display:"flex",flexDirection:"column",gap:3,maxWidth:680}}>
+                {/* Phase 13 — EDIT STOREFRONT. Banner upload + tagline/bio/location/
+                    Instagram, a PREVIEW STOREFRONT link (opens the public page in a
+                    new tab) and a pink SAVE CHANGES button. */}
+                <div style={{border:"2px solid #111",padding:"24px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                    <Store width={20} height={20} color="#FF1493"/>
+                    <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>EDIT STOREFRONT</h3>
+                  </div>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>Customise your public storefront — the page buyers see when they tap your name.</p>
+
+                  {/* Banner upload */}
+                  <div style={{marginBottom:18}}>
+                    <label style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:8}}>BANNER IMAGE</label>
+                    <div onClick={()=>document.getElementById("storefront-banner-input").click()} style={{width:"100%",height:140,border:"2px solid #111",borderRadius:0,cursor:"pointer",background:storeForm.bannerPreview?`#FF1493 url(${storeForm.bannerPreview}) center/cover no-repeat`:"#FF1493",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      {!storeForm.bannerPreview&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:1,color:"#fff",display:"inline-flex",alignItems:"center",gap:8}}><ImageIcon width={18} height={18}/> UPLOAD BANNER</span>}
+                    </div>
+                    <input id="storefront-banner-input" type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];if(f)setStoreForm(s=>({...s,bannerFile:f,bannerPreview:URL.createObjectURL(f)}));}}/>
+                    {storeForm.bannerPreview&&<button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"6px 12px",marginTop:8}} onClick={()=>setStoreForm(s=>({...s,bannerFile:null,bannerPreview:"",storefront_banner_url:""}))}>REMOVE BANNER</button>}
+                  </div>
+
+                  <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                    <F l={`TAGLINE (${(storeForm.storefront_tagline||"").length}/80)`}>
+                      <input style={S.inp} maxLength={80} placeholder="Pre-loved South Asian fashion from London" value={storeForm.storefront_tagline||""} onChange={e=>setStoreForm(s=>({...s,storefront_tagline:e.target.value.slice(0,80)}))}/>
+                    </F>
+                    <F l={`BIO (${(storeForm.storefront_bio||"").length}/300)`}>
+                      <textarea style={{...S.inp,height:90,resize:"vertical"}} maxLength={300} placeholder="Tell buyers about yourself and your style..." value={storeForm.storefront_bio||""} onChange={e=>setStoreForm(s=>({...s,storefront_bio:e.target.value.slice(0,300)}))}/>
+                    </F>
+                    <F l="LOCATION">
+                      <div style={{position:"relative"}}><span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#999",pointerEvents:"none"}}><MapPin width={15} height={15}/></span><input style={{...S.inp,paddingLeft:34}} placeholder="London, UK" value={storeForm.storefront_location||""} onChange={e=>setStoreForm(s=>({...s,storefront_location:e.target.value}))}/></div>
+                    </F>
+                    <F l="INSTAGRAM HANDLE">
+                      <div style={{position:"relative"}}><span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#999",pointerEvents:"none"}}><Instagram width={15} height={15}/></span><input style={{...S.inp,paddingLeft:34}} placeholder="@yourhandle" value={storeForm.storefront_instagram||""} onChange={e=>setStoreForm(s=>({...s,storefront_instagram:e.target.value}))}/></div>
+                    </F>
+                  </div>
+
+                  <div style={{display:"flex",gap:10,marginTop:20,flexWrap:"wrap"}}>
+                    {user&&<button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,fontSize:13,padding:"12px 20px",display:"inline-flex",alignItems:"center",gap:7}} onClick={()=>window.open(`/?seller=${user.id}`,"_blank")}><ExternalLink width={15} height={15}/> PREVIEW STOREFRONT</button>}
+                    <button className="hbtn" style={{...S.hBtn,background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,fontSize:13,padding:"12px 20px",opacity:storeSaving?0.5:1}} disabled={storeSaving} onClick={saveStorefront}>{storeSaving?"SAVING…":"SAVE CHANGES"}</button>
+                  </div>
+                </div>
+
                 {/* Phase 11 — VERIFICATION. The body switches on verification_status:
                     unverified → GET VERIFIED apply CTA; pending → under review;
                     verified → the badge + verified-since date; rejected → reapply

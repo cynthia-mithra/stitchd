@@ -11,7 +11,7 @@ import {
 import { db } from "./lib/db";
 import { startCheckout, verifySession } from "./lib/checkout";
 import { startIdentityVerification } from "./lib/identity";
-import { auth, uploadImage, uploadLookImage, uploadDisputeImage, isTokenExpired, decodeJWT } from "./lib/auth";
+import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
@@ -22,6 +22,7 @@ import Auth from "./views/Auth";
 import Profile from "./views/Profile";
 import Dashboard from "./views/Dashboard";
 import Feed from "./views/Feed";
+import Following from "./views/Following";
 import Orders from "./views/Orders";
 import Looks from "./views/Looks";
 import CreateLook from "./views/CreateLook";
@@ -238,6 +239,17 @@ export default function App() {
   const [feedItems,      setFeedItems]      = useState([]);
   const [feedLoading,    setFeedLoading]    = useState(false);
   const [feedProfiles,   setFeedProfiles]   = useState({});
+  // Phase 13 — seller storefronts + follow. `followerCount` is the count for the
+  // currently-open storefront (kept in sync as you follow/unfollow). `storeForm`
+  // backs the EDIT STOREFRONT section in the dashboard TOOLS tab. The MY FOLLOWING
+  // list resolves the followed sellers' profiles + active-listing counts. `shopTab`
+  // toggles the main shop between ALL listings and the FOLLOWING feed.
+  const [followerCount,    setFollowerCount]    = useState(0);
+  const [storeForm,        setStoreForm]        = useState({storefront_tagline:"",storefront_bio:"",storefront_location:"",storefront_instagram:"",storefront_banner_url:"",bannerFile:null,bannerPreview:""});
+  const [storeSaving,      setStoreSaving]      = useState(false);
+  const [followingProfiles,setFollowingProfiles]= useState([]);
+  const [followingLoading, setFollowingLoading] = useState(false);
+  const [shopTab,          setShopTab]          = useState("all");
   const [notifications,  setNotifications]  = useState([]);
   const [showNotifs,     setShowNotifs]     = useState(false);
   const [navMenuOpen,    setNavMenuOpen]    = useState(false);
@@ -297,6 +309,18 @@ export default function App() {
   },[]);
 
   useEffect(()=>{ fetchItems(); },[]);
+
+  // Phase 13 — deep link to a seller storefront (?seller=<id>), used by the
+  // dashboard "PREVIEW STOREFRONT" button which opens the public storefront in a
+  // new tab. Clears the param afterwards so a refresh lands on the shop.
+  useEffect(()=>{
+    const sellerId=new URLSearchParams(window.location.search).get("seller");
+    if(sellerId){
+      window.history.replaceState({},document.title,window.location.pathname);
+      openProfile(sellerId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
 
   // Stripe redirects back to /order-success?session_id=… after a paid checkout.
   // Detect that path on load, verify the session server-side (via Edge Function),
@@ -390,7 +414,7 @@ export default function App() {
 
   useEffect(()=>{
     if(user&&token){
-      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",bio:p.bio||"",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||"",is_tailor:p.is_tailor||false,tailor_services:p.tailor_services||[],tailor_price_from:p.tailor_price_from||"",accepting_clients:p.accepting_clients!==false});} });
+      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",bio:p.bio||"",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||"",is_tailor:p.is_tailor||false,tailor_services:p.tailor_services||[],tailor_price_from:p.tailor_price_from||"",accepting_clients:p.accepting_clients!==false});setStoreForm({storefront_tagline:p.storefront_tagline||"",storefront_bio:p.storefront_bio||"",storefront_location:p.storefront_location||"",storefront_instagram:p.storefront_instagram||"",storefront_banner_url:p.storefront_banner_url||"",bannerFile:null,bannerPreview:p.storefront_banner_url||""});} });
       loadConversations();
       db.getFollowing(user.id,token).then(setFollowing);
       db.getNotifications(user.id,token).then(setNotifications);
@@ -1163,17 +1187,70 @@ export default function App() {
   async function toggleFollow(targetId){
     if(!user){ setAuthMode("login"); setView("auth"); return; }
     if(targetId===user.id) return;
+    const viewing=viewedProfile?.id===targetId;
     try{
       if(isFollowing(targetId)){
         await db.unfollow(user.id,targetId,token);
         setFollowing(p=>p.filter(f=>f.following_id!==targetId));
+        // Drop the unfollowed seller from the MY FOLLOWING list immediately.
+        setFollowingProfiles(p=>p.filter(s=>s.id!==targetId));
+        if(viewing) setFollowerCount(c=>Math.max(0,c-1));
         flash("Unfollowed.");
       } else {
         await db.follow(user.id,targetId,token);
         setFollowing(p=>[...p,{follower_id:user.id,following_id:targetId}]);
+        if(viewing) setFollowerCount(c=>c+1);
         flash("✦ Following!");
+        // Phase 13 PART 7 — tell the seller they have a new follower. Link to the
+        // follower's profile (this user). Best-effort: never block the follow.
+        const me=(profile?.full_name&&profile.full_name.trim())||profile?.username||user.email?.split("@")[0]||"Someone";
+        notify(targetId,"new_follower","✦ New follower",`${me} started following you`,user.id);
       }
     }catch(e){ flash("Could not update follow."); }
+  }
+
+  // Phase 13 — MY FOLLOWING list. Resolve each followed seller's profile and
+  // count their active (unsold, not deactivated) listings for the row subtitle.
+  async function loadFollowingList(){
+    if(!user||!token) return;
+    setFollowingLoading(true);
+    try{
+      const ids=following.map(f=>f.following_id);
+      if(!ids.length){ setFollowingProfiles([]); setFollowingLoading(false); return; }
+      const rows=await Promise.all(ids.map(async id=>{
+        const [p,listings]=await Promise.all([db.getProfile(id,token),db.getListingsByUser(id,token)]);
+        const activeCount=(listings||[]).filter(i=>!i.sold&&i.status!=="inactive").length;
+        return p?{...p,activeCount}:null;
+      }));
+      setFollowingProfiles(rows.filter(Boolean));
+    }catch(e){ flash("Failed to load your following list."); }
+    finally{ setFollowingLoading(false); }
+  }
+
+  // Phase 13 — save the seller's storefront (banner upload + text fields) from the
+  // dashboard TOOLS tab. Self-healing patch tolerates a not-yet-migrated schema.
+  async function saveStorefront(){
+    if(!user||storeSaving) return;
+    setStoreSaving(true);
+    try{
+      let banner_url=storeForm.storefront_banner_url||"";
+      if(storeForm.bannerFile){
+        try{ banner_url=await withFreshToken(tok=>uploadStorefrontBanner(storeForm.bannerFile,tok)); }
+        catch(e){ flash("Banner upload failed — saved the rest of your storefront."); }
+      }
+      const patch={
+        storefront_banner_url:banner_url||null,
+        storefront_tagline:(storeForm.storefront_tagline||"").slice(0,80)||null,
+        storefront_bio:(storeForm.storefront_bio||"").slice(0,300)||null,
+        storefront_location:(storeForm.storefront_location||"").trim()||null,
+        storefront_instagram:(storeForm.storefront_instagram||"").trim()||null,
+      };
+      await withFreshToken(tok=>db.updateProfileStorefront(user.id,patch,tok));
+      setProfile(p=>p?{...p,...patch}:p);
+      setStoreForm(f=>({...f,storefront_banner_url:banner_url,bannerFile:null,bannerPreview:banner_url}));
+      flash("✓ Storefront saved!");
+    }catch(e){ flash(`Couldn't save storefront: ${errMsg(e)}`); }
+    finally{ setStoreSaving(false); }
   }
 
   async function loadFeed(){
@@ -1350,6 +1427,8 @@ export default function App() {
     const revs=await loadReviews(userId);
     setViewedProfile(p||{id:userId,username:"Seller",bio:""});
     setProfileListings(listings); setReviews(revs); setView("profile");
+    // Phase 13 — live follower count for the storefront.
+    db.getFollowers(userId,token).then(f=>setFollowerCount(f.length)).catch(()=>setFollowerCount(0));
   }
 
   async function add(){
@@ -1718,6 +1797,7 @@ export default function App() {
     {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
     {label:"SAVED SEARCHES",  run:()=>{loadSavedSearches();setView("saved-searches");}},
     {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
+    {label:"MY FOLLOWING",   run:()=>{loadFollowingList();setView("following-list");}},
     {label:"MESSAGES",       run:openMessages},
     {label:"MY PROFILE",     run:()=>{load2FAFactors();setView("editprofile");}},
     {label:"HOW TO MEASURE", run:()=>{setPrevView(view);setView("measuring");}},
@@ -1811,7 +1891,7 @@ export default function App() {
             <div style={{maxHeight:400,overflowY:"auto"}}>
               {notifications.map(n=>(
                 <div key={n.id} style={{...S.notifItem,background:n.read?"#fff":"#fff8fc",borderLeft:`4px solid ${n.read?"#f0f0f0":"#FF1493"}`}}
-                  onClick={()=>{ markNotifRead(n.id); if(n.link_id){ if(n.type==="message"||n.type==="offer"){ openMessages(); } else { const item=items.find(i=>i.id===n.link_id); if(item)openDetail(item); } } setShowNotifs(false); }}>
+                  onClick={()=>{ markNotifRead(n.id); if(n.link_id){ if(n.type==="message"||n.type==="offer"){ openMessages(); } else if(n.type==="new_follower"){ openProfile(n.link_id); } else { const item=items.find(i=>i.id===n.link_id); if(item)openDetail(item); } } setShowNotifs(false); }}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                     <div>
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:n.read?600:900,color:"#111",marginBottom:2}}>{n.title}</p>
@@ -2500,6 +2580,14 @@ export default function App() {
         confirm2FA={confirm2FA} disable2FA={disable2FA} load2FAFactors={load2FAFactors} setup2FA={setup2FA}
         viewedProfile={viewedProfile} profileListings={profileListings} reviews={reviews}
         isFollowing={isFollowing} toggleFollow={toggleFollow} openDetail={openDetail}
+        followerCount={followerCount}
+      />
+
+      {/* MY FOLLOWING (Phase 13) */}
+      <Following
+        view={view} setView={setView} user={user}
+        followingProfiles={followingProfiles} followingLoading={followingLoading}
+        toggleFollow={toggleFollow} openProfile={openProfile}
       />
 
       {/* DASHBOARD + CREATE BUNDLE */}
@@ -2522,6 +2610,7 @@ export default function App() {
         approveVerification={approveVerification} rejectVerification={rejectVerification}
         verifyIdentity={verifyIdentity} identityBusy={identityBusy}
         requestTab={dashTabRequest} clearRequestTab={()=>setDashTabRequest(null)}
+        storeForm={storeForm} setStoreForm={setStoreForm} saveStorefront={saveStorefront} storeSaving={storeSaving}
       />
 
       {/* FEED */}
@@ -2579,6 +2668,8 @@ export default function App() {
         sellerRatings={sellerRatings} fastSellers={fastSellers} verifiedSellers={verifiedSellers}
         wishlistCounts={wishlistCounts} myWishlist={myWishlist} toggleFavourite={toggleFavourite}
         looks={looks} openLook={openLook}
+        shopTab={shopTab} setShopTab={setShopTab} loadFeed={loadFeed}
+        following={following} feedItems={feedItems} feedLoading={feedLoading}
       />
 
       {/* MY SAVED SEARCHES */}
