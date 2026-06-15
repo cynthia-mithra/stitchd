@@ -1,5 +1,5 @@
 import React from "react";
-import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock, ShieldCheck, Store, Image as ImageIcon, MapPin, Zap, TrendingUp, Tag, MessageSquare, Hourglass } from "lucide-react";
+import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock, ShieldCheck, Store, Image as ImageIcon, MapPin, Zap, TrendingUp, Tag, MessageSquare, Hourglass, Scissors } from "lucide-react";
 import { CARD_COLORS, catEmoji, currencySymbol, lookListings, lookTotal } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Thumb, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
@@ -87,6 +87,8 @@ export default function Dashboard({
   myVerificationApp = null, verificationBusy = false, submitVerification = () => {},
   adminApplications = [], adminApplicants = {},
   approveVerification = () => {}, rejectVerification = () => {},
+  // Tailor applications (Phase 14)
+  tailorApplications = [], approveTailor = () => {}, rejectTailor = () => {},
   // ID verification (Phase 11 — Stripe Identity)
   verifyIdentity = () => {}, identityBusy = false,
   requestTab = null, clearRequestTab = () => {},
@@ -658,6 +660,55 @@ export default function Dashboard({
                                   <button className="hbtn" style={{...S.dashBtn,background:"#fff",color:"#FF1493",border:"1.5px solid #FF1493",display:"inline-flex",alignItems:"center",gap:4}} onClick={()=>{setRejectApp(a);setRejectNotes("");}}><X width={12} height={12}/> REJECT</button>
                                 </div>
                               )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+                {/* TAILOR APPLICATIONS (Phase 14) */}
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:10,borderBottom:"2px solid #111"}}>
+                    <Scissors width={18} height={18} color="#FF1493"/>
+                    <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>TAILOR APPLICATIONS</h3>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#bbb",letterSpacing:1}}>({tailorApplications.filter(t=>(t.status||"pending")==="pending").length} pending)</span>
+                  </div>
+                  {(()=>{
+                    const pending=tailorApplications.filter(t=>(t.status||"pending")==="pending");
+                    if(pending.length===0) return <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",letterSpacing:1}}>No pending tailor applications.</p>;
+                    return (
+                      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                        {pending.map(t=>{
+                          const date=t.created_at?new Date(t.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase():"";
+                          const pf=t.price_from_pence!=null?Math.round(t.price_from_pence/100):null;
+                          const pt=t.price_to_pence!=null?Math.round(t.price_to_pence/100):null;
+                          const priceLabel=pf!=null||pt!=null?`£${pf??"?"} – £${pt??"?"}`:"—";
+                          const portfolio=(t.tailor_portfolio||[]).slice().sort((a,b)=>(a.position??0)-(b.position??0));
+                          return(
+                            <div key={t.id} style={{border:"2px solid #111",padding:"14px 16px",fontFamily:"'Barlow Condensed',sans-serif"}}>
+                              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8,flexWrap:"wrap"}}>
+                                <div style={{width:44,height:44,borderRadius:"50%",border:"2px solid #111",overflow:"hidden",flexShrink:0,background:"#FF1493",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                  {t.profile_image_url?<img src={t.profile_image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:"#fff",fontWeight:900,fontSize:18}}>{(t.display_name||"T")[0].toUpperCase()}</span>}
+                                </div>
+                                <div style={{flex:1,minWidth:0}}>
+                                  <p style={{fontSize:18,fontWeight:900,color:"#111",lineHeight:1.1}}>{t.display_name||"Applicant"}</p>
+                                  <p style={{fontSize:13,color:"#888",display:"flex",alignItems:"center",gap:5}}><MapPin width={13} height={13}/> {t.location||"—"}</p>
+                                </div>
+                                <span style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{date}</span>
+                              </div>
+                              {t.bio&&<p style={{fontSize:13,color:"#555",marginBottom:8,lineHeight:1.45}}>{t.bio.slice(0,200)}{t.bio.length>200?"…":""}</p>}
+                              {(t.specialisms||[]).length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8}}>{t.specialisms.map(s=><span key={s} style={{border:"2px solid #111",padding:"3px 9px",fontSize:11,fontWeight:800,letterSpacing:0.5,color:"#111"}}>{s}</span>)}</div>}
+                              <p style={{fontSize:13,color:"#444",marginBottom:8}}><span style={{fontWeight:800,color:"#FF1493"}}>Price: </span>{priceLabel}{t.turnaround_days!=null?` · ${t.turnaround_days} day turnaround`:""}</p>
+                              {portfolio.length>0&&(
+                                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+                                  {portfolio.slice(0,6).map(pp=><div key={pp.id} style={{width:56,height:56,border:"2px solid #111",overflow:"hidden"}}><img src={pp.image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>)}
+                                </div>
+                              )}
+                              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:4}}>
+                                <button className="hbtn" style={{...S.dashBtn,background:"#34C759",color:"#fff",display:"inline-flex",alignItems:"center",gap:4}} onClick={()=>approveTailor(t)}><Check width={12} height={12}/> APPROVE</button>
+                                <button className="hbtn" style={{...S.dashBtn,background:"#fff",color:"#FF1493",border:"1.5px solid #FF1493",display:"inline-flex",alignItems:"center",gap:4}} onClick={()=>rejectTailor(t)}><X width={12} height={12}/> REJECT</button>
+                              </div>
                             </div>
                           );
                         })}

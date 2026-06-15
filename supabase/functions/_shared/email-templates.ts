@@ -234,6 +234,23 @@ export const templates = {
     };
   },
 
+  // Phase 14 — Tailor application approved. Sent when the admin approves a tailor
+  // application; links the new tailor to their now-live public profile.
+  tailor_approved(d: { displayName?: string; tailorId?: string }, ctx: BuildCtx) {
+    const profileLink = d.tailorId ? `${ctx.site}/tailors/${d.tailorId}` : `${ctx.site}`;
+    return {
+      subject: "You're approved as a Stitch'd tailor! 🎉",
+      html: baseTemplate({
+        heading: "You're a Stitch'd tailor.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`Great news${d.displayName ? `, ${esc(d.displayName)}` : ""} — your tailor application has been approved and your profile is now live on Stitch'd.`) +
+          p("Buyers can now find you, see your specialisms and portfolio, and (soon) book alterations.") +
+          button("View your profile", profileLink),
+      }),
+    };
+  },
+
   // 8 — Saved-search alert (buyer). New listings matched a saved search.
   // `summary` is the human filter chip (e.g. "Lehenga · Pink · Under £200");
   // `matchUrl` deep-links the shop with the saved filters pre-applied; `listings`

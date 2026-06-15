@@ -78,3 +78,9 @@ export const uploadDisputeImage=(file,t)=>uploadImage(file,t,"disputes");
 // Phase 14 — style feed post photos live in their own public "style-posts"
 // bucket (created by the phase14 style-feed migration).
 export const uploadStylePostImage=(file,t)=>uploadImage(file,t,"style-posts");
+
+// Phase 14 — tailor profiles. The tailor's profile/banner image lands in the
+// public "tailor-profiles" bucket; each portfolio image in "tailor-portfolio".
+// Both buckets are created (public) by the phase14 tailor-profiles migration.
+export const uploadTailorProfileImage=(file,t)=>uploadImage(file,t,"tailor-profiles");
+export const uploadTailorPortfolioImage=(file,t)=>uploadImage(file,t,"tailor-portfolio");

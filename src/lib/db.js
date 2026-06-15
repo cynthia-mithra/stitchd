@@ -490,4 +490,55 @@ export const db = {
   async unlikeStylePost(postId,userId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/style_post_likes?post_id=eq.${postId}&user_id=eq.${userId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   // Sync the denormalised counter after a like/unlike (best-effort background write).
   async setStylePostLikes(id,count,t){ await fetch(`${SUPABASE_URL}/rest/v1/style_posts?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({likes_count:Math.max(0,count)})}); },
+
+  // ── Phase 14 — Tailor profiles ────────────────────────────────────────────
+  // A NEW feature, fully separate from the older tailor_services marketplace:
+  // any user can apply to become a tailor; once the admin approves, they get a
+  // public profile at /tailors/<id>. The signed-in user holds at most one tailor
+  // row (tailors.user_id is UNIQUE) — getMyTailor returns it (any status) or null
+  // so the nav can show APPLY / PENDING / UNSUCCESSFUL / MY TAILOR PROFILE.
+  async getMyTailor(uid,t){ if(!uid)return null; const r=await fetch(`${SUPABASE_URL}/rest/v1/tailors?user_id=eq.${uid}&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
+  // A single tailor by id WITH its portfolio embedded (one request) for the
+  // public profile page. Items are ordered by `position` client-side. Falls back
+  // to a plain select if the embed isn't available on this deployment, then null
+  // if the table doesn't exist yet (migration not run) so the page shows its
+  // "not found" state rather than throwing.
+  async getTailor(id,t){ if(!id)return null; const r=await fetch(`${SUPABASE_URL}/rest/v1/tailors?id=eq.${id}&select=*,tailor_portfolio(*)&limit=1`,{headers:hdrs(t)}); if(r.ok){ const d=await r.json(); if(d[0])return d[0]; } const r2=await fetch(`${SUPABASE_URL}/rest/v1/tailors?id=eq.${id}&limit=1`,{headers:hdrs(t)}); if(!r2.ok)return null; const d2=await r2.json(); return d2[0]||null; },
+  // The portfolio rows for a tailor, ordered by position (used by the dashboard
+  // PORTFOLIO tab where we want a fresh read after add/delete/reorder).
+  async getTailorPortfolio(tailorId,t){ if(!tailorId)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio?tailor_id=eq.${tailorId}&order=position.asc&order=created_at.asc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // Insert a tailor application (status defaults to 'pending'). Self-heals like
+  // the verification-application insert: if the schema is missing an optional
+  // column (migration not fully run) drop it and retry — but never drop the
+  // NOT NULL columns the row can't exist without.
+  async insertTailor(row,t){
+    const url=`${SUPABASE_URL}/rest/v1/tailors`; let payload={...row};
+    for(let i=0;i<20;i++){
+      const r=await fetch(url,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+      if(r.ok){ const d=await r.json(); return d[0]; }
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&col!=="display_name"&&col!=="location"&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't submit your tailor application.");
+  },
+  // Patch a tailor row (profile edits from the dashboard, status changes from the
+  // admin panel, re-apply). Self-heals around any column the schema is missing.
+  async updateTailor(id,patch,t){
+    const url=`${SUPABASE_URL}/rest/v1/tailors?id=eq.${id}`; let payload={...patch};
+    for(let i=0;i<20;i++){
+      const r=await fetch(url,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+      if(r.ok){ const d=await r.json(); return d[0]; }
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't save your tailor profile.");
+  },
+  // Admin panel — every tailor application (all statuses), newest first.
+  async getTailorApplications(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailors?select=*,tailor_portfolio(*)&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/tailors?order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
+  // Portfolio image management (dashboard PORTFOLIO tab + the apply flow's step 4).
+  async insertPortfolioItem(row,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(row)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
+  async deletePortfolioItem(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
+  async updatePortfolioItem(id,patch,t){ await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify(patch)}); },
 };

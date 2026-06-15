@@ -8,16 +8,17 @@ import {
   garmentTypesFor, garmentFieldsFor, defaultGarmentFor, parseMeasurements, buildMeasPayload,
   ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary,
 } from "./lib/constants";
-import { db } from "./lib/db";
+import { db, fireEmail } from "./lib/db";
 import { startCheckout, startOfferCheckout, verifySession } from "./lib/checkout";
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
-import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, isTokenExpired, decodeJWT } from "./lib/auth";
+import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import PricingGuide from "./components/PricingGuide";
 import Tailors from "./views/Tailors";
+import TailorProfile from "./views/TailorProfile";
 import Detail from "./views/Detail";
 import Shop from "./views/Shop";
 import Auth from "./views/Auth";
@@ -296,6 +297,14 @@ export default function App() {
   const [tailorTypeFilter,  setTailorTypeFilter]  = useState("All");
   const [bookingNotes,      setBookingNotes]      = useState("");
   const [showBookingForm,   setShowBookingForm]   = useState(false);
+  // ── Phase 14 — Tailor profiles (NEW, separate from tailor_services above) ──
+  // `myTailor` is the signed-in user's own tailor row (any status) or null —
+  // drives the nav (APPLY / PENDING / UNSUCCESSFUL / MY TAILOR PROFILE) and the
+  // dashboard. `viewedTailor` is the public profile being viewed at /tailors/<id>.
+  const [myTailor,          setMyTailor]          = useState(null);
+  const [viewedTailor,      setViewedTailor]      = useState(null);
+  const [viewedTailorLoading,setViewedTailorLoading]= useState(false);
+  const [tailorApplications,setTailorApplications] = useState([]);
   const [following,      setFollowing]      = useState([]);
   const [feedItems,      setFeedItems]      = useState([]);
   const [feedLoading,    setFeedLoading]    = useState(false);
@@ -533,6 +542,21 @@ export default function App() {
   useEffect(()=>{ if(view==="wishlist"&&user) loadMySharedWishlists(); // eslint-disable-next-line react-hooks/exhaustive-deps
   },[view,user]);
 
+  // Phase 14 — tailor deep links: /tailors/apply opens the application flow;
+  // /tailors/<id> opens a public tailor profile (no login required). Runs once on
+  // cold load so a shared link / refresh lands on the right page.
+  useEffect(()=>{
+    const path=window.location.pathname.replace(/\/+$/,"");
+    if(path==="/tailors/apply"){ setView("tailor-apply"); return; }
+    const m=path.match(/^\/tailors\/([^/]+)$/);
+    if(m&&m[1]&&m[1]!=="apply"){
+      const id=decodeURIComponent(m[1]);
+      setViewedTailorLoading(true); setView("tailor-public");
+      db.getTailor(id,token).then(t=>setViewedTailor(t)).catch(()=>setViewedTailor(null)).finally(()=>setViewedTailorLoading(false));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
   // Footer navigation: switch to a legal `view` without a full reload and push the
   // matching path so the URL + Back button reflect it. Scrolls to top on navigate.
   const goLegal=useCallback((v,path)=>{
@@ -562,6 +586,9 @@ export default function App() {
       db.getMyPromotions(user.id,token).then(setMyPromotions).catch(()=>{});
       // Phase 14 — the seller's incoming offers for the dashboard OFFERS tab.
       loadSellerOffers();
+      // Phase 14 — the user's own tailor row (drives the BECOME A TAILOR / MY
+      // TAILOR PROFILE nav state). Best-effort: null until the migration runs.
+      db.getMyTailor(user.id,token).then(setMyTailor).catch(()=>{});
     } else {
       setMyWishlist(new Set());
       setWishlistOrder([]);
@@ -569,6 +596,7 @@ export default function App() {
       setMyPromotions([]);
       setSellerOffers([]);
       setOfferBuyers({});
+      setMyTailor(null);
     }
   },[user,token]);
 
@@ -1076,8 +1104,8 @@ export default function App() {
   // the reporters/buyers referenced. Called when an admin opens the dashboard.
   async function loadAdminData(){
     if(!isAdmin||!token) return;
-    const [reports,disputes,applications]=await Promise.all([db.getAllReports(token),db.getAllDisputes(token),db.getVerificationApplications(token)]);
-    setAdminReports(reports); setAdminDisputes(disputes); setAdminApplications(applications);
+    const [reports,disputes,applications,tailorApps]=await Promise.all([db.getAllReports(token),db.getAllDisputes(token),db.getVerificationApplications(token),db.getTailorApplications(token)]);
+    setAdminReports(reports); setAdminDisputes(disputes); setAdminApplications(applications); setTailorApplications(tailorApps);
     const ids=[...new Set([...reports.map(r=>r.reporter_id),...disputes.map(d=>d.buyer_id)].filter(Boolean))];
     if(ids.length){
       const profs=await db.getProfilesByIds(ids,token);
@@ -1635,6 +1663,82 @@ export default function App() {
   async function deleteTailorService(id){
     try{await db.deleteTailorService(id,token);setMyTailorServices(p=>p.filter(s=>s.id!==id));flash("Service deleted.");}
     catch(e){flash("Failed to delete.");}
+  }
+
+  // ── Phase 14 — Tailor profiles (NEW feature) ──────────────────────────────
+  // Submit a "become a tailor" application: upload the profile image (+ any
+  // portfolio images), insert the tailor row as 'pending', persist the portfolio,
+  // notify every admin, and land the user back on the shop with a success toast.
+  async function submitTailorApplication({form,profileFile,portfolio}){
+    if(!user||!token){ setAuthMode("login"); setView("auth"); return; }
+    try{
+      const profileUrl=profileFile?await uploadTailorProfileImage(profileFile,token):null;
+      const turn=(form.turnaround&&{ "1-3 days":3,"3-5 days":5,"1 week":7,"2 weeks":14,"2+ weeks":21 }[form.turnaround])||null;
+      const row={
+        user_id:user.id,
+        display_name:form.display_name.trim(),
+        location:form.location.trim(),
+        bio:form.bio.trim()||null,
+        specialisms:form.specialisms||[],
+        price_from_pence:form.price_from?Math.round(parseFloat(form.price_from)*100):null,
+        price_to_pence:form.price_to?Math.round(parseFloat(form.price_to)*100):null,
+        turnaround_days:turn,
+        instagram_handle:form.instagram_handle.trim()||null,
+        website_url:form.website_url.trim()||null,
+        profile_image_url:profileUrl,
+        status:"pending",
+      };
+      const created=await db.insertTailor(row,token);
+      // Persist any portfolio images uploaded during the application.
+      if(created&&created.id&&(portfolio||[]).length){
+        let pos=0;
+        for(const it of portfolio){
+          try{ const url=await uploadTailorPortfolioImage(it.file,token); await db.insertPortfolioItem({tailor_id:created.id,image_url:url,caption:it.caption||null,garment_type:it.garment_type||null,position:pos++},token); }
+          catch{ /* skip a single failed portfolio image */ }
+        }
+      }
+      setMyTailor(created);
+      // Notify every Stitch'd admin of the new application (issue PART 2).
+      try{ const admins=await db.getAdmins(token); await Promise.all((admins||[]).map(a=>notify(a.id,"tailor_application","✂️ New tailor application",`New tailor application from ${row.display_name}`,created&&created.id))); }catch{ /* best effort */ }
+      setView("shop"); window.scrollTo(0,0);
+      flash("Application submitted! We'll review it within 3 working days.");
+    }catch(e){ flash("Couldn't submit: "+e.message); }
+  }
+
+  // Open a public tailor profile at /tailors/<id> (also used by the dashboard
+  // PREVIEW button). Pushes the path so the URL + Back button reflect it.
+  async function openTailorPublic(id){
+    if(!id) return;
+    setViewedTailor(null); setViewedTailorLoading(true); setView("tailor-public");
+    window.history.pushState({},"",`/tailors/${id}`); window.scrollTo(0,0);
+    try{ const t=await db.getTailor(id,token); setViewedTailor(t); }
+    catch{ setViewedTailor(null); }
+    finally{ setViewedTailorLoading(false); }
+  }
+
+  // Admin — approve a tailor application: flip to 'approved', stamp approved_at,
+  // notify + email the tailor, and keep the admin list in sync.
+  async function approveTailor(t){
+    const now=new Date().toISOString();
+    try{
+      await db.updateTailor(t.id,{status:"approved",approved_at:now},token);
+      setTailorApplications(p=>p.map(a=>a.id===t.id?{...a,status:"approved",approved_at:now}:a));
+      if(t.user_id===user?.id) setMyTailor(m=>m?{...m,status:"approved",approved_at:now}:m);
+      await notify(t.user_id,"tailor_approved","✂️ You're approved!","Your tailor application has been approved! Your profile is now live on Stitch'd.",t.id);
+      fireEmail({type:"tailor_approved",tailorId:t.id});
+      flash("Tailor approved.");
+    }catch(e){ flash("Couldn't approve: "+e.message); }
+  }
+  // Admin — reject a tailor application.
+  async function rejectTailor(t){
+    const now=new Date().toISOString();
+    try{
+      await db.updateTailor(t.id,{status:"rejected",approved_at:null},token);
+      setTailorApplications(p=>p.map(a=>a.id===t.id?{...a,status:"rejected"}:a));
+      if(t.user_id===user?.id) setMyTailor(m=>m?{...m,status:"rejected",reviewed_at:now}:m);
+      await notify(t.user_id,"tailor_rejected","Tailor application","Your tailor application was not approved at this time.",t.id);
+      flash("Tailor application rejected.");
+    }catch(e){ flash("Couldn't reject: "+e.message); }
   }
 
   async function bookTailor(service){
@@ -2555,8 +2659,29 @@ export default function App() {
   // Favourites, Notifications and LIST IT deliberately stay out of this list —
   // they remain always-visible in the navbar. Each onClick also closes whichever
   // menu was open so navigating dismisses the overlay.
+  // Phase 14 — the tailor entry in the nav, by application status (issue PARTS
+  // 2/3/6). Not-a-tailor → BECOME A TAILOR; pending → APPLICATION PENDING;
+  // approved → MY TAILOR PROFILE (dashboard); rejected → UNSUCCESSFUL, with a
+  // re-apply path once 30 days have passed since the application.
+  const scissorsIcon=<Scissors width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>;
+  const openTailorApply=()=>{ window.history.pushState({},"","/tailors/apply"); setView("tailor-apply"); window.scrollTo(0,0); };
+  const tailorStatus=myTailor?(myTailor.status||"pending"):null;
+  const reapplyDate=myTailor&&(myTailor.reviewed_at||myTailor.created_at);
+  const canReapply=tailorStatus==="rejected"&&reapplyDate&&(Date.now()-new Date(reapplyDate).getTime())>30*24*60*60*1000;
+  let tailorNavItem;
+  if(!myTailor){
+    tailorNavItem={label:"BECOME A TAILOR", icon:scissorsIcon, run:openTailorApply};
+  } else if(tailorStatus==="approved"){
+    tailorNavItem={label:"MY TAILOR PROFILE", icon:scissorsIcon, run:()=>{ db.getMyTailor(user.id,token).then(t=>{ if(t)setMyTailor(t); }); setView("tailor-dashboard"); window.scrollTo(0,0); }};
+  } else if(tailorStatus==="rejected"){
+    tailorNavItem={label:canReapply?"TAILOR — REAPPLY":"TAILOR APPLICATION UNSUCCESSFUL", icon:scissorsIcon, run:()=>{ if(canReapply) openTailorApply(); else flash("Your tailor application was not approved at this time."); }};
+  } else {
+    tailorNavItem={label:"TAILOR APPLICATION PENDING", icon:scissorsIcon, run:()=>flash("Application submitted! We'll review it within 3 working days.")};
+  }
+
   const navMenuItems = [
     {label:"✦ NEW ARRIVALS", run:()=>{clearFilters();setView("newarrivals");}},
+    tailorNavItem,
     {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();loadMyPromotions();setView("dashboard");}},
     {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
     {label:"MY OFFERS",      icon:<Tag width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadBuyerOffers();setView("offers");}},
@@ -3506,6 +3631,7 @@ export default function App() {
         myVerificationApp={myVerificationApp} verificationBusy={verificationBusy} submitVerification={submitVerification}
         adminApplications={adminApplications} adminApplicants={adminApplicants}
         approveVerification={approveVerification} rejectVerification={rejectVerification}
+        tailorApplications={tailorApplications} approveTailor={approveTailor} rejectTailor={rejectTailor}
         verifyIdentity={verifyIdentity} identityBusy={identityBusy}
         requestTab={dashTabRequest} clearRequestTab={()=>setDashTabRequest(null)}
         storeForm={storeForm} setStoreForm={setStoreForm} saveStorefront={saveStorefront} storeSaving={storeSaving}
@@ -3550,6 +3676,15 @@ export default function App() {
         bookingNotes={bookingNotes} setBookingNotes={setBookingNotes}
         bookTailor={bookTailor} saveTailorService={saveTailorService}
         prevView={prevView}
+      />
+
+      {/* TAILOR PROFILES — Phase 14 (apply / dashboard / public profile) */}
+      <TailorProfile
+        view={view} setView={setView} user={user} token={token} flash={flash} db={db}
+        myTailor={myTailor} onTailorChange={setMyTailor}
+        viewedTailor={viewedTailor} viewedTailorLoading={viewedTailorLoading}
+        uploadProfileImage={uploadTailorProfileImage} uploadPortfolioImage={uploadTailorPortfolioImage}
+        onSubmitApplication={submitTailorApplication} openTailorPublic={openTailorPublic}
       />
 
       {/* ORDERS */}

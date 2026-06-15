@@ -141,6 +141,23 @@ async function resolveTemplated(
       return { to, userId, data: { username } };
     }
 
+    case "tailor_approved": {
+      // Phase 14 — resolve the tailor row from its id to find the owning user +
+      // their display name, then the recipient email. Honours the unsubscribe flag.
+      const tailor = body.tailorId
+        ? await sbGetOne<{ user_id: string; display_name: string }>(
+            `tailors?id=eq.${body.tailorId}&select=user_id,display_name&limit=1`,
+          )
+        : null;
+      const userId: string | null = tailor?.user_id ?? body.userId ?? null;
+      if (!userId) return { skip: "no user" };
+      const prof = await getProfile(userId);
+      if (prof?.email_notifications === false) return { skip: "unsubscribed" };
+      const to = await emailForUser(userId);
+      if (!to) return { skip: "no email" };
+      return { to, userId, data: { displayName: tailor?.display_name, tailorId: body.tailorId } };
+    }
+
     case "new_offer": {
       // Phase 14 — a buyer made an offer. Resolve the seller (recipient), the
       // listing (thumbnail/title), the buyer's name and the formatted amount
