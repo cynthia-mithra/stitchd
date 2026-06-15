@@ -737,6 +737,21 @@ export default function App() {
     }catch(e){ flash("Failed to delete comment."); }
   }
 
+  // Phase 14 — seller replies to a buyer's question. The reply is just another
+  // comment row pointing back at the question via parent_comment_id; the
+  // original commenter is notified that the seller answered.
+  async function submitReply(parent,content){
+    if(!user||!sel) return;
+    const text=(content||"").trim();
+    if(!text) return;
+    try{
+      await db.insertComment({listing_id:sel.id,user_id:user.id,content:text,parent_comment_id:parent.id},token);
+      setComments(await loadComments(sel.id));
+      notify(parent.user_id,"comment","Seller replied",`The seller replied to your question on ${sel.name}`,sel.id);
+      flash("💬 Reply posted!");
+    }catch(e){ flash("Failed to post your reply."); }
+  }
+
   async function submitReport(){
     if(!user||!sel||!reportReason)return;
     try{
@@ -2817,7 +2832,7 @@ export default function App() {
         setShowReview={setShowReview} setShowReport={setShowReport}
         reviews={reviews}
         comments={comments} commentText={commentText} setCommentText={setCommentText}
-        submitComment={submitComment} deleteComment={deleteComment} profile={profile}
+        submitComment={submitComment} deleteComment={deleteComment} submitReply={submitReply} profile={profile}
         openEdit={openEdit} markSold={markSold} relist={relist} del={del}
         similarItems={similarItems} recentItems={recentItems} openDetail={openDetail}
         fastSellers={fastSellers} verifiedSellers={verifiedSellers}

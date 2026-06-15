@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock, Trash2 } from "lucide-react";
+import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock, Trash2, CornerDownRight } from "lucide-react";
 import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure, colourSwatchBg } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
@@ -27,7 +27,7 @@ export default function Detail({
   setShowReview, setShowReport,
   reviews,
   comments = [], commentText = "", setCommentText = () => {},
-  submitComment = () => {}, deleteComment = () => {}, profile,
+  submitComment = () => {}, deleteComment = () => {}, submitReply = () => {}, profile,
   openEdit, markSold, relist, del,
   similarItems, recentItems = [], openDetail,
   fastSellers = new Set(),
@@ -36,9 +36,51 @@ export default function Detail({
 }) {
   // Buyer-side unit toggle — converts on the fly, never writes back (PART 2a).
   const [dispUnit, setDispUnit] = React.useState("cm");
-  // Phase 14 — show only the 3 newest comments until "SHOW ALL COMMENTS".
+  // Phase 14 — split top-level questions from their replies. Replies point at
+  // their parent via parent_comment_id and are grouped under it (oldest first,
+  // so a thread reads top-to-bottom). Top-level questions stay newest-first.
+  const topComments = comments.filter(c => !c.parent_comment_id);
+  const repliesByParent = {};
+  comments.forEach(c => {
+    if (c.parent_comment_id) (repliesByParent[c.parent_comment_id] ||= []).push(c);
+  });
+  Object.values(repliesByParent).forEach(arr =>
+    arr.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
+  // Phase 14 — show only the 3 newest questions until "SHOW ALL COMMENTS".
   const [showAllComments, setShowAllComments] = React.useState(false);
-  const visibleComments = showAllComments ? comments : comments.slice(0, 3);
+  const visibleComments = showAllComments ? topComments : topComments.slice(0, 3);
+  // Only one inline reply form open at a time, keyed by the question's id.
+  const [replyingTo, setReplyingTo] = React.useState(null);
+  const [replyText, setReplyText] = React.useState("");
+  const isSellerViewer = sel && isOwner(sel);
+  const closeReply = () => { setReplyingTo(null); setReplyText(""); };
+  const postReply = (parent) => {
+    if (!replyText.trim()) return;
+    submitReply(parent, replyText.trim());
+    closeReply();
+  };
+  // Shared comment display (avatar, username, SELLER badge, text, time ago) —
+  // used for both top-level questions and the seller's replies.
+  const renderCommentCard = (c) => {
+    const isSeller = sel.user_id && c.user_id === sel.user_id;
+    const mine = user && c.user_id === user.id;
+    return (
+      <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+        <div style={{width:32,height:32,borderRadius:"50%",border:"2px solid #111",background:"#FF1493",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          {c.avatar_url?<img src={c.avatar_url} alt={c.username} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#fff"}}>{(c.username||"S")[0].toUpperCase()}</span>}
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
+            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.5}}>{c.username}</span>
+            {isSeller&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#fff",background:"#FF1493",padding:"2px 7px"}}>SELLER</span>}
+            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#bbb",letterSpacing:1}}>{timeAgo(c.created_at)}</span>
+            {mine&&<button type="button" onClick={()=>deleteComment(c.id)} title="Delete" style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",color:"#999",display:"inline-flex",padding:2}}><Trash2 width={15} height={15}/></button>}
+          </div>
+          <p style={{fontSize:13,color:"#444",lineHeight:1.5,margin:0,wordBreak:"break-word"}}>{c.content}</p>
+        </div>
+      </div>
+    );
+  };
   // Source of truth for measurements: prefer the new `measurements` JSON, fall
   // back to legacy bust/waist/… columns (which were always entered in inches).
   const meas = sel ? parseMeasurements(sel) : null;
@@ -266,37 +308,52 @@ export default function Detail({
               </div>
             </div>
           )}
-          {/* QUESTIONS & COMMENTS — Phase 14. Flat thread below reviews / above the
-              footer: buyers ask questions, the seller (and everyone) can read
-              them. No replies yet. */}
+          {/* QUESTIONS & COMMENTS — Phase 14. Thread below reviews / above the
+              footer: buyers ask questions, the seller can reply inline. Replies
+              are shown indented under their question. */}
           <div style={{marginTop:48}}>
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>QUESTIONS &amp; COMMENTS</div>
-            {comments.length>0&&(
+            {topComments.length>0&&(
               <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:24}}>
                 {visibleComments.map(c=>{
-                  const isSeller=sel.user_id&&c.user_id===sel.user_id;
-                  const mine=user&&c.user_id===user.id;
+                  const replies=repliesByParent[c.id]||[];
                   return(
-                    <div key={c.id} style={{border:"2px solid #111",borderRadius:0,padding:"14px 16px"}}>
-                      <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
-                        <div style={{width:32,height:32,borderRadius:"50%",border:"2px solid #111",background:"#FF1493",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          {c.avatar_url?<img src={c.avatar_url} alt={c.username} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#fff"}}>{(c.username||"S")[0].toUpperCase()}</span>}
-                        </div>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
-                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.5}}>{c.username}</span>
-                            {isSeller&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#fff",background:"#FF1493",padding:"2px 7px"}}>SELLER</span>}
-                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#bbb",letterSpacing:1}}>{timeAgo(c.created_at)}</span>
-                            {mine&&<button type="button" onClick={()=>deleteComment(c.id)} title="Delete" style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",color:"#999",display:"inline-flex",padding:2}}><Trash2 width={15} height={15}/></button>}
-                          </div>
-                          <p style={{fontSize:13,color:"#444",lineHeight:1.5,margin:0,wordBreak:"break-word"}}>{c.content}</p>
-                        </div>
+                    <div key={c.id}>
+                      <div style={{border:"2px solid #111",borderRadius:0,padding:"14px 16px"}}>
+                        {renderCommentCard(c)}
+                        {/* REPLY — seller only. Opens an inline reply form below. */}
+                        {isSellerViewer&&replyingTo!==c.id&&(
+                          <button type="button" onClick={()=>{setReplyingTo(c.id);setReplyText("");}} style={{marginTop:10,marginLeft:44,background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#999",display:"inline-flex",alignItems:"center",gap:5,padding:0}}><CornerDownRight width={14} height={14}/> REPLY</button>
+                        )}
                       </div>
+                      {/* INLINE REPLY FORM — directly below the question. */}
+                      {isSellerViewer&&replyingTo===c.id&&(
+                        <div style={{marginLeft:24,marginTop:10,paddingLeft:14,borderLeft:"2px solid #111"}}>
+                          <textarea value={replyText} maxLength={300} onChange={e=>setReplyText(e.target.value)} placeholder="Reply to this question..." style={{...S.inp,height:72,resize:"vertical",fontFamily:"'Barlow Condensed',sans-serif",marginBottom:6}}/>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#bbb",letterSpacing:1}}>{replyText.length} / 300</span>
+                            <div style={{display:"flex",alignItems:"center",gap:14}}>
+                              <button type="button" onClick={closeReply} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#999",padding:0}}>CANCEL</button>
+                              <button type="button" onClick={()=>postReply(c)} disabled={!replyText.trim()} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:1.5,color:"#fff",background:"#111",border:"2px solid #111",borderRadius:0,padding:"8px 18px",cursor:replyText.trim()?"pointer":"not-allowed",opacity:replyText.trim()?1:0.5}}>POST REPLY</button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {/* REPLIES — indented under their question, always fully visible. */}
+                      {replies.length>0&&(
+                        <div style={{marginLeft:24,marginTop:10,paddingLeft:14,borderLeft:"2px solid #111",display:"flex",flexDirection:"column",gap:10}}>
+                          {replies.map(r=>(
+                            <div key={r.id} style={{border:"2px solid #111",borderRadius:0,padding:"14px 16px"}}>
+                              {renderCommentCard(r)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
-                {comments.length>3&&!showAllComments&&(
-                  <button type="button" onClick={()=>setShowAllComments(true)} style={{alignSelf:"flex-start",background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1.5,color:"#FF1493",padding:2}}>SHOW ALL COMMENTS ({comments.length})</button>
+                {topComments.length>3&&!showAllComments&&(
+                  <button type="button" onClick={()=>setShowAllComments(true)} style={{alignSelf:"flex-start",background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1.5,color:"#FF1493",padding:2}}>SHOW ALL COMMENTS ({topComments.length})</button>
                 )}
               </div>
             )}
