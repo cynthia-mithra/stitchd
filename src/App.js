@@ -201,6 +201,11 @@ export default function App() {
   const [vacationSellers,setVacationSellers]=useState(()=>new Set());
   const [vacationSaving,setVacationSaving]=useState(false);
   const [promoteNotified,setPromoteNotified]=useState(false);
+  // Phase 14 — bundle discounts. `bundleSellers` maps seller id → discount % for
+  // every seller with bundle_discount_enabled=true, so the shop cards, storefront
+  // and bag can apply the deal without a per-card profile fetch. Mirrors the other
+  // seller-set lookups above.
+  const [bundleSellers,setBundleSellers]=useState(()=>new Map());
   // Phase 11 — verified sellers. `verifiedSellers` is the set of seller ids
   // flagged verified=true (drives the badge on cards/Detail + the "Verified
   // sellers only" filter). `myVerificationApp` is the signed-in seller's latest
@@ -685,6 +690,9 @@ export default function App() {
           image:item.image_url||(item.images&&item.images[0])||"",
           emoji:item.emoji||catEmoji(item.category),
           seller:item.seller_username||item.seller_name||item.username||"",
+          // Phase 14 — stable seller id so the bag can group items per seller and
+          // apply that seller's bundle discount (the `seller` name above is display-only).
+          sellerId:item.user_id||item.seller_id||null,
           sold:!!item.sold,
         };
         next=[...prev,snapshot];
@@ -704,6 +712,44 @@ export default function App() {
   }
 
   const bagTotal = bag.reduce((sum,b)=>sum+(parseFloat(b.price)||0),0);
+
+  // Phase 14 — bundle discounts in the bag. Group bagged items by seller; a seller
+  // who has bundle_discount_enabled and 2+ of their items in the bag gives that %
+  // off their own items only. With items from several discounting sellers, each
+  // seller's discount applies to just their own items (separate lines). Legacy bag
+  // snapshots predate `sellerId`, so fall back to resolving it from the loaded items.
+  const bagBundles = (()=>{
+    const groups=new Map();
+    bag.forEach(b=>{
+      const sid=b.sellerId||items.find(i=>i.id===b.id)?.user_id||null;
+      if(!sid) return;
+      if(!groups.has(sid)) groups.set(sid,{sellerId:sid,name:b.seller||"this seller",items:[]});
+      groups.get(sid).items.push(b);
+    });
+    const out=[];
+    groups.forEach(g=>{
+      const pct=bundleSellers.get(g.sellerId);
+      if(pct&&g.items.length>=2){
+        const subtotal=g.items.reduce((s,b)=>s+(parseFloat(b.price)||0),0);
+        out.push({...g,pct,subtotal,discount:subtotal*pct/100});
+      }
+    });
+    return out;
+  })();
+  const bundleDiscountTotal = bagBundles.reduce((s,b)=>s+b.discount,0);
+
+  // Phase 14 — sellers whose "BUNDLE & SAVE X%" card banner should show: the
+  // discount is enabled AND they have 2+ active listings (so a bundle is actually
+  // possible). Maps seller id → % for the shop grid. The storefront banner has no
+  // 2+ requirement, so it reads bundle_discount_enabled off the profile directly.
+  const bundleCardSellers = useMemo(()=>{
+    if(!bundleSellers.size) return {};
+    const counts={};
+    items.forEach(i=>{ if(!i.sold&&i.status!=="inactive"&&i.user_id) counts[i.user_id]=(counts[i.user_id]||0)+1; });
+    const out={};
+    bundleSellers.forEach((pct,id)=>{ if((counts[id]||0)>=2) out[id]=pct; });
+    return out;
+  },[bundleSellers,items]);
 
   // PROCEED TO CHECKOUT → create a Stripe Checkout Session server-side and
   // redirect to the hosted checkout page. No Stripe secret key ever touches
@@ -1503,6 +1549,14 @@ export default function App() {
   }
   useEffect(()=>{ loadVacationSellers(); },[]);
 
+  // Phase 14 — load the sellers offering a bundle discount (id → %) so cards,
+  // storefronts and the bag can apply it. Mirrors loadVacationSellers.
+  async function loadBundleSellers(){
+    const rows=await db.getBundleDiscountSellers(token);
+    setBundleSellers(new Map(rows.map(r=>[r.id,r.bundle_discount_percentage||10])));
+  }
+  useEffect(()=>{ loadBundleSellers(); },[]);
+
   // Phase 11 — load the set of verified sellers so cards/Detail can show the
   // VERIFIED SELLER badge and the search filter can hide everyone else.
   async function loadVerifiedSellers(){
@@ -2045,6 +2099,18 @@ export default function App() {
     finally{ setVacationSaving(false); }
   }
 
+  // Phase 14 — save the seller's bundle-discount settings (TOOLS tab). Persists to
+  // the profile, updates the in-memory profile + the bundleSellers map (so the
+  // banners/bag reflect the change immediately) and shows the success message.
+  async function saveBundleDiscount(enabled,percentage){
+    if(!user) return;
+    const pct=[5,10,15,20].includes(percentage)?percentage:10;
+    await db.setBundleDiscount(user.id,{bundle_discount_enabled:!!enabled,bundle_discount_percentage:pct},token);
+    setProfile(p=>p?{...p,bundle_discount_enabled:!!enabled,bundle_discount_percentage:pct}:p);
+    setBundleSellers(prev=>{ const m=new Map(prev); if(enabled)m.set(user.id,pct); else m.delete(user.id); return m; });
+    flash("Bundle discount saved");
+  }
+
   // Promote (coming soon): record the seller's interest so we can notify them at launch.
   async function notifyPromote(){
     if(!user){ setAuthMode("login"); setView("auth"); return; }
@@ -2149,7 +2215,7 @@ export default function App() {
       const additions=available.filter(l=>!have.has(l.id)).map(l=>({
         id:l.id,name:l.name,price:l.price,currency:l.currency,
         image:l.image_url||(l.images&&l.images[0])||"",emoji:l.emoji||catEmoji(l.category),
-        seller:l.seller_username||l.seller_name||l.username||"",sold:!!l.sold,
+        seller:l.seller_username||l.seller_name||l.username||"",sellerId:l.user_id||l.seller_id||null,sold:!!l.sold,
       }));
       addedCount=additions.length;
       const next=[...prev,...additions];
@@ -2443,11 +2509,39 @@ export default function App() {
                     <button style={S.bagRemove} aria-label="Remove from bag" onClick={()=>removeFromBag(b.id)}><X width={20} height={20}/></button>
                   </div>
                 ))}
+                {/* Phase 14 — bundle deal banner(s): one per seller offering a
+                    discount on 2+ of their items in the bag. */}
+                {bagBundles.map(bd=>(
+                  <div key={bd.sellerId} style={{display:"flex",alignItems:"center",gap:9,background:"#00E5CC",color:"#111",border:"2px solid #111",borderRadius:0,padding:"10px 12px",marginTop:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:13,letterSpacing:0.3,lineHeight:1.2}}>
+                    <Tag width={16} height={16} style={{flexShrink:0}}/> BUNDLE DEAL — {bd.pct}% off {bd.name}'s items!
+                  </div>
+                ))}
                 <div style={S.bagDivider}/>
-                <div style={S.bagTotalRow}>
-                  <span style={S.bagTotalLabel}>TOTAL</span>
-                  <span style={S.bagTotalVal}>{currencySymbol(bag[0]?.currency)}{bagTotal.toFixed(2)}</span>
-                </div>
+                {bagBundles.length>0?(
+                  <>
+                    {/* Original subtotal (struck through) → per-seller discount lines
+                        (teal) → discounted total (bold). */}
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:700,letterSpacing:1,color:"#999"}}>
+                      <span>SUBTOTAL</span>
+                      <span style={{textDecoration:"line-through"}}>{currencySymbol()}{bagTotal.toFixed(2)}</span>
+                    </div>
+                    {bagBundles.map(bd=>(
+                      <div key={bd.sellerId} style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:0.5,color:"#00B5A0"}}>
+                        <span>Bundle discount ({bd.pct}%)</span>
+                        <span>−{currencySymbol()}{bd.discount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    <div style={S.bagTotalRow}>
+                      <span style={S.bagTotalLabel}>TOTAL</span>
+                      <span style={S.bagTotalVal}>{currencySymbol()}{(bagTotal-bundleDiscountTotal).toFixed(2)}</span>
+                    </div>
+                  </>
+                ):(
+                  <div style={S.bagTotalRow}>
+                    <span style={S.bagTotalLabel}>TOTAL</span>
+                    <span style={S.bagTotalVal}>{currencySymbol(bag[0]?.currency)}{bagTotal.toFixed(2)}</span>
+                  </div>
+                )}
                 <button className="hbtn" style={{...S.bagCheckoutBtn,opacity:checkingOut?0.6:1,cursor:checkingOut?"wait":"pointer"}} onClick={doCheckout} disabled={checkingOut}>{checkingOut?"REDIRECTING…":"PROCEED TO CHECKOUT"}</button>
                 <p style={S.bagGuarantee}><Lock width={13} height={13}/> Secure checkout · Stitch'd Buyer Guarantee</p>
                 <button style={S.bagContinue} onClick={()=>setShowBag(false)}>CONTINUE SHOPPING</button>
@@ -3206,6 +3300,7 @@ export default function App() {
         profile={profile} flash={flash}
         bulkUpdateListings={bulkUpdateListings} relistCopy={relistCopy}
         toggleVacation={toggleVacation} vacationSaving={vacationSaving}
+        saveBundleDiscount={saveBundleDiscount}
         notifyPromote={notifyPromote} promoteNotified={promoteNotified}
         startPromote={startPromote} promoteBusyId={promoteBusyId} myPromotions={myPromotions}
         bundles={bundles} bundleItems={bundleItems} loadBundles={loadBundles} deleteBundle={deleteBundle}
@@ -3286,6 +3381,7 @@ export default function App() {
         openDetail={openDetail} fitsMe={fitsMe}
         newListings={newListings} priceDrops={priceDrops} trendingItems={trendingItems}
         sellerRatings={sellerRatings} fastSellers={fastSellers} verifiedSellers={verifiedSellers}
+        bundleCardSellers={bundleCardSellers}
         wishlistCounts={wishlistCounts} myWishlist={myWishlist} toggleFavourite={toggleFavourite}
         looks={looks} openLook={openLook}
         shopTab={shopTab} setShopTab={setShopTab} loadFeed={loadFeed}

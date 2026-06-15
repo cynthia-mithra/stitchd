@@ -219,6 +219,15 @@ export default function Profile({
               </div>
             )}
 
+            {/* BUNDLE & SAVE banner (Phase 14) — shown prominently below the seller
+                info when this seller has bundle discounts enabled. Teal #00E5CC,
+                2px #111 border, no radius, Tag icon to the left. */}
+            {sf.bundle_discount_enabled&&(
+              <div style={{display:"flex",alignItems:"center",gap:11,background:"#00E5CC",color:"#111",border:"2px solid #111",borderRadius:0,padding:"14px 16px",marginTop:28,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,letterSpacing:0.5,fontSize:16,lineHeight:1.2}}>
+                <Tag width={20} height={20} style={{flexShrink:0}}/> BUNDLE &amp; SAVE {sf.bundle_discount_percentage||10}% ON 2+ ITEMS
+              </div>
+            )}
+
             {/* LISTINGS */}
             <div style={{marginTop:36,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap",marginBottom:18}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12}}>LISTINGS</div>

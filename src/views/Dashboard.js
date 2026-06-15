@@ -71,6 +71,8 @@ export default function Dashboard({
   // seller tools (Phase 10d)
   profile, flash = () => {}, bulkUpdateListings, relistCopy,
   toggleVacation, vacationSaving, notifyPromote, promoteNotified,
+  // Bundle discount (Phase 14)
+  saveBundleDiscount = () => {},
   // Promoted listings (Phase 13)
   startPromote = () => {}, promoteBusyId = null, myPromotions = [],
   bundles, bundleItems, loadBundles, deleteBundle,
@@ -101,6 +103,22 @@ export default function Dashboard({
   React.useEffect(()=>{ if(requestTab){ setDashTab(requestTab); clearRequestTab(); } },[requestTab,clearRequestTab]);
   // The seller's own overall rating, shown as a stat tile when they have reviews.
   const myRating = user ? sellerRatings[user.id] : null;
+
+  // ── Phase 14 — bundle discount form (TOOLS tab) ──────────────────────────────
+  // Seeded from the profile and kept in sync when the profile loads/changes.
+  const [bundleOn,setBundleOn]=React.useState(!!profile?.bundle_discount_enabled);
+  const [bundlePct,setBundlePct]=React.useState(profile?.bundle_discount_percentage||10);
+  const [bundleSaving,setBundleSaving]=React.useState(false);
+  React.useEffect(()=>{
+    setBundleOn(!!profile?.bundle_discount_enabled);
+    setBundlePct(profile?.bundle_discount_percentage||10);
+  },[profile?.bundle_discount_enabled,profile?.bundle_discount_percentage]);
+  async function doSaveBundleDiscount(){
+    if(bundleSaving) return;
+    setBundleSaving(true);
+    try{ await saveBundleDiscount(bundleOn,bundlePct); }
+    finally{ setBundleSaving(false); }
+  }
 
   // ── Phase 10d state ──────────────────────────────────────────────────────────
   const [bulkMode,setBulkMode]=React.useState(false);     // bulk-edit selection mode
@@ -466,6 +484,40 @@ export default function Dashboard({
                       Your listings are hidden. Toggle off to make them visible again.
                     </div>
                   )}
+                </div>
+
+                {/* Phase 14 — BUNDLE DISCOUNT. Toggle on, pick a % (5/10/15/20),
+                    live preview, SAVE. Persists to the profile; the deal then shows
+                    on cards/storefront and applies automatically in the bag. */}
+                <div style={{border:"2px solid #111",padding:"24px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                    <Tag width={20} height={20} color="#FF1493"/>
+                    <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>BUNDLE DISCOUNT</h3>
+                  </div>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>Offer buyers a discount when they purchase 2 or more of your items at once.</p>
+                  {/* Toggle — #FF1493 active state */}
+                  <div style={{display:"flex",alignItems:"center",gap:14}}>
+                    <button aria-label="Enable bundle discount" onClick={()=>setBundleOn(v=>!v)} style={{width:74,height:38,border:"2px solid #111",borderRadius:0,background:bundleOn?"#FF1493":"#fff",position:"relative",cursor:"pointer",padding:0,transition:"background .15s"}}>
+                      <span style={{position:"absolute",top:2,left:bundleOn?40:2,width:30,height:30,background:bundleOn?"#fff":"#111",transition:"left .15s",display:"block"}}/>
+                    </button>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,letterSpacing:1,color:bundleOn?"#FF1493":"#111"}}>{bundleOn?"ENABLE BUNDLE DISCOUNT — ON":"ENABLE BUNDLE DISCOUNT — OFF"}</span>
+                  </div>
+                  {/* Percentage selector — only visible when ON. Pills: selected #FF1493. */}
+                  {bundleOn&&(
+                    <div style={{marginTop:20}}>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}}>DISCOUNT PERCENTAGE</p>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                        {[5,10,15,20].map(p=>(
+                          <button key={p} type="button" onClick={()=>setBundlePct(p)} style={{background:bundlePct===p?"#FF1493":"#fff",color:bundlePct===p?"#fff":"#111",border:"2px solid #111",borderRadius:0,padding:"10px 20px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:bundlePct===p?900:700,fontSize:15,letterSpacing:1,cursor:"pointer"}}>{p}%</button>
+                        ))}
+                      </div>
+                      {/* Live preview */}
+                      <div style={{marginTop:18,background:"#00E5CC",border:"2px solid #111",borderRadius:0,padding:"12px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#111",lineHeight:1.3,display:"flex",alignItems:"center",gap:9}}>
+                        <Tag width={16} height={16} style={{flexShrink:0}}/> Buyers get {bundlePct}% off when they purchase 2 or more of your items
+                      </div>
+                    </div>
+                  )}
+                  <button className="hbtn" style={{...S.hBtn,background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,fontSize:13,padding:"12px 22px",marginTop:20,opacity:bundleSaving?0.5:1}} disabled={bundleSaving} onClick={doSaveBundleDiscount}>{bundleSaving?"SAVING…":"SAVE"}</button>
                 </div>
 
                 {/* Tool 5 — Promote (coming soon) */}
