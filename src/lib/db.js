@@ -111,6 +111,12 @@ export const db = {
   async removeWishlist(uid,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?user_id=eq.${uid}&listing_id=eq.${listingId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   async insertReview(review,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(review)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async insertReport(report,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reports`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(report)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  // ── Phase 14 — Comments on listings (basic, no replies) ───────────────────
+  // Only non-deleted comments are returned; usernames/avatars are resolved
+  // separately via getProfilesByIds (mirrors how reviews resolve reviewer_name).
+  async getComments(listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/comments?listing_id=eq.${listingId}&deleted=eq.false&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async insertComment(comment,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/comments`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(comment)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
+  async deleteComment(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({deleted:true})}); if(!r.ok)throw new Error(await r.text()); },
   // ── Phase 11 — Report a listing + dispute resolution ──────────────────────
   // The Stitch'd admin account(s) — profiles flagged is_admin=true. Dispute
   // notifications are routed to every admin id this returns.
