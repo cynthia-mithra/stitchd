@@ -1,6 +1,6 @@
 import React from "react";
-import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Plane } from "lucide-react";
-import { SIZES, CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
+import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Plane, Instagram, UserPlus, UserCheck, Tag, Calendar, Clock, Users } from "lucide-react";
+import { SIZES, CARD_COLORS, catEmoji, currencySymbol, listingGender } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Tog, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 
@@ -10,9 +10,14 @@ export default function Profile({
   profForm, setProfForm, saveProfile, profSaving,
   twoFAStep, setTwoFAStep, twoFAData, setTwoFAData, twoFACode, setTwoFACode,
   twoFAFactors, twoFALoading, confirm2FA, disable2FA, load2FAFactors, setup2FA,
-  // profile
+  // profile / storefront
   viewedProfile, profileListings, reviews, isFollowing, toggleFollow, openDetail,
+  followerCount = 0,
 }) {
+  // Phase 13 — storefront listings filter (ALL / WOMEN / MEN). Local to the view;
+  // resets whenever a different seller's storefront is opened.
+  const [storeFilter,setStoreFilter]=React.useState("ALL");
+  React.useEffect(()=>{ setStoreFilter("ALL"); },[viewedProfile?.id]);
   if(view!=="editprofile"&&view!=="profile") return null;
   return (
     <>
@@ -134,67 +139,117 @@ export default function Profile({
         </main>
       )}
 
-      {/* SELLER PROFILE */}
-      {view==="profile"&&viewedProfile&&(
-        <main style={S.main}>
-          <button style={S.back} onClick={()=>setView(prevView||"shop")}>← BACK</button>
-          {/* Phase 10d — vacation banner. Shown when the seller has vacation_mode on. */}
-          {viewedProfile.vacation_mode&&(
-            <div style={{display:"flex",alignItems:"center",gap:10,background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px 16px",marginBottom:24,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:0.5,fontSize:15}}>
-              <Plane width={20} height={20} color="#FF1493"/> This seller is currently on vacation and not accepting orders.
-            </div>
-          )}
-          <div style={S.profileHeader} className="profile-header">
-            <div style={S.profileAvatarWrap}>
-              {viewedProfile.avatar_url?<img src={viewedProfile.avatar_url} alt={viewedProfile.full_name||viewedProfile.username} style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<div style={S.profileAvatar}>{(viewedProfile.full_name||viewedProfile.username||"S")[0].toUpperCase()}</div>}
-            </div>
-            <div style={{flex:1}}>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:4}}>SELLER PROFILE</p>
-              <h2 style={S.profileName}>{viewedProfile.full_name||viewedProfile.username||"Seller"}</h2>
-              {/* Phase 11 — verified-seller + ID-verified badges sit prominently below
-                  the seller name. They're independent: a seller can have either, both,
-                  or neither. */}
-              {(viewedProfile.verified||viewedProfile.identity_verified)&&(
-                <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:10}}>
-                  {viewedProfile.verified&&<VerifiedBadge/>}
-                  {viewedProfile.identity_verified&&<IDVerifiedBadge/>}
-                </div>
-              )}
-              {viewedProfile.location&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:10,display:"flex",alignItems:"center",gap:5}}><MapPin width={14} height={14}/> {viewedProfile.location}</p>}
-              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:14}}>
-                {viewedProfile.total_sales>0&&<span style={{background:"#FF950022",color:"#FF9500",padding:"4px 10px",fontSize:10,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",border:"1px solid #FF950044",display:"inline-flex",alignItems:"center",gap:5}}><ShoppingBag width={12} height={12}/> {viewedProfile.total_sales} SALES</span>}
-              </div>
-              <p style={{...S.profileMeta,display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>{profileListings.length} listings · {profileListings.filter(i=>i.sold).length} sold{reviews.length>0&&<span style={{display:"inline-flex",alignItems:"center",gap:6}}> · <Stars value={reviews.reduce((a,r)=>a+r.rating,0)/reviews.length} size={14} color="#FF1493"/> <span style={{color:"#111",fontWeight:800}}>{(reviews.reduce((a,r)=>a+r.rating,0)/reviews.length).toFixed(1)}</span> ({reviews.length} review{reviews.length!==1?"s":""})</span>}</p>
-              {user&&viewedProfile.id!==user.id&&(
-                <button className="hbtn" style={{...S.hBtn,background:isFollowing(viewedProfile.id)?"#fff":"#FF1493",color:isFollowing(viewedProfile.id)?"#FF1493":"#fff",border:"2px solid #FF1493",marginTop:14}} onClick={()=>toggleFollow(viewedProfile.id)}>
-                  {isFollowing(viewedProfile.id)?<span style={{display:"inline-flex",alignItems:"center",gap:6}}><Check width={15} height={15}/> FOLLOWING</span>:"+ FOLLOW"}
-                </button>
-              )}
+      {/* SELLER STOREFRONT (Phase 13) */}
+      {view==="profile"&&viewedProfile&&(()=>{
+        const sf=viewedProfile;
+        const following=isFollowing(sf.id);
+        const own=user&&sf.id===user.id;
+        // Active = not sold and not deactivated. Sold count drives the stat tile.
+        const activeListings=profileListings.filter(i=>!i.sold&&i.status!=="inactive");
+        const soldCount=profileListings.filter(i=>i.sold).length;
+        const totalSales=sf.total_sales>0?sf.total_sales:soldCount;
+        const avgRating=reviews.length?reviews.reduce((a,r)=>a+r.rating,0)/reviews.length:0;
+        const memberSince=sf.created_at?new Date(sf.created_at).toLocaleDateString("en-GB",{month:"short",year:"numeric"}):null;
+        // Honour the WOMEN/MEN tab; ALL shows everything. Only active listings show.
+        const gridItems=activeListings.filter(i=>storeFilter==="ALL"||listingGender(i)===storeFilter.toLowerCase());
+        const ig=(sf.storefront_instagram||"").replace(/^@/,"").trim();
+        // Stat tile — small box with a 2px #111 border (design system).
+        const StatTile=({icon,value,label})=>(
+          <div style={{flex:"1 1 120px",minWidth:110,border:"2px solid #111",borderRadius:0,padding:"14px 12px",textAlign:"center"}}>
+            <div style={{display:"flex",justifyContent:"center",marginBottom:6,color:"#FF1493"}}>{icon}</div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,lineHeight:1,color:"#111"}}>{value}</div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#999",marginTop:4}}>{label}</div>
+          </div>
+        );
+        return (
+        <main style={{...S.main,padding:"0 0 40px"}}>
+          <div style={{padding:"20px 12px 0"}}><button style={S.back} onClick={()=>setView(prevView||"shop")}>← BACK</button></div>
+
+          {/* BANNER — full width, responsive height, seller-uploaded image or solid
+              #FF1493 fallback. Avatar overlaps the bottom-left. */}
+          <div style={{position:"relative",margin:"0 12px"}}>
+            <div style={{width:"100%",height:"clamp(140px,28vw,200px)",background:sf.storefront_banner_url?`#FF1493 url(${sf.storefront_banner_url}) center/cover no-repeat`:"#FF1493",border:"2px solid #111"}}/>
+            <div style={{position:"absolute",left:18,bottom:-40,width:80,height:80,borderRadius:"50%",border:"2px solid #111",overflow:"hidden",background:"#FF1493",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              {sf.avatar_url?<img src={sf.avatar_url} alt={sf.full_name||sf.username} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:34,fontWeight:900,color:"#fff"}}>{(sf.full_name||sf.username||"S")[0].toUpperCase()}</span>}
             </div>
           </div>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>ALL LISTINGS</div>
-          <div style={S.grid}>
-            {profileListings.map((item,idx)=>{
-              const accent=CARD_COLORS[idx%CARD_COLORS.length];
-              return(
-                <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
-                  <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
-                    {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
-                    {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-                  </div>
-                  <div style={S.cardBody}>
-                    <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
-                    <p style={S.cardName}>{item.name}</p>
-                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span></div>
-                  </div>
-                  <div style={{...S.accentBar,background:accent}}/>
-                </article>
-              );
-            })}
-            {profileListings.length===0&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"40px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#bbb"}}>NO LISTINGS YET.</div>}
+
+          {/* SELLER INFO */}
+          <div style={{padding:"52px 18px 0"}}>
+            {sf.vacation_mode&&(
+              <div style={{display:"flex",alignItems:"center",gap:10,background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"12px 14px",marginBottom:18,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:0.5,fontSize:14}}>
+                <Plane width={18} height={18} color="#FF1493"/> This seller is currently on vacation and not accepting orders.
+              </div>
+            )}
+            <h2 style={S.profileName}>{sf.full_name||sf.username||"Seller"}</h2>
+            {(sf.verified||sf.identity_verified)&&(
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,margin:"8px 0 4px"}}>
+                {sf.verified&&<VerifiedBadge/>}
+                {sf.identity_verified&&<IDVerifiedBadge/>}
+              </div>
+            )}
+            {sf.storefront_tagline&&<p style={{fontFamily:"'Barlow',sans-serif",fontSize:14,color:"#888",margin:"6px 0 0",lineHeight:1.4}}>{sf.storefront_tagline}</p>}
+            <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:"6px 16px",marginTop:12}}>
+              {(sf.storefront_location||sf.location)&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",display:"inline-flex",alignItems:"center",gap:5}}><MapPin width={14} height={14}/> {sf.storefront_location||sf.location}</span>}
+              {reviews.length>0&&<span style={{display:"inline-flex",alignItems:"center",gap:6,fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:"#111"}}><Stars value={avgRating} size={14} color="#FF1493"/> <span style={{fontWeight:800}}>{avgRating.toFixed(1)}</span> <span style={{color:"#999"}}>({reviews.length} review{reviews.length!==1?"s":""})</span></span>}
+              {memberSince&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",display:"inline-flex",alignItems:"center",gap:5}}><Calendar width={14} height={14}/> Member since {memberSince}</span>}
+              {ig&&<a href={`https://instagram.com/${ig}`} target="_blank" rel="noreferrer" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#FF1493",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:5}}><Instagram width={14} height={14}/> @{ig}</a>}
+              <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:1,color:"#111",display:"inline-flex",alignItems:"center",gap:5}}><Users width={14} height={14}/> {followerCount} follower{followerCount!==1?"s":""}</span>
+            </div>
+            {!own&&(
+              <button className="hbtn" style={{...S.hBtn,fontSize:13,letterSpacing:2,padding:"11px 22px",marginTop:16,border:"2px solid #111",borderRadius:0,background:following?"#111":"#fff",color:following?"#fff":"#111"}} onClick={()=>toggleFollow(sf.id)}>
+                {following
+                  ?<span style={{display:"inline-flex",alignItems:"center",gap:7}}><UserCheck width={16} height={16}/> FOLLOWING</span>
+                  :<span style={{display:"inline-flex",alignItems:"center",gap:7}}><UserPlus width={16} height={16}/> FOLLOW</span>}
+              </button>
+            )}
+
+            {/* STATS ROW */}
+            <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:24}}>
+              <StatTile icon={<ShoppingBag width={18} height={18}/>} value={activeListings.length} label="ACTIVE LISTINGS"/>
+              <StatTile icon={<Tag width={18} height={18}/>} value={totalSales} label="TOTAL SALES"/>
+              {sf.avg_response_time&&<StatTile icon={<Clock width={18} height={18}/>} value={sf.avg_response_time} label="AVG RESPONSE"/>}
+            </div>
+
+            {/* BIO */}
+            {sf.storefront_bio&&(
+              <div style={{marginTop:32}}>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:14}}>ABOUT THIS SELLER</div>
+                <p style={{fontFamily:"'Barlow',sans-serif",fontSize:15,color:"#444",lineHeight:1.6,margin:0,whiteSpace:"pre-wrap"}}>{sf.storefront_bio}</p>
+              </div>
+            )}
+
+            {/* LISTINGS */}
+            <div style={{marginTop:36,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap",marginBottom:18}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12}}>LISTINGS</div>
+              <div style={{display:"flex",gap:0}}>
+                {["ALL","WOMEN","MEN"].map(g=>(
+                  <button key={g} className="hbtn" onClick={()=>setStoreFilter(g)} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1.5,padding:"7px 16px",border:"2px solid #111",borderLeft:g==="ALL"?"2px solid #111":"none",background:storeFilter===g?"#FF1493":"#fff",color:storeFilter===g?"#fff":"#111",cursor:"pointer",borderRadius:0}}>{g}</button>
+                ))}
+              </div>
+            </div>
+            <div style={S.grid}>
+              {gridItems.map((item,idx)=>{
+                const accent=CARD_COLORS[idx%CARD_COLORS.length];
+                return(
+                  <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
+                    <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
+                      {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
+                    </div>
+                    <div style={S.cardBody}>
+                      <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
+                      <p style={S.cardName}>{item.name}</p>
+                      <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}}>{currencySymbol(item.currency)}{item.price}</span></div>
+                    </div>
+                    <div style={{...S.accentBar,background:accent}}/>
+                  </article>
+                );
+              })}
+              {gridItems.length===0&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"40px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#bbb"}}>No active listings right now</div>}
+            </div>
           </div>
           {reviews.length>0&&(
-            <div style={{marginTop:48}}>
+            <div style={{marginTop:48,padding:"0 18px"}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>REVIEWS ({reviews.length})</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:3}}>
                 {reviews.map(r=>(
@@ -213,7 +268,8 @@ export default function Profile({
             </div>
           )}
         </main>
-      )}
+        );
+      })()}
     </>
   );
 }

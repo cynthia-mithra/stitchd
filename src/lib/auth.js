@@ -65,6 +65,10 @@ export async function uploadImage(file,t,bucket="listings"){
 // Shop the Look cover images live in a separate "looks" storage bucket.
 export const uploadLookImage=(file,t)=>uploadImage(file,t,"looks");
 
+// Phase 13 — seller storefront banners live in their own public
+// "storefront-banners" bucket (created by the phase13 migration).
+export const uploadStorefrontBanner=(file,t)=>uploadImage(file,t,"storefront-banners");
+
 // Phase 11 — the optional photo a buyer attaches to a dispute lands in the
 // private "disputes" bucket. The returned URL is the public-object form; if the
 // bucket is kept private the admin panel links out to it (a signed/authorised

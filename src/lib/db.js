@@ -200,6 +200,22 @@ export const db = {
   async getBundleItems(bundleId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/bundle_items?bundle_id=eq.${bundleId}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async addBundleItem(item,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/bundle_items`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(item)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async removeBundleItem(id,t){ await fetch(`${SUPABASE_URL}/rest/v1/bundle_items?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); },
+  // ── Phase 13 — seller storefronts ─────────────────────────────────────────
+  // Patch the storefront columns on a profile (banner, bio, tagline, location,
+  // instagram). Self-heals like updateProfileVerification: if the schema is
+  // missing a column (migration not yet run) drop it and retry so the rest of
+  // the storefront still saves.
+  async updateProfileStorefront(uid,patch,t){
+    const url=`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}`; let payload={...patch};
+    for(let i=0;i<10;i++){
+      const r=await fetch(url,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+      if(r.ok) return r.json();
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't save your storefront.");
+  },
   async getFollowing(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${uid}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getFollowers(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/follows?following_id=eq.${uid}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async follow(followerId,followingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/follows`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({follower_id:followerId,following_id:followingId})}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
