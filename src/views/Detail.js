@@ -1,8 +1,20 @@
 import React from "react";
-import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock } from "lucide-react";
+import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock, Trash2 } from "lucide-react";
 import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure, colourSwatchBg } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
+
+// Phase 14 — compact relative time for comments, e.g. "2 hours ago".
+function timeAgo(ts){
+  if(!ts) return "";
+  const secs=Math.max(0,Math.floor((Date.now()-new Date(ts).getTime())/1000));
+  const units=[["year",31536000],["month",2592000],["week",604800],["day",86400],["hour",3600],["minute",60]];
+  for(const [name,size] of units){
+    const n=Math.floor(secs/size);
+    if(n>=1) return `${n} ${name}${n!==1?"s":""} ago`;
+  }
+  return "just now";
+}
 
 export default function Detail({
   view, setView, sel,
@@ -14,6 +26,8 @@ export default function Detail({
   setShowPayment, setPaymentListing, setPaymentStep, setSelectedPostage,
   setShowReview, setShowReport,
   reviews,
+  comments = [], commentText = "", setCommentText = () => {},
+  submitComment = () => {}, deleteComment = () => {}, profile,
   openEdit, markSold, relist, del,
   similarItems, recentItems = [], openDetail,
   fastSellers = new Set(),
@@ -22,6 +36,9 @@ export default function Detail({
 }) {
   // Buyer-side unit toggle — converts on the fly, never writes back (PART 2a).
   const [dispUnit, setDispUnit] = React.useState("cm");
+  // Phase 14 — show only the 3 newest comments until "SHOW ALL COMMENTS".
+  const [showAllComments, setShowAllComments] = React.useState(false);
+  const visibleComments = showAllComments ? comments : comments.slice(0, 3);
   // Source of truth for measurements: prefer the new `measurements` JSON, fall
   // back to legacy bust/waist/… columns (which were always entered in inches).
   const meas = sel ? parseMeasurements(sel) : null;
@@ -249,6 +266,54 @@ export default function Detail({
               </div>
             </div>
           )}
+          {/* QUESTIONS & COMMENTS — Phase 14. Flat thread below reviews / above the
+              footer: buyers ask questions, the seller (and everyone) can read
+              them. No replies yet. */}
+          <div style={{marginTop:48}}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>QUESTIONS &amp; COMMENTS</div>
+            {comments.length>0&&(
+              <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:24}}>
+                {visibleComments.map(c=>{
+                  const isSeller=sel.user_id&&c.user_id===sel.user_id;
+                  const mine=user&&c.user_id===user.id;
+                  return(
+                    <div key={c.id} style={{border:"2px solid #111",borderRadius:0,padding:"14px 16px"}}>
+                      <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+                        <div style={{width:32,height:32,borderRadius:"50%",border:"2px solid #111",background:"#FF1493",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {c.avatar_url?<img src={c.avatar_url} alt={c.username} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#fff"}}>{(c.username||"S")[0].toUpperCase()}</span>}
+                        </div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
+                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.5}}>{c.username}</span>
+                            {isSeller&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#fff",background:"#FF1493",padding:"2px 7px"}}>SELLER</span>}
+                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#bbb",letterSpacing:1}}>{timeAgo(c.created_at)}</span>
+                            {mine&&<button type="button" onClick={()=>deleteComment(c.id)} title="Delete" style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",color:"#999",display:"inline-flex",padding:2}}><Trash2 width={15} height={15}/></button>}
+                          </div>
+                          <p style={{fontSize:13,color:"#444",lineHeight:1.5,margin:0,wordBreak:"break-word"}}>{c.content}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {comments.length>3&&!showAllComments&&(
+                  <button type="button" onClick={()=>setShowAllComments(true)} style={{alignSelf:"flex-start",background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1.5,color:"#FF1493",padding:2}}>SHOW ALL COMMENTS ({comments.length})</button>
+                )}
+              </div>
+            )}
+            {user?(
+              <div>
+                <textarea value={commentText} maxLength={300} onChange={e=>setCommentText(e.target.value)} placeholder="Ask a question about this listing..." style={{...S.inp,height:84,resize:"vertical",fontFamily:"'Barlow Condensed',sans-serif",marginBottom:6}}/>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#bbb",letterSpacing:1}}>{commentText.length} / 300</span>
+                  <button type="button" onClick={submitComment} disabled={!commentText.trim()} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:1.5,color:"#fff",background:"#FF1493",border:"2px solid #111",borderRadius:0,padding:"9px 22px",cursor:commentText.trim()?"pointer":"not-allowed",opacity:commentText.trim()?1:0.5}}>POST</button>
+                </div>
+              </div>
+            ):(
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#888",letterSpacing:0.5}}>
+                <button type="button" onClick={()=>{setAuthMode("login");setView("auth");}} style={{background:"none",border:"none",cursor:"pointer",color:"#FF1493",fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:0.5,padding:0,textDecoration:"underline"}}>Log in</button> to ask a question
+              </p>
+            )}
+          </div>
           {/* REPORT THIS LISTING — small, unobtrusive link at the very bottom of the
               page. Logged-in users only (issue PART 1). */}
           {user&&(

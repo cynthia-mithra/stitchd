@@ -147,6 +147,9 @@ export default function App() {
   const [recentlyViewed,setRecentlyViewed]=useState(()=>{ try{return JSON.parse(localStorage.getItem("stitchd_recent"))||[];}catch{return[];} });
   const [showSizeGuide,setShowSizeGuide]=useState(false);
   const [reviews,      setReviews]      = useState([]);
+  // Phase 14 — comments on the open listing, plus the add-comment textarea.
+  const [comments,     setComments]     = useState([]);
+  const [commentText,  setCommentText]  = useState("");
   const [sellerRatings,setSellerRatings]= useState({});
   const [fastSellers,  setFastSellers]  = useState(()=>new Set());
   // Phase 10d — seller ids with vacation_mode=true; their listings are hidden
@@ -693,6 +696,45 @@ export default function App() {
       loadSellerRatings();
       flash("⭐ Review submitted!");
     }catch(e){ flash("Failed to submit review."); }
+  }
+
+  // Phase 14 — load a listing's comments and attach the commenter's username +
+  // avatar (comments only store user_id). Mirrors loadReviews' batch lookup.
+  async function loadComments(listingId){
+    const rows=await db.getComments(listingId,token);
+    const ids=[...new Set(rows.map(c=>c.user_id).filter(Boolean))];
+    if(!ids.length) return rows;
+    try{
+      const profs=await db.getProfilesFullByIds(ids,token);
+      const byId={}; profs.forEach(p=>{ byId[p.id]=p; });
+      return rows.map(c=>{
+        const p=byId[c.user_id];
+        const name=(p?.username||p?.full_name||"").trim();
+        return {...c,username:name||"Anonymous",avatar_url:p?.avatar_url||""};
+      });
+    }catch(e){ return rows; }
+  }
+
+  async function submitComment(){
+    if(!user||!sel) return;
+    const content=commentText.trim();
+    if(!content) return;
+    try{
+      await db.insertComment({listing_id:sel.id,user_id:user.id,content},token);
+      setComments(await loadComments(sel.id));
+      setCommentText("");
+      // In-app notification to the seller (never to yourself — notify() guards).
+      const who=(profile?.username||profile?.full_name||"Someone").trim();
+      notify(sel.user_id,"comment","New question",`${who} asked a question on your listing ${sel.name}`,sel.id);
+      flash("💬 Question posted!");
+    }catch(e){ flash("Failed to post your question."); }
+  }
+
+  async function deleteComment(id){
+    try{
+      await db.deleteComment(id,token);
+      setComments(p=>p.filter(c=>c.id!==id));
+    }catch(e){ flash("Failed to delete comment."); }
   }
 
   async function submitReport(){
@@ -1800,6 +1842,8 @@ export default function App() {
       return next;
     });
     if(item.user_id) loadReviews(item.user_id).then(setReviews);
+    setComments([]); setCommentText("");
+    loadComments(item.id).then(setComments);
   }
 
   const selIdx   = sel?items.findIndex(i=>i.id===sel.id):0;
@@ -2772,6 +2816,8 @@ export default function App() {
         setShowPayment={setShowPayment} setPaymentListing={setPaymentListing} setPaymentStep={setPaymentStep} setSelectedPostage={setSelectedPostage}
         setShowReview={setShowReview} setShowReport={setShowReport}
         reviews={reviews}
+        comments={comments} commentText={commentText} setCommentText={setCommentText}
+        submitComment={submitComment} deleteComment={deleteComment} profile={profile}
         openEdit={openEdit} markSold={markSold} relist={relist} del={del}
         similarItems={similarItems} recentItems={recentItems} openDetail={openDetail}
         fastSellers={fastSellers} verifiedSellers={verifiedSellers}
