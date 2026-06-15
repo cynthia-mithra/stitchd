@@ -12,12 +12,13 @@ import { db } from "./lib/db";
 import { startCheckout, startOfferCheckout, verifySession } from "./lib/checkout";
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
-import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, isTokenExpired, decodeJWT } from "./lib/auth";
+import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import PricingGuide from "./components/PricingGuide";
 import Tailors from "./views/Tailors";
+import TailorProfiles from "./views/TailorProfiles";
 import Detail from "./views/Detail";
 import Shop from "./views/Shop";
 import Auth from "./views/Auth";
@@ -296,6 +297,21 @@ export default function App() {
   const [tailorTypeFilter,  setTailorTypeFilter]  = useState("All");
   const [bookingNotes,      setBookingNotes]      = useState("");
   const [showBookingForm,   setShowBookingForm]   = useState(false);
+  // ── Phase 15 — Tailor profiles (separate from the tailor_services marketplace
+  // above). `myTailor` is the signed-in user's tailor row (application/profile)
+  // or null. The apply flow, dashboard edit form, portfolio and public profile
+  // each get their own state.
+  const [myTailor,          setMyTailor]          = useState(null);
+  const [applyForm,         setApplyForm]         = useState(null);
+  const [applyBusy,         setApplyBusy]         = useState(false);
+  const [tailorDashTab,     setTailorDashTab]     = useState("profile");
+  const [tailorEdit,        setTailorEdit]        = useState(null);
+  const [tailorEditBusy,    setTailorEditBusy]    = useState(false);
+  const [tailorPortfolio,   setTailorPortfolio]   = useState([]);
+  const [portfolioBusy,     setPortfolioBusy]     = useState(false);
+  const [publicTailor,      setPublicTailor]      = useState(null);
+  const [publicTailorLoading,setPublicTailorLoading]=useState(false);
+  const [adminTailors,      setAdminTailors]      = useState([]);
   const [following,      setFollowing]      = useState([]);
   const [feedItems,      setFeedItems]      = useState([]);
   const [feedLoading,    setFeedLoading]    = useState(false);
@@ -533,6 +549,17 @@ export default function App() {
   useEffect(()=>{ if(view==="wishlist"&&user) loadMySharedWishlists(); // eslint-disable-next-line react-hooks/exhaustive-deps
   },[view,user]);
 
+  // Phase 15 — public tailor profile deep link (/tailors/<id>). A shared link or
+  // PREVIEW PROFILE (new tab) lands here on a cold load with no login required.
+  // /tailors/apply opens the application flow instead.
+  useEffect(()=>{
+    const path=window.location.pathname.replace(/\/+$/,"");
+    if(path==="/tailors/apply"){ openTailorApply(); return; }
+    const m=path.match(/^\/tailors\/([0-9a-fA-F-]{8,})$/);
+    if(m&&m[1]) openTailorPublic(m[1]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
   // Footer navigation: switch to a legal `view` without a full reload and push the
   // matching path so the URL + Back button reflect it. Scrolls to top on navigate.
   const goLegal=useCallback((v,path)=>{
@@ -562,6 +589,9 @@ export default function App() {
       db.getMyPromotions(user.id,token).then(setMyPromotions).catch(()=>{});
       // Phase 14 — the seller's incoming offers for the dashboard OFFERS tab.
       loadSellerOffers();
+      // Phase 15 — the user's tailor row (drives the BECOME A TAILOR / PENDING /
+      // MY TAILOR PROFILE nav entries).
+      db.getMyTailor(user.id,token).then(setMyTailor).catch(()=>{});
     } else {
       setMyWishlist(new Set());
       setWishlistOrder([]);
@@ -569,6 +599,7 @@ export default function App() {
       setMyPromotions([]);
       setSellerOffers([]);
       setOfferBuyers({});
+      setMyTailor(null);
     }
   },[user,token]);
 
@@ -1076,8 +1107,8 @@ export default function App() {
   // the reporters/buyers referenced. Called when an admin opens the dashboard.
   async function loadAdminData(){
     if(!isAdmin||!token) return;
-    const [reports,disputes,applications]=await Promise.all([db.getAllReports(token),db.getAllDisputes(token),db.getVerificationApplications(token)]);
-    setAdminReports(reports); setAdminDisputes(disputes); setAdminApplications(applications);
+    const [reports,disputes,applications,tailors]=await Promise.all([db.getAllReports(token),db.getAllDisputes(token),db.getVerificationApplications(token),db.getPendingTailors(token)]);
+    setAdminReports(reports); setAdminDisputes(disputes); setAdminApplications(applications); setAdminTailors(tailors);
     const ids=[...new Set([...reports.map(r=>r.reporter_id),...disputes.map(d=>d.buyer_id)].filter(Boolean))];
     if(ids.length){
       const profs=await db.getProfilesByIds(ids,token);
@@ -1666,6 +1697,202 @@ export default function App() {
     if(!userId||userId===user?.id) return;
     try{ await db.insertNotification({user_id:userId,type,title,body,link_id:linkId,read:false},token); }
     catch(e){}
+  }
+
+  // ── Phase 15 — Tailor profiles ──────────────────────────────────────────────
+  const poundsToPence=(v)=>{ const n=parseFloat(v); return isNaN(n)?null:Math.round(n*100); };
+
+  // Open the multi-step BECOME A TAILOR application flow with a blank form.
+  function openTailorApply(){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    // Reapply (rejected): prefill from the existing row so they only tweak what's
+    // needed. A fresh application starts blank (name seeded from their profile).
+    const t=myTailor;
+    setApplyForm({step:1,
+      display_name:(t&&t.display_name)||profile?.full_name||"",
+      location:(t&&t.location)||"",
+      bio:(t&&t.bio)||"",
+      profileFile:null,profilePreview:(t&&t.profile_image_url)||"",
+      specialisms:(t&&t.specialisms)||[],
+      price_from:(t&&t.price_from_pence!=null)?(t.price_from_pence/100).toString():"",
+      price_to:(t&&t.price_to_pence!=null)?(t.price_to_pence/100).toString():"",
+      turnaround_days:(t&&t.turnaround_days)||null,
+      instagram_handle:(t&&t.instagram_handle)||"",
+      website_url:(t&&t.website_url)||"",
+      portfolio:[]});
+    setView("tailor-apply"); window.scrollTo(0,0);
+  }
+
+  // Submit the application: upload the profile image + any portfolio images,
+  // insert the tailor row (status='pending') and its portfolio, notify every
+  // admin, then show the success message.
+  async function submitTailorApplication(){
+    if(!user||!token){ setAuthMode("login"); setView("auth"); return; }
+    if(!applyForm) return;
+    if(!applyForm.display_name||!applyForm.location||!applyForm.bio||!(applyForm.profileFile||applyForm.profilePreview)){
+      flash("Please complete name, location, bio and a profile image."); setApplyForm(f=>({...f,step:1})); return;
+    }
+    setApplyBusy(true);
+    try{
+      const profileUrl=applyForm.profileFile?await uploadTailorProfileImage(applyForm.profileFile,token):applyForm.profilePreview;
+      const payload={
+        display_name:applyForm.display_name.trim(),
+        location:applyForm.location.trim(),
+        bio:applyForm.bio.trim()||null,
+        specialisms:applyForm.specialisms||[],
+        price_from_pence:poundsToPence(applyForm.price_from),
+        price_to_pence:poundsToPence(applyForm.price_to),
+        turnaround_days:applyForm.turnaround_days||null,
+        instagram_handle:applyForm.instagram_handle.trim()||null,
+        website_url:applyForm.website_url.trim()||null,
+        profile_image_url:profileUrl||null,
+        status:"pending",
+      };
+      // Reapply reuses the existing row (UNIQUE(user_id) would 409 on re-insert).
+      const row=(myTailor&&myTailor.id)
+        ? await db.updateTailor(myTailor.id,{...payload,approved_at:null},token)
+        : await db.insertTailor({user_id:user.id,...payload},token);
+      // Upload + insert portfolio (only the tiles that actually have an image).
+      const withImages=(applyForm.portfolio||[]).filter(p=>p.file||p.preview);
+      if(row&&row.id&&withImages.length){
+        const urls=await Promise.all(withImages.map(p=>p.file?uploadTailorPortfolioImage(p.file,token):Promise.resolve(p.preview)));
+        const prows=withImages.map((p,i)=>({tailor_id:row.id,image_url:urls[i],caption:p.caption||null,garment_type:p.garment_type||null,position:i}));
+        await db.insertPortfolioItems(prows,token).catch(()=>{});
+      }
+      setMyTailor(row);
+      // Notify every admin of the new application.
+      try{ const admins=await db.getAdmins(token); await Promise.all((admins||[]).map(a=>notify(a.id,"tailor_application","New tailor application",`New tailor application from ${row.display_name}`,row.id))); }catch(e){}
+      flash("Application submitted! We'll review it within 3 working days.",6000);
+      setApplyForm(null);
+      setView("shop"); window.scrollTo(0,0);
+    }catch(e){ flash("Couldn't submit application: "+errMsg(e)); }
+    finally{ setApplyBusy(false); }
+  }
+
+  // Open the tailor dashboard: seed the edit form from myTailor, load portfolio.
+  async function openTailorDashboard(){
+    if(!myTailor) return;
+    setTailorEdit({
+      display_name:myTailor.display_name||"",
+      location:myTailor.location||"",
+      bio:myTailor.bio||"",
+      specialisms:myTailor.specialisms||[],
+      price_from:myTailor.price_from_pence!=null?(myTailor.price_from_pence/100).toString():"",
+      price_to:myTailor.price_to_pence!=null?(myTailor.price_to_pence/100).toString():"",
+      turnaround_days:myTailor.turnaround_days||null,
+      instagram_handle:myTailor.instagram_handle||"",
+      website_url:myTailor.website_url||"",
+      profileFile:null,profilePreview:myTailor.profile_image_url||"",
+      bannerFile:null,bannerPreview:myTailor.banner_image_url||"",banner_image_url:myTailor.banner_image_url||"",
+    });
+    setTailorDashTab("profile");
+    setView("tailor-dashboard"); window.scrollTo(0,0);
+    try{ const p=await db.getTailorPortfolio(myTailor.id,token); setTailorPortfolio(p); }catch(e){ setTailorPortfolio([]); }
+  }
+
+  // Save the PROFILE tab edits (uploading any new profile/banner image first).
+  async function saveTailorProfile(){
+    if(!myTailor||!tailorEdit||!token) return;
+    setTailorEditBusy(true);
+    try{
+      let profileUrl=tailorEdit.profilePreview||null;
+      if(tailorEdit.profileFile) profileUrl=await uploadTailorProfileImage(tailorEdit.profileFile,token);
+      let bannerUrl=tailorEdit.banner_image_url||null;
+      if(tailorEdit.bannerFile) bannerUrl=await uploadTailorProfileImage(tailorEdit.bannerFile,token);
+      else if(!tailorEdit.bannerPreview) bannerUrl=null;
+      const patch={
+        display_name:tailorEdit.display_name.trim(),
+        location:tailorEdit.location.trim(),
+        bio:tailorEdit.bio.trim()||null,
+        specialisms:tailorEdit.specialisms||[],
+        price_from_pence:poundsToPence(tailorEdit.price_from),
+        price_to_pence:poundsToPence(tailorEdit.price_to),
+        turnaround_days:tailorEdit.turnaround_days||null,
+        instagram_handle:tailorEdit.instagram_handle.trim()||null,
+        website_url:tailorEdit.website_url.trim()||null,
+        profile_image_url:profileUrl,
+        banner_image_url:bannerUrl,
+      };
+      const updated=await db.updateTailor(myTailor.id,patch,token);
+      setMyTailor(m=>({...m,...patch,...(updated||{})}));
+      flash("Profile saved.");
+    }catch(e){ flash("Couldn't save: "+errMsg(e)); }
+    finally{ setTailorEditBusy(false); }
+  }
+
+  // PORTFOLIO tab — add images (respecting the max of 8).
+  async function addPortfolioImages(files){
+    if(!myTailor||!token) return;
+    const remaining=8-(tailorPortfolio?.length||0);
+    if(remaining<=0){ flash("You can upload up to 8 portfolio images."); return; }
+    const toAdd=files.slice(0,remaining);
+    setPortfolioBusy(true);
+    try{
+      const urls=await Promise.all(toAdd.map(f=>uploadTailorPortfolioImage(f,token)));
+      const base=tailorPortfolio?.length||0;
+      const rows=urls.map((u,i)=>({tailor_id:myTailor.id,image_url:u,caption:null,garment_type:null,position:base+i}));
+      const inserted=await db.insertPortfolioItems(rows,token);
+      setTailorPortfolio(p=>[...p,...inserted]);
+      if(files.length>remaining) flash(`Added ${remaining} — portfolio is now full (max 8).`);
+    }catch(e){ flash("Couldn't add photos: "+errMsg(e)); }
+    finally{ setPortfolioBusy(false); }
+  }
+
+  async function deletePortfolioImage(id){
+    if(!token) return;
+    try{ await db.deletePortfolioItem(id,token); setTailorPortfolio(p=>p.filter(i=>i.id!==id)); }
+    catch(e){ flash("Couldn't delete image."); }
+  }
+
+  // Reorder a portfolio image up (-1) or down (+1) and persist the new positions.
+  async function movePortfolioImage(id,dir){
+    if(!token) return;
+    const list=[...tailorPortfolio];
+    const idx=list.findIndex(i=>i.id===id);
+    const swap=idx+dir;
+    if(idx<0||swap<0||swap>=list.length) return;
+    [list[idx],list[swap]]=[list[swap],list[idx]];
+    setTailorPortfolio(list);
+    try{ await Promise.all(list.map((img,i)=>img.position===i?null:db.updatePortfolioItem(img.id,{position:i},token))); }
+    catch(e){ /* optimistic reorder already applied */ }
+  }
+
+  // Open a public tailor profile (/tailors/<id>). `pushUrl` updates the address
+  // bar so PREVIEW PROFILE / a shared link work as a real page.
+  async function openTailorPublic(id,pushUrl=false){
+    if(!id) return;
+    setPublicTailor(null); setPublicTailorLoading(true);
+    setView("tailor-public"); window.scrollTo(0,0);
+    if(pushUrl){ try{ window.history.pushState({},"",`/tailors/${id}`); }catch(e){} }
+    try{ const t=await db.getTailor(id,token); setPublicTailor(t); }
+    catch(e){ setPublicTailor(null); }
+    finally{ setPublicTailorLoading(false); }
+  }
+
+  // Admin — approve a tailor application: flip status to approved, stamp the
+  // approval, notify + email the tailor, keep myTailor in sync if it's me.
+  async function approveTailor(t){
+    const now=new Date().toISOString();
+    try{
+      const updated=await db.updateTailor(t.id,{status:"approved",approved_at:now},token);
+      setAdminTailors(p=>p.map(x=>x.id===t.id?{...x,status:"approved",approved_at:now}:x));
+      if(t.user_id===user?.id) setMyTailor(m=>m?{...m,status:"approved",approved_at:now}:m);
+      await notify(t.user_id,"tailor","🎉 You're approved as a tailor!","Your tailor application has been approved! Your profile is now live on Stitch'd.",t.id);
+      db.fireTailorApprovedEmail(t.id);
+      flash("Tailor approved.");
+      return updated;
+    }catch(e){ flash("Failed to approve tailor."); }
+  }
+
+  // Admin — reject a tailor application.
+  async function rejectTailor(t){
+    try{
+      await db.updateTailor(t.id,{status:"rejected"},token);
+      setAdminTailors(p=>p.map(x=>x.id===t.id?{...x,status:"rejected"}:x));
+      if(t.user_id===user?.id) setMyTailor(m=>m?{...m,status:"rejected"}:m);
+      await notify(t.user_id,"tailor","Tailor application update","Your tailor application was not approved at this time.",t.id);
+      flash("Tailor application rejected.");
+    }catch(e){ flash("Failed to reject tailor."); }
   }
 
   async function markNotifRead(id){
@@ -2555,6 +2782,20 @@ export default function App() {
   // Favourites, Notifications and LIST IT deliberately stay out of this list —
   // they remain always-visible in the navbar. Each onClick also closes whichever
   // menu was open so navigating dismisses the overlay.
+  // Phase 15 — the tailor nav entry depends on the user's application status.
+  // 30-day reapply window for a rejected application is measured from created_at
+  // (the schema carries no separate rejection timestamp).
+  const tailorIcon=<Scissors width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>;
+  const tailorReapplyOk=(()=>{ if(!myTailor||myTailor.status!=="rejected") return false; const t=new Date(myTailor.created_at).getTime(); return isNaN(t)?true:(Date.now()-t)>=30*24*60*60*1000; })();
+  const tailorNavItems=(()=>{
+    const st=myTailor&&myTailor.status;
+    if(!myTailor) return [{label:"BECOME A TAILOR", icon:tailorIcon, run:openTailorApply}];
+    if(st==="approved"||st==="suspended") return [{label:"MY TAILOR PROFILE", icon:tailorIcon, run:openTailorDashboard}];
+    if(st==="pending") return [{label:"TAILOR APPLICATION PENDING", icon:<Clock width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>flash("Your tailor application is under review — we'll be in touch within 3 working days.",6000)}];
+    if(st==="rejected") return [{label:"TAILOR APPLICATION UNSUCCESSFUL", icon:tailorIcon, run:()=>{ if(tailorReapplyOk) openTailorApply(); else flash("Your tailor application wasn't approved. You can reapply 30 days after applying.",6000); }}];
+    return [{label:"BECOME A TAILOR", icon:tailorIcon, run:openTailorApply}];
+  })();
+
   const navMenuItems = [
     {label:"✦ NEW ARRIVALS", run:()=>{clearFilters();setView("newarrivals");}},
     {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();loadMyPromotions();setView("dashboard");}},
@@ -2567,6 +2808,8 @@ export default function App() {
     {label:"MY FOLLOWING",   run:()=>{loadFollowingList();setView("following-list");}},
     {label:"MESSAGES",       run:openMessages},
     {label:"MY PROFILE",     run:()=>{load2FAFactors();setView("editprofile");}},
+    // Phase 15 — tailor profile entry, varying by application status.
+    ...tailorNavItems,
     {label:"HOW TO MEASURE", run:()=>{setPrevView(view);setView("measuring");}},
     {label:"LOG OUT",        run:handleSignOut, danger:true},
   ];
@@ -3506,6 +3749,7 @@ export default function App() {
         myVerificationApp={myVerificationApp} verificationBusy={verificationBusy} submitVerification={submitVerification}
         adminApplications={adminApplications} adminApplicants={adminApplicants}
         approveVerification={approveVerification} rejectVerification={rejectVerification}
+        adminTailors={adminTailors} approveTailor={approveTailor} rejectTailor={rejectTailor} openTailorPublic={openTailorPublic}
         verifyIdentity={verifyIdentity} identityBusy={identityBusy}
         requestTab={dashTabRequest} clearRequestTab={()=>setDashTabRequest(null)}
         storeForm={storeForm} setStoreForm={setStoreForm} saveStorefront={saveStorefront} storeSaving={storeSaving}
@@ -3550,6 +3794,18 @@ export default function App() {
         bookingNotes={bookingNotes} setBookingNotes={setBookingNotes}
         bookTailor={bookTailor} saveTailorService={saveTailorService}
         prevView={prevView}
+      />
+
+      {/* TAILOR PROFILES — Phase 15 (apply / dashboard / public profile) */}
+      <TailorProfiles
+        view={view} setView={setView} user={user} flash={flash}
+        myTailor={myTailor}
+        applyForm={applyForm} setApplyForm={setApplyForm} applyBusy={applyBusy} submitApplication={submitTailorApplication}
+        tailorDashTab={tailorDashTab} setTailorDashTab={setTailorDashTab}
+        tailorEdit={tailorEdit} setTailorEdit={setTailorEdit} saveTailorProfile={saveTailorProfile} tailorEditBusy={tailorEditBusy}
+        tailorPortfolio={tailorPortfolio} addPortfolioImages={addPortfolioImages} deletePortfolioImage={deletePortfolioImage} movePortfolioImage={movePortfolioImage} portfolioBusy={portfolioBusy}
+        openTailorPublic={openTailorPublic}
+        publicTailor={publicTailor} publicTailorLoading={publicTailorLoading}
       />
 
       {/* ORDERS */}

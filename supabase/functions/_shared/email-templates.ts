@@ -401,6 +401,23 @@ export const templates = {
     };
   },
 
+  // 15 — Tailor application approved (Phase 15). The applicant's tailor profile
+  // is now live; `tailorId` deep-links their public profile at /tailors/<id>.
+  tailor_approved(d: { displayName?: string; tailorId?: string }, ctx: BuildCtx) {
+    const profileLink = d.tailorId ? `${ctx.site}/tailors/${d.tailorId}` : `${ctx.site}/`;
+    return {
+      subject: "You're approved as a Stitch'd tailor! 🎉",
+      html: baseTemplate({
+        heading: "You're a Stitch'd tailor.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`Congratulations${d.displayName ? `, ${esc(d.displayName)}` : ""} — your tailor application has been approved and your public profile is now live on Stitch'd.`) +
+          p("Buyers can now find you, browse your specialisms and portfolio, and (soon) book alterations with you.") +
+          button("View your profile", profileLink),
+      }),
+    };
+  },
+
   // 7 — Welcome (new user)
   welcome(_d: Record<string, unknown>, ctx: BuildCtx) {
     return {
