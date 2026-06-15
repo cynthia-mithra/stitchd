@@ -37,7 +37,18 @@ supabase functions deploy expire-promotions
 # Phase 14 — seller responds to offers (offer expiry sweep):
 supabase functions deploy expire-offers
 # (the offer accept/decline emails reuse the existing send-email function)
+# Phase 14 — offer checkout (pay an accepted offer at the offer price):
+supabase functions deploy create-offer-checkout
+# Re-deploy stripe-webhook + expire-offers — they gained the offer-payment +
+# payment-expiry/12h-reminder handling in this phase:
+supabase functions deploy stripe-webhook
+supabase functions deploy expire-offers
 ```
+
+> **Offer checkout note:** the browser calls the same-origin Vercel proxy
+> `/api/create-offer-checkout` (mirroring the sale flow's `/api/stripe-checkout`),
+> which uses the existing `STRIPE_SECRET_KEY` Vercel env var. The Supabase
+> `create-offer-checkout` function above is the deployed sibling/fallback.
 
 `verify_jwt = false` is pinned for these functions in `supabase/config.toml`, so
 the CLI applies it automatically. If you deploy without the config file present,

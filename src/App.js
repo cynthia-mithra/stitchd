@@ -9,7 +9,7 @@ import {
   ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary,
 } from "./lib/constants";
 import { db } from "./lib/db";
-import { startCheckout, verifySession } from "./lib/checkout";
+import { startCheckout, startOfferCheckout, verifySession } from "./lib/checkout";
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, isTokenExpired, decodeJWT } from "./lib/auth";
@@ -26,6 +26,7 @@ import Dashboard from "./views/Dashboard";
 import Feed from "./views/Feed";
 import Following from "./views/Following";
 import Orders from "./views/Orders";
+import Offers from "./views/Offers";
 import Looks from "./views/Looks";
 import CreateLook from "./views/CreateLook";
 import SavedSearches from "./views/SavedSearches";
@@ -306,6 +307,11 @@ export default function App() {
   // each card can show the buyer's first name ("From Sarah").
   const [sellerOffers,   setSellerOffers]   = useState([]);
   const [offerBuyers,    setOfferBuyers]    = useState({});
+  // Phase 14 — the signed-in buyer's own offers (the /offers page), and the offer
+  // id currently being handed to Stripe checkout (disables that card's button).
+  const [buyerOffers,    setBuyerOffers]    = useState([]);
+  const [offersLoading,  setOffersLoading]  = useState(false);
+  const [checkoutOfferId,setCheckoutOfferId]= useState(null);
   const [showNotifs,     setShowNotifs]     = useState(false);
   const [navMenuOpen,    setNavMenuOpen]    = useState(false);
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
@@ -461,9 +467,19 @@ export default function App() {
     } else if(path==="/saved-searches"){
       setView("saved-searches");
       window.history.replaceState({},"","/saved-searches");
+    } else if(path==="/offers"){
+      // Phase 14 — deep link / Stripe cancel_url lands here; data loads via the
+      // view-watching effect once the session is ready.
+      setView("offers");
+      window.history.replaceState({},"","/offers");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
+
+  // Phase 14 — (re)load the buyer's offers whenever they're on /offers, so the
+  // page is current after navigating to it or returning from a cancelled checkout.
+  useEffect(()=>{ if(view==="offers"&&user&&token) loadBuyerOffers(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[view,user,token]);
 
   // Phase 14 — public shared wishlist deep link (/wishlist/<slug>). A shared link
   // lands here on a cold load with no login required; we detect the slug, switch
@@ -838,6 +854,41 @@ export default function App() {
     if(!myOffer) return;
     try{ await db.withdrawOffer(myOffer.id,token); setMyOffer(null); flash("Offer withdrawn."); }
     catch(e){ flash("Couldn't withdraw your offer."); }
+  }
+
+  // ── Phase 14 — Buyer's own offers + offer checkout (the /offers page) ──────
+  // Load every offer this buyer has made (grouped by status on the page). Safe to
+  // call without a session — it just clears the list.
+  async function loadBuyerOffers(){
+    if(!user||!token){ setBuyerOffers([]); return; }
+    setOffersLoading(true);
+    try{ setBuyerOffers(await db.getBuyerOffers(user.id,token)||[]); }
+    catch(e){ console.error("Load buyer offers failed:",e); setBuyerOffers([]); }
+    finally{ setOffersLoading(false); }
+  }
+  // COMPLETE PURCHASE on an accepted offer → Stripe checkout for the offer amount
+  // (create-offer-checkout re-verifies + redirects to the hosted page).
+  async function completeOfferPurchase(offer){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    if(!offer) return;
+    setCheckoutOfferId(offer.id);
+    try{ await startOfferCheckout({offerId:offer.id,buyerId:user.id}); }
+    catch(e){ console.error("Offer checkout failed:",e); flash(e.message||"Couldn't start checkout. Please try again."); setCheckoutOfferId(null); }
+  }
+  // Withdraw a still-pending offer from the /offers page, then refresh the list.
+  async function withdrawBuyerOffer(offer){
+    if(!offer) return;
+    try{ await db.withdrawOffer(offer.id,token); if(myOffer&&myOffer.id===offer.id) setMyOffer(null); flash("Offer withdrawn."); await loadBuyerOffers(); }
+    catch(e){ flash("Couldn't withdraw your offer."); }
+  }
+  // MAKE NEW OFFER on a declined offer → open the listing (where the offer modal
+  // lives). Use the cached listing if we have it, else fetch it fresh.
+  async function makeNewOffer(offer){
+    const lid=offer&&offer.listing_id; if(!lid) return;
+    const cached=items.find(i=>i.id===lid);
+    if(cached){ openDetail(cached); return; }
+    try{ const l=await db.getListing(lid,token); if(l) openDetail(l); else flash("That listing is no longer available."); }
+    catch(e){ flash("That listing is no longer available."); }
   }
 
   // ── Phase 14 — Seller responds to offers (accept / decline) ───────────────
@@ -2248,6 +2299,7 @@ export default function App() {
     {label:"✦ NEW ARRIVALS", run:()=>{clearFilters();setView("newarrivals");}},
     {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();loadMyPromotions();setView("dashboard");}},
     {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
+    {label:"MY OFFERS",      icon:<Tag width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadBuyerOffers();setView("offers");}},
     {label:"MY WISHLIST",    icon:<Heart width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadMyWishlist();setView("wishlist");}},
     {label:"SAVED SEARCHES",  run:()=>{loadSavedSearches();setView("saved-searches");}},
     {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
@@ -3200,6 +3252,17 @@ export default function App() {
         updateOrderStatus={updateOrderStatus}
         startOrderConversation={startOrderConversation}
         openDispute={openDispute}
+      />
+
+      {/* MY OFFERS (buyer) — Phase 14 offer checkout */}
+      <Offers
+        view={view} setView={setView} user={user}
+        buyerOffers={buyerOffers} offersLoading={offersLoading}
+        completeOfferPurchase={completeOfferPurchase}
+        withdrawBuyerOffer={withdrawBuyerOffer}
+        makeNewOffer={makeNewOffer}
+        checkoutOfferId={checkoutOfferId}
+        setAuthMode={setAuthMode}
       />
 
       {/* SHOP VIEW */}
