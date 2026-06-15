@@ -314,6 +314,57 @@ export const templates = {
     };
   },
 
+  // 12 — Offer accepted (buyer). Phase 14 — the seller accepted the buyer's
+  // offer. `amount` is the accepted price (formatted, e.g. "£45"); the CTA links
+  // to /offers for now (it'll be wired to checkout in the next issue). The buyer
+  // has 24 hours to complete payment before the offer expires.
+  offer_accepted(
+    d: { title?: string; image?: string; amount?: string },
+    ctx: BuildCtx,
+  ) {
+    return {
+      subject: "Your offer was accepted — Stitch'd",
+      html: baseTemplate({
+        heading: "Your offer was accepted!",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p("Great news — the seller accepted your offer:") +
+          listingCard({ image: d.image, title: d.title }) +
+          `<div style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount || "")}</div>` +
+          p("<strong>Complete your purchase within 24 hours</strong> or the offer will expire.") +
+          button("Complete purchase", `${ctx.site}/offers`),
+      }),
+    };
+  },
+
+  // 13 — Offer declined (buyer). Phase 14 — the seller declined the offer. If
+  // they suggested a different price, `counter` holds the formatted amount and
+  // the CTA invites a new offer on the listing; otherwise it's a plain decline
+  // with a BROWSE SIMILAR LISTINGS CTA. `listingId` deep-links the listing.
+  offer_declined(
+    d: { title?: string; image?: string; counter?: string; listingId?: string },
+    ctx: BuildCtx,
+  ) {
+    const listingLink = d.listingId ? `${ctx.site}/?listing=${d.listingId}` : `${ctx.site}/shop`;
+    return {
+      subject: "Update on your offer — Stitch'd",
+      html: baseTemplate({
+        heading: "Update on your offer.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml: d.counter
+          ? p("Your offer wasn't accepted, but the seller has suggested a different price:") +
+            listingCard({ image: d.image, title: d.title }) +
+            `<div style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.counter)}</div>` +
+            p("Make a new offer to take the seller up on it.") +
+            button("Make a new offer", listingLink)
+          : p("Your offer was not accepted this time.") +
+            listingCard({ image: d.image, title: d.title }) +
+            p("Plenty more pieces where that came from.") +
+            button("Browse similar listings", `${ctx.site}/shop`),
+      }),
+    };
+  },
+
   // 7 — Welcome (new user)
   welcome(_d: Record<string, unknown>, ctx: BuildCtx) {
     return {

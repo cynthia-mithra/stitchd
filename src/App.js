@@ -302,6 +302,10 @@ export default function App() {
   const [followingLoading, setFollowingLoading] = useState(false);
   const [shopTab,          setShopTab]          = useState("all");
   const [notifications,  setNotifications]  = useState([]);
+  // Phase 14 — seller's incoming offers (OFFERS tab) + a buyer-id→profile map so
+  // each card can show the buyer's first name ("From Sarah").
+  const [sellerOffers,   setSellerOffers]   = useState([]);
+  const [offerBuyers,    setOfferBuyers]    = useState({});
   const [showNotifs,     setShowNotifs]     = useState(false);
   const [navMenuOpen,    setNavMenuOpen]    = useState(false);
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
@@ -509,11 +513,15 @@ export default function App() {
       db.getMyVerificationApplication(user.id,token).then(setMyVerificationApp).catch(()=>{});
       // Phase 13 — the seller's promotions for the dashboard ANALYTICS history.
       db.getMyPromotions(user.id,token).then(setMyPromotions).catch(()=>{});
+      // Phase 14 — the seller's incoming offers for the dashboard OFFERS tab.
+      loadSellerOffers();
     } else {
       setMyWishlist(new Set());
       setWishlistOrder([]);
       setMyVerificationApp(null);
       setMyPromotions([]);
+      setSellerOffers([]);
+      setOfferBuyers({});
     }
   },[user,token]);
 
@@ -830,6 +838,67 @@ export default function App() {
     if(!myOffer) return;
     try{ await db.withdrawOffer(myOffer.id,token); setMyOffer(null); flash("Offer withdrawn."); }
     catch(e){ flash("Couldn't withdraw your offer."); }
+  }
+
+  // ── Phase 14 — Seller responds to offers (accept / decline) ───────────────
+  // Load the seller's incoming offers for the dashboard OFFERS tab and resolve
+  // the buyer names ("From Sarah") in one batched profiles fetch.
+  const loadSellerOffers=useCallback(async()=>{
+    if(!user||!token){ setSellerOffers([]); setOfferBuyers({}); return; }
+    try{
+      const rows=await db.getSellerOffers(user.id,token);
+      setSellerOffers(rows||[]);
+      const ids=[...new Set((rows||[]).map(o=>o.buyer_id).filter(Boolean))];
+      if(ids.length){
+        const profs=await db.getProfilesByIds(ids,token);
+        const map={}; profs.forEach(p=>{ map[p.id]=p; });
+        setOfferBuyers(map);
+      } else setOfferBuyers({});
+    }catch(e){ setSellerOffers([]); }
+  },[user,token]);
+
+  // Accept an offer (PART 3). Flip status, pause offers on the listing, decline
+  // the other pending offers, then fire every in-app notification (the emails
+  // fire from the data layer). The listing is NOT marked sold — payment is the
+  // next issue. Returns true so the modal can close only on success.
+  async function acceptOffer(offer){
+    if(!user||!offer) return false;
+    try{
+      const declined=await db.acceptOffer(offer,token);
+      const listing=offer.listings||{};
+      const title=listing.name||"your listing";
+      const amt=`${currencySymbol(listing.currency)}${(offer.amount_pence/100).toFixed(2).replace(/\.00$/,"")}`;
+      // Notify the winning buyer.
+      notify(offer.buyer_id,"offer","Offer accepted!",`Your offer of ${amt} on ${title} has been accepted! Complete your purchase within 24 hours.`,offer.listing_id);
+      // Notify each auto-declined buyer.
+      (declined||[]).forEach(d=>notify(d.buyer_id,"offer","Offer not accepted",`Your offer on ${title} was not accepted this time.`,offer.listing_id));
+      await loadSellerOffers();
+      await fetchItems(); // listing.offers_enabled changed
+      flash("Offer accepted — the buyer has been notified.",6000);
+      return true;
+    }catch(e){ console.error("Accept offer failed:",e); flash("Couldn't accept the offer. Please try again."); return false; }
+  }
+
+  // Decline an offer (PART 4). Optional counter price (in pounds) → pence. Flip
+  // status, notify the buyer in-app (counter vs plain wording), email from the
+  // data layer. Returns true so the modal closes only on success.
+  async function declineOffer(offer,counterPounds){
+    if(!user||!offer) return false;
+    try{
+      const counterPence=(counterPounds!==""&&counterPounds!=null&&!isNaN(parseFloat(counterPounds)))?Math.round(parseFloat(counterPounds)*100):null;
+      await db.declineOffer(offer,counterPence,token);
+      const listing=offer.listings||{};
+      const title=listing.name||"your listing";
+      if(counterPence!=null){
+        const c=`${currencySymbol(listing.currency)}${(counterPence/100).toFixed(2).replace(/\.00$/,"")}`;
+        notify(offer.buyer_id,"offer","Offer not accepted",`Your offer on ${title} was not accepted. The seller suggests ${c}.`,offer.listing_id);
+      } else {
+        notify(offer.buyer_id,"offer","Offer not accepted",`Your offer on ${title} was not accepted this time.`,offer.listing_id);
+      }
+      await loadSellerOffers();
+      flash("Offer declined — the buyer has been notified.");
+      return true;
+    }catch(e){ console.error("Decline offer failed:",e); flash("Couldn't decline the offer. Please try again."); return false; }
   }
 
   async function submitReport(){
@@ -2276,7 +2345,7 @@ export default function App() {
             <div style={{maxHeight:400,overflowY:"auto"}}>
               {notifications.map(n=>(
                 <div key={n.id} style={{...S.notifItem,background:n.read?"#fff":"#fff8fc",borderLeft:`4px solid ${n.read?"#f0f0f0":"#FF1493"}`}}
-                  onClick={()=>{ markNotifRead(n.id); if(n.link_id){ if(n.type==="message"||n.type==="offer"){ openMessages(); } else if(n.type==="new_follower"){ openProfile(n.link_id); } else { const item=items.find(i=>i.id===n.link_id); if(item)openDetail(item); } } setShowNotifs(false); }}>
+                  onClick={()=>{ markNotifRead(n.id); if(n.type==="new_offer"){ setDashTabRequest("offers"); setView("dashboard"); window.scrollTo(0,0); } else if(n.link_id){ if(n.type==="message"){ openMessages(); } else if(n.type==="new_follower"){ openProfile(n.link_id); } else { const item=items.find(i=>i.id===n.link_id); if(item)openDetail(item); } } setShowNotifs(false); }}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                     <div>
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:n.read?600:900,color:"#111",marginBottom:2}}>{n.title}</p>
@@ -3098,6 +3167,7 @@ export default function App() {
         verifyIdentity={verifyIdentity} identityBusy={identityBusy}
         requestTab={dashTabRequest} clearRequestTab={()=>setDashTabRequest(null)}
         storeForm={storeForm} setStoreForm={setStoreForm} saveStorefront={saveStorefront} storeSaving={storeSaving}
+        sellerOffers={sellerOffers} offerBuyers={offerBuyers} acceptOffer={acceptOffer} declineOffer={declineOffer}
       />
 
       {/* FEED */}

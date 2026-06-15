@@ -173,6 +173,51 @@ async function resolveTemplated(
       };
     }
 
+    case "offer_accepted":
+    case "offer_declined": {
+      // Phase 14 — the seller responded to an offer. Resolve the buyer
+      // (recipient), the listing (thumbnail/title) and the formatted amount from
+      // the offer id. For a decline, the seller's optional counter price comes
+      // either from the persisted offer column or the request body.
+      const offer = await sbGetOne<{
+        buyer_id: string;
+        listing_id: string;
+        amount_pence: number;
+        counter_offer_pence?: number | null;
+      }>(
+        `offers?id=eq.${body.offerId}&select=buyer_id,listing_id,amount_pence,counter_offer_pence&limit=1`,
+      );
+      if (!offer?.buyer_id) return { skip: "no buyer" };
+      const prof = await getProfile(offer.buyer_id);
+      if (prof?.email_notifications === false) return { skip: "unsubscribed" };
+      const to = await emailForUser(offer.buyer_id);
+      if (!to) return { skip: "no email" };
+      const listing = await sbGetOne<{ name: string; image_url?: string; images?: unknown; currency?: string }>(
+        `listings?id=eq.${offer.listing_id}&select=name,image_url,images,currency&limit=1`,
+      );
+      const sym = listing?.currency === "USD" ? "$" : listing?.currency === "EUR" ? "€" : "£";
+      const fmt = (pence: number) => `${sym}${(pence / 100).toFixed(2).replace(/\.00$/, "")}`;
+      if (type === "offer_accepted") {
+        return {
+          to,
+          userId: offer.buyer_id,
+          data: { title: listing?.name, image: thumb(listing), amount: fmt(offer.amount_pence) },
+        };
+      }
+      // offer_declined — counter from the column, else the request body.
+      const counterPence = offer.counter_offer_pence ?? (typeof body.counterPence === "number" ? body.counterPence : null);
+      return {
+        to,
+        userId: offer.buyer_id,
+        data: {
+          title: listing?.name,
+          image: thumb(listing),
+          counter: counterPence != null ? fmt(counterPence) : undefined,
+          listingId: offer.listing_id,
+        },
+      };
+    }
+
     case "welcome": {
       const userId: string | null = body.userId ?? null;
       if (!userId) return { skip: "no user" };

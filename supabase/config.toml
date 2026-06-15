@@ -45,3 +45,11 @@ verify_jwt = false
 
 [functions.expire-promotions]
 verify_jwt = false
+
+# Phase 14 — seller responds to offers. expire-offers is invoked by the hourly
+# pg_cron schedule (phase14 offers-response migration) with the service-role
+# bearer to expire pending offers past their 48-hour deadline and notify both
+# parties. send-email is reused for the accept/decline emails. expire-offers
+# presents no Supabase user JWT, so verification must be OFF.
+[functions.expire-offers]
+verify_jwt = false
