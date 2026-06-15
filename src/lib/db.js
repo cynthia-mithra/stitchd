@@ -142,6 +142,18 @@ export const db = {
   async getComments(listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/comments?listing_id=eq.${listingId}&deleted=eq.false&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async insertComment(comment,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/comments`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(comment)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
   async deleteComment(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({deleted:true})}); if(!r.ok)throw new Error(await r.text()); },
+  // ── Phase 14 — Make an offer (buyer side) ─────────────────────────────────
+  // A buyer's current PENDING offer on a listing — drives the MAKE AN OFFER /
+  // OFFER PENDING toggle on the Detail page. Newest pending row or null. Returns
+  // null on any error (e.g. the offers table doesn't exist yet because the
+  // migration hasn't run) so the button degrades to plain MAKE AN OFFER.
+  async getMyOffer(listingId,buyerId,t){ if(!listingId||!buyerId)return null; const r=await fetch(`${SUPABASE_URL}/rest/v1/offers?listing_id=eq.${listingId}&buyer_id=eq.${buyerId}&status=eq.pending&order=created_at.desc&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
+  async insertOffer(offer,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/offers`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(offer)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); const created=d[0];
+    // Email to the seller — send-email resolves the seller + listing + buyer name
+    // from the offer id (the browser never has the seller's email address).
+    if(created&&created.id) fireEmail({type:"new_offer",offerId:created.id});
+    return created; },
+  async withdrawOffer(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/offers?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({status:"withdrawn"})}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
   // ── Phase 11 — Report a listing + dispute resolution ──────────────────────
   // The Stitch'd admin account(s) — profiles flagged is_admin=true. Dispute
   // notifications are routed to every admin id this returns.

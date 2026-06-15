@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock, Trash2, CornerDownRight } from "lucide-react";
+import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock, Trash2, CornerDownRight, Tag } from "lucide-react";
 import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure, colourSwatchBg } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
@@ -28,6 +28,7 @@ export default function Detail({
   reviews,
   comments = [], commentText = "", setCommentText = () => {},
   submitComment = () => {}, deleteComment = () => {}, submitReply = () => {}, profile,
+  myOffer = null, submitOffer = () => {}, withdrawOffer = () => {},
   openEdit, markSold, relist, del,
   similarItems, recentItems = [], openDetail,
   fastSellers = new Set(),
@@ -52,6 +53,11 @@ export default function Detail({
   // Only one inline reply form open at a time, keyed by the question's id.
   const [replyingTo, setReplyingTo] = React.useState(null);
   const [replyText, setReplyText] = React.useState("");
+  // Phase 14 — Make an offer (buyer side). Modal open state + the offer form.
+  const [showOffer, setShowOffer] = React.useState(false);
+  const [offerAmount, setOfferAmount] = React.useState("");
+  const [offerMessage, setOfferMessage] = React.useState("");
+  const [offerSending, setOfferSending] = React.useState(false);
   const isSellerViewer = sel && isOwner(sel);
   const closeReply = () => { setReplyingTo(null); setReplyText(""); };
   const postReply = (parent) => {
@@ -93,6 +99,47 @@ export default function Detail({
   // Seller's average across all their reviews — drives the prominent stars/score
   // shown under the price (e.g. "4.8 · 12 reviews").
   const avgRating = reviews.length ? reviews.reduce((a,r)=>a+r.rating,0)/reviews.length : 0;
+  // ── Phase 14 — Make an offer (buyer side) ─────────────────────────────────
+  const cur = sel ? currencySymbol(sel.currency) : "£";
+  // Show the offer area when offers are on, the piece is active (not sold) and
+  // the viewer isn't the seller. (isOwner is false when logged out, so a
+  // logged-out visitor still sees the button — it prompts login on tap.)
+  const offersAvailable = sel && sel.offers_enabled !== false && !sel.sold && !isOwner(sel);
+  const minPence = sel && Number.isFinite(sel.minimum_offer_pence) ? sel.minimum_offer_pence : null;
+  // Whole-pound display of an amount stored in pence, e.g. 4500 → "45".
+  const fmtPence = (p) => `${cur}${(p/100).toFixed(2).replace(/\.00$/,"")}`;
+  // "Expires in 36 hours" / "Expires in 45 minutes" / "Expired" from a timestamp.
+  const expiryLabel = (ts) => {
+    if(!ts) return "";
+    const ms = new Date(ts).getTime() - Date.now();
+    if(ms <= 0) return "Expired";
+    const hrs = Math.floor(ms/3600000);
+    if(hrs >= 1) return `Expires in ${hrs} hour${hrs!==1?"s":""}`;
+    const mins = Math.max(1, Math.floor(ms/60000));
+    return `Expires in ${mins} minute${mins!==1?"s":""}`;
+  };
+  // Offer-amount validation (in pounds, against the listed price + optional floor).
+  const amtNum = parseFloat(offerAmount);
+  let offerError = "";
+  if(offerAmount !== "" && sel){
+    if(!Number.isFinite(amtNum) || amtNum <= 0) offerError = "Enter an amount greater than 0";
+    else if(amtNum >= sel.price) offerError = `Your offer must be less than the listed price (${cur}${sel.price})`;
+    else if(minPence != null && Math.round(amtNum*100) < minPence) offerError = `Minimum offer is ${fmtPence(minPence)}`;
+  }
+  const offerValid = offerAmount !== "" && !offerError;
+  const closeOffer = () => { setShowOffer(false); setOfferAmount(""); setOfferMessage(""); setOfferSending(false); };
+  const openOfferModal = () => {
+    // Not logged in → prompt to log in (issue PART 2).
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    setOfferAmount(""); setOfferMessage(""); setShowOffer(true);
+  };
+  const sendOffer = async () => {
+    if(!offerValid || offerSending) return;
+    setOfferSending(true);
+    const ok = await submitOffer(Math.round(amtNum*100), offerMessage);
+    if(ok) closeOffer(); else setOfferSending(false);
+  };
+  const thumbSrc = sel ? (sel.image_url || (sel.images && sel.images[0]) || "") : "";
   return (
     <>
       {view==="detail"&&sel&&(
@@ -151,6 +198,24 @@ export default function Detail({
                   </>
                 );
               })()}
+              {/* MAKE AN OFFER — Phase 14, buyer side. Below ADD TO BAG. If the
+                  buyer already has a pending offer, show OFFER PENDING instead. */}
+              {offersAvailable&&(
+                myOffer?(
+                  <div style={{border:"2px solid #111",borderRadius:0,padding:"16px 18px",marginBottom:16}}>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,letterSpacing:2,color:"#FF1493",marginBottom:8,display:"flex",alignItems:"center",gap:7}}><Tag width={15} height={15}/> OFFER PENDING</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:"#111",letterSpacing:0.5,marginBottom:2}}>Your offer: {fmtPence(myOffer.amount_pence)}</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#888",letterSpacing:0.5,marginBottom:14}}>{expiryLabel(myOffer.expires_at)}</p>
+                    <button type="button" className="hbtn" style={{...S.hBtn,width:"100%",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"12px",fontSize:13,letterSpacing:2,display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>{ if(window.confirm("Withdraw your offer? This can't be undone.")) withdrawOffer(); }}>
+                      <X width={15} height={15}/> WITHDRAW OFFER
+                    </button>
+                  </div>
+                ):(
+                  <button type="button" className="hbtn" style={{width:"100%",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:17,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16}} onClick={openOfferModal}>
+                    <Tag width={18} height={18}/> MAKE AN OFFER
+                  </button>
+                )
+              )}
               <div style={S.guaranteeBanner}>
                 <p style={S.guaranteeHeading}>STITCH'D BUYER GUARANTEE</p>
                 <div style={S.guaranteeList}>
@@ -378,6 +443,49 @@ export default function Detail({
               <button type="button" onClick={()=>setShowReport(true)} style={{display:"inline-flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:0.5,color:"#999",padding:6}}>
                 <Flag width={14} height={14}/> Report this listing
               </button>
+            </div>
+          )}
+          {/* MAKE AN OFFER MODAL — Phase 14, buyer side. */}
+          {showOffer&&sel&&(
+            <div style={S.modalOverlay} onClick={closeOffer}>
+              <div style={{background:"#fff",border:"2px solid #111",borderRadius:0,padding:28,maxWidth:460,width:"100%",maxHeight:"88vh",overflowY:"auto",fontFamily:"'Barlow Condensed',sans-serif"}} onClick={e=>e.stopPropagation()}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,paddingBottom:14,borderBottom:"3px solid #111"}}>
+                  <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,letterSpacing:0.5,display:"inline-flex",alignItems:"center",gap:9,margin:0}}><Tag width={22} height={22}/> MAKE AN OFFER</h3>
+                  <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900,lineHeight:1}} onClick={closeOffer}>✕</button>
+                </div>
+                {/* Listing thumbnail + title + listed price */}
+                <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:18}}>
+                  <div style={{width:64,height:64,border:"2px solid #111",borderRadius:0,overflow:"hidden",flexShrink:0,background:"#f2f2f2",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    {thumbSrc?<img src={thumbSrc} alt={sel.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:30}}>{sel.emoji||""}</span>}
+                  </div>
+                  <div style={{minWidth:0}}>
+                    <p style={{fontSize:17,fontWeight:800,color:"#111",letterSpacing:0.5,margin:0,marginBottom:3,wordBreak:"break-word"}}>{sel.name}</p>
+                    <p style={{fontSize:14,color:"#999",letterSpacing:0.5,margin:0}}>Listed at {cur}{sel.price}</p>
+                    {minPence!=null&&<p style={{fontSize:12,color:"#888",letterSpacing:0.5,margin:0,marginTop:2}}>Minimum offer: {fmtPence(minPence)}</p>}
+                  </div>
+                </div>
+                {/* Offer amount */}
+                <div style={{marginBottom:16}}>
+                  <p style={{fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:8}}>YOUR OFFER</p>
+                  <div style={{position:"relative"}}>
+                    <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:16,fontWeight:700,color:"#111",fontFamily:"'Barlow',sans-serif",pointerEvents:"none"}}>{cur}</span>
+                    <input type="number" min="0" step="0.01" inputMode="decimal" autoFocus value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} placeholder="0.00" style={{...S.inp,paddingLeft:30,fontSize:18,fontWeight:700,borderColor:offerError?"#FF1493":"#111"}}/>
+                  </div>
+                  {offerError&&<p style={{fontSize:13,color:"#FF1493",fontWeight:700,letterSpacing:0.5,marginTop:6}}>{offerError}</p>}
+                </div>
+                {/* Optional message */}
+                <div style={{marginBottom:14}}>
+                  <textarea value={offerMessage} maxLength={200} onChange={e=>setOfferMessage(e.target.value)} placeholder="Add a note to the seller (optional)" style={{...S.inp,height:80,resize:"vertical",fontFamily:"'Barlow Condensed',sans-serif"}}/>
+                  <p style={{fontSize:12,color:"#bbb",letterSpacing:1,textAlign:"right",margin:0,marginTop:4}}>{offerMessage.length} / 200</p>
+                </div>
+                <p style={{fontSize:12,color:"#999",letterSpacing:0.5,marginBottom:16}}>Your offer expires in 48 hours.</p>
+                <button type="button" onClick={sendOffer} disabled={!offerValid||offerSending} style={{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"15px",fontSize:16,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:9,cursor:(!offerValid||offerSending)?"not-allowed":"pointer",opacity:(!offerValid||offerSending)?0.45:1}}>
+                  <Tag width={17} height={17}/> {offerSending?"SENDING...":"SEND OFFER"}
+                </button>
+                <div style={{textAlign:"center",marginTop:14}}>
+                  <button type="button" onClick={closeOffer} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#999",padding:4,textDecoration:"underline"}}>CANCEL</button>
+                </div>
+              </div>
             </div>
           )}
         </main>

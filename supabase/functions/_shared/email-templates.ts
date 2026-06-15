@@ -288,6 +288,32 @@ export const templates = {
     };
   },
 
+  // 11 — New offer (seller). Phase 14 — a buyer made an offer on the seller's
+  // listing. `amount` is the formatted offer (e.g. "£45"); `message` is the
+  // buyer's optional note. CTA deep-links the dashboard where offers are managed.
+  new_offer(
+    d: { title?: string; image?: string; amount?: string; buyerName?: string; message?: string },
+    ctx: BuildCtx,
+  ) {
+    const who = d.buyerName || "A buyer";
+    return {
+      subject: "You have a new offer — Stitch'd",
+      html: baseTemplate({
+        heading: "You have a new offer.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`<strong>${esc(who)}</strong> made an offer on your listing:`) +
+          listingCard({ image: d.image, title: d.title }) +
+          `<div style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount || "")}</div>` +
+          (d.message
+            ? `<blockquote style="margin:0 0 16px 0;padding:12px 16px;border-left:3px solid ${PINK};background:#fafafa;color:#555;font-style:italic;">${esc(d.message)}</blockquote>`
+            : "") +
+          p("This offer expires in 48 hours.") +
+          button("View offer", `${ctx.site}/dashboard`),
+      }),
+    };
+  },
+
   // 7 — Welcome (new user)
   welcome(_d: Record<string, unknown>, ctx: BuildCtx) {
     return {
