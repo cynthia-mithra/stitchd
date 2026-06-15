@@ -427,6 +427,19 @@ Deno.serve(async (req) => {
   const buyerId = session.metadata?.buyer_id || null;
   const stripeSessionId = session.id;
 
+  // Phase 14 — bundle discount breakdown (seller_id → {percentage, amount_pence}),
+  // carried in the checkout metadata by api/stripe-checkout.js. Used to record the
+  // discount against each order row below. Absent for non-bundle checkouts.
+  const bundleBySeller: Record<string, { percentage: number; amount_pence: number }> = {};
+  try {
+    const parsed = JSON.parse(session.metadata?.bundle_discounts || "[]");
+    if (Array.isArray(parsed)) {
+      for (const b of parsed) {
+        if (b && b.seller_id) bundleBySeller[b.seller_id] = b;
+      }
+    }
+  } catch { /* no/!invalid bundle metadata — proceed as a normal sale */ }
+
   try {
     // Re-fetch authoritative listing data (price + seller) for the order rows.
     const ids = listingIds.map((id) => `"${id}"`).join(",");
@@ -469,6 +482,10 @@ Deno.serve(async (req) => {
       }).catch(() => {});
 
       // 2. Order record (pence). Resilient to whichever columns the table has.
+      //    Phase 14 — when this seller offered a bundle discount, record the % and
+      //    this listing's share of the discount (linePence × %); insertHealing
+      //    drops the columns on a deployment where the migration hasn't run.
+      const bundle = bundleBySeller[l.user_id];
       await insertHealing("orders", {
         listing_id: l.id,
         buyer_id: buyerId,
@@ -477,6 +494,12 @@ Deno.serve(async (req) => {
         amount: parseFloat(String(l.price)),
         stripe_session_id: stripeSessionId,
         status: "paid",
+        ...(bundle
+          ? {
+              bundle_discount_percentage: bundle.percentage,
+              bundle_discount_amount_pence: Math.round((pence * bundle.percentage) / 100),
+            }
+          : {}),
       });
 
       // 3. Notify the seller (in-app).

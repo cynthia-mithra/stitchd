@@ -73,6 +73,79 @@ module.exports = async (req, res) => {
       };
     });
 
+    // ── Phase 14 — bundle discounts ──────────────────────────────────────────
+    // A seller who has bundle_discount_enabled and 2+ of their items in this
+    // checkout gives that % off their own items. Computed authoritatively here
+    // from the listing/seller data — never trust the client. Each discounting
+    // seller discounts only their own items; we sum the discounts and apply them
+    // as a single Stripe coupon (amount_off), so the buyer pays the discounted
+    // total. (Stripe Checkout has no "negative line item" — a once-off coupon is
+    // the supported way to subtract an amount; it shows as a discount line on the
+    // hosted page.) The per-seller breakdown is carried in metadata for the
+    // webhook to record against each order.
+    let bundleInfo = [];
+    const sellerIds = [...new Set(listings.map((l) => l.user_id).filter(Boolean))];
+    if (sellerIds.length) {
+      const sids = sellerIds.map((id) => `"${id}"`).join(",");
+      const pr = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=in.(${sids})&select=id,bundle_discount_enabled,bundle_discount_percentage`,
+        { headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` } },
+      ).catch(() => null);
+      const profiles = pr && pr.ok ? await pr.json().catch(() => []) : [];
+      const byId = {};
+      (Array.isArray(profiles) ? profiles : []).forEach((p) => { byId[p.id] = p; });
+      sellerIds.forEach((sid) => {
+        const prof = byId[sid];
+        const sellerLines = listings.filter((l) => l.user_id === sid);
+        if (prof && prof.bundle_discount_enabled && sellerLines.length >= 2) {
+          const pct = [5, 10, 15, 20].includes(prof.bundle_discount_percentage)
+            ? prof.bundle_discount_percentage
+            : 10;
+          const subtotal = sellerLines.reduce(
+            (sum, l) => sum + Math.round(parseFloat(String(l.price)) * 100),
+            0,
+          );
+          const amount = Math.round((subtotal * pct) / 100);
+          if (amount > 0) bundleInfo.push({ seller_id: sid, percentage: pct, amount_pence: amount });
+        }
+      });
+    }
+    const bundleTotalPence = bundleInfo.reduce((s, b) => s + b.amount_pence, 0);
+
+    // Build the discount (a single once-off coupon for the combined amount).
+    let discounts;
+    if (bundleTotalPence > 0) {
+      const couponName =
+        bundleInfo.length === 1
+          ? `Bundle discount (${bundleInfo[0].percentage}%)`
+          : "Bundle discount";
+      const coupon = await stripe.coupons.create({
+        amount_off: bundleTotalPence,
+        currency: "gbp",
+        duration: "once",
+        name: couponName,
+      });
+      discounts = [{ coupon: coupon.id }];
+    }
+
+    // Metadata: flag the discount + carry the per-seller breakdown so the webhook
+    // can record it against each order. Single-seller convenience keys mirror the
+    // issue's metadata shape ({ bundle_discount, discount_percentage,
+    // discount_amount_pence, seller_id }).
+    const bundleMeta = bundleInfo.length
+      ? {
+          bundle_discount: "true",
+          discount_amount_pence: String(bundleTotalPence),
+          bundle_discounts: JSON.stringify(bundleInfo),
+          ...(bundleInfo.length === 1
+            ? {
+                discount_percentage: String(bundleInfo[0].percentage),
+                seller_id: bundleInfo[0].seller_id,
+              }
+            : {}),
+        }
+      : {};
+
     // Build success/cancel URLs from the request origin so this works on every
     // Vercel deployment (preview + production) without hardcoding a domain.
     const origin =
@@ -81,6 +154,7 @@ module.exports = async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items,
+      ...(discounts ? { discounts } : {}),
       success_url: `${origin}/order-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/bag`,
       customer_email: buyer_email || undefined,
@@ -88,6 +162,7 @@ module.exports = async (req, res) => {
         listing_ids: listings.map((l) => l.id).join(","),
         seller_ids: listings.map((l) => l.user_id).join(","),
         buyer_id: buyer_id || "",
+        ...bundleMeta,
       },
     });
 

@@ -330,6 +330,27 @@ export const db = {
     }
     throw new Error("Couldn't save your storefront.");
   },
+  // ── Phase 14 — Bundle discounts ───────────────────────────────────────────
+  // The set of sellers offering a bundle discount (bundle_discount_enabled=true),
+  // with the % each offers, so the shop grid / storefront / bag can apply it
+  // without a per-card profile fetch. Mirrors getVacationSellers/getVerifiedSellers.
+  // Returns [] if the column doesn't exist yet (migration not run) so the feature
+  // simply stays dormant rather than throwing.
+  async getBundleDiscountSellers(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?bundle_discount_enabled=eq.true&select=id,bundle_discount_percentage`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // Save the seller's bundle-discount settings. Self-heals like the other profile
+  // patches: if the schema is missing a column (migration not yet run) drop it and
+  // retry so the save still lands wherever it can.
+  async setBundleDiscount(uid,patch,t){
+    const url=`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}`; let payload={...patch};
+    for(let i=0;i<10;i++){
+      const r=await fetch(url,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+      if(r.ok) return r.json();
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't save your bundle discount.");
+  },
   async getFollowing(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${uid}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getFollowers(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/follows?following_id=eq.${uid}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async follow(followerId,followingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/follows`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({follower_id:followerId,following_id:followingId})}); if(!r.ok)throw new Error(await r.text()); return r.json(); },

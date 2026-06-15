@@ -32,6 +32,9 @@ export default function Shop({
   sellerRatings = {},
   fastSellers = new Set(),
   verifiedSellers = new Set(),
+  // Phase 14 — sellers (id → %) whose "BUNDLE & SAVE X%" card banner should show
+  // (discount enabled + 2+ active listings).
+  bundleCardSellers = {},
   wishlistCounts = {},
   myWishlist = new Set(),
   toggleFavourite = () => {},
@@ -110,6 +113,18 @@ export default function Shop({
   // verified. Renders nothing for everyone else.
   const VerifiedSellerBadge = ({ sellerId }) =>
     verifiedSellers.has(sellerId) ? <VerifiedBadge size="sm" style={{marginBottom:10}}/> : null;
+  // Phase 14 — "BUNDLE & SAVE X%" banner across the bottom of a card's image, for
+  // sellers offering a bundle discount who have 2+ active listings. Teal #00E5CC
+  // background, #111 text, Barlow Condensed bold, very small, full width.
+  const BundleSaveBanner = ({ sellerId }) => {
+    const pct = bundleCardSellers[sellerId];
+    if(!pct) return null;
+    return (
+      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"#00E5CC",color:"#111",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:10,letterSpacing:1.5,textAlign:"center",padding:"3px 0",zIndex:4}}>
+        BUNDLE &amp; SAVE {pct}%
+      </div>
+    );
+  };
   // Seller rating chip — sits in the price/views row. Shows up to five #FF1493
   // stars filled proportionally to the seller's average, with the review count in
   // brackets (e.g. ★★★★★ (3)). Renders nothing when the seller has no reviews so
@@ -300,6 +315,7 @@ export default function Shop({
                     <FastBadge sellerId={item.user_id} raised={fitsMe(item)===true}/>
                     <button aria-label={myWishlist.has(item.id)?"Remove from wishlist":"Add to wishlist"} style={{...S.heartBtn,background:myWishlist.has(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();toggleFavourite(item);}}><Heart width={16} height={16} fill={myWishlist.has(item.id)?"#fff":"none"} color={myWishlist.has(item.id)?"#fff":"#111"}/></button>
                     <div style={S.cardOrigin}>{item.origin?.toUpperCase()}</div>
+                    {!item.sold&&<BundleSaveBanner sellerId={item.user_id}/>}
                   </Thumb>
                   <div style={S.cardBody} className="card-body">
                     <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()} · {(item.material||item.fabric)?.toUpperCase()}</p>
