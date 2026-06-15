@@ -218,6 +218,26 @@ async function resolveTemplated(
       };
     }
 
+    case "tailor_approved": {
+      // Phase 15 — a tailor application was approved. Resolve the applicant
+      // (recipient) and their display name from the tailor id.
+      let userId: string | null = body.userId ?? null;
+      let displayName: string | undefined;
+      if (body.tailorId) {
+        const tailor = await sbGetOne<{ user_id: string; display_name: string }>(
+          `tailors?id=eq.${body.tailorId}&select=user_id,display_name&limit=1`,
+        );
+        if (!userId) userId = tailor?.user_id ?? null;
+        displayName = tailor?.display_name;
+      }
+      if (!userId) return { skip: "no user" };
+      const prof = await getProfile(userId);
+      if (prof?.email_notifications === false) return { skip: "unsubscribed" };
+      const to = await emailForUser(userId);
+      if (!to) return { skip: "no email" };
+      return { to, userId, data: { displayName, tailorId: body.tailorId ?? null } };
+    }
+
     case "welcome": {
       const userId: string | null = body.userId ?? null;
       if (!userId) return { skip: "no user" };

@@ -191,6 +191,26 @@ export const waLink   = (n,name,price)=>`https://wa.me/${n.replace(/\D/g,"")}?te
 // is handled separately in the Stripe call sites and is intentionally untouched.
 export const currencySymbol = ()=>"£";
 
+// ── Phase 15 — Tailor profiles ────────────────────────────────────────────────
+// The specialism pills a tailor selects on application (Step 2) and that show on
+// their public profile, and the turnaround-time options (Step 3). turnaround_days
+// stores a single representative day count; turnaroundLabel maps it back to the
+// human band for display ("Typically 3-5 days").
+export const TAILOR_SPECIALISMS = [
+  "Saree blouse stitching","Lehenga alterations","Sherwani tailoring",
+  "Salwar kameez alterations","Bridal wear","Embroidery and embellishment",
+  "Hem alterations","Taking in / letting out","Custom stitching from scratch",
+  "General alterations",
+];
+export const TAILOR_TURNAROUND = [
+  {label:"1-3 days",days:3},{label:"3-5 days",days:5},{label:"1 week",days:7},
+  {label:"2 weeks",days:14},{label:"2+ weeks",days:21},
+];
+export const turnaroundLabel = (days) => {
+  const m = TAILOR_TURNAROUND.find(o=>o.days===days);
+  return m ? m.label : (days ? `${days} days` : "");
+};
+
 // ── Phase 10e — Shop the Look helpers ─────────────────────────────────────────
 // The Stitch'd admin account. Looks created by this account (or any profile with
 // is_admin=true) are stamped created_by_type='admin' and show "Curated by
