@@ -34,6 +34,9 @@ supabase functions deploy stripe-webhook
 # Phase 13 — promoted listings (paid boost):
 supabase functions deploy create-promotion-session
 supabase functions deploy expire-promotions
+# Phase 14 — seller responds to offers (offer expiry sweep):
+supabase functions deploy expire-offers
+# (the offer accept/decline emails reuse the existing send-email function)
 ```
 
 `verify_jwt = false` is pinned for these functions in `supabase/config.toml`, so

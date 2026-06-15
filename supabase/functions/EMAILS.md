@@ -82,6 +82,12 @@ curl -X POST $FN -H 'Content-Type: application/json' \
 # Verification approved
 curl -X POST $FN -H 'Content-Type: application/json' \
   -d '{"type":"verification_approved","applicationId":"<application id>"}'
+
+# Phase 14 — offer accepted / declined (recipient is the buyer, resolved from the offer)
+curl -X POST $FN -H 'Content-Type: application/json' \
+  -d '{"type":"offer_accepted","offerId":"<offer id>"}'
+curl -X POST $FN -H 'Content-Type: application/json' \
+  -d '{"type":"offer_declined","offerId":"<offer id>","counterPence":4000}'
 ```
 
 Raw send (service-role only — how the webhook path is shaped). Useful to preview

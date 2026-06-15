@@ -1,5 +1,5 @@
 import React from "react";
-import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock, ShieldCheck, Store, Image as ImageIcon, MapPin, Zap, TrendingUp } from "lucide-react";
+import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock, ShieldCheck, Store, Image as ImageIcon, MapPin, Zap, TrendingUp, Tag, MessageSquare, Hourglass } from "lucide-react";
 import { CARD_COLORS, catEmoji, currencySymbol, lookListings, lookTotal } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Thumb, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
@@ -90,6 +90,8 @@ export default function Dashboard({
   requestTab = null, clearRequestTab = () => {},
   // Edit storefront (Phase 13)
   storeForm = {}, setStoreForm = () => {}, saveStorefront = () => {}, storeSaving = false,
+  // Seller responds to offers (Phase 14)
+  sellerOffers = [], offerBuyers = {}, acceptOffer = () => {}, declineOffer = () => {},
 }) {
   // Split listings into ACTIVE vs SOLD (issue PART 4 — sold listings move to a
   // separate SOLD tab in the seller dashboard).
@@ -118,6 +120,26 @@ export default function Dashboard({
   const [adminAppTab,setAdminAppTab]=React.useState("pending"); // admin PENDING/APPROVED/REJECTED
   const [rejectApp,setRejectApp]=React.useState(null);       // application being rejected
   const [rejectNotes,setRejectNotes]=React.useState("");
+
+  // ── Phase 14 — seller responds to offers ─────────────────────────────────────
+  const [offerTab,setOfferTab]=React.useState("pending");   // PENDING/ACCEPTED/DECLINED/EXPIRED filter
+  const [acceptModal,setAcceptModal]=React.useState(null);  // offer pending an ACCEPT confirm
+  const [declineModal,setDeclineModal]=React.useState(null);// offer pending a DECLINE confirm
+  const [counterPrice,setCounterPrice]=React.useState("");  // optional counter in the decline modal
+  const [offerBusy,setOfferBusy]=React.useState(false);
+
+  // An offer's effective status: a 'pending' row whose 48h deadline has passed
+  // reads as EXPIRED in the UI even before the hourly cron sweeps it.
+  const effectiveStatus=(o)=>{
+    if(o.status==="pending"&&o.expires_at&&new Date(o.expires_at).getTime()<=Date.now()) return "expired";
+    return o.status;
+  };
+  // Withdrawn offers (buyer pulled out) aren't a tab — hide them everywhere.
+  const visibleOffers=sellerOffers.filter(o=>effectiveStatus(o)!=="withdrawn");
+  const pendingCount=visibleOffers.filter(o=>effectiveStatus(o)==="pending").length;
+  const buyerFirstName=(o)=>{ const p=offerBuyers[o.buyer_id]||{}; const name=(p.full_name||p.username||"").trim(); return name?name.split(/\s+/)[0]:"a buyer"; };
+  const confirmAccept=async()=>{ if(!acceptModal||offerBusy) return; setOfferBusy(true); const ok=await acceptOffer(acceptModal); setOfferBusy(false); if(ok){ setAcceptModal(null); setOfferTab("accepted"); } };
+  const confirmDecline=async()=>{ if(!declineModal||offerBusy) return; setOfferBusy(true); const ok=await declineOffer(declineModal,counterPrice); setOfferBusy(false); if(ok){ setDeclineModal(null); setCounterPrice(""); setOfferTab("declined"); } };
 
   const openVerifyModal=()=>{ setVerifyForm({full_name:profile?.full_name||"",reason:"",selling_experience:"Less than 6 months",instagram_handle:""}); setVerifyModal(true); };
   const submitVerifyForm=async()=>{ const ok=await submitVerification(verifyForm); if(ok) setVerifyModal(false); };
@@ -205,6 +227,8 @@ export default function Dashboard({
             <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
               <TabBtn l="ACTIVE" v="active" n={activeItems.length}/>
               <TabBtn l="SOLD" v="sold" n={myItems.filter(i=>i.sold).length}/>
+              {/* Phase 14 — OFFERS tab. Count badge shows pending offers only. */}
+              <TabBtn l="OFFERS" v="offers" n={pendingCount>0?pendingCount:null} activeBg="#FF1493"/>
               {/* Phase 10c — ANALYTICS sits alongside ACTIVE / SOLD; active state uses the pink accent. */}
               <TabBtn l="ANALYTICS" v="analytics" n={null} activeBg="#FF1493"/>
               {/* Phase 10d — TOOLS tab. */}
@@ -590,6 +614,106 @@ export default function Dashboard({
                   })()}
                 </div>
               </div>
+            ):dashTab==="offers"?(
+              /* ── OFFERS TAB (Phase 14 — seller responds to offers) ───────────── */
+              (()=>{
+                const sym=currencySymbol();
+                const fmtMoney=(n)=>`${sym}${Number(n).toFixed(2).replace(/\.00$/,"")}`;
+                // PENDING first by default; within a tab, newest offers first.
+                const filtered=visibleOffers.filter(o=>effectiveStatus(o)===offerTab);
+                const STATUS_TABS=[["pending","PENDING"],["accepted","ACCEPTED"],["declined","DECLINED"],["expired","EXPIRED"]];
+                const STATUS_META={
+                  accepted:{label:"ACCEPTED",bg:"#34C759"},
+                  declined:{label:"DECLINED",bg:"#999"},
+                  expired:{label:"EXPIRED",bg:"#FF9500"},
+                };
+                // Time-remaining label for a pending offer; red under 6 hours.
+                const expiryInfo=(o)=>{
+                  if(!o.expires_at) return null;
+                  const ms=new Date(o.expires_at).getTime()-Date.now();
+                  if(ms<=0) return {text:"Expired",urgent:true};
+                  const hours=ms/3600000;
+                  if(hours<1){ const mins=Math.max(1,Math.round(ms/60000)); return {text:`Expires in ${mins} minute${mins!==1?"s":""}`,urgent:true}; }
+                  const h=Math.round(hours);
+                  return {text:`Expires in ${h} hour${h!==1?"s":""}`,urgent:hours<6};
+                };
+                return (
+                <>
+                  {/* Filter tabs: PENDING / ACCEPTED / DECLINED / EXPIRED */}
+                  <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
+                    {STATUS_TABS.map(([v,l])=>{
+                      const n=visibleOffers.filter(o=>effectiveStatus(o)===v).length;
+                      return <button key={v} className="hbtn" style={{...S.hBtn,background:offerTab===v?"#111":"#fff",color:offerTab===v?"#fff":"#111",border:"2px solid #111",fontSize:12,padding:"8px 18px"}} onClick={()=>setOfferTab(v)}>{l} ({n})</button>;
+                    })}
+                  </div>
+                  {filtered.length===0?(
+                    <div style={{textAlign:"center",padding:"48px 20px"}}>
+                      <p style={{display:"flex",justifyContent:"center",marginBottom:12,color:"#ddd"}}><Tag width={40} height={40}/></p>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#bbb",letterSpacing:1}}>
+                        {visibleOffers.length===0
+                          ?"NO OFFERS YET — BUYERS CAN MAKE OFFERS ON YOUR ACTIVE LISTINGS"
+                          :offerTab==="pending"?"NO PENDING OFFERS":`NO ${offerTab.toUpperCase()} OFFERS`}
+                      </p>
+                    </div>
+                  ):(
+                    <div style={{display:"flex",flexDirection:"column",gap:12,maxWidth:680}}>
+                      {filtered.map(o=>{
+                        const listing=o.listings||{};
+                        const offerAmount=o.amount_pence/100;
+                        const listed=Number(listing.price||0);
+                        const diff=listed-offerAmount;
+                        const st=effectiveStatus(o);
+                        const meta=STATUS_META[st];
+                        const exp=expiryInfo(o);
+                        const msg=(o.message||"").trim();
+                        return (
+                        <div key={o.id} style={{border:"2px solid #111",padding:"16px",fontFamily:"'Barlow Condensed',sans-serif",display:"flex",gap:14,alignItems:"flex-start",flexWrap:"wrap"}}>
+                          {/* Listing thumbnail — 60px square, 2px #111 border */}
+                          <div style={{width:60,height:60,flexShrink:0,border:"2px solid #111",overflow:"hidden"}}>
+                            <Thumb src={listing.image_url||(listing.images&&listing.images[0])||""} emoji={<Tag width={24} height={24}/>} accent="#fafafa" style={{width:"100%",height:"100%"}} emojiStyle={{color:"#111"}}/>
+                          </div>
+                          <div style={{flex:1,minWidth:200}}>
+                            {/* Status pill on non-pending tabs */}
+                            {meta&&<span style={{display:"inline-block",background:meta.bg,color:"#fff",fontSize:10,fontWeight:800,letterSpacing:1.5,padding:"3px 10px",marginBottom:6}}>{meta.label}</span>}
+                            <p style={{fontSize:17,fontWeight:900,color:"#111",lineHeight:1.1,marginBottom:6}}>{listing.name||"Listing"}</p>
+                            {/* Offer amount — large, bold, #111 */}
+                            <p style={{fontSize:30,fontWeight:900,color:"#111",letterSpacing:-0.5,lineHeight:1,marginBottom:2}}>{fmtMoney(offerAmount)}</p>
+                            {/* Listed price + difference */}
+                            <p style={{fontSize:14,fontWeight:700,color:"#999",marginBottom:2}}>Listed at {fmtMoney(listed)}</p>
+                            {diff>0
+                              ? <p style={{fontSize:12,fontWeight:700,color:"#aaa",marginBottom:8}}>{fmtMoney(diff)} below asking</p>
+                              : diff<0
+                                ? <p style={{fontSize:12,fontWeight:700,color:"#aaa",marginBottom:8}}>{fmtMoney(-diff)} above asking</p>
+                                : <p style={{fontSize:12,fontWeight:700,color:"#aaa",marginBottom:8}}>Full asking price</p>}
+                            {/* Buyer first name */}
+                            <p style={{fontSize:14,fontWeight:800,color:"#111",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>From {buyerFirstName(o)}</p>
+                            {/* Buyer message in a light grey box */}
+                            {msg&&(
+                              <div style={{background:"#f5f5f5",border:"1px solid #e5e5e5",padding:"10px 12px",marginBottom:10,display:"flex",gap:8,alignItems:"flex-start"}}>
+                                <MessageSquare width={14} height={14} color="#999" style={{flexShrink:0,marginTop:2}}/>
+                                <span style={{fontSize:14,color:"#555",lineHeight:1.4}}>{msg}</span>
+                              </div>
+                            )}
+                            {/* Time remaining (pending only) */}
+                            {st==="pending"&&exp&&(
+                              <p style={{fontSize:12,fontWeight:700,letterSpacing:0.5,color:exp.urgent?"#FF1493":"#999",marginBottom:12,display:"flex",alignItems:"center",gap:5}}><Hourglass width={13} height={13}/> {exp.text}</p>
+                            )}
+                            {/* Accept / Decline (pending only) */}
+                            {st==="pending"&&(
+                              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                                <button className="hbtn" style={{background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,fontSize:13,padding:"10px 22px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}} onClick={()=>setAcceptModal(o)}><Check width={15} height={15}/> ACCEPT</button>
+                                <button className="hbtn" style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,fontSize:13,padding:"10px 22px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}} onClick={()=>{ setDeclineModal(o); setCounterPrice(""); }}><X width={15} height={15}/> DECLINE</button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+                );
+              })()
             ):tabItems.length===0?(
               <div style={{textAlign:"center",padding:"48px 20px"}}><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#bbb",letterSpacing:1}}>{dashTab==="sold"?"NO SALES YET.":"NO ACTIVE LISTINGS."}</p></div>
             ):(
@@ -828,6 +952,43 @@ export default function Dashboard({
                 <div style={{display:"flex",gap:10,marginTop:16}}>
                   <button className="hbtn" style={{...S.hBtn,flex:1,padding:"12px",fontSize:14,background:"#FF1493",border:"2px solid #111"}} onClick={confirmReject}>CONFIRM REJECT</button>
                   <button className="hbtn" style={{...S.hBtn,flex:1,padding:"12px",fontSize:14,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>setRejectApp(null)}>CANCEL</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ACCEPT OFFER MODAL (Phase 14) */}
+          {acceptModal&&(()=>{
+            const listing=acceptModal.listings||{};
+            const amt=`${currencySymbol()}${(acceptModal.amount_pence/100).toFixed(2).replace(/\.00$/,"")}`;
+            return (
+            <div style={S.modalOverlay} onClick={()=>!offerBusy&&setAcceptModal(null)}>
+              <div style={{background:"#fff",border:"2px solid #111",borderRadius:0,padding:28,maxWidth:420,width:"100%",fontFamily:"'Barlow Condensed',sans-serif"}} onClick={e=>e.stopPropagation()}>
+                <h3 style={{fontSize:22,fontWeight:900,marginBottom:10,lineHeight:1.15}}>Accept offer of {amt} for {listing.name||"this listing"}?</h3>
+                <p style={{fontSize:14,color:"#666",marginBottom:20,lineHeight:1.45}}>The buyer will be notified and sent a payment link. Any other pending offers on this listing will be declined.</p>
+                <div style={{display:"flex",gap:10}}>
+                  <button className="hbtn" disabled={offerBusy} style={{...S.hBtn,flex:1,padding:"12px",fontSize:14,background:"#FF1493",color:"#fff",border:"2px solid #111"}} onClick={confirmAccept}>{offerBusy?"ACCEPTING…":"CONFIRM"}</button>
+                  <button className="hbtn" disabled={offerBusy} style={{...S.hBtn,flex:1,padding:"12px",fontSize:14,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>setAcceptModal(null)}>CANCEL</button>
+                </div>
+              </div>
+            </div>
+            );
+          })()}
+
+          {/* DECLINE OFFER MODAL (Phase 14) */}
+          {declineModal&&(
+            <div style={S.modalOverlay} onClick={()=>!offerBusy&&setDeclineModal(null)}>
+              <div style={{background:"#fff",border:"2px solid #111",borderRadius:0,padding:28,maxWidth:420,width:"100%",fontFamily:"'Barlow Condensed',sans-serif"}} onClick={e=>e.stopPropagation()}>
+                <h3 style={{fontSize:22,fontWeight:900,marginBottom:10}}>Decline this offer?</h3>
+                <p style={{fontSize:14,color:"#666",marginBottom:16,lineHeight:1.45}}>The buyer will be notified. You can optionally suggest a different price to invite a new offer.</p>
+                <label style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:8}}>Suggest a different price (optional)</label>
+                <div style={{position:"relative",marginBottom:20}}>
+                  <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"#111",pointerEvents:"none"}}>{currencySymbol()}</span>
+                  <input type="number" min="0" step="0.01" value={counterPrice} onChange={e=>setCounterPrice(e.target.value)} placeholder="0.00" style={{...S.inp,paddingLeft:28,fontSize:18,fontWeight:800}}/>
+                </div>
+                <div style={{display:"flex",gap:10}}>
+                  <button className="hbtn" disabled={offerBusy} style={{...S.hBtn,flex:1,padding:"12px",fontSize:14,background:"#111",color:"#fff",border:"2px solid #111"}} onClick={confirmDecline}>{offerBusy?"DECLINING…":"DECLINE"}</button>
+                  <button className="hbtn" disabled={offerBusy} style={{...S.hBtn,flex:1,padding:"12px",fontSize:14,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>setDeclineModal(null)}>CANCEL</button>
                 </div>
               </div>
             </div>

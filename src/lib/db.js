@@ -154,6 +154,52 @@ export const db = {
     if(created&&created.id) fireEmail({type:"new_offer",offerId:created.id});
     return created; },
   async withdrawOffer(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/offers?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({status:"withdrawn"})}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
+  // ── Phase 14 — Seller responds to offers (accept / decline) ───────────────
+  // Every offer on the seller's listings, newest first, with the listing
+  // (title/thumbnail/price) embedded so the dashboard OFFERS tab renders without
+  // a per-offer round-trip. Falls back to a plain select where the embed isn't
+  // available, then [] if the table doesn't exist yet (migration not run).
+  async getSellerOffers(sellerId,t){ if(!sellerId)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/offers?seller_id=eq.${sellerId}&select=*,listings(id,name,image_url,images,price,currency,offers_enabled)&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/offers?seller_id=eq.${sellerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
+  // Accept an offer (issue PART 3). Sets it 'accepted', turns OFF offers on the
+  // listing so no new offers arrive while payment is pending (the listing is NOT
+  // marked sold — that's the next issue, after payment), then declines every
+  // OTHER pending offer on the same listing. Returns the declined rows so the
+  // caller can fire their in-app decline notifications. The accept + auto-decline
+  // emails fire from here.
+  async acceptOffer(offer,t){
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/offers?id=eq.${offer.id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({status:"accepted"})}); if(!r.ok)throw new Error(await r.text());
+    // Pause offers on the listing while we await payment.
+    await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${offer.listing_id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({offers_enabled:false})}).catch(()=>{});
+    // Find, then decline, the other pending offers on this listing.
+    let declined=[];
+    const o=await fetch(`${SUPABASE_URL}/rest/v1/offers?listing_id=eq.${offer.listing_id}&status=eq.pending&id=neq.${offer.id}&select=id,buyer_id,amount_pence,listing_id`,{headers:hdrs(t)});
+    if(o.ok) declined=await o.json();
+    if(declined.length){
+      await fetch(`${SUPABASE_URL}/rest/v1/offers?listing_id=eq.${offer.listing_id}&status=eq.pending&id=neq.${offer.id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({status:"declined"})}).catch(()=>{});
+    }
+    // Emails: the accepted buyer, plus each auto-declined buyer (no counter).
+    fireEmail({type:"offer_accepted",offerId:offer.id});
+    declined.forEach(d=>fireEmail({type:"offer_declined",offerId:d.id}));
+    return declined;
+  },
+  // Decline an offer (issue PART 4). Sets it 'declined' and, when the seller
+  // suggested a different price, persists counter_offer_pence so the decline
+  // email/notification can reference it. counterPence is also passed to the email
+  // so it works even on a deployment where the column doesn't exist yet. Self-
+  // heals by dropping counter_offer_pence and retrying if the column is missing.
+  async declineOffer(offer,counterPence,t){
+    const base={status:"declined"};
+    const payload=counterPence!=null?{...base,counter_offer_pence:counterPence}:base;
+    let r=await fetch(`${SUPABASE_URL}/rest/v1/offers?id=eq.${offer.id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify(payload)});
+    if(!r.ok){
+      const text=await r.text();
+      if(/counter_offer_pence/.test(text)){
+        r=await fetch(`${SUPABASE_URL}/rest/v1/offers?id=eq.${offer.id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify(base)});
+      }
+      if(!r.ok) throw new Error(text);
+    }
+    fireEmail(counterPence!=null?{type:"offer_declined",offerId:offer.id,counterPence}:{type:"offer_declined",offerId:offer.id});
+  },
   // ── Phase 11 — Report a listing + dispute resolution ──────────────────────
   // The Stitch'd admin account(s) — profiles flagged is_admin=true. Dispute
   // notifications are routed to every admin id this returns.
