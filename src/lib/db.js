@@ -686,4 +686,29 @@ export const db = {
   // request_id -> review map. Returns [] if the table doesn't exist yet.
   async getMyTailorReviews(buyerId,t){ if(!buyerId)return [];
     const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_reviews?buyer_id=eq.${buyerId}&select=id,alteration_request_id,rating,comment`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+
+  // ── Phase 15 — Tailor availability calendar ───────────────────────────────
+  // Every availability row for one tailor (the dates they've explicitly marked).
+  // A date with NO row falls back to "available with the tailor's default slots".
+  // Used both by the tailor's own dashboard AVAILABILITY tab and the read-only
+  // calendar on the public /tailors/<id> profile. Returns [] if the table doesn't
+  // exist yet (migration not run) so the calendar degrades to all-default rather
+  // than throwing.
+  async getTailorAvailability(tailorId,t){ if(!tailorId)return [];
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_availability?tailor_id=eq.${tailorId}&order=date.asc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // Upsert a single day's row. The UNIQUE(tailor_id,date) constraint +
+  // resolution=merge-duplicates means a repeat write for the same date updates in
+  // place rather than 409-ing. Returns the saved row.
+  async upsertTailorAvailability(row,t){
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_availability`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation,resolution=merge-duplicates"},body:JSON.stringify(row)});
+    if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return Array.isArray(d)?d[0]:d; },
+  // Upsert many days at once (week toggle / bulk actions). Same merge-duplicates
+  // semantics so re-marking already-stored dates updates them in place.
+  async bulkUpsertTailorAvailability(rows,t){ if(!rows||!rows.length)return [];
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_availability`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation,resolution=merge-duplicates"},body:JSON.stringify(rows)});
+    if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  // MARK ALL AS AVAILABLE — wipe every override so all dates fall back to the
+  // tailor's default (available with default slots).
+  async clearTailorAvailability(tailorId,t){ if(!tailorId)return;
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_availability?tailor_id=eq.${tailorId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
 };
