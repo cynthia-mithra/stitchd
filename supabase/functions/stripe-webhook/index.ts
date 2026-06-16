@@ -309,6 +309,158 @@ async function handleOffer(session: Stripe.Checkout.Session) {
   }
 }
 
+// ── Phase 15 — alteration booking payment ─────────────────────────────────────
+// An alteration-checkout session (created by create-alteration-checkout, tagged
+// metadata.type='alteration') completed. The buyer paid the tailor's full quote,
+// so:
+//   1. flip the request to 'accepted', stamp paid_at + the session id + the
+//      commission split (15% to Stitch'd, the rest owed to the tailor)
+//   2. record a tailor_payouts row (status 'pending' — released on completion)
+//   3. notify the tailor + buyer in-app
+//   4. email the tailor (earnings after commission) and buyer (amount paid)
+// Kept entirely separate from the sale / offer / promotion paths so the existing
+// logic is untouched (issue constraint).
+const COMMISSION_RATE = 0.15;
+async function handleAlteration(session: Stripe.Checkout.Session) {
+  const requestId = session.metadata?.alteration_request_id || "";
+  if (!requestId) {
+    console.error("Alteration webhook: no alteration_request_id in metadata", session.id);
+    return;
+  }
+
+  // Authoritative request (the paid amount must come from the stored quote, not
+  // the client) + embedded listing (title/thumbnail) and tailor (name/image/user).
+  const rr = await fetch(
+    `${SUPABASE_URL}/rest/v1/alteration_requests?id=eq.${requestId}&select=id,buyer_id,tailor_id,listing_id,status,quote_pence,alterations_needed,listings(name,image_url,images),tailors(display_name,profile_image_url,user_id)&limit=1`,
+    { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
+  ).catch(() => null);
+  const reqRow = rr && rr.ok ? (await rr.json().catch(() => []))[0] : null;
+  if (!reqRow) {
+    console.error("Alteration webhook: request not found", requestId);
+    return;
+  }
+
+  // Amounts — prefer the stored quote, fall back to metadata then the session.
+  const quotePence = Number(reqRow.quote_pence) ||
+    Number(session.metadata?.quote_amount_pence) ||
+    session.amount_total || 0;
+  const commissionPence = Number(session.metadata?.commission_amount_pence) ||
+    Math.round(quotePence * COMMISSION_RATE);
+  const payoutPence = Number(session.metadata?.tailor_payout_pence) ||
+    (quotePence - commissionPence);
+
+  const buyerId = reqRow.buyer_id || session.metadata?.buyer_id || null;
+  const tailorId = reqRow.tailor_id || session.metadata?.tailor_id || null;
+  const tailor = reqRow.tailors || null;
+  const tailorUserId = tailor?.user_id || null;
+  const tailorName = tailor?.display_name || "your tailor";
+  const tailorImage = tailor?.profile_image_url || undefined;
+  const listing = reqRow.listings || null;
+  const title = listing?.name || "your item";
+  const image = listing ? listingThumb(listing) : undefined;
+  const fmt = (pence: number) => `£${(pence / 100).toFixed(2).replace(/\.00$/, "")}`;
+
+  // 1. Flip the request to accepted + stamp the payment fields. insertHealing
+  //    isn't used for PATCH; drop missing columns manually so a deployment
+  //    behind on the migration still records what it can.
+  const patch: Record<string, unknown> = {
+    status: "accepted",
+    paid_at: new Date().toISOString(),
+    stripe_session_id: session.id,
+    quote_amount_pence: quotePence,
+    commission_amount_pence: commissionPence,
+    tailor_payout_pence: payoutPence,
+  };
+  for (let i = 0; i < 8; i++) {
+    const pr = await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?id=eq.${requestId}`, {
+      method: "PATCH",
+      headers: sbHeaders,
+      body: JSON.stringify(patch),
+    }).catch(() => null);
+    if (pr && pr.ok) break;
+    if (!pr) break;
+    const text = await pr.text();
+    const col = missingColumn(text);
+    if (col && Object.prototype.hasOwnProperty.call(patch, col)) {
+      delete patch[col];
+      continue;
+    }
+    console.error("Alteration request PATCH failed:", text);
+    break;
+  }
+
+  // 2. Record the payout (pending — released when the buyer confirms completion).
+  await insertHealing("tailor_payouts", {
+    tailor_id: tailorId,
+    alteration_request_id: requestId,
+    amount_pence: quotePence,
+    commission_pence: commissionPence,
+    stripe_session_id: session.id,
+    status: "pending",
+  });
+
+  // 3. In-app notifications — tailor + buyer.
+  if (tailorUserId) {
+    await insertHealing("notifications", {
+      user_id: tailorUserId,
+      type: "alteration_booking",
+      title: "💷 Payment received",
+      body: `Payment received for your alteration booking! ${fmt(payoutPence)} will be paid to you on completion.`,
+      link_id: reqRow.listing_id,
+      read: false,
+    });
+  }
+  if (buyerId) {
+    await insertHealing("notifications", {
+      user_id: buyerId,
+      type: "alteration_booking",
+      title: "🩷 Booking confirmed",
+      body: `Your alteration booking with ${tailorName} is confirmed!`,
+      link_id: reqRow.listing_id,
+      read: false,
+    });
+  }
+
+  // 4. Emails — tailor (earnings after commission) + buyer (amount paid).
+  try {
+    // Tailor.
+    if (tailorUserId) {
+      const tailorProfile = await getProfile(tailorUserId);
+      if (tailorProfile?.email_notifications !== false) {
+        const tailorEmail = await emailForUser(tailorUserId);
+        if (tailorEmail) {
+          const buyer = buyerId ? await getProfile(buyerId) : null;
+          const buyerName = buyer?.full_name || buyer?.username || "A buyer";
+          const { subject, html } = await render(
+            "alteration_booking_tailor",
+            { title, image, buyerName, alterations: reqRow.alterations_needed || [], earnings: fmt(payoutPence) },
+            tailorUserId,
+          );
+          await sendViaResend(tailorEmail, subject, html);
+        }
+      }
+    }
+    // Buyer.
+    if (buyerId) {
+      const buyerProfile = await getProfile(buyerId);
+      if (buyerProfile?.email_notifications !== false) {
+        const buyerEmail = (await emailForUser(buyerId)) ||
+          session.customer_details?.email || session.customer_email || "";
+        if (buyerEmail) {
+          const { subject, html } = await render(
+            "alteration_booking_buyer",
+            { title, image: tailorImage || image, tailorName, amount: fmt(quotePence) },
+            buyerId,
+          );
+          await sendViaResend(buyerEmail, subject, html);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Alteration email send error:", (e as Error).message);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
@@ -421,6 +573,17 @@ Deno.serve(async (req) => {
       console.error("Offer processing error:", (e as Error).message);
     }
     return new Response(JSON.stringify({ received: true, offer: true }), { status: 200 });
+  }
+
+  // Phase 15 — an alteration booking payment (metadata.type='alteration') is
+  // handled on a completely separate path; the bag-sale logic below is untouched.
+  if (session.metadata?.type === "alteration") {
+    try {
+      await handleAlteration(session);
+    } catch (e) {
+      console.error("Alteration processing error:", (e as Error).message);
+    }
+    return new Response(JSON.stringify({ received: true, alteration: true }), { status: 200 });
   }
 
   const listingIds = (session.metadata?.listing_ids ?? "").split(",").filter(Boolean);

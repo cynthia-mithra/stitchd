@@ -322,6 +322,35 @@ async function resolveTemplated(
       };
     }
 
+    case "alteration_completed_buyer": {
+      // Phase 15 — the tailor marked the alteration complete; ask the buyer to
+      // confirm receipt (which releases the payout). Recipient is the buyer;
+      // resolve the listing + the tailor's display name from the request id.
+      const reqRow = await sbGetOne<{
+        buyer_id: string;
+        tailor_id: string;
+        listing_id: string;
+      }>(
+        `alteration_requests?id=eq.${body.requestId}&select=buyer_id,tailor_id,listing_id&limit=1`,
+      );
+      if (!reqRow?.buyer_id) return { skip: "no request" };
+      const prof = await getProfile(reqRow.buyer_id);
+      if (prof?.email_notifications === false) return { skip: "unsubscribed" };
+      const to = await emailForUser(reqRow.buyer_id);
+      if (!to) return { skip: "no email" };
+      const tailor = await sbGetOne<{ display_name: string }>(
+        `tailors?id=eq.${reqRow.tailor_id}&select=display_name&limit=1`,
+      );
+      const listing = await sbGetOne<{ name: string; image_url?: string; images?: unknown }>(
+        `listings?id=eq.${reqRow.listing_id}&select=name,image_url,images&limit=1`,
+      );
+      return {
+        to,
+        userId: reqRow.buyer_id,
+        data: { title: listing?.name, image: thumb(listing), tailorName: tailor?.display_name },
+      };
+    }
+
     case "welcome": {
       const userId: string | null = body.userId ?? null;
       if (!userId) return { skip: "no user" };

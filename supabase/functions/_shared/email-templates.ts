@@ -494,6 +494,81 @@ export const templates = {
     };
   },
 
+  // 19 — Booking confirmed (tailor). Phase 15 — a buyer paid the tailor's quote.
+  // `earnings` is the formatted payout AFTER the 15% Stitch'd commission;
+  // `buyerName` and the alteration list/notes give the tailor the job detail.
+  // CTA opens the tailor dashboard where the booking now lives under ACCEPTED.
+  alteration_booking_tailor(
+    d: { title?: string; image?: string; buyerName?: string; alterations?: string[]; earnings?: string },
+    ctx: BuildCtx,
+  ) {
+    const who = d.buyerName || "A buyer";
+    const list = (d.alterations || []).length
+      ? `<ul style="margin:0 0 16px 0;padding-left:20px;color:#333;">${(d.alterations || []).map((a) => `<li style="margin:0 0 4px 0;">${esc(a)}</li>`).join("")}</ul>`
+      : "";
+    return {
+      subject: "Booking confirmed — Stitch'd",
+      html: baseTemplate({
+        heading: "Booking confirmed.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`Payment received for your alteration booking from <strong>${esc(who)}</strong>.`) +
+          listingCard({ image: d.image, title: d.title }) +
+          (list ? p("<strong>Alterations booked:</strong>") + list : "") +
+          (d.earnings
+            ? noteLine(`Your earnings: ${d.earnings} (after 15% Stitch'd commission). Paid on completion.`)
+            : "") +
+          p("Get started, then mark the booking complete from your dashboard when the work is done.") +
+          button("View booking", `${ctx.site}/tailors`),
+      }),
+    };
+  },
+
+  // 20 — Booking confirmed (buyer). Phase 15 — the buyer paid for their
+  // alteration. `amount` is the formatted total paid; `tailorName` is who'll do
+  // the work. CTA opens the buyer's /alterations page.
+  alteration_booking_buyer(
+    d: { title?: string; image?: string; tailorName?: string; amount?: string },
+    ctx: BuildCtx,
+  ) {
+    const who = d.tailorName || "Your tailor";
+    return {
+      subject: "Alteration booking confirmed — Stitch'd",
+      html: baseTemplate({
+        heading: "Your booking is confirmed!",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`Your payment went through — your alteration booking with <strong>${esc(who)}</strong> is confirmed.`) +
+          listingCard({ image: d.image, title: d.title, price: d.amount }) +
+          (d.amount ? p(`<strong>Amount paid:</strong> ${esc(d.amount)}`) : "") +
+          p(`${esc(who)} will be in touch to arrange your fitting.`) +
+          button("View booking", `${ctx.site}/alterations`),
+      }),
+    };
+  },
+
+  // 21 — Alteration marked complete (buyer). Phase 15 — the tailor marked the
+  // job done; the buyer confirms receipt to release the payout. CTA opens
+  // /alterations where the CONFIRM COMPLETION button lives.
+  alteration_completed_buyer(
+    d: { title?: string; image?: string; tailorName?: string },
+    ctx: BuildCtx,
+  ) {
+    const who = d.tailorName || "Your tailor";
+    return {
+      subject: "Your alteration is ready — please confirm — Stitch'd",
+      html: baseTemplate({
+        heading: "Your alteration is ready.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`<strong>${esc(who)}</strong> has marked your alteration as complete.`) +
+          listingCard({ image: d.image, title: d.title }) +
+          p("Please confirm once you've received your item — this releases the tailor's payout.") +
+          button("Confirm completion", `${ctx.site}/alterations`),
+      }),
+    };
+  },
+
   // 7 — Welcome (new user)
   welcome(_d: Record<string, unknown>, ctx: BuildCtx) {
     return {
