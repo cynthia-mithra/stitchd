@@ -1723,7 +1723,7 @@ export default function App() {
 
   async function saveTailorService(){
     if(!tailorServiceForm.title||!tailorServiceForm.price_from){flash("Add a title and starting price.");return;}
-    if(!tailorServiceForm.service_type||tailorServiceForm.service_type==="All"){flash("Please select at least one specialism");return;}
+    if(!tailorServiceForm.service_type){flash("Please select a service type");return;}
     try{
       const imageUrls=await Promise.all((tailorServiceForm.images||[]).map(f=>uploadImage(f,token)));
       const payload={tailor_id:user.id,title:tailorServiceForm.title,description:tailorServiceForm.description,service_type:tailorServiceForm.service_type,price_from:parseFloat(tailorServiceForm.price_from),price_to:tailorServiceForm.price_to?parseFloat(tailorServiceForm.price_to):null,turnaround_days:tailorServiceForm.turnaround_days?parseInt(tailorServiceForm.turnaround_days):null,location:tailorServiceForm.location,images:imageUrls,active:true};

@@ -55,7 +55,7 @@ export default function Tailors({
                 {tailorServices.filter(s=>{
                   const q=tailorSearch.toLowerCase();
                   const matchSearch=!q||s.title?.toLowerCase().includes(q)||s.location?.toLowerCase().includes(q);
-                  const matchType=tailorTypeFilter==="All"||s.service_type===tailorTypeFilter;
+                  const matchType=tailorTypeFilter==="All"||s.service_type===tailorTypeFilter||s.service_type==="All";
                   return matchSearch&&matchType;
                 }).map((s,idx)=>{
                   const accent=CARD_COLORS[idx%CARD_COLORS.length];
