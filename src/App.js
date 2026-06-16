@@ -112,6 +112,11 @@ export default function App() {
   const [view,      setView]      = useState("shop");
   const [prevView,  setPrevView]  = useState("shop");
   const [authMode,  setAuthMode]  = useState("login");
+  // When a login gate (LoginPromptModal) sends a logged-out buyer to /auth, we
+  // stash the page they were on so we can return them there after they sign in
+  // or sign up — instead of the default bounce to the shop. Normal LOG IN / SIGN
+  // UP from the nav leaves this null, preserving the existing behaviour.
+  const [postAuthView, setPostAuthView] = useState(null);
   const [sel,       setSel]       = useState(null);
   const [selImgIdx, setSelImgIdx] = useState(0);
   const [toast,     setToast]     = useState("");
@@ -2297,6 +2302,13 @@ export default function App() {
     setForm(f=>({...f,imageFiles:f.imageFiles.filter((_,i)=>i!==idx),imagePreviews:f.imagePreviews.filter((_,i)=>i!==idx)}));
   }
 
+  // Login gate → /auth. Remembers the current page so we can return here once
+  // the buyer is signed in. Used by the reusable LoginPromptModal everywhere.
+  function gateAuth(mode){ setPostAuthView(view); setAuthMode(mode==="signup"?"signup":"login"); setView("auth"); window.scrollTo(0,0); }
+  // Where to land after a successful sign in/up: the gated page the buyer came
+  // from (set by gateAuth), else the default shop. Cleared once consumed.
+  function postAuthDest(){ const v=postAuthView; setPostAuthView(null); return v||"shop"; }
+
   async function handleAuth(e){
     e.preventDefault(); setALoading(true); setAError("");
     try{
@@ -2306,7 +2318,7 @@ export default function App() {
         flash("📧 Check your email for your 6-digit code!");
       } else {
         const s=await auth.signIn(aForm.email,aForm.password);
-        auth.saveSession(s); setSession(s); flash("🩷 Welcome back!"); setView("shop");
+        auth.saveSession(s); setSession(s); flash("🩷 Welcome back!"); setView(postAuthDest());
       }
     }catch(e){ setAError(e.message); }
     finally{ setALoading(false); }
@@ -2318,7 +2330,7 @@ export default function App() {
       const s=await auth.verifyOTP(otpEmail,otpCode);
       auth.saveSession(s); setSession(s);
       setOtpStep("form"); setOtpCode(""); setOtpEmail("");
-      flash("🩷 Welcome to Stitch'd!"); setView("shop");
+      flash("🩷 Welcome to Stitch'd!"); setView(postAuthDest());
     }catch(e){ setAError("Invalid or expired code. Try again."); }
     finally{ setALoading(false); }
   }
@@ -2859,8 +2871,8 @@ export default function App() {
               </>
             ):(
               <>
-                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{setAuthMode("login");setView("auth");}}>LOG IN</button>
-                <button className="hbtn" style={S.hBtn} onClick={()=>{setAuthMode("signup");setView("auth");}}>SIGN UP</button>
+                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{setPostAuthView(null);setAuthMode("login");setView("auth");}}>LOG IN</button>
+                <button className="hbtn" style={S.hBtn} onClick={()=>{setPostAuthView(null);setAuthMode("signup");setView("auth");}}>SIGN UP</button>
               </>
             )}
           </div>
@@ -3719,7 +3731,7 @@ export default function App() {
         confirm2FA={confirm2FA} disable2FA={disable2FA} load2FAFactors={load2FAFactors} setup2FA={setup2FA}
         viewedProfile={viewedProfile} profileListings={profileListings} reviews={reviews}
         isFollowing={isFollowing} toggleFollow={toggleFollow} openDetail={openDetail}
-        followerCount={followerCount}
+        followerCount={followerCount} onGateAuth={gateAuth}
       />
 
       {/* MY FOLLOWING (Phase 13) */}
@@ -3774,6 +3786,7 @@ export default function App() {
         loadMore={loadMoreStyle}
         openProfile={openProfile} openDetail={openDetail}
         toggleLike={toggleStyleLike} deletePost={deleteStylePost} sharePost={shareStylePost}
+        onGateAuth={gateAuth}
         createOpen={styleCreateOpen} setCreateOpen={setStyleCreateOpen}
         onCreate={createStylePost} creating={styleCreating}
         searchActiveListings={searchActiveListings}
@@ -3806,7 +3819,7 @@ export default function App() {
         tailorPortfolio={tailorPortfolio} addPortfolioImages={addPortfolioImages} deletePortfolioImage={deletePortfolioImage} movePortfolioImage={movePortfolioImage} portfolioBusy={portfolioBusy}
         openTailorPublic={openTailorPublic}
         publicTailor={publicTailor} publicTailorLoading={publicTailorLoading}
-        setAuthMode={setAuthMode}
+        setAuthMode={setAuthMode} onGateAuth={gateAuth}
       />
 
       {/* ORDERS */}
@@ -3833,7 +3846,7 @@ export default function App() {
       {/* SHOP VIEW */}
       <Shop
         view={view}
-        user={user} profile={profile} setView={setView} setAuthMode={setAuthMode}
+        user={user} profile={profile} setView={setView} setAuthMode={setAuthMode} onGateAuth={gateAuth}
         search={search} setSearch={setSearch} handleSearchInput={handleSearchInput}
         searchSuggestions={searchSuggestions} showSuggestions={showSuggestions} setShowSuggestions={setShowSuggestions}
         savedSearches={savedSearches} showSavedSearches={showSavedSearches} setShowSavedSearches={setShowSavedSearches}
@@ -3935,7 +3948,7 @@ export default function App() {
         myWishlist={myWishlist} toggleFavourite={toggleFavourite} shareItem={shareItem} setShowSizeGuide={setShowSizeGuide}
         inBag={inBag} toggleBag={toggleBag}
         isOwner={isOwner} startConversation={startConversation}
-        user={user} setAuthMode={setAuthMode} buyNow={buyNow}
+        user={user} setAuthMode={setAuthMode} onGateAuth={gateAuth} buyNow={buyNow}
         setShowPayment={setShowPayment} setPaymentListing={setPaymentListing} setPaymentStep={setPaymentStep} setSelectedPostage={setSelectedPostage}
         setShowReview={setShowReview} setShowReport={setShowReport}
         reviews={reviews}

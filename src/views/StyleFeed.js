@@ -3,6 +3,7 @@ import { Sparkles, Heart, Share2, Trash2, Plus, Camera, X, Search, Check } from 
 import { currencySymbol, catEmoji } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb } from "../components/Shared";
+import LoginPromptModal from "../components/LoginPromptModal";
 
 const PAGE = 12;            // posts loaded per LOAD MORE (matches App.js)
 const MAX_CAPTION = 300;
@@ -229,9 +230,14 @@ export default function StyleFeed({
   likedSet, likeCounts = {}, loading, hasMore, loadMore,
   openProfile, openDetail,
   toggleLike, deletePost, sharePost,
+  onGateAuth = () => {},
   createOpen, setCreateOpen, onCreate, creating, searchActiveListings,
   flash = () => {},
 }) {
+  // Login gate — CREATE POST and the FOLLOWING tab are already hidden when
+  // logged out; liking a post opens the shared sign-up prompt (context: default).
+  const [gate, setGate] = useState(null);
+  const onLike = (post) => { if (user) toggleLike(post); else setGate("default"); };
   if (view !== "stylefeed") return null;
   const liked = likedSet || new Set();
 
@@ -292,7 +298,7 @@ export default function StyleFeed({
               isOwn={!!(user && post.user_id === user.id)}
               openProfile={openProfile}
               openDetail={openDetail}
-              onLike={toggleLike}
+              onLike={onLike}
               onShare={sharePost}
               onDelete={deletePost}
             />
@@ -313,6 +319,8 @@ export default function StyleFeed({
       )}
 
       <CreatePostModal open={createOpen} onClose={() => setCreateOpen(false)} onShare={onCreate} creating={creating} searchActiveListings={searchActiveListings} flash={flash} />
+
+      <LoginPromptModal open={!!gate} context={gate || "default"} onClose={() => setGate(null)} onAuth={m => { setGate(null); onGateAuth(m); }} />
     </main>
   );
 }

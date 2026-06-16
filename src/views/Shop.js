@@ -9,10 +9,11 @@ import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, ColourSwatches } from "../components/Shared";
 import { LookCard } from "./Looks";
 import { StyleInspiration } from "./StyleFeed";
+import LoginPromptModal from "../components/LoginPromptModal";
 
 export default function Shop({
   view,
-  user, profile, setView, setAuthMode,
+  user, profile, setView, setAuthMode, onGateAuth = () => {},
   search, setSearch, handleSearchInput,
   searchSuggestions, showSuggestions, setShowSuggestions,
   savedSearches, showSavedSearches, setShowSavedSearches,
@@ -48,6 +49,11 @@ export default function Shop({
   // Phase 14 — homepage STYLE INSPIRATION preview (4 most recent style posts).
   homeStylePosts = [], homeStyleProfiles = {}, openStyleFeed = () => {},
 }) {
+  // Login gate — browsing/filtering is fully open; saving a search or
+  // wishlisting a card opens the shared sign-up prompt instead of bouncing to
+  // /auth. `gate` holds the active context while the modal is open.
+  const [gate, setGate] = React.useState(null);
+  const requireAuth = (context, action) => { if (user) action(); else setGate(context); };
   if(view!=="shop"&&view!=="newarrivals") return null;
   const followingActive = !!user && view==="shop" && shopTab==="following";
   // Tab bar shown at the top of the shop for logged-in users (not on /new-arrivals).
@@ -163,7 +169,7 @@ export default function Shop({
     const mine = myWishlist.has(item.id);
     return (
       <button
-        onClick={e=>{e.stopPropagation();toggleFavourite(item);}}
+        onClick={e=>{e.stopPropagation();requireAuth("wishlist",()=>toggleFavourite(item));}}
         aria-label={mine?"Remove from wishlist":"Add to wishlist"}
         style={{display:"inline-flex",alignItems:"center",gap:4,background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,color:"#FF1493",letterSpacing:0.5,whiteSpace:"nowrap"}}
       >
@@ -237,7 +243,7 @@ export default function Shop({
           {/* Phase 12 — SAVE THIS SEARCH. Appears once any filter or query is
               active. Logged-out buyers are prompted to log in on tap (handled in
               openSaveSearch). Outlined, 2px #111, no radius, Barlow Condensed. */}
-          {hasFilters&&<button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={openSaveSearch}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Bookmark width={15} height={15}/> SAVE THIS SEARCH</span></button>}
+          {hasFilters&&<button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>requireAuth("default",openSaveSearch)}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Bookmark width={15} height={15}/> SAVE THIS SEARCH</span></button>}
           <button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailorMarket();setView("tailors");}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Scissors width={16} height={16}/> TAILORS</span></button>
         </div>
         {(showSuggestions&&searchSuggestions.length>0)||(showSavedSearches&&savedSearches.length>0)?(
@@ -316,7 +322,7 @@ export default function Shop({
                     {item.prev_price>item.price&&<div style={S.priceDropBadge}>PRICE DROP</div>}
                     {fitsMe(item)===true&&<div style={{...S.fitsBadge,display:"inline-flex",alignItems:"center",gap:5}}><Ruler width={11} height={11}/> FITS YOU</div>}
                     <FastBadge sellerId={item.user_id} raised={fitsMe(item)===true}/>
-                    <button aria-label={myWishlist.has(item.id)?"Remove from wishlist":"Add to wishlist"} style={{...S.heartBtn,background:myWishlist.has(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();toggleFavourite(item);}}><Heart width={16} height={16} fill={myWishlist.has(item.id)?"#fff":"none"} color={myWishlist.has(item.id)?"#fff":"#111"}/></button>
+                    <button aria-label={myWishlist.has(item.id)?"Remove from wishlist":"Add to wishlist"} style={{...S.heartBtn,background:myWishlist.has(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();requireAuth("wishlist",()=>toggleFavourite(item));}}><Heart width={16} height={16} fill={myWishlist.has(item.id)?"#fff":"none"} color={myWishlist.has(item.id)?"#fff":"#111"}/></button>
                     <div style={S.cardOrigin}>{item.origin?.toUpperCase()}</div>
                     {!item.sold&&<BundleSaveBanner sellerId={item.user_id}/>}
                   </Thumb>
@@ -501,6 +507,7 @@ export default function Shop({
           </div>
         </div>
       )}
+      <LoginPromptModal open={!!gate} context={gate||"default"} onClose={()=>setGate(null)} onAuth={m=>{ setGate(null); onGateAuth(m); }}/>
     </>
   );
 }
