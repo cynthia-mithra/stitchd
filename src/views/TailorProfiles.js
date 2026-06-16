@@ -1,5 +1,5 @@
 import React from "react";
-import { Scissors, MapPin, Instagram, Globe, Trash2, Plus, ArrowUp, ArrowDown, X, ExternalLink, Mail } from "lucide-react";
+import { Scissors, MapPin, Instagram, Globe, Trash2, Plus, ArrowUp, ArrowDown, X, ExternalLink, Mail, Check, Wallet, Clock } from "lucide-react";
 import { S } from "../styles";
 import { F, Stars, Thumb } from "../components/Shared";
 import LoginPromptModal from "../components/LoginPromptModal";
@@ -64,6 +64,7 @@ export default function TailorProfiles({
   // bookings (incoming alteration requests)
   alterationRequests = [], alterationBuyers = {}, bookingsLoading = false,
   onSendQuote = () => {}, onDeclineRequest = () => {}, onMessageBuyer = () => {},
+  onMarkComplete = () => {}, payouts = [],
   // public
   publicTailor, publicTailorLoading,
   onGateAuth = () => {},
@@ -239,7 +240,7 @@ export default function TailorProfiles({
 
           {/* tabs */}
           <div style={{display:"flex",gap:4,flexWrap:"wrap",borderBottom:"3px solid #111",marginBottom:28}}>
-            {[["profile","PROFILE"],["portfolio","PORTFOLIO"],["bookings","BOOKINGS"],["reviews","REVIEWS"]].map(([v,l])=>(
+            {[["profile","PROFILE"],["portfolio","PORTFOLIO"],["bookings","BOOKINGS"],["earnings","EARNINGS"],["reviews","REVIEWS"]].map(([v,l])=>(
               <button key={v} className="hbtn" onClick={()=>setTailorDashTab(v)}
                 style={{background:tailorDashTab===v?"#111":"#fff",color:tailorDashTab===v?"#fff":"#111",border:"none",borderBottom:tailorDashTab===v?`4px solid ${PINK}`:"4px solid transparent",padding:"12px 22px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,letterSpacing:2,fontSize:14,cursor:"pointer"}}>
                 {l}
@@ -331,7 +332,13 @@ export default function TailorProfiles({
             <TailorBookings
               requests={alterationRequests} buyers={alterationBuyers} loading={bookingsLoading}
               onSendQuote={onSendQuote} onDeclineRequest={onDeclineRequest} onMessageBuyer={onMessageBuyer}
+              onMarkComplete={onMarkComplete}
             />
+          )}
+
+          {/* EARNINGS TAB — payout totals + paid bookings (Phase 15). */}
+          {tailorDashTab==="earnings"&&(
+            <TailorEarnings payouts={payouts}/>
           )}
 
           {/* REVIEWS TAB — placeholder (feature comes later) */}
@@ -406,12 +413,49 @@ const firstName = (prof) => {
 const bkDate = (d) => { try{ return new Date(d).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }catch{ return ""; } };
 const BOOKING_TABS=[["pending","PENDING"],["quoted","QUOTED"],["accepted","ACCEPTED"],["completed","COMPLETED"],["declined","DECLINED"]];
 
-function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuote, onDeclineRequest, onMessageBuyer }) {
+// Booking financials from a request row, tolerant of rows quoted before the
+// payment columns were populated (fall back to computing from quote_pence).
+const COMMISSION_RATE=0.15;
+function bookingFinancials(req){
+  const total=req.quote_amount_pence!=null?req.quote_amount_pence:req.quote_pence;
+  if(total==null) return null;
+  const commission=req.commission_amount_pence!=null?req.commission_amount_pence:Math.round(total*COMMISSION_RATE);
+  const payout=req.tailor_payout_pence!=null?req.tailor_payout_pence:(total-commission);
+  return { total, commission, payout };
+}
+
+// The commission breakdown shown on a booking card (Part 5) — booking value,
+// the 15% Stitch'd fee, and the tailor's earnings in pink bold.
+function FinancialBreakdown({ fin }) {
+  if(!fin) return null;
+  return (
+    <div style={{border:"2px solid #111",padding:14,display:"flex",flexDirection:"column",gap:6,background:"#fafafa"}}>
+      <Row l="Booking value" v={gbp(fin.total)}/>
+      <Row l="Stitch'd commission (15%)" v={`-${gbp(fin.commission)}`} muted/>
+      <div style={{height:1,background:"#e0e0e0",margin:"2px 0"}}/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:15,color:"#111"}}>Your earnings</span>
+        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:20,color:PINK}}>{gbp(fin.payout)}</span>
+      </div>
+    </div>
+  );
+}
+function Row({ l, v, muted=false }) {
+  return (
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <span style={{fontSize:13,color:muted?"#888":"#444"}}>{l}</span>
+      <span style={{fontSize:14,fontWeight:700,color:muted?"#888":"#111"}}>{v}</span>
+    </div>
+  );
+}
+
+function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuote, onDeclineRequest, onMessageBuyer, onMarkComplete = () => {} }) {
   const [tab,setTab]=React.useState("pending");
   const [quoteFor,setQuoteFor]=React.useState(null);  // request id with the quote form open
   const [amount,setAmount]=React.useState("");
   const [message,setMessage]=React.useState("");
   const [busyId,setBusyId]=React.useState(null);
+  const [completeFor,setCompleteFor]=React.useState(null); // request pending the MARK COMPLETE confirm
 
   const counts=requests.reduce((m,r)=>{ const s=(r.status||"pending").toLowerCase(); m[s]=(m[s]||0)+1; return m; },{});
   const shown=requests.filter(r=>(r.status||"pending").toLowerCase()===tab);
@@ -428,6 +472,11 @@ function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuo
     if(!window.confirm("Decline this alteration request? The buyer will be notified.")) return;
     setBusyId(req.id);
     try{ await onDeclineRequest(req); }
+    finally{ setBusyId(null); }
+  };
+  const confirmComplete=async(req)=>{
+    setBusyId(req.id);
+    try{ await onMarkComplete(req); setCompleteFor(null); }
     finally{ setBusyId(null); }
   };
 
@@ -484,6 +533,11 @@ function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuo
                   <p style={{fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:"#111"}}>Your quote: <span style={{fontWeight:900,color:PINK}}>{gbp(req.quote_pence)}</span></p>
                 )}
 
+                {/* Commission breakdown — paid (accepted) + completed bookings (Part 5). */}
+                {(req.status==="accepted"||req.status==="completed")&&(
+                  <FinancialBreakdown fin={bookingFinancials(req)}/>
+                )}
+
                 {/* Inline quote form */}
                 {quoteFor===req.id?(
                   <div style={{border:"2px solid #00E5CC",background:"#effdfa",padding:14,display:"flex",flexDirection:"column",gap:12}}>
@@ -516,6 +570,10 @@ function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuo
                           style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"11px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:busy?"wait":"pointer",display:"inline-flex",alignItems:"center",gap:6}}><X width={15} height={15}/> DECLINE</button>
                       </>
                     )}
+                    {req.status==="accepted"&&(
+                      <button className="hbtn" disabled={busy} onClick={()=>setCompleteFor(req)}
+                        style={{background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"11px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:busy?"wait":"pointer",display:"inline-flex",alignItems:"center",gap:6}}><Check width={15} height={15}/> MARK AS COMPLETE</button>
+                    )}
                     <button className="hbtn" onClick={()=>onMessageBuyer(req)}
                       style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"11px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><Mail width={15} height={15}/> MESSAGE BUYER</button>
                   </div>
@@ -525,6 +583,86 @@ function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuo
           })}
         </div>
       )}
+
+      {/* MARK AS COMPLETE confirm modal */}
+      {completeFor&&(
+        <div style={S.modalOverlay} onClick={()=>setCompleteFor(null)}>
+          <div style={{...S.modalBox,maxWidth:420}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+              <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,lineHeight:1.1}}>Mark this alteration as complete?</h2>
+              <button onClick={()=>setCompleteFor(null)} style={{background:"none",border:"none",padding:0,cursor:"pointer",color:"#111"}}><X width={22} height={22}/></button>
+            </div>
+            <p style={{fontSize:14,color:"#555",lineHeight:1.5,marginTop:10}}>The buyer will be notified to confirm.</p>
+            <div style={{display:"flex",gap:12,marginTop:22,flexWrap:"wrap"}}>
+              <button className="hbtn" disabled={busyId===completeFor.id} onClick={()=>confirmComplete(completeFor)}
+                style={{flex:1,background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:busyId===completeFor.id?"wait":"pointer",opacity:busyId===completeFor.id?0.6:1}}>{busyId===completeFor.id?"…":"CONFIRM"}</button>
+              <button className="hbtn" onClick={()=>setCompleteFor(null)}
+                style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"14px 22px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer"}}>CANCEL</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── EARNINGS tab — payout totals + a list of paid bookings (Phase 15) ─────────
+function TailorEarnings({ payouts = [] }) {
+  // Tailor's earnings = booking value − commission. Totals split paid vs pending.
+  let totalEarned=0, totalCommission=0, pendingPayout=0;
+  const paidRows=[];
+  for(const po of payouts){
+    const amount=Number(po.amount_pence)||0;
+    const commission=Number(po.commission_pence)||0;
+    const payout=amount-commission;
+    if(po.status==="paid"){ totalEarned+=payout; totalCommission+=commission; paidRows.push(po); }
+    else if(po.status!=="failed"){ pendingPayout+=payout; }
+  }
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:20}}>
+      {/* Summary tiles */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:14}}>
+        <StatTile icon={<Wallet width={18} height={18}/>} label="TOTAL EARNED" value={gbp(totalEarned)} accent={PINK}/>
+        <StatTile icon={<Clock width={18} height={18}/>} label="PENDING PAYOUTS" value={gbp(pendingPayout)}/>
+        <StatTile icon={<Scissors width={18} height={18}/>} label="COMMISSION PAID" value={gbp(totalCommission)} muted/>
+      </div>
+      <p style={{fontSize:12,color:"#999"}}>Earnings are shown after Stitch'd's 15% commission. Pending payouts are released once the buyer confirms completion.</p>
+
+      {/* Paid bookings list */}
+      <div>
+        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,letterSpacing:1.5,marginBottom:12}}>PAID BOOKINGS</p>
+        {paidRows.length===0?(
+          <Placeholder title="NO PAID BOOKINGS YET" text="Your completed, paid-out bookings will appear here."/>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {paidRows.map(po=>{
+              const ar=po.alteration_requests; const listing=ar&&ar.listings;
+              const payout=(Number(po.amount_pence)||0)-(Number(po.commission_pence)||0);
+              const name=(listing&&listing.name)||(ar&&ar.garment_type)||"Alteration";
+              return (
+                <div key={po.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,border:"2px solid #111",padding:12}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
+                    <Thumb src={bkListingThumb(listing)} emoji={catEmoji(listing&&listing.category)} accent="#f5f5f5" style={{width:46,height:46,border:"2px solid #111",flexShrink:0}} emojiStyle={{fontSize:22}}/>
+                    <div style={{minWidth:0}}>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,lineHeight:1.1}}>{name}</p>
+                      <p style={{fontSize:11,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5}}>{bkDate(po.created_at).toUpperCase()}</p>
+                    </div>
+                  </div>
+                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:PINK,whiteSpace:"nowrap"}}>{gbp(payout)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+function StatTile({ icon, label, value, accent="#111", muted=false }) {
+  return (
+    <div style={{border:"2px solid #111",padding:16,display:"flex",flexDirection:"column",gap:8}}>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase"}}>{icon} {label}</span>
+      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:muted?"#888":accent,lineHeight:1}}>{value}</span>
     </div>
   );
 }

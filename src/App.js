@@ -9,7 +9,7 @@ import {
   ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary,
 } from "./lib/constants";
 import { db } from "./lib/db";
-import { startCheckout, startOfferCheckout, verifySession } from "./lib/checkout";
+import { startCheckout, startOfferCheckout, startAlterationCheckout, verifySession } from "./lib/checkout";
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
@@ -330,6 +330,10 @@ export default function App() {
   const [tailorAlterations, setTailorAlterations] = useState([]);
   const [alterationBuyers,  setAlterationBuyers]  = useState({});
   const [tailorAlterationsLoading,setTailorAlterationsLoading]=useState(false);
+  // Phase 15 — booking payments: which quote is mid-checkout, the tailor's
+  // payout rows (EARNINGS section) and the buyer's decline-quote confirm modal.
+  const [alterCheckoutId,   setAlterCheckoutId]   = useState(null);
+  const [tailorPayouts,     setTailorPayouts]     = useState([]);
   const [following,      setFollowing]      = useState([]);
   const [feedItems,      setFeedItems]      = useState([]);
   const [feedLoading,    setFeedLoading]    = useState(false);
@@ -540,6 +544,9 @@ export default function App() {
     } else if(path==="/alterations"){
       // Phase 15 — buyer's alteration requests deep link (email CTA / direct).
       // Data loads via the view-watching effect once the session is ready.
+      // ?paid=true is Stripe's return from a completed alteration checkout — show
+      // a confirmation (the webhook does the real work async).
+      try{ if(new URLSearchParams(window.location.search).get("paid")==="true"){ setTimeout(()=>flash("Payment received — your booking is confirmed!",6000),400); } }catch(e){}
       setView("alterations");
       window.history.replaceState({},"","/alterations");
     }
@@ -1816,6 +1823,7 @@ export default function App() {
     setTailorDashTab("profile");
     setView("tailor-dashboard"); window.scrollTo(0,0);
     loadTailorAlterations();
+    loadTailorPayouts();
     try{ const p=await db.getTailorPortfolio(myTailor.id,token); setTailorPortfolio(p); }catch(e){ setTailorPortfolio([]); }
   }
 
@@ -2005,8 +2013,63 @@ export default function App() {
       flash("Request declined.");
     }catch(e){ flash("Couldn't decline: "+errMsg(e)); throw e; }
   }
-  // Buyer accepts a quote — payment for alterations lands in a later issue.
-  function acceptAlterationQuote(){ flash("Payments for alterations are coming soon!",5000); }
+  // Buyer accepts a quote → Stripe checkout for the full quote (create-alteration-
+  // checkout re-verifies + redirects to the hosted page). On success Stripe
+  // returns to /alterations?paid=true and the webhook flips the request to accepted.
+  async function acceptAlterationQuote(req){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    if(!req) return;
+    setAlterCheckoutId(req.id);
+    try{ await startAlterationCheckout({alterationRequestId:req.id,buyerId:user.id}); }
+    catch(e){ console.error("Alteration checkout failed:",e); flash(e.message||"Couldn't start checkout. Please try again."); setAlterCheckoutId(null); }
+  }
+  // Buyer declines a quote (status → declined) + notifies the tailor with the
+  // listing title. Confirmed via the DECLINE QUOTE modal.
+  async function declineAlterationQuote(req){
+    if(!token||!req) return;
+    try{
+      await db.declineAlterationQuote(req.id,token);
+      const listingTitle=(req.listings&&req.listings.name)||"your listing";
+      const tailorUserId=req.tailors&&req.tailors.user_id;
+      if(tailorUserId) await notify(tailorUserId,"alteration_declined","Quote declined",`The buyer has declined your quote for ${listingTitle}`,req.listing_id);
+      setBuyerAlterations(p=>p.map(r=>r.id===req.id?{...r,status:"declined"}:r));
+      flash("Quote declined.");
+    }catch(e){ flash("Couldn't decline the quote: "+errMsg(e)); }
+  }
+
+  // Tailor marks an accepted booking complete (status → completed) + notifies the
+  // buyer to confirm receipt. The "please confirm" email fires from the data layer.
+  async function markAlterationComplete(req){
+    if(!token||!req) return;
+    try{
+      await db.markAlterationComplete(req.id,token);
+      const name=(myTailor&&myTailor.display_name)||"Your tailor";
+      await notify(req.buyer_id,"alteration_complete","Alteration complete",`${name} has marked your alteration as complete. Please confirm when you receive your item.`,req.listing_id);
+      setTailorAlterations(p=>p.map(r=>r.id===req.id?{...r,status:"completed"}:r));
+      flash("Marked as complete. The buyer will be asked to confirm.");
+    }catch(e){ flash("Couldn't mark complete: "+errMsg(e)); throw e; }
+  }
+  // Buyer confirms completion → release the tailor's payout (status → paid) +
+  // notify the tailor. Returns true so the card can switch to the review prompt.
+  async function confirmAlterationCompletion(req){
+    if(!token||!req) return false;
+    try{
+      await db.confirmAlterationPayout(req.id,token);
+      const payoutPence=req.tailor_payout_pence;
+      const tailorUserId=req.tailors&&req.tailors.user_id;
+      if(tailorUserId) await notify(tailorUserId,"alteration_payout","Payout confirmed!",`Great news! Your payout of ${gbp(payoutPence)} has been confirmed.`,req.listing_id);
+      setBuyerAlterations(p=>p.map(r=>r.id===req.id?{...r,payout_status:"paid"}:r));
+      flash("Thanks for confirming! We've released the payout.");
+      return true;
+    }catch(e){ flash("Couldn't confirm completion: "+errMsg(e)); return false; }
+  }
+
+  // Tailor's payout rows for the dashboard EARNINGS section.
+  async function loadTailorPayouts(){
+    if(!myTailor||!token) return;
+    try{ setTailorPayouts(await db.getTailorPayouts(myTailor.id,token)); }
+    catch(e){ setTailorPayouts([]); }
+  }
 
   // Admin — approve a tailor application: flip status to approved, stamp the
   // approval, notify + email the tailor, keep myTailor in sync if it's me.
@@ -3955,6 +4018,7 @@ export default function App() {
         openTailorPublic={openTailorPublic}
         alterationRequests={tailorAlterations} alterationBuyers={alterationBuyers} bookingsLoading={tailorAlterationsLoading}
         onSendQuote={sendAlterationQuote} onDeclineRequest={declineAlterationRequest} onMessageBuyer={messageBuyerFromRequest}
+        onMarkComplete={markAlterationComplete} payouts={tailorPayouts}
         publicTailor={publicTailor} publicTailorLoading={publicTailorLoading}
         setAuthMode={setAuthMode} onGateAuth={gateAuth}
       />
@@ -3963,7 +4027,9 @@ export default function App() {
       <Alterations
         view={view} setView={setView} loading={buyerAlterationsLoading} requests={buyerAlterations}
         onMessageTailor={messageTailorFromRequest} onFindTailor={()=>{loadTailorMarket();setView("tailors");window.scrollTo(0,0);}}
-        onAcceptQuote={acceptAlterationQuote}
+        onAcceptQuote={acceptAlterationQuote} onDeclineQuote={declineAlterationQuote}
+        onConfirmCompletion={confirmAlterationCompletion} checkoutId={alterCheckoutId}
+        onLeaveReview={()=>flash("Reviews for tailors are coming soon!",5000)}
       />
 
       {/* REQUEST ALTERATIONS modal — launched from the listing detail page */}

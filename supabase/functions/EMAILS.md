@@ -88,7 +88,17 @@ curl -X POST $FN -H 'Content-Type: application/json' \
   -d '{"type":"offer_accepted","offerId":"<offer id>"}'
 curl -X POST $FN -H 'Content-Type: application/json' \
   -d '{"type":"offer_declined","offerId":"<offer id>","counterPence":4000}'
+
+# Phase 15 — alteration marked complete (recipient is the buyer, resolved from the request)
+curl -X POST $FN -H 'Content-Type: application/json' \
+  -d '{"type":"alteration_completed_buyer","requestId":"<alteration request id>"}'
 ```
+
+> **Phase 15 — booking confirmation emails.** The two "booking confirmed" emails
+> (`alteration_booking_tailor` + `alteration_booking_buyer`) are sent by the
+> `stripe-webhook` on `checkout.session.completed` (`metadata.type='alteration'`),
+> not via this endpoint — test them with a real Stripe **test-mode** alteration
+> checkout (card `4242 4242 4242 4242`) or by replaying the event.
 
 Raw send (service-role only — how the webhook path is shaped). Useful to preview
 the shell against any address:

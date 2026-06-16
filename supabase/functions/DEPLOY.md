@@ -43,12 +43,29 @@ supabase functions deploy create-offer-checkout
 # payment-expiry/12h-reminder handling in this phase:
 supabase functions deploy stripe-webhook
 supabase functions deploy expire-offers
+# Phase 15 — alteration booking checkout (pay a tailor's quote, 15% commission):
+supabase functions deploy create-alteration-checkout
+# Re-deploy stripe-webhook + send-email — the webhook gained the alteration
+# booking-payment handler (metadata.type='alteration') and send-email gained the
+# "please confirm completion" buyer email:
+supabase functions deploy stripe-webhook
+supabase functions deploy send-email
 ```
 
 > **Offer checkout note:** the browser calls the same-origin Vercel proxy
 > `/api/create-offer-checkout` (mirroring the sale flow's `/api/stripe-checkout`),
 > which uses the existing `STRIPE_SECRET_KEY` Vercel env var. The Supabase
 > `create-offer-checkout` function above is the deployed sibling/fallback.
+
+> **Alteration checkout note (Phase 15):** same pattern — the browser calls the
+> same-origin Vercel proxy `/api/create-alteration-checkout`; the Supabase
+> `create-alteration-checkout` function is the deployed sibling/fallback. The
+> payment result arrives on `stripe-webhook` (`metadata.type === 'alteration'`),
+> which flips the request to `accepted`, records a `tailor_payouts` row and emails
+> both parties. **Run the `20260616010000_phase15_tailor_payments.sql` migration
+> first** so the payment columns + `tailor_payouts` table exist. Test with card
+> `4242 4242 4242 4242` before going live. **Actual tailor payouts require Stripe
+> Connect — not in this phase; see the PR description.**
 
 `verify_jwt = false` is pinned for these functions in `supabase/config.toml`, so
 the CLI applies it automatically. If you deploy without the config file present,

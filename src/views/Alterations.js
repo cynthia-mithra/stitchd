@@ -1,5 +1,5 @@
 import React from "react";
-import { Scissors, MapPin, ExternalLink, Mail, ArrowLeft } from "lucide-react";
+import { Scissors, MapPin, ExternalLink, Mail, ArrowLeft, CreditCard, Check, Star, X } from "lucide-react";
 import { S } from "../styles";
 import { Stars, Thumb } from "../components/Shared";
 import { ALTERATION_TYPES, tailorsForAlterations, catEmoji } from "../lib/constants";
@@ -220,8 +220,19 @@ function Summary({ label, children }) {
 export default function Alterations({
   view, setView, loading = false, requests = [],
   onMessageTailor = () => {}, onFindTailor = () => {}, onAcceptQuote = () => {},
+  onDeclineQuote = () => {}, onConfirmCompletion = () => {}, onLeaveReview = () => {},
+  checkoutId = null,
 }) {
+  // Confirm modals: declining a quote, and confirming a completed booking.
+  const [declineReq,setDeclineReq]=React.useState(null);
+  const [confirmReq,setConfirmReq]=React.useState(null);
+  const [busy,setBusy]=React.useState(false);
+
   if(view!=="alterations") return null;
+
+  const doDecline=async()=>{ const r=declineReq; setBusy(true); try{ await onDeclineQuote(r); }finally{ setBusy(false); setDeclineReq(null); } };
+  const doConfirm=async()=>{ const r=confirmReq; setBusy(true); try{ await onConfirmCompletion(r); }finally{ setBusy(false); setConfirmReq(null); } };
+
   return (
     <main style={{...S.main,maxWidth:820}}>
       <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
@@ -246,6 +257,11 @@ export default function Alterations({
           {requests.map(req=>{
             const listing=req.listings; const tailor=req.tailors;
             const st=(req.status||"pending").toLowerCase();
+            const tailorName=tailor?tailor.display_name:"Tailor";
+            // Total the buyer pays / paid, and whether the payout's been released.
+            const totalPence=req.quote_amount_pence!=null?req.quote_amount_pence:req.quote_pence;
+            const payoutPaid=req.payout_status==="paid"||(Array.isArray(req.tailor_payouts)&&req.tailor_payouts.some(p=>p.status==="paid"));
+            const checkingOut=checkoutId===req.id;
             return (
               <div key={req.id} style={{border:"2px solid #111",padding:16,display:"flex",flexDirection:"column",gap:14}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,flexWrap:"wrap"}}>
@@ -264,22 +280,66 @@ export default function Alterations({
                   <div style={{width:32,height:32,borderRadius:"50%",border:"2px solid #111",overflow:"hidden",flexShrink:0,background:PINK,display:"flex",alignItems:"center",justifyContent:"center"}}>
                     {tailor&&tailor.profile_image_url?<img src={tailor.profile_image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<Scissors width={14} height={14} color="#fff"/>}
                   </div>
-                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800}}>{tailor?tailor.display_name:"Tailor"}</span>
+                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800}}>{tailorName}</span>
                 </div>
 
                 <AlterationPills items={req.alterations_needed}/>
 
-                {/* QUOTED — show amount + accept */}
+                {/* ── QUOTED — QUOTE RECEIVED + ACCEPT AND PAY / DECLINE ── */}
                 {st==="quoted"&&req.quote_pence!=null&&(
-                  <div style={{border:"2px solid #00E5CC",background:"#effdfa",padding:14,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
-                    <div>
-                      <p style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase"}}>QUOTE</p>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:PINK}}>{gbp(req.quote_pence)}</p>
-                      {req.quote_message&&<p style={{fontSize:13,color:"#555",marginTop:2}}>{req.quote_message}</p>}
+                  <div style={{border:"2px solid #00E5CC",background:"#effdfa",padding:18,display:"flex",flexDirection:"column",gap:12}}>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:900,letterSpacing:2.5,color:"#111"}}>QUOTE RECEIVED</p>
+                    {/* Tailor name + profile image */}
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{width:36,height:36,borderRadius:"50%",border:"2px solid #111",overflow:"hidden",flexShrink:0,background:PINK,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        {tailor&&tailor.profile_image_url?<img src={tailor.profile_image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<Scissors width={16} height={16} color="#fff"/>}
+                      </div>
+                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900}}>{tailorName}</span>
                     </div>
-                    <button className="hbtn" onClick={()=>onAcceptQuote(req)}
-                      style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"12px 22px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer"}}>ACCEPT QUOTE</button>
+                    {/* Amount — large + bold + pink */}
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:46,fontWeight:900,color:PINK,lineHeight:1,letterSpacing:-1}}>{gbp(req.quote_pence)}</p>
+                    {/* Tailor message in a light grey box */}
+                    {req.quote_message&&(
+                      <div style={{background:"#f4f4f4",border:"1.5px solid #e4e4e4",padding:"10px 14px"}}>
+                        <p style={{fontSize:14,color:"#555",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{req.quote_message}</p>
+                      </div>
+                    )}
+                    {/* Commission note */}
+                    <p style={{fontSize:11,color:"#999"}}>Includes Stitch'd booking fee</p>
+                    {/* ACCEPT AND PAY — black, full width */}
+                    <button className="hbtn" disabled={checkingOut} onClick={()=>onAcceptQuote(req)}
+                      style={{width:"100%",background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:15,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2.5,cursor:checkingOut?"wait":"pointer",opacity:checkingOut?0.6:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                      <CreditCard width={18} height={18}/> {checkingOut?"STARTING CHECKOUT…":"ACCEPT AND PAY"}
+                    </button>
+                    {/* DECLINE QUOTE — outlined, smaller */}
+                    <button className="hbtn" disabled={checkingOut} onClick={()=>setDeclineReq(req)}
+                      style={{alignSelf:"center",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"9px 18px",fontSize:12,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:"pointer"}}>DECLINE QUOTE</button>
                   </div>
+                )}
+
+                {/* ── ACCEPTED — paid, awaiting the work ── */}
+                {st==="accepted"&&(
+                  <div style={{border:`2px solid ${PINK}`,background:"#fff0f7",padding:14}}>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#111"}}>BOOKING CONFIRMED</p>
+                    {totalPence!=null&&<p style={{fontSize:13,color:"#555",marginTop:3}}>Paid <span style={{fontWeight:800,color:PINK}}>{gbp(totalPence)}</span> · {tailorName} will be in touch to arrange your fitting.</p>}
+                  </div>
+                )}
+
+                {/* ── COMPLETED — confirm receipt to release payout, then review ── */}
+                {st==="completed"&&(
+                  payoutPaid?(
+                    <div style={{border:"2px solid #00E5CC",background:"#effdfa",padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                      <p style={{fontSize:14,color:"#444",lineHeight:1.5}}>How was your experience with <strong>{tailorName}</strong>?</p>
+                      <button className="hbtn" onClick={()=>onLeaveReview(req)}
+                        style={{alignSelf:"flex-start",background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"11px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}><Star width={15} height={15}/> LEAVE A REVIEW</button>
+                    </div>
+                  ):(
+                    <div style={{border:"2px solid #111",background:"#fafafa",padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                      <p style={{fontSize:14,color:"#444",lineHeight:1.5}}><strong>{tailorName}</strong> has marked your alteration as complete. Please confirm once you've received your item.</p>
+                      <button className="hbtn" onClick={()=>setConfirmReq(req)}
+                        style={{alignSelf:"flex-start",background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"12px 22px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}><Check width={16} height={16}/> CONFIRM COMPLETION</button>
+                    </div>
+                  )
                 )}
 
                 {/* Actions */}
@@ -296,6 +356,45 @@ export default function Alterations({
           })}
         </div>
       )}
+
+      {/* DECLINE QUOTE confirm modal */}
+      {declineReq&&(
+        <ConfirmModal
+          title="Decline this quote?"
+          body="The tailor will be notified that you've declined."
+          confirmLabel="CONFIRM" cancelLabel="CANCEL" busy={busy}
+          onConfirm={doDecline} onCancel={()=>setDeclineReq(null)}/>
+      )}
+      {/* CONFIRM COMPLETION confirm modal */}
+      {confirmReq&&(
+        <ConfirmModal
+          title="Confirm completion?"
+          body="This confirms you've received your item and releases the tailor's payout."
+          confirmLabel="CONFIRM" cancelLabel="CANCEL" busy={busy}
+          onConfirm={doConfirm} onCancel={()=>setConfirmReq(null)}/>
+      )}
     </main>
+  );
+}
+
+// Small shared confirm dialog (matches the design system: 2px ink border, no
+// radius, Barlow Condensed). CONFIRM is pink, CANCEL is a plain link.
+function ConfirmModal({ title, body, confirmLabel="CONFIRM", cancelLabel="CANCEL", busy=false, onConfirm, onCancel }) {
+  return (
+    <div style={S.modalOverlay} onClick={onCancel}>
+      <div style={{...S.modalBox,maxWidth:420}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+          <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,lineHeight:1.1}}>{title}</h2>
+          <button onClick={onCancel} style={{background:"none",border:"none",padding:0,cursor:"pointer",color:"#111"}}><X width={22} height={22}/></button>
+        </div>
+        {body&&<p style={{fontSize:14,color:"#555",lineHeight:1.5,marginTop:10}}>{body}</p>}
+        <div style={{display:"flex",gap:12,marginTop:22,flexWrap:"wrap"}}>
+          <button className="hbtn" disabled={busy} onClick={onConfirm}
+            style={{flex:1,background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:busy?"wait":"pointer",opacity:busy?0.6:1}}>{busy?"…":confirmLabel}</button>
+          <button className="hbtn" disabled={busy} onClick={onCancel}
+            style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"14px 22px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer"}}>{cancelLabel}</button>
+        </div>
+      </div>
+    </div>
   );
 }

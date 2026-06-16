@@ -62,3 +62,12 @@ verify_jwt = false
 # (metadata.type='offer').
 [functions.create-offer-checkout]
 verify_jwt = false
+
+# Phase 15 — alteration booking checkout. create-alteration-checkout is called
+# from the browser (the /alterations ACCEPT AND PAY button, via the same-origin
+# Vercel proxy) and re-verifies the quoted request server-side via the service
+# role before building the Stripe Checkout Session for the full quote. It doesn't
+# rely on the caller's JWT, so verification must be OFF. The payment result
+# arrives on stripe-webhook (metadata.type='alteration').
+[functions.create-alteration-checkout]
+verify_jwt = false

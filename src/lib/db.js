@@ -573,8 +573,10 @@ export const db = {
   // round-trip. Falls back to a plain select where the embed isn't available,
   // then [] if the table doesn't exist yet (migration not run).
   async getBuyerAlterationRequests(buyerId,t){ if(!buyerId)return [];
-    const r=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?buyer_id=eq.${buyerId}&select=*,listings(id,name,image_url,images),tailors(id,display_name,profile_image_url,user_id)&order=created_at.desc`,{headers:hdrs(t)});
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?buyer_id=eq.${buyerId}&select=*,listings(id,name,image_url,images),tailors(id,display_name,profile_image_url,user_id),tailor_payouts(status)&order=created_at.desc`,{headers:hdrs(t)});
     if(r.ok)return r.json();
+    const rEmbed=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?buyer_id=eq.${buyerId}&select=*,listings(id,name,image_url,images),tailors(id,display_name,profile_image_url,user_id)&order=created_at.desc`,{headers:hdrs(t)});
+    if(rEmbed.ok)return rEmbed.json();
     const r2=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?buyer_id=eq.${buyerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
   // A tailor's incoming requests, newest first, WITH the listing embedded for the
   // dashboard BOOKINGS tab. Buyer names are resolved separately via
@@ -607,4 +609,33 @@ export const db = {
     const r=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)});
     if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0];
   },
+
+  // ── Phase 15 — Tailor booking payments + completion ───────────────────────
+  // Buyer declines a quote: status -> declined. Fires the decline email to the
+  // tailor (reuses the existing alteration_declined template).
+  async declineAlterationQuote(id,t){
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({status:"declined"})});
+    if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0];
+  },
+  // Tailor marks an accepted booking complete: status -> completed. Fires the
+  // "please confirm completion" email to the buyer (resolved server-side).
+  async markAlterationComplete(id,t){
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({status:"completed"})});
+    if(!r.ok)throw new Error(await r.text()); const d=await r.json();
+    fireEmail({type:"alteration_completed_buyer",requestId:id});
+    return d[0];
+  },
+  // Buyer confirms completion: release the tailor's payout (status -> paid). Marks
+  // every payout row for this request paid (there's normally exactly one).
+  async confirmAlterationPayout(requestId,t){
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_payouts?alteration_request_id=eq.${requestId}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({status:"paid"})});
+    if(!r.ok)throw new Error(await r.text()); return r.json();
+  },
+  // A tailor's payout rows (for the dashboard EARNINGS section), with the request
+  // + listing embedded for the "paid bookings" list. Falls back to a plain select
+  // where the embed isn't available, then [] if the table doesn't exist yet.
+  async getTailorPayouts(tailorId,t){ if(!tailorId)return [];
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_payouts?tailor_id=eq.${tailorId}&select=*,alteration_requests(id,garment_type,listing_id,paid_at,listings(name,image_url,images))&order=created_at.desc`,{headers:hdrs(t)});
+    if(r.ok)return r.json();
+    const r2=await fetch(`${SUPABASE_URL}/rest/v1/tailor_payouts?tailor_id=eq.${tailorId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
 };
