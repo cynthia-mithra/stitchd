@@ -41,6 +41,14 @@ export const CSS=`
   .style-feed-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
   .style-create-fab{display:none;}
   .style-home-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  /* AVAILABILITY CALENDAR (Phase 15) — current + next month side by side on
+     desktop, a single month on mobile (the second month is hidden; PREV/NEXT
+     still navigates one month at a time). */
+  .avail-months{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:600px){
+    .avail-months{grid-template-columns:1fr !important;}
+    .avail-month-second{display:none !important;}
+  }
   @media(max-width:600px){
     .style-feed-grid{grid-template-columns:1fr !important;}
     .style-create-desktop{display:none !important;}

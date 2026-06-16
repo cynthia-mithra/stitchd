@@ -1,9 +1,10 @@
 import React from "react";
-import { Scissors, MapPin, ExternalLink, Mail, ArrowLeft, CreditCard, Check, Star, X } from "lucide-react";
+import { Scissors, MapPin, ExternalLink, Mail, ArrowLeft, CreditCard, Check, Star, X, Calendar } from "lucide-react";
 import { S } from "../styles";
 import { Stars, Thumb } from "../components/Shared";
 import { RatingChip } from "../components/Reviews";
 import { ALTERATION_TYPES, tailorsForAlterations, catEmoji } from "../lib/constants";
+import { toISODate, parseISODate, startOfDay, todayStart, addDays, mondayIndex, WEEKDAYS, rowsByDate, dayState } from "../lib/availability";
 
 const PINK = "#FF1493";
 const TEAL = "#00E5CC";
@@ -63,15 +64,18 @@ const fmtDate = (d) => { try{ return new Date(d).toLocaleDateString("en-GB",{day
 export function RequestAlterationModal({
   open, onClose, listing, tailors = [], busy = false,
   onSend = () => {}, openTailorProfile = () => {}, browseAllTailors = () => {},
+  initialPreferredDate = null, getTailorAvailability = null,
 }) {
   const [step,setStep]=React.useState(1);
   const [alterations,setAlterations]=React.useState([]);
   const [notes,setNotes]=React.useState("");
   const [budget,setBudget]=React.useState("");
   const [tailor,setTailor]=React.useState(null);
+  const [preferredDate,setPreferredDate]=React.useState(initialPreferredDate||"");
+  const [tailorAvail,setTailorAvail]=React.useState([]); // selected tailor's availability rows
 
   // Reset the whole flow each time the modal is (re)opened.
-  React.useEffect(()=>{ if(open){ setStep(1); setAlterations([]); setNotes(""); setBudget(""); setTailor(null); } },[open]);
+  React.useEffect(()=>{ if(open){ setStep(1); setAlterations([]); setNotes(""); setBudget(""); setTailor(null); setPreferredDate(initialPreferredDate||""); setTailorAvail([]); } },[open,initialPreferredDate]);
 
   if(!open) return null;
 
@@ -80,8 +84,16 @@ export function RequestAlterationModal({
   const step1Valid=alterations.length>0&&notes.trim().length>0;
   const lThumb=listingThumb(listing);
   const lEmoji=catEmoji(listing&&listing.category);
+  const todayISO=toISODate(todayStart());
 
-  const pickTailor=(t)=>{ setTailor(t); setStep(3); };
+  // On choosing a tailor, load their availability (for the step-3 mini calendar)
+  // if they have it enabled and a loader was provided.
+  const pickTailor=async(t)=>{
+    setTailor(t); setStep(3); setTailorAvail([]);
+    if(t&&t.availability_enabled&&getTailorAvailability){
+      try{ const rows=await getTailorAvailability(t.id); setTailorAvail(rows||[]); }catch(e){ setTailorAvail([]); }
+    }
+  };
 
   return (
     <div style={S.modalOverlay} onClick={onClose}>
@@ -114,6 +126,11 @@ export function RequestAlterationModal({
                 <span style={{padding:"0 12px",fontSize:16,fontWeight:800,color:"#111"}}>£</span>
                 <input style={{...S.inp,border:"none",borderLeft:"2px solid #e0e0e0"}} type="number" min="0" placeholder="50" value={budget} onChange={e=>setBudget(e.target.value)}/>
               </div>
+            </div>
+            <div>
+              <label style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>PREFERRED START DATE (OPTIONAL)</label>
+              <input style={S.inp} type="date" min={todayISO} value={preferredDate} onChange={e=>setPreferredDate(e.target.value)}/>
+              <p style={{fontSize:11,color:"#aaa",marginTop:5}}>If your tailor publishes a calendar, you can fine-tune this to an available date next.</p>
             </div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
               <button onClick={onClose} style={{background:"none",border:"none",padding:0,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,cursor:"pointer"}}>CANCEL</button>
@@ -190,10 +207,21 @@ export function RequestAlterationModal({
                   <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:17,fontWeight:900}}>{tailor.display_name}</span>
                 </div>
               </Summary>
+              {preferredDate&&<Summary label="PREFERRED START DATE"><p style={{fontSize:15,fontWeight:800,color:PINK}}>{(parseISODate(preferredDate)||new Date()).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}</p></Summary>}
             </div>
+
+            {/* Availability-aware date picker — only when this tailor publishes a
+                calendar. Tapping an available day sets the preferred start date. */}
+            {tailor.availability_enabled&&(
+              <div>
+                <label style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"flex",alignItems:"center",gap:6,marginBottom:8}}><Calendar width={13} height={13}/> PICK AN AVAILABLE START DATE (OPTIONAL)</label>
+                <MiniAvailabilityPicker tailor={tailor} rows={tailorAvail} selected={preferredDate} onSelect={setPreferredDate}/>
+              </div>
+            )}
+
             <button className="hbtn" disabled={busy}
               style={{width:"100%",background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:16,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,cursor:busy?"wait":"pointer",opacity:busy?0.6:1}}
-              onClick={()=>onSend({alterations,notes:notes.trim(),budget,tailor})}>
+              onClick={()=>onSend({alterations,notes:notes.trim(),budget,tailor,preferredDate:preferredDate||null})}>
               {busy?"SENDING…":"SEND REQUEST"}
             </button>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -212,6 +240,46 @@ function Summary({ label, children }) {
     <div>
       <p style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5}}>{label}</p>
       {children}
+    </div>
+  );
+}
+
+// Compact next-4-weeks calendar for the request flow. Only the tailor's available
+// dates are tappable; the selected one is highlighted in #FF1493. Mirrors the
+// public-profile availability grid but bound to the preferred-date state.
+function MiniAvailabilityPicker({ tailor, rows = [], selected, onSelect = () => {} }) {
+  const today=todayStart();
+  const map=React.useMemo(()=>rowsByDate(rows),[rows]);
+  const start=addDays(today,-mondayIndex(today));
+  const days=[]; for(let i=0;i<28;i++) days.push(addDays(start,i));
+  const vacation=!!tailor.vacation_mode;
+  return (
+    <div style={{border:"2px solid #111"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",borderBottom:"2px solid #111"}}>
+        {WEEKDAYS.map(w=><div key={w} style={{textAlign:"center",padding:"5px 0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:10,letterSpacing:1,color:"#999"}}>{w}</div>)}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)"}}>
+        {days.map((d,i)=>{
+          const st=dayState(d,map,tailor,{today,vacation});
+          const iso=toISODate(d);
+          const isToday=startOfDay(d).getTime()===today.getTime();
+          const avail=st.state==="available"||st.state==="partial";
+          const isSel=selected===iso;
+          const past=st.state==="past";
+          return (
+            <button key={i} type="button" disabled={!avail} onClick={()=>onSelect(isSel?"":iso)}
+              style={{minHeight:44,border:"none",borderRight:"1px solid #f0f0f0",borderBottom:i<21?"1px solid #f0f0f0":"none",
+                background:isSel?PINK:(past?"#f7f7f7":(avail?"#fff":"#f0f0f0")),color:isSel?"#fff":"#111",
+                ...(!isSel&&isToday?{boxShadow:`inset 0 0 0 2px ${PINK}`}:{}),
+                cursor:avail?"pointer":"default",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"3px 2px",gap:2}}>
+              <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:13,color:isSel?"#fff":(past?"#ccc":"#111")}}>{d.getDate()}</span>
+              {!past&&(avail
+                ?<span style={{width:6,height:6,borderRadius:"50%",background:isSel?"#fff":"#16a34a"}}/>
+                :<span style={{fontSize:8,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,color:"#999"}}>OFF</span>)}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

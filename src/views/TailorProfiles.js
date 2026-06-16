@@ -1,11 +1,14 @@
 import React from "react";
-import { Scissors, MapPin, Instagram, Globe, Trash2, Plus, ArrowUp, ArrowDown, X, ExternalLink, Mail, Check, Wallet, Clock } from "lucide-react";
+import { Scissors, MapPin, Instagram, Globe, Trash2, Plus, ArrowUp, ArrowDown, X, ExternalLink, Mail, Check, Wallet, Clock, Calendar, ChevronLeft, ChevronRight, Save, Plane } from "lucide-react";
 import { S } from "../styles";
 import { F, Stars, Thumb } from "../components/Shared";
 import { RatingSummary, ReviewList } from "../components/Reviews";
 import LoginPromptModal from "../components/LoginPromptModal";
 import { TAILOR_SPECIALISMS, TAILOR_TURNAROUND, turnaroundLabel, catEmoji } from "../lib/constants";
 import { StatusBadge, gbp } from "./Alterations";
+import { toISODate, parseISODate, startOfDay, todayStart, addDays, monthGrid, monthLabel, rowsByDate, dayState, mondayIndex, WEEKDAYS, ADVANCE_BOOKING_OPTIONS } from "../lib/availability";
+
+const TEAL = "#00E5CC";
 
 const PINK = "#FF1493";
 const poundsFromPence = (p) => (p==null||p==="") ? "" : (p/100).toString();
@@ -62,6 +65,11 @@ export default function TailorProfiles({
   tailorEdit, setTailorEdit, saveTailorProfile, tailorEditBusy,
   tailorPortfolio, addPortfolioImages, deletePortfolioImage, movePortfolioImage, portfolioBusy,
   openTailorPublic,
+  // availability (Phase 15 — Tailor availability calendar)
+  availabilityRows = [], availabilityLoading = false, availabilityBusy = false,
+  onToggleAvailabilityEnabled = () => {}, onSaveAvailabilitySettings = () => {},
+  onSetDayAvailability = () => {}, onSetDaySlots = () => {},
+  onMarkRangeUnavailable = () => {}, onMarkAllAvailable = () => {},
   // bookings (incoming alteration requests)
   alterationRequests = [], alterationBuyers = {}, bookingsLoading = false,
   onSendQuote = () => {}, onDeclineRequest = () => {}, onMessageBuyer = () => {},
@@ -71,6 +79,7 @@ export default function TailorProfiles({
   publicTailorReviews = [], publicReviewBuyers = {},
   // public
   publicTailor, publicTailorLoading,
+  publicAvailability = [], onSendAlterationRequest = () => {},
   onGateAuth = () => {},
 }) {
   const [lightbox,setLightbox]=React.useState(null);
@@ -244,7 +253,7 @@ export default function TailorProfiles({
 
           {/* tabs */}
           <div style={{display:"flex",gap:4,flexWrap:"wrap",borderBottom:"3px solid #111",marginBottom:28}}>
-            {[["profile","PROFILE"],["portfolio","PORTFOLIO"],["bookings","BOOKINGS"],["earnings","EARNINGS"],["reviews","REVIEWS"]].map(([v,l])=>(
+            {[["profile","PROFILE"],["portfolio","PORTFOLIO"],["availability","AVAILABILITY"],["bookings","BOOKINGS"],["earnings","EARNINGS"],["reviews","REVIEWS"]].map(([v,l])=>(
               <button key={v} className="hbtn" onClick={()=>setTailorDashTab(v)}
                 style={{background:tailorDashTab===v?"#111":"#fff",color:tailorDashTab===v?"#fff":"#111",border:"none",borderBottom:tailorDashTab===v?`4px solid ${PINK}`:"4px solid transparent",padding:"12px 22px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,letterSpacing:2,fontSize:14,cursor:"pointer"}}>
                 {l}
@@ -331,6 +340,16 @@ export default function TailorProfiles({
             </div>
           )}
 
+          {/* AVAILABILITY TAB — publish the dates the tailor can take work (Phase 15). */}
+          {tailorDashTab==="availability"&&(
+            <AvailabilityTab
+              tailor={myTailor} rows={availabilityRows} loading={availabilityLoading} busy={availabilityBusy}
+              onToggleEnabled={onToggleAvailabilityEnabled} onSaveSettings={onSaveAvailabilitySettings}
+              onSetDay={onSetDayAvailability} onSetSlots={onSetDaySlots}
+              onMarkRangeUnavailable={onMarkRangeUnavailable} onMarkAllAvailable={onMarkAllAvailable}
+            />
+          )}
+
           {/* BOOKINGS TAB — incoming alteration requests (Phase 15). */}
           {tailorDashTab==="bookings"&&(
             <TailorBookings
@@ -372,7 +391,7 @@ export default function TailorProfiles({
               <button className="hbtn" style={{...S.hBtn,background:PINK,border:"2px solid #111",padding:"14px 28px",fontSize:14}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
             </div>
           ):(
-            <PublicProfile tailor={publicTailor} setView={setView} flash={flash} onOpenImage={setLightbox} user={user} onGateAuth={onGateAuth} reviews={publicTailorReviews} reviewBuyers={publicReviewBuyers}/>
+            <PublicProfile tailor={publicTailor} setView={setView} flash={flash} onOpenImage={setLightbox} user={user} onGateAuth={onGateAuth} reviews={publicTailorReviews} reviewBuyers={publicReviewBuyers} availability={publicAvailability} onSendAlterationRequest={onSendAlterationRequest}/>
           )}
         </main>
       )}
@@ -405,6 +424,252 @@ function Placeholder({ title, text }) {
     <div style={{textAlign:"center",padding:"70px 20px",border:"3px dashed #e0e0e0"}}>
       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:3,color:PINK,marginBottom:10}}>{title}</p>
       <p style={{fontSize:15,color:"#999",maxWidth:380,margin:"0 auto"}}>{text}</p>
+    </div>
+  );
+}
+
+// ── AVAILABILITY tab — set the dates the tailor can take work (Phase 15) ──────
+function AvailabilityTab({ tailor, rows = [], loading = false, busy = false, onToggleEnabled, onSaveSettings, onSetDay, onSetSlots, onMarkRangeUnavailable, onMarkAllAvailable }) {
+  const enabled=!!(tailor&&tailor.availability_enabled);
+  const onVacation=!!(tailor&&tailor.vacation_mode);
+  const defaultSlots=Number(tailor&&tailor.default_slots_per_day)||3;
+  // Settings form (advance window + daily slots), seeded from the tailor row.
+  const [advance,setAdvance]=React.useState((tailor&&tailor.advance_booking_days)||30);
+  const [slots,setSlots]=React.useState(defaultSlots);
+  React.useEffect(()=>{ setAdvance((tailor&&tailor.advance_booking_days)||30); setSlots(Number(tailor&&tailor.default_slots_per_day)||3); },[tailor]);
+
+  const today=todayStart();
+  // The left-hand month shown; NEXT/PREV shifts it. The second month (desktop) is
+  // always left+1.
+  const [monthDate,setMonthDate]=React.useState(new Date(today.getFullYear(),today.getMonth(),1));
+  const map=React.useMemo(()=>rowsByDate(rows),[rows]);
+  const [slotEditISO,setSlotEditISO]=React.useState(null);
+
+  const settingsDirty=advance!==((tailor&&tailor.advance_booking_days)||30)||slots!==(Number(tailor&&tailor.default_slots_per_day)||3);
+  const saveSettings=()=>onSaveSettings({advance_booking_days:Number(advance),default_slots_per_day:Math.max(1,Math.min(10,Number(slots)||1))});
+
+  const nextMonth=new Date(monthDate.getFullYear(),monthDate.getMonth()+1,1);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:24}}>
+      {/* Visibility toggle */}
+      <div style={{border:"2px solid #111",padding:18,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
+        <div>
+          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,display:"flex",alignItems:"center",gap:8}}><Calendar width={20} height={20}/> SHOW MY AVAILABILITY TO BUYERS</p>
+          <p style={{fontSize:13,color:"#888",marginTop:4}}>{enabled?"Your calendar is visible on your public profile.":"Off — your calendar is hidden from buyers."}</p>
+        </div>
+        <Toggle on={enabled} disabled={busy} onClick={()=>onToggleEnabled(!enabled)}/>
+      </div>
+
+      {onVacation&&(
+        <div style={{border:`2px solid ${PINK}`,background:"#fff0f7",padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
+          <Plane width={18} height={18} color={PINK}/>
+          <p style={{fontSize:14,color:"#111",fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5}}>VACATION MODE IS ON — buyers see every date as unavailable. Your saved availability is restored when you turn vacation off.</p>
+        </div>
+      )}
+
+      {/* Settings */}
+      <div style={{border:"2px solid #111",padding:18,display:"flex",flexDirection:"column",gap:16}}>
+        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,letterSpacing:1.5}}>SETTINGS</p>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:16}}>
+          <F l="ACCEPT BOOKINGS UP TO">
+            <select style={S.inp} value={advance} onChange={e=>setAdvance(Number(e.target.value))}>
+              {ADVANCE_BOOKING_OPTIONS.map(o=><option key={o.days} value={o.days}>{o.label} ahead</option>)}
+            </select>
+          </F>
+          <F l="MAXIMUM JOBS PER DAY">
+            <input style={S.inp} type="number" min="1" max="10" value={slots} onChange={e=>setSlots(e.target.value)}/>
+          </F>
+        </div>
+        <button className="hbtn" disabled={busy||!settingsDirty} onClick={saveSettings}
+          style={{alignSelf:"flex-start",background:settingsDirty?PINK:"#ccc",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"13px 26px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:(busy||!settingsDirty)?"not-allowed":"pointer",display:"inline-flex",alignItems:"center",gap:8}}>
+          <Save width={15} height={15}/> {busy?"SAVING…":"SAVE SETTINGS"}
+        </button>
+      </div>
+
+      {/* Legend */}
+      <div style={{display:"flex",flexWrap:"wrap",gap:14}}>
+        <LegendDot bg="#fff" border="#111" label="Available"/>
+        <LegendDot bg={TEAL} border="#111" label="Partially booked"/>
+        <LegendDot bg="#111" border="#111" label="Unavailable"/>
+        <LegendDot bg="#eee" border="#e0e0e0" label="Past"/>
+      </div>
+
+      {/* Calendar navigation */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+        <button className="hbtn" onClick={()=>setMonthDate(new Date(monthDate.getFullYear(),monthDate.getMonth()-1,1))}
+          disabled={monthDate.getFullYear()===today.getFullYear()&&monthDate.getMonth()===today.getMonth()}
+          style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"10px 16px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,fontSize:13,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6,opacity:(monthDate.getFullYear()===today.getFullYear()&&monthDate.getMonth()===today.getMonth())?0.4:1}}>
+          <ChevronLeft width={16} height={16}/> PREV
+        </button>
+        <button className="hbtn" onClick={()=>setMonthDate(new Date(monthDate.getFullYear(),monthDate.getMonth()+1,1))}
+          style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"10px 16px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,fontSize:13,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}>
+          NEXT <ChevronRight width={16} height={16}/>
+        </button>
+      </div>
+
+      {loading?(
+        <div style={S.loadingWrap}><div style={S.spinner}/><p style={S.loadingText}>LOADING CALENDAR…</p></div>
+      ):(
+        <div className="avail-months" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+          <MonthCalendar monthDate={monthDate} map={map} tailor={tailor} today={today} interactive={!onVacation}
+            onToggle={iso=>onSetDay(iso)} onEdit={iso=>setSlotEditISO(iso)} onToggleWeek={dates=>onMarkRangeUnavailable(dates)}/>
+          <div className="avail-month-second">
+            <MonthCalendar monthDate={nextMonth} map={map} tailor={tailor} today={today} interactive={!onVacation}
+              onToggle={iso=>onSetDay(iso)} onEdit={iso=>setSlotEditISO(iso)} onToggleWeek={dates=>onMarkRangeUnavailable(dates)}/>
+          </div>
+        </div>
+      )}
+
+      {/* Inline slot editor */}
+      {slotEditISO&&(
+        <SlotEditor iso={slotEditISO} defaultSlots={defaultSlots} map={map} busy={busy}
+          onSave={(n)=>{ onSetSlots(slotEditISO,n); setSlotEditISO(null); }} onClose={()=>setSlotEditISO(null)}/>
+      )}
+
+      {/* Bulk actions */}
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",borderTop:"2px solid #f0f0f0",paddingTop:18}}>
+        <button className="hbtn" disabled={busy} onClick={onMarkAllAvailable}
+          style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"12px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:busy?"wait":"pointer",display:"inline-flex",alignItems:"center",gap:8}}><Check width={15} height={15}/> MARK ALL AS AVAILABLE</button>
+        <button className="hbtn" disabled={busy} onClick={()=>onMarkRangeUnavailable(rangeDates(today,14))}
+          style={{background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"12px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:busy?"wait":"pointer",display:"inline-flex",alignItems:"center",gap:8}}><Plane width={15} height={15}/> MARK NEXT 2 WEEKS UNAVAILABLE</button>
+      </div>
+      <p style={{fontSize:12,color:"#999"}}>Tap a day to switch it between available and unavailable. Double-tap (or long-press) a day to set how many jobs you can take that day. Tap a week's <strong>W</strong> button to mark the whole week unavailable.</p>
+    </div>
+  );
+}
+
+// Array of "YYYY-MM-DD" for `count` days starting today (used by bulk actions).
+function rangeDates(today,count){ const out=[]; for(let i=0;i<count;i++) out.push(toISODate(addDays(today,i))); return out; }
+
+function Toggle({ on, disabled, onClick }) {
+  return (
+    <button type="button" disabled={disabled} onClick={onClick} aria-pressed={on}
+      style={{width:60,height:32,border:"2px solid #111",borderRadius:0,background:on?PINK:"#fff",position:"relative",cursor:disabled?"wait":"pointer",flexShrink:0,padding:0}}>
+      <span style={{position:"absolute",top:2,left:on?30:2,width:24,height:24,background:on?"#fff":"#111",transition:"left .15s"}}/>
+    </button>
+  );
+}
+
+function LegendDot({ bg, border, label }) {
+  return (
+    <span style={{display:"inline-flex",alignItems:"center",gap:7,fontSize:12,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5,color:"#555"}}>
+      <span style={{width:16,height:16,background:bg,border:`2px solid ${border}`,display:"inline-block"}}/> {label}
+    </span>
+  );
+}
+
+// One month grid. `interactive` enables tap/edit/week actions (dashboard) vs the
+// read-only public render.
+function MonthCalendar({ monthDate, map, tailor, today, interactive = false, onToggle = () => {}, onEdit = () => {}, onToggleWeek = () => {}, publicMode = false }) {
+  const weeks=monthGrid(monthDate.getFullYear(),monthDate.getMonth());
+  return (
+    <div style={{border:"2px solid #111"}}>
+      <div style={{background:"#111",color:"#fff",padding:"10px 12px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,letterSpacing:2,fontSize:15}}>{monthLabel(monthDate)}</div>
+      {/* Weekday header */}
+      <div style={{display:"grid",gridTemplateColumns:`${interactive?"28px ":""}repeat(7,1fr)`,borderBottom:"2px solid #111"}}>
+        {interactive&&<div style={{borderRight:"1px solid #eee"}}/>}
+        {WEEKDAYS.map(w=><div key={w} style={{textAlign:"center",padding:"6px 0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:11,letterSpacing:1,color:"#999"}}>{w}</div>)}
+      </div>
+      {weeks.map((week,wi)=>{
+        // Days in this week that are inside this month + today-or-future (week toggle targets).
+        const toggleable=week.filter(c=>c.inMonth&&startOfDay(c.date)>=today).map(c=>toISODate(c.date));
+        return (
+          <div key={wi} style={{display:"grid",gridTemplateColumns:`${interactive?"28px ":""}repeat(7,1fr)`,borderBottom:wi===weeks.length-1?"none":"1px solid #eee"}}>
+            {interactive&&(
+              <button type="button" title="Mark this week unavailable" disabled={!toggleable.length} onClick={()=>onToggleWeek(toggleable)}
+                style={{border:"none",borderRight:"1px solid #eee",background:"#fafafa",cursor:toggleable.length?"pointer":"default",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:11,color:toggleable.length?"#111":"#ddd",padding:0}}>W</button>
+            )}
+            {week.map((cell,ci)=>(
+              <DayCell key={ci} cell={cell} map={map} tailor={tailor} today={today}
+                interactive={interactive} publicMode={publicMode}
+                onToggle={onToggle} onEdit={onEdit}/>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// A single day. Handles single-tap (toggle), double-tap / long-press (edit slots)
+// on the dashboard; renders a read-only chip in public mode.
+function DayCell({ cell, map, tailor, today, interactive, publicMode, onToggle, onEdit }) {
+  const clickTimer=React.useRef(null);
+  const longPress=React.useRef(false);
+  const lpTimer=React.useRef(null);
+  if(!cell.inMonth) return <div style={{minHeight:48,background:"#fafafa",borderRight:"1px solid #f5f5f5"}}/>;
+  const iso=toISODate(cell.date);
+  const st=dayState(cell.date,map,tailor,{today});
+  const isToday=startOfDay(cell.date).getTime()===today.getTime();
+  const dayNum=cell.date.getDate();
+
+  // Colours per the design system.
+  let bg="#fff",color="#111",border="#111",label="";
+  if(st.state==="past"){ bg="#f0f0f0"; color="#bbb"; border="#e8e8e8"; }
+  else if(st.state==="unavailable"){ bg="#111"; color="#fff"; label="Unavailable"; }
+  else if(st.state==="partial"){ bg=TEAL; color="#111"; label=st.slots===1?"1 slot left":`${st.slots} left`; }
+  else { bg="#fff"; color="#111"; label=st.slots===1?"1 slot":`${st.slots} slots`; } // available
+
+  const tappable=interactive&&st.state!=="past";
+
+  // PUBLIC read-only: available = white + green dot, unavailable = grey, today = pink border.
+  if(publicMode){
+    const avail=st.state==="available"||st.state==="partial";
+    return (
+      <div style={{minHeight:44,borderRight:"1px solid #f0f0f0",background:st.state==="past"?"#f7f7f7":(avail?"#fff":"#f0f0f0"),
+        ...(isToday?{boxShadow:`inset 0 0 0 2px ${PINK}`}:{}),display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"4px 2px",gap:2}}>
+        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:14,color:st.state==="past"?"#ccc":"#111"}}>{dayNum}</span>
+        {st.state!=="past"&&(avail
+          ?<span style={{width:7,height:7,borderRadius:"50%",background:"#16a34a"}}/>
+          :<span style={{fontSize:8,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:0.5,color:"#999"}}>OFF</span>)}
+      </div>
+    );
+  }
+
+  const handleClick=()=>{
+    if(!tappable) return;
+    if(longPress.current){ longPress.current=false; return; }
+    if(clickTimer.current){ clearTimeout(clickTimer.current); clickTimer.current=null; onEdit(iso); return; }
+    clickTimer.current=setTimeout(()=>{ clickTimer.current=null; onToggle(iso); },230);
+  };
+  const onTouchStart=()=>{ if(!tappable) return; longPress.current=false; lpTimer.current=setTimeout(()=>{ longPress.current=true; onEdit(iso); },480); };
+  const clearLP=()=>{ if(lpTimer.current){ clearTimeout(lpTimer.current); lpTimer.current=null; } };
+
+  return (
+    <button type="button" onClick={handleClick} onTouchStart={onTouchStart} onTouchEnd={clearLP} onTouchMove={clearLP}
+      disabled={!tappable}
+      style={{minHeight:48,border:"none",borderRight:"1px solid #eee",background:bg,color,cursor:tappable?"pointer":"default",
+        ...(isToday?{boxShadow:`inset 0 0 0 2px ${PINK}`}:{}),display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"4px 2px",gap:1}}>
+      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:14,lineHeight:1}}>{dayNum}</span>
+      {label&&<span style={{fontSize:9,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.3,lineHeight:1.1,textAlign:"center"}}>{label}</span>}
+    </button>
+  );
+}
+
+// Inline editor for a single day's slot count.
+function SlotEditor({ iso, defaultSlots, map, busy, onSave, onClose }) {
+  const row=map.get(iso);
+  const current=row&&row.available!==false&&row.slots_remaining!=null?Number(row.slots_remaining):defaultSlots;
+  const [n,setN]=React.useState(current);
+  const d=parseISODate(iso);
+  const dateLabel=d?d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}):iso;
+  return (
+    <div style={S.modalOverlay} onClick={onClose}>
+      <div style={{...S.modalBox,maxWidth:380}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+          <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,lineHeight:1.1}}>SLOTS FOR {dateLabel.toUpperCase()}</h2>
+          <button onClick={onClose} style={{background:"none",border:"none",padding:0,cursor:"pointer",color:"#111"}}><X width={22} height={22}/></button>
+        </div>
+        <p style={{fontSize:13,color:"#888",margin:"10px 0 16px"}}>How many jobs can you take this day? Set to 0 to mark the day unavailable.</p>
+        <input style={S.inp} type="number" min="0" max="10" value={n} onChange={e=>setN(e.target.value)}/>
+        <div style={{display:"flex",gap:12,marginTop:20,flexWrap:"wrap"}}>
+          <button className="hbtn" disabled={busy} onClick={()=>onSave(Math.max(0,Math.min(10,Number(n)||0)))}
+            style={{flex:1,background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"13px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:busy?"wait":"pointer",opacity:busy?0.6:1}}>{busy?"…":"SAVE"}</button>
+          <button className="hbtn" onClick={onClose}
+            style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"13px 20px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer"}}>CANCEL</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -538,6 +803,9 @@ function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuo
                     <p style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>NOTES</p>
                     <p style={{fontSize:14,color:"#444",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{req.additional_notes||req.description}</p>
                   </div>
+                )}
+                {req.preferred_date&&(
+                  <p style={{fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:"#111",display:"inline-flex",alignItems:"center",gap:6}}><Calendar width={15} height={15}/> Preferred start: <span style={{fontWeight:900,color:PINK}}>{bkDate(req.preferred_date)}</span></p>
                 )}
                 {req.budget_pence!=null&&(
                   <p style={{fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:"#111"}}>Buyer budget: <span style={{fontWeight:900,color:PINK}}>{gbp(req.budget_pence)}</span></p>
@@ -695,12 +963,57 @@ function AddPhotosButton({ onPick, disabled }) {
   );
 }
 
+// Read-only next-4-weeks availability grid for the public profile (Part 3).
+// Available days carry a green dot and can be tapped to pre-select a preferred
+// start date; today gets a pink border; unavailable days are greyed out.
+function PublicAvailability({ tailor, rows = [], selected, onSelect = () => {} }) {
+  const today=todayStart();
+  const map=React.useMemo(()=>rowsByDate(rows),[rows]);
+  // Start from Monday of the current week, render 4 weeks (28 days).
+  const start=addDays(today,-mondayIndex(today));
+  const days=[]; for(let i=0;i<28;i++) days.push(addDays(start,i));
+  const vacation=!!tailor.vacation_mode;
+  return (
+    <div style={{border:"2px solid #111"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",borderBottom:"2px solid #111"}}>
+        {WEEKDAYS.map(w=><div key={w} style={{textAlign:"center",padding:"6px 0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:11,letterSpacing:1,color:"#999"}}>{w}</div>)}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)"}}>
+        {days.map((d,i)=>{
+          const st=dayState(d,map,tailor,{today,vacation});
+          const iso=toISODate(d);
+          const isToday=startOfDay(d).getTime()===today.getTime();
+          const avail=st.state==="available"||st.state==="partial";
+          const isSel=selected===iso;
+          const past=st.state==="past";
+          return (
+            <button key={i} type="button" disabled={!avail} onClick={()=>onSelect(isSel?null:iso)}
+              style={{minHeight:48,border:"none",borderRight:"1px solid #f0f0f0",borderBottom:i<21?"1px solid #f0f0f0":"none",
+                background:isSel?"#fff0f7":(past?"#f7f7f7":(avail?"#fff":"#f0f0f0")),
+                ...(isSel?{boxShadow:`inset 0 0 0 2px ${PINK}`}:(isToday?{boxShadow:`inset 0 0 0 2px ${PINK}`}:{})),
+                cursor:avail?"pointer":"default",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"4px 2px",gap:2}}>
+              <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:14,color:past?"#ccc":"#111"}}>{d.getDate()}</span>
+              {!past&&(avail
+                ?<span style={{width:7,height:7,borderRadius:"50%",background:isSel?PINK:"#16a34a"}}/>
+                :<span style={{fontSize:8,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:0.3,color:"#999"}}>OFF</span>)}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // The public /tailors/<id> profile.
-function PublicProfile({ tailor, setView, flash, onOpenImage, user, onGateAuth = () => {}, reviews = [], reviewBuyers = {} }) {
+function PublicProfile({ tailor, setView, flash, onOpenImage, user, onGateAuth = () => {}, reviews = [], reviewBuyers = {}, availability = [], onSendAlterationRequest = () => {} }) {
   // Logged-out buyers can browse the whole profile, but booking a tailor is
   // gated — tapping BOOK opens the shared sign-up prompt (context: book).
   const [gateOpen,setGateOpen]=React.useState(false);
   const onBook=()=>{ if(user){ flash("Booking coming soon!"); } else { setGateOpen(true); } };
+  // Availability section (Part 3) — only when the tailor has switched it on.
+  const showAvailability=!!tailor.availability_enabled;
+  const [selectedDate,setSelectedDate]=React.useState(null);
+  const sendRequest=()=>{ if(!user){ setGateOpen(true); return; } onSendAlterationRequest(tailor,selectedDate); };
   const reviewCount=tailor.review_count||reviews.length;
   const avgRating=tailor.average_rating!=null&&Number(tailor.average_rating)>0
     ? Number(tailor.average_rating)
@@ -751,6 +1064,31 @@ function PublicProfile({ tailor, setView, flash, onOpenImage, user, onGateAuth =
           onClick={onBook}>
           BOOK THIS TAILOR
         </button>
+
+        {/* AVAILABILITY (Part 3) — read-only next-4-weeks calendar, shown only when
+            the tailor has enabled it. Otherwise just the SEND ALTERATION REQUEST CTA. */}
+        {showAvailability?(
+          <Section heading="AVAILABILITY">
+            <PublicAvailability tailor={tailor} rows={availability} selected={selectedDate} onSelect={setSelectedDate}/>
+            <p style={{fontSize:14,color:"#555",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5,display:"flex",alignItems:"center",gap:7,marginTop:16}}>
+              <Clock width={16} height={16}/> Typically responds within 24 hours
+            </p>
+            {selectedDate&&(
+              <p style={{fontSize:13,color:"#111",marginTop:8}}>Selected start date: <strong style={{color:PINK}}>{(parseISODate(selectedDate)||new Date()).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}</strong></p>
+            )}
+            <button className="hbtn" onClick={sendRequest}
+              style={{marginTop:18,background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"15px 32px",fontSize:15,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}>
+              <Scissors width={16} height={16}/> SEND ALTERATION REQUEST
+            </button>
+          </Section>
+        ):(
+          <div style={{marginBottom:40}}>
+            <button className="hbtn" onClick={sendRequest}
+              style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"15px 32px",fontSize:15,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}>
+              <Scissors width={16} height={16}/> SEND ALTERATION REQUEST
+            </button>
+          </div>
+        )}
 
         {/* SPECIALISMS */}
         {(tailor.specialisms||[]).length>0&&(

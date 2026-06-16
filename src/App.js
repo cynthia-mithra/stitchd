@@ -346,6 +346,15 @@ export default function App() {
   const [publicReviewBuyers, setPublicReviewBuyers] =useState({});
   const [tailorReviews,     setTailorReviews]     = useState([]);
   const [tailorReviewBuyers,setTailorReviewBuyers]=useState({});
+  // Phase 15 — Tailor availability calendar. The signed-in tailor's own
+  // availability rows (dashboard AVAILABILITY tab), the public profile's rows,
+  // a busy/loading flag, and a preferred-date hint carried from the public
+  // profile's SEND ALTERATION REQUEST button into the request modal.
+  const [availabilityRows,  setAvailabilityRows]  = useState([]);
+  const [availabilityLoading,setAvailabilityLoading]=useState(false);
+  const [availabilityBusy,  setAvailabilityBusy]  = useState(false);
+  const [publicAvailability,setPublicAvailability]= useState([]);
+  const [preferredDateHint, setPreferredDateHint] = useState(null);
   const [following,      setFollowing]      = useState([]);
   const [feedItems,      setFeedItems]      = useState([]);
   const [feedLoading,    setFeedLoading]    = useState(false);
@@ -1837,6 +1846,7 @@ export default function App() {
     loadTailorAlterations();
     loadTailorPayouts();
     loadTailorReviews();
+    loadTailorAvailability();
     try{ const p=await db.getTailorPortfolio(myTailor.id,token); setTailorPortfolio(p); }catch(e){ setTailorPortfolio([]); }
   }
 
@@ -1848,6 +1858,76 @@ export default function App() {
       setTailorReviews(reviews);
       setTailorReviewBuyers(await resolveReviewBuyers(reviews));
     }catch(e){ setTailorReviews([]); setTailorReviewBuyers({}); }
+  }
+
+  // ── Phase 15 — Tailor availability calendar ────────────────────────────────
+  // Load the signed-in tailor's availability rows for the dashboard tab.
+  async function loadTailorAvailability(){
+    if(!myTailor||!token) return;
+    setAvailabilityLoading(true);
+    try{ setAvailabilityRows(await db.getTailorAvailability(myTailor.id,token)); }
+    catch(e){ setAvailabilityRows([]); }
+    finally{ setAvailabilityLoading(false); }
+  }
+  // Merge an upserted row into the local availability array (by date).
+  const mergeAvailabilityRow=(row)=>{ if(!row) return; setAvailabilityRows(prev=>{ const iso=String(row.date).slice(0,10); const rest=prev.filter(r=>String(r.date).slice(0,10)!==iso); return [...rest,row].sort((a,b)=>String(a.date).localeCompare(String(b.date))); }); };
+  const availDefaultSlots=()=>Number(myTailor&&myTailor.default_slots_per_day)||3;
+  const isDateAvailable=(iso)=>{ const row=availabilityRows.find(r=>String(r.date).slice(0,10)===iso); if(!row) return true; if(row.available===false) return false; return row.slots_remaining==null||Number(row.slots_remaining)>0; };
+
+  // Show/hide the calendar on the public profile.
+  async function toggleAvailabilityEnabled(on){
+    if(!myTailor||!token) return;
+    setAvailabilityBusy(true);
+    try{ await db.updateTailor(myTailor.id,{availability_enabled:!!on},token); setMyTailor(m=>({...m,availability_enabled:!!on})); flash(on?"Your availability is now visible to buyers.":"Your availability is hidden."); }
+    catch(e){ flash("Couldn't update: "+errMsg(e)); }
+    finally{ setAvailabilityBusy(false); }
+  }
+  // Save the advance-booking window + daily-slots settings.
+  async function saveAvailabilitySettings({ advance_booking_days, default_slots_per_day }){
+    if(!myTailor||!token) return;
+    setAvailabilityBusy(true);
+    try{ const patch={advance_booking_days:Number(advance_booking_days)||30,default_slots_per_day:Math.max(1,Math.min(10,Number(default_slots_per_day)||3))}; await db.updateTailor(myTailor.id,patch,token); setMyTailor(m=>({...m,...patch})); flash("Availability settings saved."); }
+    catch(e){ flash("Couldn't save settings: "+errMsg(e)); }
+    finally{ setAvailabilityBusy(false); }
+  }
+  // Toggle a single day available ⇄ unavailable.
+  async function setDayAvailability(iso){
+    if(!myTailor||!token) return;
+    const makeUnavailable=isDateAvailable(iso);
+    const row=makeUnavailable?{tailor_id:myTailor.id,date:iso,available:false,slots_remaining:0}:{tailor_id:myTailor.id,date:iso,available:true,slots_remaining:availDefaultSlots()};
+    setAvailabilityBusy(true);
+    try{ const saved=await db.upsertTailorAvailability(row,token); mergeAvailabilityRow(saved||row); }
+    catch(e){ flash("Couldn't update that day."); }
+    finally{ setAvailabilityBusy(false); }
+  }
+  // Set a specific day's slot count (0 ⇒ unavailable).
+  async function setDaySlots(iso,n){
+    if(!myTailor||!token) return;
+    const slots=Math.max(0,Math.min(10,Number(n)||0));
+    const row={tailor_id:myTailor.id,date:iso,available:slots>0,slots_remaining:slots};
+    setAvailabilityBusy(true);
+    try{ const saved=await db.upsertTailorAvailability(row,token); mergeAvailabilityRow(saved||row); }
+    catch(e){ flash("Couldn't update that day."); }
+    finally{ setAvailabilityBusy(false); }
+  }
+  // Toggle a set of dates (week label / "next 2 weeks" bulk action): if every date
+  // is already unavailable, restore them; otherwise mark them all unavailable.
+  async function markRangeUnavailable(isoList){
+    if(!myTailor||!token||!isoList||!isoList.length) return;
+    const allUnavailable=isoList.every(iso=>!isDateAvailable(iso));
+    const rows=isoList.map(iso=>allUnavailable?{tailor_id:myTailor.id,date:iso,available:true,slots_remaining:availDefaultSlots()}:{tailor_id:myTailor.id,date:iso,available:false,slots_remaining:0});
+    setAvailabilityBusy(true);
+    try{ const saved=await db.bulkUpsertTailorAvailability(rows,token); (saved&&saved.length?saved:rows).forEach(mergeAvailabilityRow); }
+    catch(e){ flash("Couldn't update those days."); }
+    finally{ setAvailabilityBusy(false); }
+  }
+  // MARK ALL AS AVAILABLE — clear every override.
+  async function markAllAvailable(){
+    if(!myTailor||!token) return;
+    setAvailabilityBusy(true);
+    try{ await db.clearTailorAvailability(myTailor.id,token); setAvailabilityRows([]); flash("All dates marked available."); }
+    catch(e){ flash("Couldn't reset availability."); }
+    finally{ setAvailabilityBusy(false); }
   }
 
   // Save the PROFILE tab edits (uploading any new profile/banner image first).
@@ -1922,10 +2002,13 @@ export default function App() {
   async function openTailorPublic(id,pushUrl=false){
     if(!id) return;
     setPublicTailor(null); setPublicTailorLoading(true);
-    setPublicTailorReviews([]); setPublicReviewBuyers({});
+    setPublicTailorReviews([]); setPublicReviewBuyers({}); setPublicAvailability([]);
     setView("tailor-public"); window.scrollTo(0,0);
     if(pushUrl){ try{ window.history.pushState({},"",`/tailors/${id}`); }catch(e){} }
-    try{ const t=await db.getTailor(id,token); setPublicTailor(t); }
+    try{ const t=await db.getTailor(id,token); setPublicTailor(t);
+      // Load the calendar only if the tailor has switched it on.
+      if(t&&t.availability_enabled){ try{ setPublicAvailability(await db.getTailorAvailability(id,token)); }catch(e){ setPublicAvailability([]); } }
+    }
     catch(e){ setPublicTailor(null); }
     finally{ setPublicTailorLoading(false); }
     // Reviews for the profile's REVIEWS section, plus the reviewers' profiles
@@ -1965,7 +2048,7 @@ export default function App() {
   }
   // Send the request: insert the row (which fires the tailor email), notify the
   // tailor in-app, then close + confirm.
-  async function sendAlterationRequest({ alterations, notes, budget, tailor }){
+  async function sendAlterationRequest({ alterations, notes, budget, tailor, preferredDate }){
     if(!user||!token||!alterReqListing||!tailor) return;
     setAlterReqBusy(true);
     try{
@@ -1979,11 +2062,12 @@ export default function App() {
         garment_type:garment,
         alterations_needed:alterations,
         budget_pence:poundsToPence(budget),
+        preferred_date:preferredDate||null,
         status:"pending",
       };
       await db.insertAlterationRequest(row,token);
       await notify(tailor.user_id,"alteration_request","New alteration request",`${buyerDisplayName()} has sent you an alteration request for a ${garment||"garment"}`,alterReqListing.id);
-      setAlterReqOpen(false); setAlterReqListing(null);
+      setAlterReqOpen(false); setAlterReqListing(null); setPreferredDateHint(null);
       flash(`Request sent! ${tailor.display_name} will get back to you with a quote.`,6000);
       if(view==="alterations") loadBuyerAlterations();
     }catch(e){ flash("Couldn't send your request: "+errMsg(e)); }
@@ -2002,6 +2086,17 @@ export default function App() {
     catch(e){ /* leave whatever's cached */ }
   }
   function openAlterations(){ loadBuyerAlterations(); setView("alterations"); window.scrollTo(0,0); }
+
+  // SEND ALTERATION REQUEST from a public tailor profile (Part 3). A request is
+  // always tied to a listing, so we carry the optional preferred date as a hint
+  // and send the buyer to pick the piece they want altered; the hint pre-fills
+  // the preferred-date field in the request modal.
+  function sendAlterationRequestFromProfile(tailor,dateISO){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    setPreferredDateHint(dateISO||null);
+    flash(`Choose the piece you'd like altered to start your request${tailor&&tailor.display_name?` with ${tailor.display_name}`:""}.${dateISO?" Your preferred date is saved.":""}`,6000);
+    setView("shop"); window.scrollTo(0,0);
+  }
 
   async function loadTailorAlterations(){
     if(!myTailor||!token) return;
@@ -2809,6 +2904,13 @@ export default function App() {
       await db.setVacationMode(user.id,on,token);
       setProfile(p=>p?{...p,vacation_mode:on}:p);
       setVacationSellers(prev=>{ const s=new Set(prev); if(on)s.add(user.id); else s.delete(user.id); return s; });
+      // Phase 15 — if this seller is also a tailor, mirror vacation onto their
+      // tailor row so the public availability calendar shows every date as
+      // unavailable while away. The per-day availability rows are left untouched,
+      // so turning vacation off restores the tailor's saved availability exactly.
+      if(myTailor&&myTailor.id){
+        try{ await db.updateTailor(myTailor.id,{vacation_mode:on},token); setMyTailor(m=>m?{...m,vacation_mode:on}:m); }catch(e){ /* non-fatal */ }
+      }
       flash(on?"You're on vacation — your listings are now hidden.":"Welcome back! Your listings are visible again.");
     }catch(e){ flash("Couldn't update vacation mode."); }
     finally{ setVacationSaving(false); }
@@ -4104,8 +4206,13 @@ export default function App() {
         alterationRequests={tailorAlterations} alterationBuyers={alterationBuyers} bookingsLoading={tailorAlterationsLoading}
         onSendQuote={sendAlterationQuote} onDeclineRequest={declineAlterationRequest} onMessageBuyer={messageBuyerFromRequest}
         onMarkComplete={markAlterationComplete} payouts={tailorPayouts}
+        availabilityRows={availabilityRows} availabilityLoading={availabilityLoading} availabilityBusy={availabilityBusy}
+        onToggleAvailabilityEnabled={toggleAvailabilityEnabled} onSaveAvailabilitySettings={saveAvailabilitySettings}
+        onSetDayAvailability={setDayAvailability} onSetDaySlots={setDaySlots}
+        onMarkRangeUnavailable={markRangeUnavailable} onMarkAllAvailable={markAllAvailable}
         publicTailor={publicTailor} publicTailorLoading={publicTailorLoading}
         publicTailorReviews={publicTailorReviews} publicReviewBuyers={publicReviewBuyers}
+        publicAvailability={publicAvailability} onSendAlterationRequest={sendAlterationRequestFromProfile}
         tailorReviews={tailorReviews} tailorReviewBuyers={tailorReviewBuyers}
         setAuthMode={setAuthMode} onGateAuth={gateAuth}
       />
@@ -4124,6 +4231,8 @@ export default function App() {
         open={alterReqOpen} onClose={()=>setAlterReqOpen(false)}
         listing={alterReqListing} tailors={approvedTailors} busy={alterReqBusy}
         onSend={sendAlterationRequest}
+        initialPreferredDate={preferredDateHint}
+        getTailorAvailability={(id)=>db.getTailorAvailability(id,token)}
         openTailorProfile={(id)=>{ try{ window.open(`/tailors/${id}`,"_blank","noopener"); }catch(e){} }}
         browseAllTailors={()=>{ setAlterReqOpen(false); loadTailorMarket(); setView("tailors"); window.scrollTo(0,0); }}
       />
