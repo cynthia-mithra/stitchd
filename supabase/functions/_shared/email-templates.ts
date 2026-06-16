@@ -5,7 +5,7 @@
 //   • white background, clean minimal layout
 //   • black (#111) header bar, STITCH'D wordmark in white Barlow Condensed
 //   • #FF1493 pink accent for headings and CTA buttons
-//   • footer: © 2026 Stitch'd · stitchd.fit · Unsubscribe
+//   • footer: 2026 Stitch'd · stitchd.fit · Unsubscribe
 //
 // Every builder returns { subject, html }. Templates are inline-styled tables —
 // the only layout email clients render reliably (no external CSS, no flexbox).
@@ -101,7 +101,7 @@ export function baseTemplate(opts: {
       <!-- Footer -->
       <tr><td style="padding:30px 28px 40px 28px;border-top:1px solid #eeeeee;">
         <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#999999;">
-          &copy; 2026 Stitch'd &middot;
+          2026 Stitch'd &middot;
           <a href="https://stitchd.fit" target="_blank" style="color:#999999;text-decoration:underline;">stitchd.fit</a>
           &middot;
           <a href="${esc(opts.unsubscribeUrl)}" target="_blank" style="color:#999999;text-decoration:underline;">Unsubscribe from these emails</a>

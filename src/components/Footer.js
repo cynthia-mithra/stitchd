@@ -50,8 +50,8 @@ export default function Footer({ onNav }) {
           </a>
         </nav>
 
-        {/* RIGHT — copyright */}
-        <span style={S.copy}>© 2026 Stitch'd. All rights reserved.</span>
+        {/* RIGHT — wordmark / year */}
+        <span style={S.copy}>2026 Stitch'd</span>
       </div>
 
       <p style={S.note}>
