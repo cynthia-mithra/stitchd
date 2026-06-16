@@ -29,7 +29,7 @@ export default function Tailors({
               <button style={{...S.back,color:"#00E5CC",marginBottom:16}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#00E5CC",marginBottom:8}}>FIND A TAILOR</p>
               <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(48px,8vw,100px)",fontWeight:900,color:"#111",lineHeight:.9,letterSpacing:-2,marginBottom:16}}>TAILOR<br/><span style={{color:"#00E5CC"}}>MARKETPLACE</span></h1>
-              {user&&<button className="hbtn" style={{...S.hBtn,background:"#00E5CC",border:"none",padding:"14px 28px",fontSize:13,letterSpacing:2,marginTop:16}} onClick={()=>{setEditingService(null);setTailorServiceForm({title:"",description:"",service_type:"Alterations",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});setShowTailorForm(true);}}>+ LIST MY SERVICE</button>}
+              {user&&<button className="hbtn" style={{...S.hBtn,background:"#00E5CC",border:"none",padding:"14px 28px",fontSize:13,letterSpacing:2,marginTop:16}} onClick={()=>{setEditingService(null);setTailorServiceForm({title:"",description:"",service_type:"All",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});setShowTailorForm(true);}}>+ LIST MY SERVICE</button>}
             </div>
           </div>
           <div style={{maxWidth:1200,margin:"0 auto",padding:"32px 16px"}}>
@@ -55,7 +55,7 @@ export default function Tailors({
                 {tailorServices.filter(s=>{
                   const q=tailorSearch.toLowerCase();
                   const matchSearch=!q||s.title?.toLowerCase().includes(q)||s.location?.toLowerCase().includes(q);
-                  const matchType=tailorTypeFilter==="All"||s.service_type===tailorTypeFilter;
+                  const matchType=tailorTypeFilter==="All"||s.service_type===tailorTypeFilter||s.service_type==="All";
                   return matchSearch&&matchType;
                 }).map((s,idx)=>{
                   const accent=CARD_COLORS[idx%CARD_COLORS.length];
@@ -115,7 +115,7 @@ export default function Tailors({
                   <F l="SERVICE TITLE *"><input style={S.inp} placeholder="e.g. Bridal Lehenga Alterations" value={tailorServiceForm.title} onChange={e=>setTailorServiceForm(f=>({...f,title:e.target.value}))}/></F>
                   <F l="SERVICE TYPE">
                     <select style={S.inp} value={tailorServiceForm.service_type} onChange={e=>setTailorServiceForm(f=>({...f,service_type:e.target.value}))}>
-                      {["Alterations","Taking In","Letting Out","Hemming","Blouse Stitching","Full Stitching","Custom Stitching","Embroidery","Repairs","Custom Orders"].map(t=><option key={t}>{t}</option>)}
+                      {["All","Alterations","Taking In","Letting Out","Hemming","Blouse Stitching","Full Stitching","Custom Stitching","Embroidery","Repairs","Custom Orders"].map(t=><option key={t}>{t}</option>)}
                     </select>
                   </F>
                   <F l="DESCRIPTION"><textarea style={{...S.inp,height:90,resize:"vertical",width:"100%"}} value={tailorServiceForm.description} onChange={e=>setTailorServiceForm(f=>({...f,description:e.target.value}))}/></F>
