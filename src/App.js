@@ -12,6 +12,7 @@ import { db } from "./lib/db";
 import { startCheckout, startOfferCheckout, startAlterationCheckout, verifySession } from "./lib/checkout";
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
+import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } from "./lib/connect";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock } from "lucide-react";
@@ -335,6 +336,13 @@ export default function App() {
   // payout rows (EARNINGS section) and the buyer's decline-quote confirm modal.
   const [alterCheckoutId,   setAlterCheckoutId]   = useState(null);
   const [tailorPayouts,     setTailorPayouts]     = useState([]);
+  // Phase 15 — Stripe Connect: PAYMENTS section busy flag, and the admin PAYOUTS
+  // oversight rows (every payout with status, for the admin dashboard).
+  const [paymentsBusy,      setPaymentsBusy]      = useState(false);
+  const [adminPayouts,      setAdminPayouts]      = useState([]);
+  // Phase 15 — Stripe's return from Connect onboarding (?connect=success|refresh).
+  // Captured on cold load, then resolved once myTailor is ready (see the effect).
+  const [connectReturn,     setConnectReturn]     = useState(null);
   // Phase 15 — Tailor reviews & ratings. The review modal (request being reviewed
   // + submit busy flag), the buyer's own reviews (so /alterations shows reviewed
   // state), the public-profile reviews (+ reviewer profiles) and the dashboard
@@ -570,6 +578,13 @@ export default function App() {
       try{ if(new URLSearchParams(window.location.search).get("paid")==="true"){ setTimeout(()=>flash("Payment received — your booking is confirmed!",6000),400); } }catch(e){}
       setView("alterations");
       window.history.replaceState({},"","/alterations");
+    } else if(path==="/tailor-dashboard"){
+      // Phase 15 — Stripe Connect onboarding return. ?connect=success means the
+      // tailor finished the hosted flow; ?connect=refresh means the link expired.
+      // Capture it for the myTailor-ready effect, which opens the dashboard and
+      // verifies onboarding (the actual completion is confirmed against Stripe).
+      try{ const c=new URLSearchParams(window.location.search).get("connect"); if(c) setConnectReturn(c); }catch(e){}
+      window.history.replaceState({},"","/tailor-dashboard");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
@@ -1163,8 +1178,8 @@ export default function App() {
   // the reporters/buyers referenced. Called when an admin opens the dashboard.
   async function loadAdminData(){
     if(!isAdmin||!token) return;
-    const [reports,disputes,applications,tailors]=await Promise.all([db.getAllReports(token),db.getAllDisputes(token),db.getVerificationApplications(token),db.getPendingTailors(token)]);
-    setAdminReports(reports); setAdminDisputes(disputes); setAdminApplications(applications); setAdminTailors(tailors);
+    const [reports,disputes,applications,tailors,payouts]=await Promise.all([db.getAllReports(token),db.getAllDisputes(token),db.getVerificationApplications(token),db.getPendingTailors(token),db.getAllPayouts(token)]);
+    setAdminReports(reports); setAdminDisputes(disputes); setAdminApplications(applications); setAdminTailors(tailors); setAdminPayouts(payouts);
     const ids=[...new Set([...reports.map(r=>r.reporter_id),...disputes.map(d=>d.buyer_id)].filter(Boolean))];
     if(ids.length){
       const profs=await db.getProfilesByIds(ids,token);
@@ -2188,17 +2203,42 @@ export default function App() {
       flash("Marked as complete. The buyer will be asked to confirm.");
     }catch(e){ flash("Couldn't mark complete: "+errMsg(e)); throw e; }
   }
-  // Buyer confirms completion → release the tailor's payout (status → paid) +
-  // notify the tailor. Returns true so the card can switch to the review prompt.
+  // Buyer confirms completion → release the tailor's payout as a real Stripe
+  // Connect transfer (process-tailor-payout). That function decides the outcome:
+  //   • paid  — the tailor's onboarded; the transfer went out (it notifies/emails)
+  //   • held  — the tailor hasn't finished payment setup; payout stays pending
+  //             (it nudges the tailor to finish)
+  // If the function is unreachable (e.g. Connect not yet live on the account), we
+  // fall back to the DB-only release so completion still works — the transfer can
+  // be retried later from the admin PAYOUTS panel.
+  // Returns true so the card can switch to the review prompt.
   async function confirmAlterationCompletion(req){
     if(!token||!req) return false;
     try{
-      await db.confirmAlterationPayout(req.id,token);
       const payoutPence=req.tailor_payout_pence;
       const tailorUserId=req.tailors&&req.tailors.user_id;
-      if(tailorUserId) await notify(tailorUserId,"alteration_payout","Payout confirmed!",`Great news! Your payout of ${gbp(payoutPence)} has been confirmed.`,req.listing_id);
+      let outcome="paid"; // paid | held | fallback
+      try{
+        const res=await processTailorPayout(req.id);
+        if(res&&res.held) outcome="held";
+        else outcome="paid"; // paid or already_paid
+      }catch(e){
+        // Connect may not be active yet — degrade to the DB-only release so the
+        // buyer isn't blocked, and notify the tailor ourselves (the edge function
+        // didn't run, so no notification/email fired).
+        console.error("Payout transfer failed, falling back to DB release:",e);
+        await db.confirmAlterationPayout(req.id,token);
+        if(tailorUserId) await notify(tailorUserId,"alteration_payout","Payout confirmed!",`Great news! Your payout of ${gbp(payoutPence)} has been confirmed.`,req.listing_id);
+        outcome="fallback";
+      }
+      // The buyer has done their part — advance their own card to the review
+      // prompt regardless of the payout outcome (held is the tailor's concern,
+      // surfaced on the tailor EARNINGS + admin PAYOUTS views from the real
+      // tailor_payouts.status). This is a local-only optimistic flag.
       setBuyerAlterations(p=>p.map(r=>r.id===req.id?{...r,payout_status:"paid"}:r));
-      flash("Thanks for confirming! We've released the payout.");
+      flash(outcome==="held"
+        ? "Thanks for confirming! Your tailor's payout is pending until they finish their payment setup."
+        : "Thanks for confirming! We've released the payout to your tailor.");
       // Prompt for a review straight away (Part 2 trigger). Skip if somehow
       // already reviewed; the /alterations card keeps the LEAVE A REVIEW button
       // for later either way.
@@ -2251,6 +2291,60 @@ export default function App() {
     catch(e){ setTailorPayouts([]); }
   }
 
+  // ── Phase 15 — Stripe Connect onboarding (tailor PAYMENTS section) ─────────
+  // Tap CONNECT BANK ACCOUNT → create-connect-account creates/reuses the tailor's
+  // Express account and redirects to the Stripe-hosted onboarding flow, which
+  // returns to /tailor-dashboard?connect=success.
+  async function startTailorPayments(){
+    if(!myTailor||!user){ flash("You need to be signed in as a tailor to set up payments."); return; }
+    setPaymentsBusy(true);
+    try{ await startConnectOnboarding(myTailor.id,user.id); }
+    catch(e){ flash(e.message||"Couldn't start payment setup. Please try again."); setPaymentsBusy(false); }
+    // No finally — on success the browser navigates away to Stripe.
+  }
+  // Re-check onboarding against Stripe (details_submitted) and sync myTailor.
+  // Called on the ?connect=success return; returns the function's JSON.
+  async function verifyTailorPayments({ silent=false }={}){
+    if(!myTailor) return null;
+    try{
+      const res=await verifyConnectAccount(myTailor.id);
+      const complete=!!(res&&res.onboarding_complete);
+      setMyTailor(m=>m?{...m,stripe_onboarding_complete:complete}:m);
+      return res;
+    }catch(e){ if(!silent) flash(e.message||"Couldn't verify payment setup."); return null; }
+  }
+  // MANAGE PAYMENTS → open the tailor's Stripe Express dashboard in a new tab
+  // (verify-connect-account returns a login link once onboarding is complete).
+  async function manageTailorPayments(){
+    if(!myTailor) return;
+    setPaymentsBusy(true);
+    try{
+      const res=await verifyConnectAccount(myTailor.id);
+      const url=(res&&(res.dashboard_url||res.url))||null;
+      if(url){ try{ window.open(url,"_blank","noopener"); }catch(e){ window.location.href=url; } }
+      else flash("Couldn't open your Stripe dashboard. Please try again.");
+    }catch(e){ flash(e.message||"Couldn't open your Stripe dashboard."); }
+    finally{ setPaymentsBusy(false); }
+  }
+  // Resolve the Connect return once myTailor + token are ready (cold load after
+  // Stripe redirects back). Opens the dashboard, then verifies + confirms.
+  useEffect(()=>{
+    if(!connectReturn||!myTailor||!token) return;
+    const mode=connectReturn;
+    setConnectReturn(null);
+    (async()=>{
+      await openTailorDashboard();
+      if(mode==="success"){
+        const res=await verifyTailorPayments({silent:true});
+        if(res&&res.onboarding_complete) flash("Payment account connected successfully!",6000);
+        else flash("Almost there — finish your payment setup to start receiving payouts.",6000);
+      }else{
+        flash("Payment setup wasn't completed. You can resume it anytime from your profile.",6000);
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[connectReturn,myTailor,token]);
+
   // Admin — approve a tailor application: flip status to approved, stamp the
   // approval, notify + email the tailor, keep myTailor in sync if it's me.
   async function approveTailor(t){
@@ -2275,6 +2369,21 @@ export default function App() {
       await notify(t.user_id,"tailor","Tailor application update","Your tailor application was not approved at this time.",t.id);
       flash("Tailor application rejected.");
     }catch(e){ flash("Failed to reject tailor."); }
+  }
+
+  // Admin — retry a failed (or stuck-pending) payout. Re-runs process-tailor-payout
+  // for the booking; the function re-verifies everything and either transfers,
+  // holds (tailor not onboarded) or reports a fresh failure. Reloads the panel.
+  async function retryPayout(po){
+    const reqId=po&&(po.alteration_request_id||(po.alteration_requests&&po.alteration_requests.id));
+    if(!reqId){ flash("Couldn't find the booking for this payout."); return; }
+    try{
+      const res=await processTailorPayout(reqId);
+      if(res&&res.held) flash("Payout still pending — the tailor hasn't finished their payment setup yet.",6000);
+      else if(res&&(res.paid||res.already_paid)) flash("Payout transferred successfully.");
+      else flash("Payout retried.");
+    }catch(e){ flash("Retry failed: "+errMsg(e)); }
+    try{ setAdminPayouts(await db.getAllPayouts(token)); }catch(e){}
   }
 
   async function markNotifRead(id){
@@ -4147,6 +4256,7 @@ export default function App() {
         adminApplications={adminApplications} adminApplicants={adminApplicants}
         approveVerification={approveVerification} rejectVerification={rejectVerification}
         adminTailors={adminTailors} approveTailor={approveTailor} rejectTailor={rejectTailor} openTailorPublic={openTailorPublic}
+        adminPayouts={adminPayouts} retryPayout={retryPayout}
         verifyIdentity={verifyIdentity} identityBusy={identityBusy}
         requestTab={dashTabRequest} clearRequestTab={()=>setDashTabRequest(null)}
         storeForm={storeForm} setStoreForm={setStoreForm} saveStorefront={saveStorefront} storeSaving={storeSaving}
@@ -4206,6 +4316,7 @@ export default function App() {
         alterationRequests={tailorAlterations} alterationBuyers={alterationBuyers} bookingsLoading={tailorAlterationsLoading}
         onSendQuote={sendAlterationQuote} onDeclineRequest={declineAlterationRequest} onMessageBuyer={messageBuyerFromRequest}
         onMarkComplete={markAlterationComplete} payouts={tailorPayouts}
+        onSetupPayments={startTailorPayments} onManagePayments={manageTailorPayments} paymentsBusy={paymentsBusy}
         availabilityRows={availabilityRows} availabilityLoading={availabilityLoading} availabilityBusy={availabilityBusy}
         onToggleAvailabilityEnabled={toggleAvailabilityEnabled} onSaveAvailabilitySettings={saveAvailabilitySettings}
         onSetDayAvailability={setDayAvailability} onSetDaySlots={setDaySlots}

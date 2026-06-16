@@ -50,7 +50,26 @@ supabase functions deploy create-alteration-checkout
 # "please confirm completion" buyer email:
 supabase functions deploy stripe-webhook
 supabase functions deploy send-email
+# Phase 15 — Stripe Connect for tailor payouts (Express accounts). Three new
+# functions; send-email gained the "Payment sent" payout email template:
+supabase functions deploy create-connect-account
+supabase functions deploy verify-connect-account
+supabase functions deploy process-tailor-payout
+supabase functions deploy send-email
 ```
+
+> **Stripe Connect note (Phase 15):** these three functions implement tailor
+> payouts via Connect **Express** accounts. They reuse the existing
+> `STRIPE_SECRET_KEY` / `SITE_URL` / auto-injected service-role secrets — no new
+> secrets. **Run the `20260616040000_phase15_stripe_connect.sql` migration first**
+> so the `tailors.stripe_account_id` / `stripe_onboarding_complete` /
+> `stripe_onboarding_url` columns and the `tailor_payouts.stripe_transfer_id` /
+> `paid_at` / `failure_reason` columns exist. **Stripe Connect must be ENABLED on
+> the Stitch'd account before this can be tested end to end** — see the PR
+> description. The browser calls these functions directly (they return permissive
+> CORS headers, like the identity/promotion flows), so no Vercel proxy is needed.
+> Test with Connect test mode + test Express accounts and card
+> `4242 4242 4242 4242` before going live.
 
 > **Offer checkout note:** the browser calls the same-origin Vercel proxy
 > `/api/create-offer-checkout` (mirroring the sale flow's `/api/stripe-checkout`),

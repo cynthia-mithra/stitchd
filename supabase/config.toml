@@ -71,3 +71,19 @@ verify_jwt = false
 # arrives on stripe-webhook (metadata.type='alteration').
 [functions.create-alteration-checkout]
 verify_jwt = false
+
+# Phase 15 — Stripe Connect for tailor payouts. All three are called directly from
+# the browser (PAYMENTS section + buyer's "confirm completion"); each re-verifies
+# ownership / booking state server-side via the service role and doesn't rely on
+# the caller's Supabase JWT, so verification must be OFF.
+#   create-connect-account  — create/reuse the tailor's Express account + link
+#   verify-connect-account  — read Stripe details_submitted, sync onboarding flag
+#   process-tailor-payout   — transfer the tailor's cut on completion
+[functions.create-connect-account]
+verify_jwt = false
+
+[functions.verify-connect-account]
+verify_jwt = false
+
+[functions.process-tailor-payout]
+verify_jwt = false

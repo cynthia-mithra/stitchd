@@ -1,5 +1,5 @@
 import React from "react";
-import { Scissors, MapPin, Instagram, Globe, Trash2, Plus, ArrowUp, ArrowDown, X, ExternalLink, Mail, Check, Wallet, Clock, Calendar, ChevronLeft, ChevronRight, Save, Plane } from "lucide-react";
+import { Scissors, MapPin, Instagram, Globe, Trash2, Plus, ArrowUp, ArrowDown, X, ExternalLink, Mail, Check, CheckCircle, CreditCard, AlertTriangle, ArrowUpRight, Wallet, Clock, Calendar, ChevronLeft, ChevronRight, Save, Plane } from "lucide-react";
 import { S } from "../styles";
 import { F, Stars, Thumb } from "../components/Shared";
 import { RatingSummary, ReviewList } from "../components/Reviews";
@@ -65,6 +65,8 @@ export default function TailorProfiles({
   tailorEdit, setTailorEdit, saveTailorProfile, tailorEditBusy,
   tailorPortfolio, addPortfolioImages, deletePortfolioImage, movePortfolioImage, portfolioBusy,
   openTailorPublic,
+  // Stripe Connect — PAYMENTS section (Phase 15)
+  onSetupPayments = () => {}, onManagePayments = () => {}, paymentsBusy = false,
   // availability (Phase 15 — Tailor availability calendar)
   availabilityRows = [], availabilityLoading = false, availabilityBusy = false,
   onToggleAvailabilityEnabled = () => {}, onSaveAvailabilitySettings = () => {},
@@ -264,6 +266,8 @@ export default function TailorProfiles({
           {/* PROFILE TAB */}
           {tailorDashTab==="profile"&&(
             <div style={{display:"flex",flexDirection:"column",gap:18,maxWidth:680}}>
+              {/* PAYMENTS — Stripe Connect onboarding (Phase 15) */}
+              <PaymentsSection tailor={myTailor} busy={paymentsBusy} onSetup={onSetupPayments} onManage={onManagePayments}/>
               <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
                 <F l="PROFILE IMAGE">
                   <div style={{width:130,height:130}}>
@@ -887,49 +891,105 @@ function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuo
   );
 }
 
-// ── EARNINGS tab — payout totals + a list of paid bookings (Phase 15) ─────────
+// ── PAYMENTS — Stripe Connect onboarding (Phase 15) ───────────────────────────
+// Shown at the top of the PROFILE tab. Before onboarding: SET UP PAYMENTS + a
+// warning that bookings can't be accepted until setup is done. After onboarding:
+// a PAYMENTS CONNECTED confirmation + a MANAGE PAYMENTS link to the Stripe Express
+// dashboard.
+function PaymentsSection({ tailor, busy = false, onSetup, onManage }) {
+  const connected = !!(tailor && tailor.stripe_onboarding_complete);
+  return (
+    <div style={{border:"2px solid #111",padding:20,display:"flex",flexDirection:"column",gap:12,background:connected?"#f3fffd":"#fff"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <CreditCard width={18} height={18} color={PINK}/>
+        <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,letterSpacing:1}}>PAYMENTS</h3>
+      </div>
+      {connected ? (
+        <>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <CheckCircle width={22} height={22} color={TEAL}/>
+            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,letterSpacing:1.5}}>PAYMENTS CONNECTED</span>
+          </div>
+          <p style={{fontSize:13.5,color:"#555",fontFamily:"'Barlow',sans-serif"}}>Your payouts go to your connected bank account.</p>
+          <button className="hbtn" disabled={busy} onClick={onManage}
+            style={{alignSelf:"flex-start",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"12px 22px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,fontSize:13,cursor:busy?"wait":"pointer",opacity:busy?0.6:1,display:"inline-flex",alignItems:"center",gap:8}}>
+            <ArrowUpRight width={15} height={15}/> {busy?"OPENING…":"MANAGE PAYMENTS"}
+          </button>
+        </>
+      ) : (
+        <>
+          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,letterSpacing:1.5}}>SET UP PAYMENTS</p>
+          <p style={{fontSize:13.5,color:"#555",fontFamily:"'Barlow',sans-serif"}}>Connect your bank account to receive payouts from Stitch'd bookings.</p>
+          <div style={{display:"flex",alignItems:"center",gap:8,background:"#fff0f8",border:`1.5px solid ${PINK}`,padding:"10px 12px"}}>
+            <AlertTriangle width={16} height={16} color={PINK} style={{flexShrink:0}}/>
+            <span style={{fontSize:12.5,fontWeight:800,color:"#111",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5}}>You must complete payment setup before you can accept bookings.</span>
+          </div>
+          <button className="hbtn" disabled={busy} onClick={onSetup}
+            style={{alignSelf:"flex-start",background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px 30px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2.5,fontSize:14,cursor:busy?"wait":"pointer",opacity:busy?0.6:1}}>
+            {busy?"REDIRECTING…":"CONNECT BANK ACCOUNT"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── EARNINGS tab — payout totals + per-booking breakdown (Phase 15) ───────────
 function TailorEarnings({ payouts = [] }) {
-  // Tailor's earnings = booking value − commission. Totals split paid vs pending.
-  let totalEarned=0, totalCommission=0, pendingPayout=0;
-  const paidRows=[];
+  // Tailor's earnings = booking value − 15% commission. Totals split transferred
+  // (status 'paid' — a real Stripe transfer went out) vs pending (awaiting the
+  // buyer's completion confirmation or the tailor finishing payment setup).
+  let totalEarned=0, totalCommission=0, pendingPayout=0, transferred=0;
+  const rows=[];
   for(const po of payouts){
     const amount=Number(po.amount_pence)||0;
     const commission=Number(po.commission_pence)||0;
     const payout=amount-commission;
-    if(po.status==="paid"){ totalEarned+=payout; totalCommission+=commission; paidRows.push(po); }
-    else if(po.status!=="failed"){ pendingPayout+=payout; }
+    if(po.status==="failed") continue;
+    rows.push(po);
+    totalEarned+=payout; totalCommission+=commission;
+    if(po.status==="paid") transferred+=payout; else pendingPayout+=payout;
   }
   return (
     <div style={{display:"flex",flexDirection:"column",gap:20}}>
       {/* Summary tiles */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:14}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:14}}>
         <StatTile icon={<Wallet width={18} height={18}/>} label="TOTAL EARNED" value={gbp(totalEarned)} accent={PINK}/>
         <StatTile icon={<Clock width={18} height={18}/>} label="PENDING PAYOUTS" value={gbp(pendingPayout)}/>
+        <StatTile icon={<CheckCircle width={18} height={18}/>} label="TRANSFERRED" value={gbp(transferred)} accent={TEAL}/>
         <StatTile icon={<Scissors width={18} height={18}/>} label="COMMISSION PAID" value={gbp(totalCommission)} muted/>
       </div>
-      <p style={{fontSize:12,color:"#999"}}>Earnings are shown after Stitch'd's 15% commission. Pending payouts are released once the buyer confirms completion.</p>
+      <p style={{fontSize:12,color:"#999"}}>Earnings are shown after Stitch'd's 15% commission. Pending payouts are transferred to your bank account once the buyer confirms completion.</p>
 
-      {/* Paid bookings list */}
+      {/* Per-booking breakdown */}
       <div>
-        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,letterSpacing:1.5,marginBottom:12}}>PAID BOOKINGS</p>
-        {paidRows.length===0?(
-          <Placeholder title="NO PAID BOOKINGS YET" text="Your completed, paid-out bookings will appear here."/>
+        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,letterSpacing:1.5,marginBottom:12}}>BOOKINGS</p>
+        {rows.length===0?(
+          <Placeholder title="NO EARNINGS YET" text="Your paid bookings and payouts will appear here."/>
         ):(
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            {paidRows.map(po=>{
+            {rows.map(po=>{
               const ar=po.alteration_requests; const listing=ar&&ar.listings;
-              const payout=(Number(po.amount_pence)||0)-(Number(po.commission_pence)||0);
+              const gross=Number(po.amount_pence)||0;
+              const commission=Number(po.commission_pence)||0;
+              const payout=gross-commission;
               const name=(listing&&listing.name)||(ar&&ar.garment_type)||"Alteration";
+              const transferredRow=po.status==="paid";
+              const when=po.paid_at||po.created_at;
               return (
-                <div key={po.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,border:"2px solid #111",padding:12}}>
-                  <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
+                <div key={po.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,border:"2px solid #111",padding:12,flexWrap:"wrap"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0,flex:1}}>
                     <Thumb src={bkListingThumb(listing)} emoji={catEmoji(listing&&listing.category)} accent="#f5f5f5" style={{width:46,height:46,border:"2px solid #111",flexShrink:0}} emojiStyle={{fontSize:22}}/>
                     <div style={{minWidth:0}}>
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,lineHeight:1.1}}>{name}</p>
-                      <p style={{fontSize:11,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5}}>{bkDate(po.created_at).toUpperCase()}</p>
+                      <p style={{fontSize:11,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5}}>{bkDate(when).toUpperCase()}</p>
+                      <p style={{fontSize:11.5,color:"#777",fontFamily:"'Barlow',sans-serif",marginTop:2}}>Gross {gbp(gross)} · Commission −{gbp(commission)}</p>
                     </div>
                   </div>
-                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:PINK,whiteSpace:"nowrap"}}>{gbp(payout)}</span>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:PINK,whiteSpace:"nowrap"}}>{gbp(payout)}</span>
+                    <span style={{background:transferredRow?TEAL:"#FF9500",color:transferredRow?"#111":"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:900,letterSpacing:1.5,padding:"3px 9px"}}>{transferredRow?"TRANSFERRED":"PENDING"}</span>
+                  </div>
                 </div>
               );
             })}

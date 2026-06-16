@@ -638,6 +638,13 @@ export const db = {
     const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_payouts?tailor_id=eq.${tailorId}&select=*,alteration_requests(id,garment_type,listing_id,paid_at,listings(name,image_url,images))&order=created_at.desc`,{headers:hdrs(t)});
     if(r.ok)return r.json();
     const r2=await fetch(`${SUPABASE_URL}/rest/v1/tailor_payouts?tailor_id=eq.${tailorId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
+  // Admin PAYOUTS oversight — EVERY payout, newest first, with the booking (+
+  // listing) and tailor embedded for the table. Falls back to a plain select where
+  // the embed isn't available, then [] if the table doesn't exist yet.
+  async getAllPayouts(t){
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_payouts?select=*,alteration_requests(id,garment_type,listing_id,listings(name,image_url,images)),tailors(id,display_name)&order=created_at.desc`,{headers:hdrs(t)});
+    if(r.ok)return r.json();
+    const r2=await fetch(`${SUPABASE_URL}/rest/v1/tailor_payouts?order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
 
   // ── Phase 15 — Tailor reviews & ratings ───────────────────────────────────
   // A buyer reviews a tailor after a completed booking. Reviews live in their own
