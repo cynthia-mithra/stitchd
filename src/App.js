@@ -298,7 +298,7 @@ export default function App() {
   const [tailorBookings,    setTailorBookings]    = useState([]);
   const [showTailorMarket,  setShowTailorMarket]  = useState(false);
   const [selectedService,   setSelectedService]   = useState(null);
-  const [tailorServiceForm, setTailorServiceForm] = useState({title:"",description:"",service_type:"Alterations",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});
+  const [tailorServiceForm, setTailorServiceForm] = useState({title:"",description:"",service_type:"All",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});
   const [showTailorForm,    setShowTailorForm]    = useState(false);
   const [editingService,    setEditingService]    = useState(null);
   const [tailorSearch,      setTailorSearch]      = useState("");
@@ -1723,13 +1723,14 @@ export default function App() {
 
   async function saveTailorService(){
     if(!tailorServiceForm.title||!tailorServiceForm.price_from){flash("Add a title and starting price.");return;}
+    if(!tailorServiceForm.service_type||tailorServiceForm.service_type==="All"){flash("Please select at least one specialism");return;}
     try{
       const imageUrls=await Promise.all((tailorServiceForm.images||[]).map(f=>uploadImage(f,token)));
       const payload={tailor_id:user.id,title:tailorServiceForm.title,description:tailorServiceForm.description,service_type:tailorServiceForm.service_type,price_from:parseFloat(tailorServiceForm.price_from),price_to:tailorServiceForm.price_to?parseFloat(tailorServiceForm.price_to):null,turnaround_days:tailorServiceForm.turnaround_days?parseInt(tailorServiceForm.turnaround_days):null,location:tailorServiceForm.location,images:imageUrls,active:true};
       if(editingService){ await db.updateTailorService(editingService.id,payload,token); flash("✓ Service updated!"); }
       else { await db.insertTailorService(payload,token); flash("🩷 Service listed!"); }
       setShowTailorForm(false); setEditingService(null);
-      setTailorServiceForm({title:"",description:"",service_type:"Alterations",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});
+      setTailorServiceForm({title:"",description:"",service_type:"All",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});
       await loadTailorMarket();
     }catch(e){flash("Failed to save service.");}
   }
