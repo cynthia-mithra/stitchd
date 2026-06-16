@@ -3,9 +3,10 @@ import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, Shoppi
 import { SIZES, CARD_COLORS, catEmoji, currencySymbol, listingGender } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Tog, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
+import LoginPromptModal from "../components/LoginPromptModal";
 
 export default function Profile({
-  view, setView, prevView, user,
+  view, setView, prevView, user, onGateAuth = () => {},
   // editprofile
   profForm, setProfForm, saveProfile, profSaving,
   twoFAStep, setTwoFAStep, twoFAData, setTwoFAData, twoFACode, setTwoFACode,
@@ -18,6 +19,10 @@ export default function Profile({
   // resets whenever a different seller's storefront is opened.
   const [storeFilter,setStoreFilter]=React.useState("ALL");
   React.useEffect(()=>{ setStoreFilter("ALL"); },[viewedProfile?.id]);
+  // Login gate — following a seller needs an account; logged-out visitors get
+  // the shared sign-up prompt (context: follow) rather than a bounce to /auth.
+  const [gate,setGate]=React.useState(null);
+  const requireAuth=(context,action)=>{ if(user) action(); else setGate(context); };
   if(view!=="editprofile"&&view!=="profile") return null;
   return (
     <>
@@ -197,7 +202,7 @@ export default function Profile({
               <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:1,color:"#111",display:"inline-flex",alignItems:"center",gap:5}}><Users width={14} height={14}/> {followerCount} follower{followerCount!==1?"s":""}</span>
             </div>
             {!own&&(
-              <button className="hbtn" style={{...S.hBtn,fontSize:13,letterSpacing:2,padding:"11px 22px",marginTop:16,border:"2px solid #111",borderRadius:0,background:following?"#111":"#fff",color:following?"#fff":"#111"}} onClick={()=>toggleFollow(sf.id)}>
+              <button className="hbtn" style={{...S.hBtn,fontSize:13,letterSpacing:2,padding:"11px 22px",marginTop:16,border:"2px solid #111",borderRadius:0,background:following?"#111":"#fff",color:following?"#fff":"#111"}} onClick={()=>requireAuth("follow",()=>toggleFollow(sf.id))}>
                 {following
                   ?<span style={{display:"inline-flex",alignItems:"center",gap:7}}><UserCheck width={16} height={16}/> FOLLOWING</span>
                   :<span style={{display:"inline-flex",alignItems:"center",gap:7}}><UserPlus width={16} height={16}/> FOLLOW</span>}
@@ -279,6 +284,7 @@ export default function Profile({
         </main>
         );
       })()}
+      <LoginPromptModal open={!!gate} context={gate||"default"} onClose={()=>setGate(null)} onAuth={m=>{ setGate(null); onGateAuth(m); }}/>
     </>
   );
 }

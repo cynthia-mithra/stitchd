@@ -3,6 +3,7 @@ import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, 
 import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure, colourSwatchBg } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
+import LoginPromptModal from "../components/LoginPromptModal";
 
 // Phase 14 — compact relative time for comments, e.g. "2 hours ago".
 function timeAgo(ts){
@@ -22,7 +23,7 @@ export default function Detail({
   myWishlist = new Set(), toggleFavourite = () => {}, shareItem, setShowSizeGuide,
   inBag = () => false, toggleBag = () => {},
   isOwner, startConversation,
-  user, setAuthMode, buyNow = () => {},
+  user, onGateAuth = () => {}, buyNow = () => {},
   setShowPayment, setPaymentListing, setPaymentStep, setSelectedPostage,
   setShowReview, setShowReport,
   reviews,
@@ -35,6 +36,11 @@ export default function Detail({
   verifiedSellers = new Set(),
   identityVerifiedSellers = new Set(),
 }) {
+  // Login gate — logged-out buyers can browse everything, but actions that need
+  // an account (bag, offer, wishlist, comment, message) open the shared sign-up
+  // prompt instead of erroring. `gate` holds the context string while open.
+  const [gate, setGate] = React.useState(null);
+  const requireAuth = (context, action) => { if (user) action(); else setGate(context); };
   // Buyer-side unit toggle — converts on the fly, never writes back (PART 2a).
   const [dispUnit, setDispUnit] = React.useState("cm");
   // Phase 14 — split top-level questions from their replies. Replies point at
@@ -129,8 +135,8 @@ export default function Detail({
   const offerValid = offerAmount !== "" && !offerError;
   const closeOffer = () => { setShowOffer(false); setOfferAmount(""); setOfferMessage(""); setOfferSending(false); };
   const openOfferModal = () => {
-    // Not logged in → prompt to log in (issue PART 2).
-    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    // Not logged in → friendly sign-up prompt (context: offer).
+    if(!user){ setGate("offer"); return; }
     setOfferAmount(""); setOfferMessage(""); setShowOffer(true);
   };
   const sendOffer = async () => {
@@ -181,7 +187,7 @@ export default function Detail({
                   <span style={{fontSize:15,fontWeight:700,color:"#888",letterSpacing:0.5}}>· {reviews.length} review{reviews.length!==1?"s":""}</span>
                 </div>
               )}
-              {user&&!isOwner(sel)&&(()=>{
+              {!isOwner(sel)&&(()=>{
                 const bagged=inBag(sel.id);
                 const soldStyle={background:"#e5e5e5",color:"#999",border:"2px solid #ccc",cursor:"not-allowed"};
                 const baggedStyle={background:"#111",color:"#fff"};
@@ -191,7 +197,7 @@ export default function Detail({
                       className={sel.sold?"":"hbtn"}
                       disabled={sel.sold}
                       style={{...S.bagAddBtn,...(sel.sold?soldStyle:bagged?baggedStyle:{})}}
-                      onClick={()=>{ if(!sel.sold) toggleBag(sel); }}>
+                      onClick={()=>{ if(!sel.sold) requireAuth("default",()=>toggleBag(sel)); }}>
                       <ShoppingBag width={18} height={18}/> {sel.sold?"SOLD":bagged?"ADDED TO BAG":"ADD TO BAG"}
                     </button>
                     {sel.sold&&<p style={{fontStyle:"italic",fontSize:13,color:"#999",marginTop:8,marginBottom:4}}>This piece has found a new home</p>}
@@ -232,7 +238,7 @@ export default function Detail({
                 </div>
               )}
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20,flexWrap:"wrap"}}>
-                <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:myWishlist.has(sel.id)?"#FF1493":"#fff",color:myWishlist.has(sel.id)?"#fff":"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>toggleFavourite(sel)}><Heart width={15} height={15} fill={myWishlist.has(sel.id)?"currentColor":"none"}/> {myWishlist.has(sel.id)?"SAVED":"SAVE"}</button>
+                <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:myWishlist.has(sel.id)?"#FF1493":"#fff",color:myWishlist.has(sel.id)?"#fff":"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>requireAuth("wishlist",()=>toggleFavourite(sel))}><Heart width={15} height={15} fill={myWishlist.has(sel.id)?"currentColor":"none"}/> {myWishlist.has(sel.id)?"SAVED":"SAVE"}</button>
                 <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>shareItem(sel)}><Share2 width={15} height={15}/> SHARE</button>
                 <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>setShowSizeGuide(true)}><Ruler width={15} height={15}/> SIZE GUIDE</button>
               </div>
@@ -281,7 +287,7 @@ export default function Detail({
                 </div>
               )}
               {sel.description&&<p style={S.detailDesc}>{sel.description}</p>}
-              {!isOwner(sel)&&!sel.sold&&<button className="hbtn" style={{...S.waCta,background:"#FF1493",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:10,marginBottom:16}} onClick={()=>startConversation(sel)}><Mail width={16} height={16}/> MESSAGE SELLER</button>}
+              {!isOwner(sel)&&!sel.sold&&<button className="hbtn" style={{...S.waCta,background:"#FF1493",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:10,marginBottom:16}} onClick={()=>requireAuth("message",()=>startConversation(sel))}><Mail width={16} height={16}/> MESSAGE SELLER</button>}
               {!isOwner(sel)&&!sel.sold&&(
                 <div style={{marginBottom:24}}>
                   <button className="hbtn" style={{...S.hBtn,background:"#111",border:"none",padding:"16px 32px",fontSize:16,letterSpacing:2,width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:12}} onClick={()=>buyNow(sel)}>
@@ -422,19 +428,15 @@ export default function Detail({
                 )}
               </div>
             )}
-            {user?(
-              <div>
-                <textarea value={commentText} maxLength={300} onChange={e=>setCommentText(e.target.value)} placeholder="Ask a question about this listing..." style={{...S.inp,height:84,resize:"vertical",fontFamily:"'Barlow Condensed',sans-serif",marginBottom:6}}/>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#bbb",letterSpacing:1}}>{commentText.length} / 300</span>
-                  <button type="button" onClick={submitComment} disabled={!commentText.trim()} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:1.5,color:"#fff",background:"#FF1493",border:"2px solid #111",borderRadius:0,padding:"9px 22px",cursor:commentText.trim()?"pointer":"not-allowed",opacity:commentText.trim()?1:0.5}}>POST</button>
-                </div>
+            {/* Comments are read-only when logged out: the form shows, but POST
+                opens the sign-up prompt (context: comment) instead of erroring. */}
+            <div>
+              <textarea value={commentText} maxLength={300} onChange={e=>setCommentText(e.target.value)} placeholder="Ask a question about this listing..." style={{...S.inp,height:84,resize:"vertical",fontFamily:"'Barlow Condensed',sans-serif",marginBottom:6}}/>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#bbb",letterSpacing:1}}>{commentText.length} / 300</span>
+                <button type="button" onClick={()=>requireAuth("comment",submitComment)} disabled={!commentText.trim()} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:1.5,color:"#fff",background:"#FF1493",border:"2px solid #111",borderRadius:0,padding:"9px 22px",cursor:commentText.trim()?"pointer":"not-allowed",opacity:commentText.trim()?1:0.5}}>POST</button>
               </div>
-            ):(
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#888",letterSpacing:0.5}}>
-                <button type="button" onClick={()=>{setAuthMode("login");setView("auth");}} style={{background:"none",border:"none",cursor:"pointer",color:"#FF1493",fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:0.5,padding:0,textDecoration:"underline"}}>Log in</button> to ask a question
-              </p>
-            )}
+            </div>
           </div>
           {/* REPORT THIS LISTING — small, unobtrusive link at the very bottom of the
               page. Logged-in users only (issue PART 1). */}
@@ -490,6 +492,7 @@ export default function Detail({
           )}
         </main>
       )}
+      <LoginPromptModal open={!!gate} context={gate||"default"} onClose={()=>setGate(null)} onAuth={m=>{ setGate(null); onGateAuth(m); }}/>
     </>
   );
 }

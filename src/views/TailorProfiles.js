@@ -2,6 +2,7 @@ import React from "react";
 import { Scissors, MapPin, Instagram, Globe, Trash2, Plus, ArrowUp, ArrowDown, X, ExternalLink } from "lucide-react";
 import { S } from "../styles";
 import { F, Stars } from "../components/Shared";
+import LoginPromptModal from "../components/LoginPromptModal";
 import { TAILOR_SPECIALISMS, TAILOR_TURNAROUND, turnaroundLabel } from "../lib/constants";
 
 const PINK = "#FF1493";
@@ -61,7 +62,7 @@ export default function TailorProfiles({
   openTailorPublic,
   // public
   publicTailor, publicTailorLoading,
-  setAuthMode,
+  onGateAuth = () => {},
 }) {
   const [lightbox,setLightbox]=React.useState(null);
 
@@ -344,7 +345,7 @@ export default function TailorProfiles({
               <button className="hbtn" style={{...S.hBtn,background:PINK,border:"2px solid #111",padding:"14px 28px",fontSize:14}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
             </div>
           ):(
-            <PublicProfile tailor={publicTailor} setView={setView} flash={flash} onOpenImage={setLightbox} user={user} setAuthMode={setAuthMode}/>
+            <PublicProfile tailor={publicTailor} setView={setView} flash={flash} onOpenImage={setLightbox} user={user} onGateAuth={onGateAuth}/>
           )}
         </main>
       )}
@@ -397,11 +398,10 @@ function AddPhotosButton({ onPick, disabled }) {
 }
 
 // The public /tailors/<id> profile.
-function PublicProfile({ tailor, setView, flash, onOpenImage, user, setAuthMode }) {
-  // Logged-out buyers can browse the whole profile, but contacting/booking a
-  // tailor is gated — tapping BOOK opens a sign-up prompt instead.
+function PublicProfile({ tailor, setView, flash, onOpenImage, user, onGateAuth = () => {} }) {
+  // Logged-out buyers can browse the whole profile, but booking a tailor is
+  // gated — tapping BOOK opens the shared sign-up prompt (context: book).
   const [gateOpen,setGateOpen]=React.useState(false);
-  const goAuth=(mode)=>{ setGateOpen(false); if(setAuthMode) setAuthMode(mode); setView("auth"); };
   const onBook=()=>{ if(user){ flash("Booking coming soon!"); } else { setGateOpen(true); } };
   const portfolio=[...(tailor.tailor_portfolio||[])].sort((a,b)=>(a.position??0)-(b.position??0)||String(a.created_at).localeCompare(String(b.created_at)));
   const igHandle=(tailor.instagram_handle||"").replace(/^@/,"");
@@ -486,27 +486,7 @@ function PublicProfile({ tailor, setView, flash, onOpenImage, user, setAuthMode 
       </div>
 
       {/* SIGN-UP GATE — shown when a logged-out buyer taps BOOK THIS TAILOR */}
-      {gateOpen&&(
-        <div style={S.modalOverlay} onClick={()=>setGateOpen(false)}>
-          <div onClick={e=>e.stopPropagation()}
-            style={{background:"#fff",border:"3px solid #111",borderRadius:0,maxWidth:420,width:"100%",padding:32,textAlign:"center"}}>
-            <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,letterSpacing:-0.5,lineHeight:1.05,marginBottom:14}}>JOIN STITCH'D TO CONTACT TAILORS</h2>
-            <p style={{fontSize:15,color:"#444",lineHeight:1.6,marginBottom:24}}>Create a free account to message tailors, request alterations, and buy pre-loved South Asian fashion.</p>
-            <button className="hbtn"
-              style={{width:"100%",background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"15px 24px",fontSize:16,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,cursor:"pointer",marginBottom:18}}
-              onClick={()=>goAuth("signup")}>
-              SIGN UP
-            </button>
-            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#666",letterSpacing:0.5,marginBottom:18}}>
-              Already have an account?{" "}
-              <button onClick={()=>goAuth("login")}
-                style={{background:"none",border:"none",padding:0,color:"#111",fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:900,letterSpacing:1,textDecoration:"underline",cursor:"pointer"}}>LOG IN</button>
-            </p>
-            <button onClick={()=>setGateOpen(false)}
-              style={{background:"none",border:"none",padding:0,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,cursor:"pointer"}}>CANCEL</button>
-          </div>
-        </div>
-      )}
+      <LoginPromptModal open={gateOpen} context="book" onClose={()=>setGateOpen(false)} onAuth={m=>{ setGateOpen(false); onGateAuth(m); }}/>
     </>
   );
 }
