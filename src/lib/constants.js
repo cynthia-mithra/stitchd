@@ -211,6 +211,52 @@ export const turnaroundLabel = (days) => {
   return m ? m.label : (days ? `${days} days` : "");
 };
 
+// ── Phase 15 — Request alterations on a listing ───────────────────────────────
+// The alteration types a buyer can pick (Step 1 of the request flow). Each maps
+// to zero or more tailor specialisms (from TAILOR_SPECIALISMS) so Step 2 can
+// surface the most relevant tailors first. A type with no mapping (e.g. "Other")
+// matches no specialism — when NOTHING matches the buyer's whole selection we
+// fall back to showing every approved tailor (see tailorsForAlterations).
+export const ALTERATION_TYPES = [
+  "Take in / let out",
+  "Hem adjustment",
+  "Sleeve alteration",
+  "Blouse alteration",
+  "Embroidery addition",
+  "Custom stitching",
+  "General repair",
+  "Other",
+];
+
+const ALTERATION_SPECIALISM_MAP = {
+  "Take in / let out":   ["Taking in / letting out","General alterations"],
+  "Hem adjustment":      ["Hem alterations","General alterations"],
+  "Sleeve alteration":   ["General alterations"],
+  "Blouse alteration":   ["Saree blouse stitching","General alterations"],
+  "Embroidery addition": ["Embroidery and embellishment"],
+  "Custom stitching":    ["Custom stitching from scratch","General alterations"],
+  "General repair":      ["General alterations"],
+  "Other":               [],
+};
+
+// The set of tailor specialisms relevant to the buyer's selected alterations.
+export function specialismsForAlterations(selected = []) {
+  const set = new Set();
+  (selected || []).forEach(a => (ALTERATION_SPECIALISM_MAP[a] || []).forEach(s => set.add(s)));
+  return [...set];
+}
+
+// Filter approved tailors to those whose specialisms overlap the buyer's
+// selection. If no tailor matches (or the selection maps to no specialism), the
+// caller should show ALL approved tailors — so this returns the matches and a
+// flag indicating whether the match narrowed anything.
+export function tailorsForAlterations(tailors = [], selected = []) {
+  const wanted = new Set(specialismsForAlterations(selected));
+  if (!wanted.size) return { matched: tailors, narrowed: false };
+  const matched = (tailors || []).filter(t => (t.specialisms || []).some(s => wanted.has(s)));
+  return matched.length ? { matched, narrowed: true } : { matched: tailors, narrowed: false };
+}
+
 // ── Phase 10e — Shop the Look helpers ─────────────────────────────────────────
 // The Stitch'd admin account. Looks created by this account (or any profile with
 // is_admin=true) are stamped created_by_type='admin' and show "Curated by

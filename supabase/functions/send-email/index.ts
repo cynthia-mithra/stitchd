@@ -238,6 +238,90 @@ async function resolveTemplated(
       return { to, userId, data: { displayName, tailorId: body.tailorId ?? null } };
     }
 
+    case "alteration_request": {
+      // Phase 15 — a buyer sent an alteration request. Recipient is the tailor's
+      // user; resolve the listing, the buyer's name and the formatted budget.
+      const reqRow = await sbGetOne<{
+        buyer_id: string;
+        tailor_id: string;
+        listing_id: string;
+        alterations_needed?: string[];
+        additional_notes?: string;
+        description?: string;
+        budget_pence?: number | null;
+      }>(
+        `alteration_requests?id=eq.${body.requestId}&select=buyer_id,tailor_id,listing_id,alterations_needed,additional_notes,description,budget_pence&limit=1`,
+      );
+      if (!reqRow?.tailor_id) return { skip: "no request" };
+      const tailor = await sbGetOne<{ user_id: string; display_name: string }>(
+        `tailors?id=eq.${reqRow.tailor_id}&select=user_id,display_name&limit=1`,
+      );
+      if (!tailor?.user_id) return { skip: "no tailor user" };
+      const prof = await getProfile(tailor.user_id);
+      if (prof?.email_notifications === false) return { skip: "unsubscribed" };
+      const to = await emailForUser(tailor.user_id);
+      if (!to) return { skip: "no email" };
+      const listing = await sbGetOne<{ name: string; image_url?: string; images?: unknown }>(
+        `listings?id=eq.${reqRow.listing_id}&select=name,image_url,images&limit=1`,
+      );
+      const buyer = reqRow.buyer_id ? await getProfile(reqRow.buyer_id) : null;
+      const buyerName = buyer?.full_name || buyer?.username || "A buyer";
+      const budget = reqRow.budget_pence != null
+        ? `£${(reqRow.budget_pence / 100).toFixed(2).replace(/\.00$/, "")}`
+        : undefined;
+      return {
+        to,
+        userId: tailor.user_id,
+        data: {
+          title: listing?.name,
+          image: thumb(listing),
+          buyerName,
+          alterations: reqRow.alterations_needed || [],
+          notes: reqRow.additional_notes || reqRow.description || "",
+          budget,
+        },
+      };
+    }
+
+    case "alteration_quote":
+    case "alteration_declined": {
+      // Phase 15 — the tailor responded to a request. Recipient is the buyer;
+      // resolve the listing, the tailor's display name and (for a quote) the
+      // formatted amount + optional message.
+      const reqRow = await sbGetOne<{
+        buyer_id: string;
+        tailor_id: string;
+        listing_id: string;
+        quote_pence?: number | null;
+        quote_message?: string | null;
+      }>(
+        `alteration_requests?id=eq.${body.requestId}&select=buyer_id,tailor_id,listing_id,quote_pence,quote_message&limit=1`,
+      );
+      if (!reqRow?.buyer_id) return { skip: "no request" };
+      const prof = await getProfile(reqRow.buyer_id);
+      if (prof?.email_notifications === false) return { skip: "unsubscribed" };
+      const to = await emailForUser(reqRow.buyer_id);
+      if (!to) return { skip: "no email" };
+      const tailor = await sbGetOne<{ display_name: string }>(
+        `tailors?id=eq.${reqRow.tailor_id}&select=display_name&limit=1`,
+      );
+      const listing = await sbGetOne<{ name: string; image_url?: string; images?: unknown }>(
+        `listings?id=eq.${reqRow.listing_id}&select=name,image_url,images&limit=1`,
+      );
+      const base = { title: listing?.name, image: thumb(listing), tailorName: tailor?.display_name };
+      if (type === "alteration_declined") {
+        return { to, userId: reqRow.buyer_id, data: base };
+      }
+      const amount = reqRow.quote_pence != null
+        ? `£${(reqRow.quote_pence / 100).toFixed(2).replace(/\.00$/, "")}`
+        : "";
+      return {
+        to,
+        userId: reqRow.buyer_id,
+        data: { ...base, amount, message: reqRow.quote_message || undefined },
+      };
+    }
+
     case "welcome": {
       const userId: string | null = body.userId ?? null;
       if (!userId) return { skip: "no user" };

@@ -1,9 +1,10 @@
 import React from "react";
-import { Scissors, MapPin, Instagram, Globe, Trash2, Plus, ArrowUp, ArrowDown, X, ExternalLink } from "lucide-react";
+import { Scissors, MapPin, Instagram, Globe, Trash2, Plus, ArrowUp, ArrowDown, X, ExternalLink, Mail } from "lucide-react";
 import { S } from "../styles";
-import { F, Stars } from "../components/Shared";
+import { F, Stars, Thumb } from "../components/Shared";
 import LoginPromptModal from "../components/LoginPromptModal";
-import { TAILOR_SPECIALISMS, TAILOR_TURNAROUND, turnaroundLabel } from "../lib/constants";
+import { TAILOR_SPECIALISMS, TAILOR_TURNAROUND, turnaroundLabel, catEmoji } from "../lib/constants";
+import { StatusBadge, gbp } from "./Alterations";
 
 const PINK = "#FF1493";
 const poundsFromPence = (p) => (p==null||p==="") ? "" : (p/100).toString();
@@ -60,6 +61,9 @@ export default function TailorProfiles({
   tailorEdit, setTailorEdit, saveTailorProfile, tailorEditBusy,
   tailorPortfolio, addPortfolioImages, deletePortfolioImage, movePortfolioImage, portfolioBusy,
   openTailorPublic,
+  // bookings (incoming alteration requests)
+  alterationRequests = [], alterationBuyers = {}, bookingsLoading = false,
+  onSendQuote = () => {}, onDeclineRequest = () => {}, onMessageBuyer = () => {},
   // public
   publicTailor, publicTailorLoading,
   onGateAuth = () => {},
@@ -322,9 +326,12 @@ export default function TailorProfiles({
             </div>
           )}
 
-          {/* BOOKINGS TAB — placeholder (feature comes later) */}
+          {/* BOOKINGS TAB — incoming alteration requests (Phase 15). */}
           {tailorDashTab==="bookings"&&(
-            <Placeholder title="BOOKINGS" text="Alteration bookings will appear here. This feature is coming soon."/>
+            <TailorBookings
+              requests={alterationRequests} buyers={alterationBuyers} loading={bookingsLoading}
+              onSendQuote={onSendQuote} onDeclineRequest={onDeclineRequest} onMessageBuyer={onMessageBuyer}
+            />
           )}
 
           {/* REVIEWS TAB — placeholder (feature comes later) */}
@@ -378,6 +385,146 @@ function Placeholder({ title, text }) {
     <div style={{textAlign:"center",padding:"70px 20px",border:"3px dashed #e0e0e0"}}>
       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:3,color:PINK,marginBottom:10}}>{title}</p>
       <p style={{fontSize:15,color:"#999",maxWidth:380,margin:"0 auto"}}>{text}</p>
+    </div>
+  );
+}
+
+// ── BOOKINGS tab — incoming alteration requests (Phase 15) ────────────────────
+const bkListingThumb = (l) => {
+  if(!l) return "";
+  if(l.image_url) return l.image_url;
+  const imgs=l.images;
+  if(Array.isArray(imgs)&&imgs.length) return typeof imgs[0]==="string"?imgs[0]:(imgs[0]&&imgs[0].url)||"";
+  return "";
+};
+const firstName = (prof) => {
+  if(!prof) return "A buyer";
+  const fn=(prof.full_name||"").trim();
+  if(fn) return fn.split(/\s+/)[0];
+  return prof.username||"A buyer";
+};
+const bkDate = (d) => { try{ return new Date(d).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }catch{ return ""; } };
+const BOOKING_TABS=[["pending","PENDING"],["quoted","QUOTED"],["accepted","ACCEPTED"],["completed","COMPLETED"],["declined","DECLINED"]];
+
+function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuote, onDeclineRequest, onMessageBuyer }) {
+  const [tab,setTab]=React.useState("pending");
+  const [quoteFor,setQuoteFor]=React.useState(null);  // request id with the quote form open
+  const [amount,setAmount]=React.useState("");
+  const [message,setMessage]=React.useState("");
+  const [busyId,setBusyId]=React.useState(null);
+
+  const counts=requests.reduce((m,r)=>{ const s=(r.status||"pending").toLowerCase(); m[s]=(m[s]||0)+1; return m; },{});
+  const shown=requests.filter(r=>(r.status||"pending").toLowerCase()===tab);
+
+  const openQuote=(req)=>{ setQuoteFor(req.id); setAmount(""); setMessage(""); };
+  const submitQuote=async(req)=>{
+    const pence=Math.round(parseFloat(amount)*100);
+    if(isNaN(pence)||pence<=0) return;
+    setBusyId(req.id);
+    try{ await onSendQuote(req,pence,message.trim()); setQuoteFor(null); }
+    finally{ setBusyId(null); }
+  };
+  const decline=async(req)=>{
+    if(!window.confirm("Decline this alteration request? The buyer will be notified.")) return;
+    setBusyId(req.id);
+    try{ await onDeclineRequest(req); }
+    finally{ setBusyId(null); }
+  };
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:18}}>
+      {/* Filter tabs */}
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        {BOOKING_TABS.map(([v,l])=>(
+          <button key={v} className="hbtn" onClick={()=>setTab(v)}
+            style={{background:tab===v?"#111":"#fff",color:tab===v?"#fff":"#111",border:"2px solid #111",borderRadius:0,padding:"8px 16px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,fontSize:12,cursor:"pointer"}}>
+            {l}{counts[v]?` (${counts[v]})`:""}
+          </button>
+        ))}
+      </div>
+
+      {loading?(
+        <div style={S.loadingWrap}><div style={S.spinner}/><p style={S.loadingText}>LOADING REQUESTS…</p></div>
+      ):shown.length===0?(
+        <Placeholder title={tab.toUpperCase()} text={`No ${tab} alteration requests.`}/>
+      ):(
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          {shown.map(req=>{
+            const listing=req.listings; const buyer=buyers[req.buyer_id];
+            const busy=busyId===req.id;
+            return (
+              <div key={req.id} style={{border:"2px solid #111",padding:16,display:"flex",flexDirection:"column",gap:14}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,flexWrap:"wrap"}}>
+                  <div style={{display:"flex",gap:12,alignItems:"center",minWidth:0}}>
+                    <Thumb src={bkListingThumb(listing)} emoji={catEmoji(listing&&listing.category)} accent="#f5f5f5" style={{width:60,height:60,border:"2px solid #111",flexShrink:0}} emojiStyle={{fontSize:28}}/>
+                    <div style={{minWidth:0}}>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,lineHeight:1.1}}>{listing?listing.name:"Listing"}</p>
+                      <p style={{fontSize:13,color:"#666",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,marginTop:2}}>From {firstName(buyer)}</p>
+                      <p style={{fontSize:11,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5,marginTop:1}}>RECEIVED {bkDate(req.created_at).toUpperCase()}</p>
+                    </div>
+                  </div>
+                  <StatusBadge status={req.status}/>
+                </div>
+
+                {(req.alterations_needed||[]).length>0&&(
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                    {req.alterations_needed.map(a=><span key={a} style={{border:"1.5px solid #111",borderRadius:0,background:"#fff",padding:"3px 10px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5}}>{a}</span>)}
+                  </div>
+                )}
+                {(req.additional_notes||req.description)&&(
+                  <div>
+                    <p style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>NOTES</p>
+                    <p style={{fontSize:14,color:"#444",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{req.additional_notes||req.description}</p>
+                  </div>
+                )}
+                {req.budget_pence!=null&&(
+                  <p style={{fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:"#111"}}>Buyer budget: <span style={{fontWeight:900,color:PINK}}>{gbp(req.budget_pence)}</span></p>
+                )}
+                {req.status==="quoted"&&req.quote_pence!=null&&(
+                  <p style={{fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:"#111"}}>Your quote: <span style={{fontWeight:900,color:PINK}}>{gbp(req.quote_pence)}</span></p>
+                )}
+
+                {/* Inline quote form */}
+                {quoteFor===req.id?(
+                  <div style={{border:"2px solid #00E5CC",background:"#effdfa",padding:14,display:"flex",flexDirection:"column",gap:12}}>
+                    <div>
+                      <label style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>QUOTE AMOUNT *</label>
+                      <div style={{display:"flex",alignItems:"center",border:"2px solid #e0e0e0",background:"#fff"}}>
+                        <span style={{padding:"0 12px",fontSize:16,fontWeight:800,color:"#111"}}>£</span>
+                        <input style={{...S.inp,border:"none",borderLeft:"2px solid #e0e0e0"}} type="number" min="0" placeholder="40" value={amount} onChange={e=>setAmount(e.target.value)}/>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>MESSAGE TO BUYER (OPTIONAL)</label>
+                      <textarea style={{...S.inp,height:80,resize:"vertical"}} placeholder="Add a note about your quote…" value={message} onChange={e=>setMessage(e.target.value)}/>
+                    </div>
+                    <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                      <button className="hbtn" disabled={busy||!(parseFloat(amount)>0)}
+                        style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"12px 22px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:busy?"wait":"pointer",opacity:(busy||!(parseFloat(amount)>0))?0.5:1}}
+                        onClick={()=>submitQuote(req)}>{busy?"SENDING…":"SEND QUOTE"}</button>
+                      <button className="hbtn" onClick={()=>setQuoteFor(null)}
+                        style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"12px 22px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer"}}>CANCEL</button>
+                    </div>
+                  </div>
+                ):(
+                  <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                    {req.status==="pending"&&(
+                      <>
+                        <button className="hbtn" onClick={()=>openQuote(req)}
+                          style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"11px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:"pointer"}}>SEND QUOTE</button>
+                        <button className="hbtn" disabled={busy} onClick={()=>decline(req)}
+                          style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"11px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:busy?"wait":"pointer",display:"inline-flex",alignItems:"center",gap:6}}><X width={15} height={15}/> DECLINE</button>
+                      </>
+                    )}
+                    <button className="hbtn" onClick={()=>onMessageBuyer(req)}
+                      style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"11px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><Mail width={15} height={15}/> MESSAGE BUYER</button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
