@@ -418,6 +418,82 @@ export const templates = {
     };
   },
 
+  // 16 — New alteration request (tailor). Phase 15 — a buyer asked this tailor to
+  // quote on alterations. `alterations` is the list of selected types; `notes` is
+  // the buyer's description; `budget` is the formatted optional budget. CTA opens
+  // the tailor's dashboard where they can quote or decline.
+  alteration_request(
+    d: { title?: string; image?: string; buyerName?: string; alterations?: string[]; notes?: string; budget?: string },
+    ctx: BuildCtx,
+  ) {
+    const who = d.buyerName || "A buyer";
+    const list = (d.alterations || []).length
+      ? `<ul style="margin:0 0 16px 0;padding-left:20px;color:#333;">${(d.alterations || []).map((a) => `<li style="margin:0 0 4px 0;">${esc(a)}</li>`).join("")}</ul>`
+      : "";
+    return {
+      subject: "New alteration request — Stitch'd",
+      html: baseTemplate({
+        heading: "New alteration request.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`<strong>${esc(who)}</strong> has sent you an alteration request:`) +
+          listingCard({ image: d.image, title: d.title }) +
+          (list ? p("<strong>Alterations needed:</strong>") + list : "") +
+          (d.notes
+            ? `<blockquote style="margin:0 0 16px 0;padding:12px 16px;border-left:3px solid ${PINK};background:#fafafa;color:#555;font-style:italic;">${esc(d.notes)}</blockquote>`
+            : "") +
+          (d.budget ? p(`<strong>Buyer budget:</strong> ${esc(d.budget)}`) : "") +
+          p("Send a quote or decline from your dashboard.") +
+          button("View request", `${ctx.site}/`),
+      }),
+    };
+  },
+
+  // 17 — Alteration quote (buyer). Phase 15 — a tailor quoted on the buyer's
+  // request. `amount` is the formatted quote; `tailorName` is who sent it.
+  alteration_quote(
+    d: { title?: string; image?: string; amount?: string; tailorName?: string; message?: string },
+    ctx: BuildCtx,
+  ) {
+    const who = d.tailorName || "Your tailor";
+    return {
+      subject: `You have a quote from ${who} — Stitch'd`,
+      html: baseTemplate({
+        heading: "You have a quote.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`<strong>${esc(who)}</strong> has sent you a quote for your alteration request:`) +
+          listingCard({ image: d.image, title: d.title }) +
+          `<div style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount || "")}</div>` +
+          (d.message
+            ? `<blockquote style="margin:0 0 16px 0;padding:12px 16px;border-left:3px solid ${PINK};background:#fafafa;color:#555;font-style:italic;">${esc(d.message)}</blockquote>`
+            : "") +
+          button("View quote", `${ctx.site}/alterations`),
+      }),
+    };
+  },
+
+  // 18 — Alteration declined (buyer). Phase 15 — a tailor couldn't take on the
+  // request. CTA points back to the tailor directory to find another.
+  alteration_declined(
+    d: { title?: string; image?: string; tailorName?: string },
+    ctx: BuildCtx,
+  ) {
+    const who = d.tailorName || "The tailor";
+    return {
+      subject: "Update on your alteration request — Stitch'd",
+      html: baseTemplate({
+        heading: "Update on your request.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`<strong>${esc(who)}</strong> is unable to take on your alteration request at this time.`) +
+          listingCard({ image: d.image, title: d.title }) +
+          p("Plenty more vetted tailors on Stitch'd — find another to help.") +
+          button("Find another tailor", `${ctx.site}/tailors`),
+      }),
+    };
+  },
+
   // 7 — Welcome (new user)
   welcome(_d: Record<string, unknown>, ctx: BuildCtx) {
     return {

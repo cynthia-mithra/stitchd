@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock, Trash2, CornerDownRight, Tag } from "lucide-react";
+import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock, Trash2, CornerDownRight, Tag, Scissors } from "lucide-react";
 import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure, colourSwatchBg } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
@@ -35,6 +35,7 @@ export default function Detail({
   fastSellers = new Set(),
   verifiedSellers = new Set(),
   identityVerifiedSellers = new Set(),
+  onFindTailor = () => {},
 }) {
   // Login gate — logged-out buyers can browse everything, but actions that need
   // an account (bag, offer, wishlist, comment, message) open the shared sign-up
@@ -229,6 +230,15 @@ export default function Detail({
                   <span style={S.guaranteePoint}><MessageCircle width={16} height={16} color="#00E5CC" style={{flexShrink:0}}/> Message the seller directly before you buy</span>
                   <span style={S.guaranteePoint}><Clock width={16} height={16} color="#00E5CC" style={{flexShrink:0}}/> Report an issue within 48 hours of delivery</span>
                 </div>
+              </div>
+              {/* NEED ALTERATIONS? — connect with a Stitch'd tailor (Phase 15). */}
+              <div style={{border:"2px solid #111",borderRadius:0,background:"#fff",padding:"16px 18px",marginBottom:16}}>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,letterSpacing:2,color:"#111",textTransform:"uppercase",marginBottom:6}}>NEED ALTERATIONS?</p>
+                <p style={{fontSize:13,color:"#666",lineHeight:1.5,marginBottom:14}}>Connect with a Stitch'd tailor before or after you buy</p>
+                <button type="button" className="hbtn" style={{width:"100%",background:"#00E5CC",color:"#111",border:"2px solid #111",borderRadius:0,padding:"15px",fontSize:15,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2.5,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}
+                  onClick={()=>requireAuth("book",()=>onFindTailor(sel))}>
+                  <Scissors width={18} height={18}/> FIND A TAILOR
+                </button>
               </div>
               {(verifiedSellers.has(sel.user_id)||identityVerifiedSellers.has(sel.user_id)||fastSellers.has(sel.user_id))&&(
                 <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:16}}>

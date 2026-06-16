@@ -544,4 +544,67 @@ export const db = {
   async deletePortfolioItem(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   // Fire the tailor-approved email (resolved server-side from the tailor id).
   fireTailorApprovedEmail(tailorId){ if(tailorId) fireEmail({type:"tailor_approved",tailorId}); },
+
+  // ── Phase 15 — Request alterations on a listing ───────────────────────────
+  // A buyer picks an approved tailor and describes the alterations they need.
+  // The request lives in alteration_requests; the tailor responds (quote/decline)
+  // from their dashboard. Payment for an accepted quote comes in a later issue.
+  //
+  // Insert a new request. Self-heals like insertTailor/insertOffer: if the schema
+  // is missing an optional column (e.g. quote_pence on a deployment whose
+  // migration hasn't run) drop it and retry so the request still records.
+  // `description` is required and never dropped. On success the new-request email
+  // to the tailor is fired (resolved server-side from the request id).
+  async insertAlterationRequest(row,t){
+    const url=`${SUPABASE_URL}/rest/v1/alteration_requests`; let payload={...row};
+    for(let i=0;i<20;i++){
+      const r=await fetch(url,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+      if(r.ok){ const d=await r.json(); const created=d[0];
+        if(created&&created.id) fireEmail({type:"alteration_request",requestId:created.id});
+        return created; }
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&col!=="description"&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't send your alteration request.");
+  },
+  // The buyer's own requests, newest first, WITH the listing (thumbnail/title)
+  // and tailor (name/image/user) embedded for the /alterations page — no per-row
+  // round-trip. Falls back to a plain select where the embed isn't available,
+  // then [] if the table doesn't exist yet (migration not run).
+  async getBuyerAlterationRequests(buyerId,t){ if(!buyerId)return [];
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?buyer_id=eq.${buyerId}&select=*,listings(id,name,image_url,images),tailors(id,display_name,profile_image_url,user_id)&order=created_at.desc`,{headers:hdrs(t)});
+    if(r.ok)return r.json();
+    const r2=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?buyer_id=eq.${buyerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
+  // A tailor's incoming requests, newest first, WITH the listing embedded for the
+  // dashboard BOOKINGS tab. Buyer names are resolved separately via
+  // getProfilesByIds (mirrors how the seller OFFERS tab resolves offer buyers).
+  async getTailorAlterationRequests(tailorId,t){ if(!tailorId)return [];
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?tailor_id=eq.${tailorId}&select=*,listings(id,name,image_url,images)&order=created_at.desc`,{headers:hdrs(t)});
+    if(r.ok)return r.json();
+    const r2=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?tailor_id=eq.${tailorId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
+  // Tailor sends a quote: status -> quoted, persist quote_pence + optional message.
+  // Self-heals by dropping any column the schema is missing. Fires the quote email
+  // to the buyer (resolved server-side from the request id).
+  async sendAlterationQuote(id,quotePence,message,t){
+    const url=`${SUPABASE_URL}/rest/v1/alteration_requests?id=eq.${id}`; let payload={status:"quoted",quote_pence:quotePence,quote_message:message||null};
+    for(let i=0;i<10;i++){
+      const r=await fetch(url,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
+      if(r.ok){ const d=await r.json(); fireEmail({type:"alteration_quote",requestId:id}); return d[0]; }
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&col!=="status"&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
+    throw new Error("Couldn't send the quote.");
+  },
+  // Tailor declines a request: status -> declined. Fires the decline email.
+  async declineAlterationRequest(id,t){
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({status:"declined"})});
+    if(!r.ok)throw new Error(await r.text()); const d=await r.json(); fireEmail({type:"alteration_declined",requestId:id}); return d[0];
+  },
+  // Generic status patch (e.g. buyer cancels, or accepts a quote in a later issue).
+  async updateAlterationRequest(id,patch,t){
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/alteration_requests?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)});
+    if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0];
+  },
 };

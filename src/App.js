@@ -19,6 +19,7 @@ import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import PricingGuide from "./components/PricingGuide";
 import Tailors from "./views/Tailors";
 import TailorProfiles from "./views/TailorProfiles";
+import Alterations, { RequestAlterationModal, gbp } from "./views/Alterations";
 import Detail from "./views/Detail";
 import Shop from "./views/Shop";
 import Auth from "./views/Auth";
@@ -317,6 +318,18 @@ export default function App() {
   const [publicTailor,      setPublicTailor]      = useState(null);
   const [publicTailorLoading,setPublicTailorLoading]=useState(false);
   const [adminTailors,      setAdminTailors]      = useState([]);
+  // ── Phase 15 — Request alterations on a listing. The request modal (launched
+  // from the listing detail FIND A TAILOR button), the buyer's /alterations page
+  // and the tailor's dashboard BOOKINGS tab share these.
+  const [approvedTailors,   setApprovedTailors]   = useState([]);
+  const [alterReqOpen,      setAlterReqOpen]      = useState(false);
+  const [alterReqListing,   setAlterReqListing]   = useState(null);
+  const [alterReqBusy,      setAlterReqBusy]      = useState(false);
+  const [buyerAlterations,  setBuyerAlterations]  = useState([]);
+  const [buyerAlterationsLoading,setBuyerAlterationsLoading]=useState(false);
+  const [tailorAlterations, setTailorAlterations] = useState([]);
+  const [alterationBuyers,  setAlterationBuyers]  = useState({});
+  const [tailorAlterationsLoading,setTailorAlterationsLoading]=useState(false);
   const [following,      setFollowing]      = useState([]);
   const [feedItems,      setFeedItems]      = useState([]);
   const [feedLoading,    setFeedLoading]    = useState(false);
@@ -524,6 +537,11 @@ export default function App() {
       // view-watching effect once the session is ready.
       setView("offers");
       window.history.replaceState({},"","/offers");
+    } else if(path==="/alterations"){
+      // Phase 15 — buyer's alteration requests deep link (email CTA / direct).
+      // Data loads via the view-watching effect once the session is ready.
+      setView("alterations");
+      window.history.replaceState({},"","/alterations");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
@@ -531,6 +549,11 @@ export default function App() {
   // Phase 14 — (re)load the buyer's offers whenever they're on /offers, so the
   // page is current after navigating to it or returning from a cancelled checkout.
   useEffect(()=>{ if(view==="offers"&&user&&token) loadBuyerOffers(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[view,user,token]);
+
+  // Phase 15 — (re)load the buyer's alteration requests whenever they're on
+  // /alterations, so the page is current after navigating to it or deep-linking.
+  useEffect(()=>{ if(view==="alterations"&&user&&token) loadBuyerAlterations(); // eslint-disable-next-line react-hooks/exhaustive-deps
   },[view,user,token]);
 
   // Phase 14 — public shared wishlist deep link (/wishlist/<slug>). A shared link
@@ -1792,6 +1815,7 @@ export default function App() {
     });
     setTailorDashTab("profile");
     setView("tailor-dashboard"); window.scrollTo(0,0);
+    loadTailorAlterations();
     try{ const p=await db.getTailorPortfolio(myTailor.id,token); setTailorPortfolio(p); }catch(e){ setTailorPortfolio([]); }
   }
 
@@ -1873,6 +1897,116 @@ export default function App() {
     catch(e){ setPublicTailor(null); }
     finally{ setPublicTailorLoading(false); }
   }
+
+  // ── Phase 15 — Request alterations on a listing ────────────────────────────
+  // The buyer's display name, used in the in-app notification to the tailor.
+  const buyerDisplayName=()=>(profile?.full_name&&profile.full_name.trim())||profile?.username||user?.email?.split("@")[0]||"A buyer";
+  // The garment type a request is about, derived from the listing's measurements
+  // (the detailed garment) falling back to its category.
+  const garmentTypeOf=(l)=>(l&&(parseMeasurements(l)?.garment||l.category))||null;
+
+  async function loadApprovedTailors(){
+    try{ setApprovedTailors(await db.getApprovedTailors(token)); }catch(e){ /* leave whatever's cached */ }
+  }
+  // FIND A TAILOR on the listing detail page → open the request modal (auth is
+  // gated in Detail via requireAuth("book", …) before this fires).
+  function openAlterationModal(listing){
+    if(!listing) return;
+    setAlterReqListing(listing); setAlterReqOpen(true);
+    loadApprovedTailors();
+  }
+  // Send the request: insert the row (which fires the tailor email), notify the
+  // tailor in-app, then close + confirm.
+  async function sendAlterationRequest({ alterations, notes, budget, tailor }){
+    if(!user||!token||!alterReqListing||!tailor) return;
+    setAlterReqBusy(true);
+    try{
+      const garment=garmentTypeOf(alterReqListing);
+      const row={
+        listing_id:alterReqListing.id,
+        buyer_id:user.id,
+        tailor_id:tailor.id,
+        description:notes,
+        additional_notes:notes,
+        garment_type:garment,
+        alterations_needed:alterations,
+        budget_pence:poundsToPence(budget),
+        status:"pending",
+      };
+      await db.insertAlterationRequest(row,token);
+      await notify(tailor.user_id,"alteration_request","New alteration request",`${buyerDisplayName()} has sent you an alteration request for a ${garment||"garment"}`,alterReqListing.id);
+      setAlterReqOpen(false); setAlterReqListing(null);
+      flash(`Request sent! ${tailor.display_name} will get back to you with a quote.`,6000);
+      if(view==="alterations") loadBuyerAlterations();
+    }catch(e){ flash("Couldn't send your request: "+errMsg(e)); }
+    finally{ setAlterReqBusy(false); }
+  }
+
+  async function loadBuyerAlterations(){
+    if(!user||!token) return;
+    setBuyerAlterationsLoading(true);
+    try{ setBuyerAlterations(await db.getBuyerAlterationRequests(user.id,token)); }
+    catch(e){ setBuyerAlterations([]); }
+    finally{ setBuyerAlterationsLoading(false); }
+  }
+  function openAlterations(){ loadBuyerAlterations(); setView("alterations"); window.scrollTo(0,0); }
+
+  async function loadTailorAlterations(){
+    if(!myTailor||!token) return;
+    setTailorAlterationsLoading(true);
+    try{
+      const reqs=await db.getTailorAlterationRequests(myTailor.id,token);
+      setTailorAlterations(reqs);
+      const ids=[...new Set(reqs.map(r=>r.buyer_id).filter(Boolean))];
+      if(ids.length){ const profs=await db.getProfilesByIds(ids,token); const map={}; profs.forEach(p=>{ map[p.id]=p; }); setAlterationBuyers(map); }
+    }catch(e){ setTailorAlterations([]); }
+    finally{ setTailorAlterationsLoading(false); }
+  }
+
+  // Open (or create) the buyer↔tailor conversation behind an alteration request.
+  // `buyerId`/`tailorUserId` fix who's who; the current user is one of them.
+  async function openAlterationConversation(buyerId,tailorUserId,listingId){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    if(!buyerId||!tailorUserId){ flash("Couldn't open the conversation."); return; }
+    if(buyerId===tailorUserId){ flash("You can't message yourself!"); return; }
+    try{
+      let conv=await db.findConversation(buyerId,tailorUserId,listingId,token);
+      if(!conv) conv=await db.createConversation({listing_id:listingId,buyer_id:buyerId,seller_id:tailorUserId,last_message:"",last_message_at:new Date().toISOString()},token);
+      await loadConversations();
+      setActiveConv(conv);
+      setMessages(await db.getMessages(conv.id,token));
+      setView("messages"); window.scrollTo(0,0);
+    }catch(e){ flash("Could not start conversation."); }
+  }
+  // Buyer (/alterations) → message the tailor on a request.
+  function messageTailorFromRequest(req){ openAlterationConversation(user?.id,req.tailors?.user_id,req.listing_id); }
+  // Tailor (dashboard BOOKINGS) → message the buyer on a request.
+  function messageBuyerFromRequest(req){ openAlterationConversation(req.buyer_id,user?.id,req.listing_id); }
+
+  // Tailor sends a quote on a request (status → quoted) + notifies the buyer.
+  async function sendAlterationQuote(req,quotePence,message){
+    if(!token) return;
+    try{
+      await db.sendAlterationQuote(req.id,quotePence,message,token);
+      const name=(myTailor&&myTailor.display_name)||"Your tailor";
+      await notify(req.buyer_id,"alteration_quote","You have a quote",`${name} has sent you a quote of ${gbp(quotePence)} for your alteration request`,req.listing_id);
+      setTailorAlterations(p=>p.map(r=>r.id===req.id?{...r,status:"quoted",quote_pence:quotePence,quote_message:message||null}:r));
+      flash("Quote sent.");
+    }catch(e){ flash("Couldn't send the quote: "+errMsg(e)); throw e; }
+  }
+  // Tailor declines a request (status → declined) + notifies the buyer.
+  async function declineAlterationRequest(req){
+    if(!token) return;
+    try{
+      await db.declineAlterationRequest(req.id,token);
+      const name=(myTailor&&myTailor.display_name)||"The tailor";
+      await notify(req.buyer_id,"alteration_declined","Alteration request update",`${name} is unable to take on your alteration request at this time.`,req.listing_id);
+      setTailorAlterations(p=>p.map(r=>r.id===req.id?{...r,status:"declined"}:r));
+      flash("Request declined.");
+    }catch(e){ flash("Couldn't decline: "+errMsg(e)); throw e; }
+  }
+  // Buyer accepts a quote — payment for alterations lands in a later issue.
+  function acceptAlterationQuote(){ flash("Payments for alterations are coming soon!",5000); }
 
   // Admin — approve a tailor application: flip status to approved, stamp the
   // approval, notify + email the tailor, keep myTailor in sync if it's me.
@@ -2814,6 +2948,7 @@ export default function App() {
     {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
     {label:"MY OFFERS",      icon:<Tag width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadBuyerOffers();setView("offers");}},
     {label:"MY WISHLIST",    icon:<Heart width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadMyWishlist();setView("wishlist");}},
+    {label:"ALTERATION REQUESTS", icon:<Scissors width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openAlterations},
     {label:"SAVED SEARCHES",  run:()=>{loadSavedSearches();setView("saved-searches");}},
     {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
     {label:"STYLE FEED",     icon:<Sparkles width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openStyleFeed},
@@ -2913,7 +3048,7 @@ export default function App() {
             <div style={{maxHeight:400,overflowY:"auto"}}>
               {notifications.map(n=>(
                 <div key={n.id} style={{...S.notifItem,background:n.read?"#fff":"#fff8fc",borderLeft:`4px solid ${n.read?"#f0f0f0":"#FF1493"}`}}
-                  onClick={()=>{ markNotifRead(n.id); if(n.type==="new_offer"){ setDashTabRequest("offers"); setView("dashboard"); window.scrollTo(0,0); } else if(n.link_id){ if(n.type==="message"){ openMessages(); } else if(n.type==="new_follower"){ openProfile(n.link_id); } else { const item=items.find(i=>i.id===n.link_id); if(item)openDetail(item); } } setShowNotifs(false); }}>
+                  onClick={()=>{ markNotifRead(n.id); if(n.type==="new_offer"){ setDashTabRequest("offers"); setView("dashboard"); window.scrollTo(0,0); } else if(n.type==="alteration_quote"||n.type==="alteration_declined"){ openAlterations(); } else if(n.type==="alteration_request"){ if(myTailor){ openTailorDashboard(); setTailorDashTab("bookings"); window.scrollTo(0,0); } } else if(n.link_id){ if(n.type==="message"){ openMessages(); } else if(n.type==="new_follower"){ openProfile(n.link_id); } else { const item=items.find(i=>i.id===n.link_id); if(item)openDetail(item); } } setShowNotifs(false); }}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                     <div>
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:n.read?600:900,color:"#111",marginBottom:2}}>{n.title}</p>
@@ -3818,8 +3953,26 @@ export default function App() {
         tailorEdit={tailorEdit} setTailorEdit={setTailorEdit} saveTailorProfile={saveTailorProfile} tailorEditBusy={tailorEditBusy}
         tailorPortfolio={tailorPortfolio} addPortfolioImages={addPortfolioImages} deletePortfolioImage={deletePortfolioImage} movePortfolioImage={movePortfolioImage} portfolioBusy={portfolioBusy}
         openTailorPublic={openTailorPublic}
+        alterationRequests={tailorAlterations} alterationBuyers={alterationBuyers} bookingsLoading={tailorAlterationsLoading}
+        onSendQuote={sendAlterationQuote} onDeclineRequest={declineAlterationRequest} onMessageBuyer={messageBuyerFromRequest}
         publicTailor={publicTailor} publicTailorLoading={publicTailorLoading}
         setAuthMode={setAuthMode} onGateAuth={gateAuth}
+      />
+
+      {/* ALTERATIONS — Phase 15 buyer page (/alterations) */}
+      <Alterations
+        view={view} setView={setView} loading={buyerAlterationsLoading} requests={buyerAlterations}
+        onMessageTailor={messageTailorFromRequest} onFindTailor={()=>{loadTailorMarket();setView("tailors");window.scrollTo(0,0);}}
+        onAcceptQuote={acceptAlterationQuote}
+      />
+
+      {/* REQUEST ALTERATIONS modal — launched from the listing detail page */}
+      <RequestAlterationModal
+        open={alterReqOpen} onClose={()=>setAlterReqOpen(false)}
+        listing={alterReqListing} tailors={approvedTailors} busy={alterReqBusy}
+        onSend={sendAlterationRequest}
+        openTailorProfile={(id)=>{ try{ window.open(`/tailors/${id}`,"_blank","noopener"); }catch(e){} }}
+        browseAllTailors={()=>{ setAlterReqOpen(false); loadTailorMarket(); setView("tailors"); window.scrollTo(0,0); }}
       />
 
       {/* ORDERS */}
@@ -3959,6 +4112,7 @@ export default function App() {
         similarItems={similarItems} recentItems={recentItems} openDetail={openDetail}
         fastSellers={fastSellers} verifiedSellers={verifiedSellers}
         identityVerifiedSellers={identityVerifiedSellers}
+        onFindTailor={openAlterationModal}
       />
 
       {/* ADD / EDIT */}
