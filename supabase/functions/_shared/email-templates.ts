@@ -569,6 +569,41 @@ export const templates = {
     };
   },
 
+  // 22 — New tailor review (tailor). Phase 15 — a buyer reviewed the tailor after
+  // a completed booking. `rating` is 1–5 (shown as filled/empty stars), `comment`
+  // is the buyer's optional note, `buyerName` is who left it. CTA deep-links the
+  // tailor's public profile where the review now appears.
+  tailor_review(
+    d: { rating?: number; comment?: string; buyerName?: string; tailorId?: string },
+    ctx: BuildCtx,
+  ) {
+    const who = d.buyerName || "A buyer";
+    const n = Math.max(0, Math.min(5, Math.round(Number(d.rating) || 0)));
+    // Visual star row — filled pink stars + grey remainder (★/☆ unicode renders
+    // reliably across email clients where icon fonts / SVGs don't).
+    const stars =
+      `<div style="font-size:30px;line-height:1;letter-spacing:4px;margin:6px 0 16px 0;">` +
+      `<span style="color:${PINK};">${"★".repeat(n)}</span>` +
+      `<span style="color:#dddddd;">${"★".repeat(5 - n)}</span>` +
+      `</div>`;
+    const profileLink = d.tailorId ? `${ctx.site}/tailors/${d.tailorId}` : `${ctx.site}/`;
+    return {
+      subject: "You have a new review — Stitch'd",
+      html: baseTemplate({
+        heading: "You have a new review.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`<strong>${esc(who)}</strong> left you a review:`) +
+          stars +
+          (d.comment
+            ? `<blockquote style="margin:0 0 16px 0;padding:12px 16px;border-left:3px solid ${PINK};background:#fafafa;color:#555;font-style:italic;">${esc(d.comment)}</blockquote>`
+            : "") +
+          p("Reviews build trust and help buyers choose you for their alterations.") +
+          button("View your profile", profileLink),
+      }),
+    };
+  },
+
   // 7 — Welcome (new user)
   welcome(_d: Record<string, unknown>, ctx: BuildCtx) {
     return {

@@ -638,4 +638,52 @@ export const db = {
     const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_payouts?tailor_id=eq.${tailorId}&select=*,alteration_requests(id,garment_type,listing_id,paid_at,listings(name,image_url,images))&order=created_at.desc`,{headers:hdrs(t)});
     if(r.ok)return r.json();
     const r2=await fetch(`${SUPABASE_URL}/rest/v1/tailor_payouts?tailor_id=eq.${tailorId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
+
+  // ── Phase 15 — Tailor reviews & ratings ───────────────────────────────────
+  // A buyer reviews a tailor after a completed booking. Reviews live in their own
+  // tailor_reviews table (separate from the Phase 10b listing `reviews`); the
+  // tailor row carries a denormalised average_rating / review_count roll-up.
+  //
+  // Insert a review, then recalculate the tailor's average. The UNIQUE constraint
+  // on alteration_request_id makes a duplicate review a harmless 409 (we surface
+  // it as an error to the caller so the UI can say "already reviewed"). On success
+  // the review email to the tailor fires (resolved server-side from the review id).
+  async insertTailorReview(review,t){
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_reviews`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(review)});
+    if(!r.ok)throw new Error(await r.text());
+    const d=await r.json(); const created=d[0];
+    if(review&&review.tailor_id) await db.recalcTailorRating(review.tailor_id,t);
+    if(created&&created.id) fireEmail({type:"tailor_review",reviewId:created.id});
+    return created;
+  },
+  // Recompute a tailor's average_rating + review_count from their reviews and
+  // patch the tailor row. Best-effort: counts client-side from a lightweight
+  // select (PostgREST has no portable AVG without an RPC), then PATCHes via the
+  // self-healing updateTailor so a deployment missing the columns degrades quietly.
+  async recalcTailorRating(tailorId,t){
+    if(!tailorId)return;
+    try{
+      const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_reviews?tailor_id=eq.${tailorId}&select=rating`,{headers:hdrs(t)});
+      if(!r.ok)return;
+      const rows=await r.json();
+      const count=rows.length;
+      const avg=count?Math.round((rows.reduce((s,x)=>s+(Number(x.rating)||0),0)/count)*100)/100:0;
+      await db.updateTailor(tailorId,{average_rating:avg,review_count:count},t);
+    }catch(e){ /* a stale roll-up is better than a failed review submission */ }
+  },
+  // Every review for one tailor, newest first, WITH the alteration request
+  // (garment_type) embedded for the "Lehenga alteration" line. Buyer first names
+  // + avatars are resolved separately via getProfilesFullByIds (tailor_reviews has
+  // no PostgREST FK to profiles). Falls back to a plain select then [] so the
+  // section degrades to its empty state rather than throwing.
+  async getTailorReviews(tailorId,t){ if(!tailorId)return [];
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_reviews?tailor_id=eq.${tailorId}&select=*,alteration_requests(garment_type)&order=created_at.desc`,{headers:hdrs(t)});
+    if(r.ok)return r.json();
+    const r2=await fetch(`${SUPABASE_URL}/rest/v1/tailor_reviews?tailor_id=eq.${tailorId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
+  // The reviews this buyer has already left, so the /alterations page can show
+  // "Review submitted" + their stars instead of the LEAVE A REVIEW button (and
+  // never prompt twice for the same booking). Keyed by caller into a
+  // request_id -> review map. Returns [] if the table doesn't exist yet.
+  async getMyTailorReviews(buyerId,t){ if(!buyerId)return [];
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_reviews?buyer_id=eq.${buyerId}&select=id,alteration_request_id,rating,comment`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
 };

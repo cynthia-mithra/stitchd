@@ -2,6 +2,7 @@ import React from "react";
 import { Scissors, MapPin, Instagram, Globe, Trash2, Plus, ArrowUp, ArrowDown, X, ExternalLink, Mail, Check, Wallet, Clock } from "lucide-react";
 import { S } from "../styles";
 import { F, Stars, Thumb } from "../components/Shared";
+import { RatingSummary, ReviewList } from "../components/Reviews";
 import LoginPromptModal from "../components/LoginPromptModal";
 import { TAILOR_SPECIALISMS, TAILOR_TURNAROUND, turnaroundLabel, catEmoji } from "../lib/constants";
 import { StatusBadge, gbp } from "./Alterations";
@@ -65,6 +66,9 @@ export default function TailorProfiles({
   alterationRequests = [], alterationBuyers = {}, bookingsLoading = false,
   onSendQuote = () => {}, onDeclineRequest = () => {}, onMessageBuyer = () => {},
   onMarkComplete = () => {}, payouts = [],
+  // reviews (Phase 15): dashboard REVIEWS tab + public profile
+  tailorReviews = [], tailorReviewBuyers = {},
+  publicTailorReviews = [], publicReviewBuyers = {},
   // public
   publicTailor, publicTailorLoading,
   onGateAuth = () => {},
@@ -341,9 +345,18 @@ export default function TailorProfiles({
             <TailorEarnings payouts={payouts}/>
           )}
 
-          {/* REVIEWS TAB — placeholder (feature comes later) */}
+          {/* REVIEWS TAB — overall stats + every review, newest first (Part 5). */}
           {tailorDashTab==="reviews"&&(
-            <Placeholder title="REVIEWS" text="Your reviews will appear here. This feature is coming soon."/>
+            (tailorReviews||[]).length===0?(
+              <Placeholder title="NO REVIEWS YET" text="Reviews from buyers will appear here once you've completed bookings."/>
+            ):(
+              <div style={{display:"flex",flexDirection:"column",gap:28}}>
+                <div style={{border:"2px solid #111",padding:20}}>
+                  <RatingSummary reviews={tailorReviews} average={myTailor.average_rating}/>
+                </div>
+                <ReviewList reviews={tailorReviews} buyers={tailorReviewBuyers}/>
+              </div>
+            )
           )}
         </main>
       )}
@@ -359,7 +372,7 @@ export default function TailorProfiles({
               <button className="hbtn" style={{...S.hBtn,background:PINK,border:"2px solid #111",padding:"14px 28px",fontSize:14}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
             </div>
           ):(
-            <PublicProfile tailor={publicTailor} setView={setView} flash={flash} onOpenImage={setLightbox} user={user} onGateAuth={onGateAuth}/>
+            <PublicProfile tailor={publicTailor} setView={setView} flash={flash} onOpenImage={setLightbox} user={user} onGateAuth={onGateAuth} reviews={publicTailorReviews} reviewBuyers={publicReviewBuyers}/>
           )}
         </main>
       )}
@@ -683,11 +696,15 @@ function AddPhotosButton({ onPick, disabled }) {
 }
 
 // The public /tailors/<id> profile.
-function PublicProfile({ tailor, setView, flash, onOpenImage, user, onGateAuth = () => {} }) {
+function PublicProfile({ tailor, setView, flash, onOpenImage, user, onGateAuth = () => {}, reviews = [], reviewBuyers = {} }) {
   // Logged-out buyers can browse the whole profile, but booking a tailor is
   // gated — tapping BOOK opens the shared sign-up prompt (context: book).
   const [gateOpen,setGateOpen]=React.useState(false);
   const onBook=()=>{ if(user){ flash("Booking coming soon!"); } else { setGateOpen(true); } };
+  const reviewCount=tailor.review_count||reviews.length;
+  const avgRating=tailor.average_rating!=null&&Number(tailor.average_rating)>0
+    ? Number(tailor.average_rating)
+    : (reviews.length?reviews.reduce((s,r)=>s+(Number(r.rating)||0),0)/reviews.length:0);
   const portfolio=[...(tailor.tailor_portfolio||[])].sort((a,b)=>(a.position??0)-(b.position??0)||String(a.created_at).localeCompare(String(b.created_at)));
   const igHandle=(tailor.instagram_handle||"").replace(/^@/,"");
   const igUrl=igHandle?`https://instagram.com/${igHandle}`:null;
@@ -706,10 +723,20 @@ function PublicProfile({ tailor, setView, flash, onOpenImage, user, onGateAuth =
         <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
         <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(36px,6vw,56px)",fontWeight:900,letterSpacing:-1,lineHeight:1,marginBottom:8}}>{tailor.display_name}</h1>
         <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:700,color:"#666",display:"flex",alignItems:"center",gap:6,marginBottom:10}}><MapPin width={16} height={16}/> {tailor.location}</p>
-        {/* star placeholder */}
+        {/* Overall rating (Part 3) — stars + average + count, or a no-reviews note. */}
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-          <Stars value={0} size={16}/>
-          <span style={{fontSize:13,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1}}>No reviews yet</span>
+          {reviewCount>0?(
+            <>
+              <Stars value={avgRating} size={16}/>
+              <span style={{fontSize:14,color:"#111",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,letterSpacing:0.5}}>{avgRating.toFixed(1)}</span>
+              <span style={{fontSize:13,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5}}>({reviewCount} review{reviewCount===1?"":"s"})</span>
+            </>
+          ):(
+            <>
+              <Stars value={0} size={16}/>
+              <span style={{fontSize:13,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1}}>No reviews yet</span>
+            </>
+          )}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:20,flexWrap:"wrap",marginBottom:18}}>
           {tailor.price_from_pence!=null&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:PINK}}>From £{poundsFromPence(tailor.price_from_pence)}</span>}
@@ -764,9 +791,23 @@ function PublicProfile({ tailor, setView, flash, onOpenImage, user, onGateAuth =
           </Section>
         )}
 
-        {/* REVIEWS */}
+        {/* REVIEWS (Part 3) — overall rating + breakdown + individual reviews, or
+            a no-reviews state inviting the first booking. */}
         <Section heading="REVIEWS">
-          <p style={{fontSize:15,color:"#999"}}>No reviews yet</p>
+          {reviews.length>0?(
+            <div style={{display:"flex",flexDirection:"column",gap:28}}>
+              <RatingSummary reviews={reviews} average={tailor.average_rating}/>
+              <ReviewList reviews={reviews} buyers={reviewBuyers}/>
+            </div>
+          ):(
+            <div style={{textAlign:"center",padding:"40px 20px",border:"3px dashed #e0e0e0"}}>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#bbb",marginBottom:8}}>NO REVIEWS YET</p>
+              <p style={{fontSize:14,color:"#999",marginBottom:18}}>Be the first to book and review this tailor</p>
+              <button className="hbtn"
+                style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer"}}
+                onClick={onBook}>BOOK THIS TAILOR</button>
+            </div>
+          )}
         </Section>
       </div>
 

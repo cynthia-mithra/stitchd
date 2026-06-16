@@ -238,6 +238,41 @@ async function resolveTemplated(
       return { to, userId, data: { displayName, tailorId: body.tailorId ?? null } };
     }
 
+    case "tailor_review": {
+      // Phase 15 — a buyer reviewed a tailor. Recipient is the tailor's user;
+      // resolve the rating + comment from the review id, the tailor (for the
+      // profile deep link) and the buyer's name.
+      const review = await sbGetOne<{
+        tailor_id: string;
+        buyer_id: string;
+        rating: number;
+        comment?: string | null;
+      }>(
+        `tailor_reviews?id=eq.${body.reviewId}&select=tailor_id,buyer_id,rating,comment&limit=1`,
+      );
+      if (!review?.tailor_id) return { skip: "no review" };
+      const tailor = await sbGetOne<{ user_id: string }>(
+        `tailors?id=eq.${review.tailor_id}&select=user_id&limit=1`,
+      );
+      if (!tailor?.user_id) return { skip: "no tailor user" };
+      const prof = await getProfile(tailor.user_id);
+      if (prof?.email_notifications === false) return { skip: "unsubscribed" };
+      const to = await emailForUser(tailor.user_id);
+      if (!to) return { skip: "no email" };
+      const buyer = review.buyer_id ? await getProfile(review.buyer_id) : null;
+      const buyerName = buyer?.full_name || buyer?.username || "A buyer";
+      return {
+        to,
+        userId: tailor.user_id,
+        data: {
+          rating: review.rating,
+          comment: review.comment || undefined,
+          buyerName,
+          tailorId: review.tailor_id,
+        },
+      };
+    }
+
     case "alteration_request": {
       // Phase 15 — a buyer sent an alteration request. Recipient is the tailor's
       // user; resolve the listing, the buyer's name and the formatted budget.
