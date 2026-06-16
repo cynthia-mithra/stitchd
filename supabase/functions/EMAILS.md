@@ -92,6 +92,10 @@ curl -X POST $FN -H 'Content-Type: application/json' \
 # Phase 15 — alteration marked complete (recipient is the buyer, resolved from the request)
 curl -X POST $FN -H 'Content-Type: application/json' \
   -d '{"type":"alteration_completed_buyer","requestId":"<alteration request id>"}'
+
+# Phase 15 — new tailor review (recipient is the tailor, resolved from the review)
+curl -X POST $FN -H 'Content-Type: application/json' \
+  -d '{"type":"tailor_review","reviewId":"<tailor review id>"}'
 ```
 
 > **Phase 15 — booking confirmation emails.** The two "booking confirmed" emails

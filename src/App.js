@@ -16,6 +16,7 @@ import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefron
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, User, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
+import { ReviewModal } from "./components/Reviews";
 import PricingGuide from "./components/PricingGuide";
 import Tailors from "./views/Tailors";
 import TailorProfiles from "./views/TailorProfiles";
@@ -334,6 +335,17 @@ export default function App() {
   // payout rows (EARNINGS section) and the buyer's decline-quote confirm modal.
   const [alterCheckoutId,   setAlterCheckoutId]   = useState(null);
   const [tailorPayouts,     setTailorPayouts]     = useState([]);
+  // Phase 15 — Tailor reviews & ratings. The review modal (request being reviewed
+  // + submit busy flag), the buyer's own reviews (so /alterations shows reviewed
+  // state), the public-profile reviews (+ reviewer profiles) and the dashboard
+  // REVIEWS tab reviews (+ reviewer profiles).
+  const [reviewReq,         setReviewReq]         = useState(null);
+  const [reviewBusy,        setReviewBusy]        = useState(false);
+  const [buyerReviews,      setBuyerReviews]      = useState([]);
+  const [publicTailorReviews,setPublicTailorReviews]=useState([]);
+  const [publicReviewBuyers, setPublicReviewBuyers] =useState({});
+  const [tailorReviews,     setTailorReviews]     = useState([]);
+  const [tailorReviewBuyers,setTailorReviewBuyers]=useState({});
   const [following,      setFollowing]      = useState([]);
   const [feedItems,      setFeedItems]      = useState([]);
   const [feedLoading,    setFeedLoading]    = useState(false);
@@ -1824,7 +1836,18 @@ export default function App() {
     setView("tailor-dashboard"); window.scrollTo(0,0);
     loadTailorAlterations();
     loadTailorPayouts();
+    loadTailorReviews();
     try{ const p=await db.getTailorPortfolio(myTailor.id,token); setTailorPortfolio(p); }catch(e){ setTailorPortfolio([]); }
+  }
+
+  // Load the tailor's reviews (+ reviewer profiles) for the dashboard REVIEWS tab.
+  async function loadTailorReviews(){
+    if(!myTailor||!token) return;
+    try{
+      const reviews=await db.getTailorReviews(myTailor.id,token);
+      setTailorReviews(reviews);
+      setTailorReviewBuyers(await resolveReviewBuyers(reviews));
+    }catch(e){ setTailorReviews([]); setTailorReviewBuyers({}); }
   }
 
   // Save the PROFILE tab edits (uploading any new profile/banner image first).
@@ -1899,11 +1922,28 @@ export default function App() {
   async function openTailorPublic(id,pushUrl=false){
     if(!id) return;
     setPublicTailor(null); setPublicTailorLoading(true);
+    setPublicTailorReviews([]); setPublicReviewBuyers({});
     setView("tailor-public"); window.scrollTo(0,0);
     if(pushUrl){ try{ window.history.pushState({},"",`/tailors/${id}`); }catch(e){} }
     try{ const t=await db.getTailor(id,token); setPublicTailor(t); }
     catch(e){ setPublicTailor(null); }
     finally{ setPublicTailorLoading(false); }
+    // Reviews for the profile's REVIEWS section, plus the reviewers' profiles
+    // (first name + avatar). Best-effort — the section degrades to its empty state.
+    try{
+      const reviews=await db.getTailorReviews(id,token);
+      setPublicTailorReviews(reviews);
+      setPublicReviewBuyers(await resolveReviewBuyers(reviews));
+    }catch(e){ /* leave empty */ }
+  }
+
+  // Resolve the reviewer profiles (id → {full_name, username, avatar_url}) for a
+  // set of reviews, so the list can show each buyer's first name + avatar.
+  async function resolveReviewBuyers(reviews){
+    const ids=[...new Set((reviews||[]).map(r=>r.buyer_id).filter(Boolean))];
+    if(!ids.length) return {};
+    try{ const profs=await db.getProfilesFullByIds(ids,token); const map={}; profs.forEach(p=>{ map[p.id]=p; }); return map; }
+    catch(e){ return {}; }
   }
 
   // ── Phase 15 — Request alterations on a listing ────────────────────────────
@@ -1956,6 +1996,10 @@ export default function App() {
     try{ setBuyerAlterations(await db.getBuyerAlterationRequests(user.id,token)); }
     catch(e){ setBuyerAlterations([]); }
     finally{ setBuyerAlterationsLoading(false); }
+    // The buyer's existing reviews, so completed bookings can show "Review
+    // submitted" + the stars they gave (and never prompt twice).
+    try{ setBuyerReviews(await db.getMyTailorReviews(user.id,token)); }
+    catch(e){ /* leave whatever's cached */ }
   }
   function openAlterations(){ loadBuyerAlterations(); setView("alterations"); window.scrollTo(0,0); }
 
@@ -2060,8 +2104,49 @@ export default function App() {
       if(tailorUserId) await notify(tailorUserId,"alteration_payout","Payout confirmed!",`Great news! Your payout of ${gbp(payoutPence)} has been confirmed.`,req.listing_id);
       setBuyerAlterations(p=>p.map(r=>r.id===req.id?{...r,payout_status:"paid"}:r));
       flash("Thanks for confirming! We've released the payout.");
+      // Prompt for a review straight away (Part 2 trigger). Skip if somehow
+      // already reviewed; the /alterations card keeps the LEAVE A REVIEW button
+      // for later either way.
+      if(!buyerReviews.some(rv=>rv.alteration_request_id===req.id)) setReviewReq(req);
       return true;
     }catch(e){ flash("Couldn't confirm completion: "+errMsg(e)); return false; }
+  }
+
+  // ── Phase 15 — Leave a review for a tailor ─────────────────────────────────
+  // Open the review modal for a completed booking. Guard against reviewing twice
+  // (the UNIQUE(alteration_request_id) constraint also enforces this server-side).
+  function openTailorReview(req){
+    if(!req) return;
+    if(buyerReviews.some(rv=>rv.alteration_request_id===req.id)){ flash("You've already reviewed this booking."); return; }
+    setReviewReq(req);
+  }
+  // Submit the review: insert it (which recalculates the tailor's average + fires
+  // the review email), notify the tailor in-app, then record it locally so the
+  // card flips to "Review submitted" and confirm to the buyer.
+  async function submitTailorReview({ rating, comment }){
+    const req=reviewReq;
+    if(!user||!token||!req||!rating) return;
+    setReviewBusy(true);
+    try{
+      const tailorId=req.tailor_id||(req.tailors&&req.tailors.id);
+      const created=await db.insertTailorReview({
+        tailor_id:tailorId,
+        buyer_id:user.id,
+        alteration_request_id:req.id,
+        rating,
+        comment:comment||null,
+      },token);
+      const tailorUserId=req.tailors&&req.tailors.user_id;
+      if(tailorUserId) await notify(tailorUserId,"tailor_review","New review",`${buyerDisplayName()} left you a ${rating} star review`,req.listing_id);
+      setBuyerReviews(p=>[...p,created||{id:`local-${req.id}`,alteration_request_id:req.id,buyer_id:user.id,rating,comment:comment||null}]);
+      setReviewReq(null);
+      flash("Review submitted! Thank you for your feedback.",6000);
+    }catch(e){
+      // The UNIQUE constraint surfaces a 409 here if they somehow double-submit.
+      if(/duplicate|unique|409/i.test(errMsg(e))){ flash("You've already reviewed this booking."); setReviewReq(null); }
+      else flash("Couldn't submit your review: "+errMsg(e));
+    }
+    finally{ setReviewBusy(false); }
   }
 
   // Tailor's payout rows for the dashboard EARNINGS section.
@@ -4020,6 +4105,8 @@ export default function App() {
         onSendQuote={sendAlterationQuote} onDeclineRequest={declineAlterationRequest} onMessageBuyer={messageBuyerFromRequest}
         onMarkComplete={markAlterationComplete} payouts={tailorPayouts}
         publicTailor={publicTailor} publicTailorLoading={publicTailorLoading}
+        publicTailorReviews={publicTailorReviews} publicReviewBuyers={publicReviewBuyers}
+        tailorReviews={tailorReviews} tailorReviewBuyers={tailorReviewBuyers}
         setAuthMode={setAuthMode} onGateAuth={gateAuth}
       />
 
@@ -4029,7 +4116,7 @@ export default function App() {
         onMessageTailor={messageTailorFromRequest} onFindTailor={()=>{loadTailorMarket();setView("tailors");window.scrollTo(0,0);}}
         onAcceptQuote={acceptAlterationQuote} onDeclineQuote={declineAlterationQuote}
         onConfirmCompletion={confirmAlterationCompletion} checkoutId={alterCheckoutId}
-        onLeaveReview={()=>flash("Reviews for tailors are coming soon!",5000)}
+        onLeaveReview={openTailorReview} reviews={buyerReviews}
       />
 
       {/* REQUEST ALTERATIONS modal — launched from the listing detail page */}
@@ -4039,6 +4126,13 @@ export default function App() {
         onSend={sendAlterationRequest}
         openTailorProfile={(id)=>{ try{ window.open(`/tailors/${id}`,"_blank","noopener"); }catch(e){} }}
         browseAllTailors={()=>{ setAlterReqOpen(false); loadTailorMarket(); setView("tailors"); window.scrollTo(0,0); }}
+      />
+
+      {/* LEAVE A REVIEW modal — Phase 15 (opened from /alterations) */}
+      <ReviewModal
+        open={!!reviewReq} onClose={()=>setReviewReq(null)}
+        tailor={reviewReq&&reviewReq.tailors} busy={reviewBusy}
+        onSubmit={submitTailorReview}
       />
 
       {/* ORDERS */}

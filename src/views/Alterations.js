@@ -2,6 +2,7 @@ import React from "react";
 import { Scissors, MapPin, ExternalLink, Mail, ArrowLeft, CreditCard, Check, Star, X } from "lucide-react";
 import { S } from "../styles";
 import { Stars, Thumb } from "../components/Shared";
+import { RatingChip } from "../components/Reviews";
 import { ALTERATION_TYPES, tailorsForAlterations, catEmoji } from "../lib/constants";
 
 const PINK = "#FF1493";
@@ -148,7 +149,7 @@ export function RequestAlterationModal({
                         <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:17,fontWeight:900,lineHeight:1.1}}>{t.display_name}</p>
                         <p style={{fontSize:12,color:"#888",display:"flex",alignItems:"center",gap:4}}><MapPin width={12} height={12}/> {t.location}</p>
                         <div style={{display:"flex",alignItems:"center",gap:8,marginTop:3,flexWrap:"wrap"}}>
-                          <Stars value={0} size={12}/>
+                          <RatingChip average={t.average_rating} count={t.review_count} size={12}/>
                           {t.price_from_pence!=null&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:PINK}}>From £{poundsFromPence(t.price_from_pence)}</span>}
                           {t.turnaround_days&&<span style={{fontSize:11,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700}}>{t.turnaround_days} days</span>}
                         </div>
@@ -218,7 +219,7 @@ function Summary({ label, children }) {
 // ════════════════════════ BUYER — MY ALTERATION REQUESTS ════════════════════════
 // The /alterations page: every request the buyer has sent, newest first.
 export default function Alterations({
-  view, setView, loading = false, requests = [],
+  view, setView, loading = false, requests = [], reviews = [],
   onMessageTailor = () => {}, onFindTailor = () => {}, onAcceptQuote = () => {},
   onDeclineQuote = () => {}, onConfirmCompletion = () => {}, onLeaveReview = () => {},
   checkoutId = null,
@@ -229,6 +230,11 @@ export default function Alterations({
   const [busy,setBusy]=React.useState(false);
 
   if(view!=="alterations") return null;
+
+  // Map alteration_request_id → the review the buyer left, so completed bookings
+  // can show "Review submitted" + their stars instead of the LEAVE A REVIEW button.
+  const reviewByReq={};
+  (reviews||[]).forEach(rv=>{ if(rv&&rv.alteration_request_id) reviewByReq[rv.alteration_request_id]=rv; });
 
   const doDecline=async()=>{ const r=declineReq; setBusy(true); try{ await onDeclineQuote(r); }finally{ setBusy(false); setDeclineReq(null); } };
   const doConfirm=async()=>{ const r=confirmReq; setBusy(true); try{ await onConfirmCompletion(r); }finally{ setBusy(false); setConfirmReq(null); } };
@@ -328,11 +334,18 @@ export default function Alterations({
                 {/* ── COMPLETED — confirm receipt to release payout, then review ── */}
                 {st==="completed"&&(
                   payoutPaid?(
+                    reviewByReq[req.id]?(
+                      <div style={{border:"2px solid #00E5CC",background:"#effdfa",padding:14,display:"flex",flexDirection:"column",gap:8}}>
+                        <Stars value={Number(reviewByReq[req.id].rating)||0} size={18}/>
+                        <p style={{fontSize:13,color:"#444",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,display:"inline-flex",alignItems:"center",gap:6}}><Check width={15} height={15} color="#00E5CC"/> REVIEW SUBMITTED</p>
+                      </div>
+                    ):(
                     <div style={{border:"2px solid #00E5CC",background:"#effdfa",padding:14,display:"flex",flexDirection:"column",gap:10}}>
                       <p style={{fontSize:14,color:"#444",lineHeight:1.5}}>How was your experience with <strong>{tailorName}</strong>?</p>
                       <button className="hbtn" onClick={()=>onLeaveReview(req)}
                         style={{alignSelf:"flex-start",background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"11px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}><Star width={15} height={15}/> LEAVE A REVIEW</button>
                     </div>
+                    )
                   ):(
                     <div style={{border:"2px solid #111",background:"#fafafa",padding:14,display:"flex",flexDirection:"column",gap:10}}>
                       <p style={{fontSize:14,color:"#444",lineHeight:1.5}}><strong>{tailorName}</strong> has marked your alteration as complete. Please confirm once you've received your item.</p>
