@@ -604,6 +604,32 @@ export const templates = {
     };
   },
 
+  // 23 — Payout sent (tailor). Phase 15 — Stripe Connect transferred the tailor's
+  // cut to their connected bank account after the buyer confirmed completion.
+  // `amount` is the formatted payout (after the 15% commission); `title` is the
+  // job. CTA opens the dashboard EARNINGS section.
+  tailor_payout_sent(
+    d: { amount?: string; title?: string; image?: string },
+    ctx: BuildCtx,
+  ) {
+    const job = d.title || "your alteration job";
+    return {
+      subject: "Payment sent — Stitch'd",
+      html: baseTemplate({
+        heading: "Your payment is on its way.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          (d.amount
+            ? p(`<strong>${esc(d.amount)}</strong> has been transferred to your connected bank account.`)
+            : p("Your payout has been transferred to your connected bank account.")) +
+          listingCard({ image: d.image, title: job, price: d.amount }) +
+          p(`<strong>Job:</strong> ${esc(job)}`) +
+          noteLine("Funds typically arrive within 2–7 business days.") +
+          button("View earnings", `${ctx.site}/tailor-dashboard`),
+      }),
+    };
+  },
+
   // 7 — Welcome (new user)
   welcome(_d: Record<string, unknown>, ctx: BuildCtx) {
     return {

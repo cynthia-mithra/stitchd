@@ -1,5 +1,5 @@
 import React from "react";
-import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock, ShieldCheck, Store, Image as ImageIcon, MapPin, Zap, TrendingUp, Tag, MessageSquare, Hourglass, Scissors } from "lucide-react";
+import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock, ShieldCheck, Store, Image as ImageIcon, MapPin, Zap, TrendingUp, Tag, MessageSquare, Hourglass, Scissors, Wallet, RefreshCw } from "lucide-react";
 import { CARD_COLORS, catEmoji, currencySymbol, lookListings, lookTotal, turnaroundLabel } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Thumb, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
@@ -96,6 +96,8 @@ export default function Dashboard({
   sellerOffers = [], offerBuyers = {}, acceptOffer = () => {}, declineOffer = () => {},
   // Tailor applications (Phase 15 — admin)
   adminTailors = [], approveTailor = () => {}, rejectTailor = () => {}, openTailorPublic = () => {},
+  // Tailor payouts oversight (Phase 15 — admin)
+  adminPayouts = [], retryPayout = () => {},
 }) {
   // Split listings into ACTIVE vs SOLD (issue PART 4 — sold listings move to a
   // separate SOLD tab in the seller dashboard).
@@ -718,6 +720,66 @@ export default function Dashboard({
                     );
                   })()}
                 </div>
+                {/* TAILOR PAYOUTS (Phase 15 — Stripe Connect oversight) */}
+                {(()=>{
+                  const gbp=(p)=>`£${((Number(p)||0)/100).toFixed(2).replace(/\.00$/,"")}`;
+                  const fmtDate=(d)=>{ try{ return new Date(d).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase(); }catch{ return ""; } };
+                  let gmv=0, commission=0, paidOut=0;
+                  for(const po of adminPayouts){
+                    const amount=Number(po.amount_pence)||0; const comm=Number(po.commission_pence)||0;
+                    gmv+=amount; commission+=comm;
+                    if(po.status==="paid") paidOut+=(amount-comm);
+                  }
+                  const STAT=(label,value,accent)=>(
+                    <div style={{border:"2px solid #111",padding:14,display:"flex",flexDirection:"column",gap:6,minWidth:150,flex:1}}>
+                      <span style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5}}>{label}</span>
+                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:accent||"#111",lineHeight:1}}>{value}</span>
+                    </div>
+                  );
+                  const badge=(st)=>{ const s=(st||"pending").toLowerCase(); const bg=s==="paid"?"#00E5CC":s==="failed"?"#FF1493":"#FF9500"; const fg=s==="paid"?"#111":"#fff"; const label=s==="paid"?"TRANSFERRED":s==="failed"?"FAILED":"PENDING"; return <span style={{background:bg,color:fg,padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5}}>{label}</span>; };
+                  return (
+                    <div>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:10,borderBottom:"2px solid #111"}}>
+                        <Wallet width={18} height={18} color="#FF1493"/>
+                        <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>TAILOR PAYOUTS</h3>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#bbb",letterSpacing:1}}>({adminPayouts.length})</span>
+                      </div>
+                      <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:16}}>
+                        {STAT("GMV (BOOKINGS)",gbp(gmv))}
+                        {STAT("STITCH'D COMMISSION",gbp(commission),"#FF1493")}
+                        {STAT("PAID OUT TO TAILORS",gbp(paidOut),"#00E5CC")}
+                      </div>
+                      {adminPayouts.length===0?(
+                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",letterSpacing:1}}>No payouts yet.</p>
+                      ):(
+                        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                          {adminPayouts.map(po=>{
+                            const ar=po.alteration_requests; const listing=ar&&ar.listings;
+                            const job=(listing&&listing.name)||(ar&&ar.garment_type)||"Alteration";
+                            const tailorName=(po.tailors&&po.tailors.display_name)||"Tailor";
+                            const gross=Number(po.amount_pence)||0; const comm=Number(po.commission_pence)||0; const payout=gross-comm;
+                            const failed=po.status==="failed";
+                            return (
+                              <div key={po.id} style={{border:`2px solid ${failed?"#FF1493":"#111"}`,padding:"14px 16px",fontFamily:"'Barlow Condensed',sans-serif",background:failed?"#fff0f8":"#fff"}}>
+                                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
+                                  {badge(po.status)}
+                                  <span style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{fmtDate(po.paid_at||po.created_at)}</span>
+                                </div>
+                                <p style={{fontSize:17,fontWeight:900,color:"#111",marginBottom:2}}>{job}</p>
+                                <p style={{fontSize:13,color:"#888",letterSpacing:0.3,marginBottom:6,display:"inline-flex",alignItems:"center",gap:5}}><Scissors width={13} height={13}/> {tailorName}</p>
+                                <p style={{fontSize:13.5,color:"#444",marginBottom:failed?6:0,fontFamily:"'Barlow',sans-serif"}}>Gross {gbp(gross)} · Commission {gbp(comm)} · <span style={{fontWeight:800,color:"#FF1493"}}>Payout {gbp(payout)}</span></p>
+                                {failed&&po.failure_reason&&<p style={{fontSize:12,color:"#FF1493",marginBottom:8,fontStyle:"italic",fontFamily:"'Barlow',sans-serif"}}>Error: {po.failure_reason}</p>}
+                                {(failed||po.status==="pending"||(po.status==="paid"&&!po.stripe_transfer_id))&&(
+                                  <button className="hbtn" style={{...S.dashBtn,background:failed?"#FF1493":"#fff",color:failed?"#fff":"#111",border:failed?"none":"1.5px solid #111",marginTop:6,display:"inline-flex",alignItems:"center",gap:4}} onClick={()=>retryPayout(po)}><RefreshCw width={12} height={12}/> {failed?"RETRY PAYOUT":"PROCESS PAYOUT"}</button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             ):dashTab==="offers"?(
               /* ── OFFERS TAB (Phase 14 — seller responds to offers) ───────────── */
