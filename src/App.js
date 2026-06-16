@@ -701,6 +701,13 @@ export default function App() {
     // has deactivated via bulk edit (status='inactive'). Applies to shop & search.
     const matchVacation=!vacationSellers.has(i.user_id);
     const matchActive=i.status!=="inactive";
+    // Issue #167 — hide SOLD listings from every browse/discovery view (shop,
+    // homepage grid, search, new arrivals). "Sold" is matched by EITHER signal:
+    // the legacy sold=true flag (set when a seller marks a piece sold) OR
+    // status='sold' (set by the stripe-webhook on a real purchase). Sold pieces
+    // remain visible on the dashboard SOLD tab, order history, Shop the Look and
+    // Recently Viewed (each with a SOLD overlay) — none of which use this filter.
+    const matchNotSold=!i.sold&&i.status!=="sold";
     // Phase 11 — "Verified sellers only" filter: keep listings from verified sellers.
     const matchVerified=!showVerifiedOnly||verifiedSellers.has(i.user_id);
     // Phase 12 — occasion + colour filters. Multi-select, OR within a group. An
@@ -710,7 +717,7 @@ export default function App() {
     const matchOcc=occFilter.length===0||occ.length===0||occFilter.some(o=>occ.includes(o));
     const col=i.colours||[];
     const matchColour=colourFilter.length===0||col.length===0||colourFilter.some(c=>col.includes(c));
-    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchVacation&&matchActive&&matchVerified&&matchOcc&&matchColour;
+    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchVacation&&matchActive&&matchNotSold&&matchVerified&&matchOcc&&matchColour;
    })
    // Promoted (in-window) listings float to the top; the source array is already
    // created_at.desc so a stable sort keeps newest-first order within each group.
@@ -3238,7 +3245,10 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(()=>{ if(view==="dashboard"&&isAdmin) loadAdminData(); },[view,isAdmin]);
   const selImages= sel?(sel.images&&sel.images.length>0?sel.images:[sel.image_url].filter(Boolean)):[];
-  const similarItems = sel ? items.filter(i=>i.id!==sel.id&&(i.category===sel.category||i.fabric===sel.fabric||i.origin===sel.origin)).slice(0,4) : [];
+  // Issue #167 — "YOU MIGHT ALSO LIKE" is a discovery rail, so exclude SOLD
+  // (and inactive) pieces the same way the shop grid does. Recently Viewed below
+  // deliberately keeps sold items (with a SOLD overlay) and is not filtered here.
+  const similarItems = sel ? items.filter(i=>i.id!==sel.id&&!i.sold&&i.status!=="sold"&&i.status!=="inactive"&&(i.category===sel.category||i.fabric===sel.fabric||i.origin===sel.origin)).slice(0,4) : [];
   // Phase 12 — recently viewed, in view order (newest first), excluding the
   // current listing, capped at 6 for the Detail "RECENTLY VIEWED" rail.
   const recentItems  = recentlyViewed
