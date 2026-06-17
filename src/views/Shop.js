@@ -54,62 +54,66 @@ export default function Shop({
   // /auth. `gate` holds the active context while the modal is open.
   const [gate, setGate] = React.useState(null);
   const requireAuth = (context, action) => { if (user) action(); else setGate(context); };
+  // First name for the personalised logged-in hero greeting (falls back through
+  // full_name → username → email handle). Logged-out visitors see the generic
+  // marketing hero instead.
+  const firstName = ((profile?.full_name&&profile.full_name.trim())||profile?.username||user?.email?.split("@")[0]||"").split(" ")[0];
   if(view!=="shop"&&view!=="newarrivals") return null;
   const followingActive = !!user && view==="shop" && shopTab==="following";
-  // Tab bar shown at the top of the shop for logged-in users (not on /new-arrivals).
+  // BROWSE tab row — shown below the hero + search bar for logged-in users (not on
+  // /new-arrivals). A small grey "BROWSE" section label introduces the tabs, which
+  // sit on a full-width divider that separates them from the listings grid. Tabs are
+  // full width on mobile (.shop-tab via media query) and auto width on desktop.
   const ShopTabs = () => (!user||newArrivals) ? null : (
-    <div style={{maxWidth:1300,margin:"0 auto",padding:"18px 24px 0",display:"flex",gap:0}}>
-      {[["all","ALL LISTINGS"],["following","FOLLOWING"]].map(([k,l])=>(
-        <button key={k} className="hbtn" onClick={()=>{ setShopTab(k); if(k==="following") loadFeed(); }}
-          style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,padding:"10px 22px",border:"2px solid #111",borderLeft:k==="all"?"2px solid #111":"none",background:shopTab===k?"#FF1493":"#fff",color:shopTab===k?"#fff":"#111",cursor:"pointer",borderRadius:0}}>{l}</button>
-      ))}
+    <div style={{maxWidth:1300,margin:"0 auto",padding:"28px 24px 0"}}>
+      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:3,color:"#999",textTransform:"uppercase",margin:"0 0 10px"}}>BROWSE</p>
+      <div className="shop-tabs" style={{display:"flex",gap:0,borderBottom:"2px solid #111"}}>
+        {[["all","ALL LISTINGS"],["following","FOLLOWING"]].map(([k,l])=>(
+          <button key={k} className="hbtn shop-tab" onClick={()=>{ setShopTab(k); if(k==="following") loadFeed(); }}
+            style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,padding:"11px 26px",border:"2px solid #111",borderBottom:"none",borderLeft:k==="all"?"2px solid #111":"none",background:shopTab===k?"#FF1493":"#fff",color:shopTab===k?"#fff":"#111",cursor:"pointer",borderRadius:0,marginBottom:-2}}>{l}</button>
+        ))}
+      </div>
     </div>
   );
-  // FOLLOWING feed — replaces the hero/grid/rails. Same card grid as the shop.
-  if(followingActive){
-    return (
-      <>
-        <ShopTabs/>
-        <main style={S.main}>
-          <div style={{marginBottom:28,paddingBottom:20,borderBottom:"3px solid #111"}}>
-            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>FROM SELLERS YOU FOLLOW</p>
-            <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:44,fontWeight:900,letterSpacing:-1,lineHeight:1}}>FOLLOWING ✦</h2>
-          </div>
-          {feedLoading&&<div style={S.loadingWrap}><div style={S.spinner}/></div>}
-          {!feedLoading&&following.length===0&&(
-            <div style={{textAlign:"center",padding:"56px 20px"}}>
-              <p style={{display:"flex",justifyContent:"center",marginBottom:12,color:"#ccc"}}><Heart width={48} height={48}/></p>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,marginBottom:18}}>Follow sellers to see their latest listings here</p>
-              <button className="hbtn" style={{...S.hBtn,fontSize:13,padding:"12px 22px",border:"2px solid #111"}} onClick={()=>setShopTab("all")}>DISCOVER SELLERS →</button>
-            </div>
-          )}
-          {!feedLoading&&following.length>0&&feedItems.length===0&&(
-            <div style={{textAlign:"center",padding:"56px 20px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:"#bbb"}}>No new listings from sellers you follow yet.</div>
-          )}
-          {!feedLoading&&feedItems.length>0&&(
-            <div style={S.grid} className="shop-grid">
-              {feedItems.map((item,idx)=>{
-                const accent=CARD_COLORS[idx%CARD_COLORS.length];
-                return(
-                  <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
-                    <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
-                      {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-                    </Thumb>
-                    <div style={S.cardBody} className="card-body">
-                      <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
-                      <p style={S.cardName} className="card-name">{item.name}</p>
-                      <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span></div>
-                    </div>
-                    <div style={{...S.accentBar,background:accent}}/>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </main>
-      </>
-    );
-  }
+  // FOLLOWING feed — rendered in the grid position below the hero + tabs (same
+  // page flow as the ALL LISTINGS grid), so the hero always stays first. Shows a
+  // friendly empty state with a DISCOVER SELLERS button when the user follows no
+  // one yet.
+  const FollowingFeed = () => (
+    <div style={S.gridWrap}>
+      {feedLoading&&<div style={S.loadingWrap}><div style={S.spinner}/></div>}
+      {!feedLoading&&following.length===0&&(
+        <div style={{textAlign:"center",padding:"56px 20px"}}>
+          <p style={{display:"flex",justifyContent:"center",marginBottom:12,color:"#ccc"}}><Heart width={48} height={48}/></p>
+          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,marginBottom:18}}>Follow sellers to see their listings here</p>
+          <button className="hbtn" style={{...S.hBtn,fontSize:13,padding:"12px 22px",border:"2px solid #111"}} onClick={()=>setShopTab("all")}>DISCOVER SELLERS →</button>
+        </div>
+      )}
+      {!feedLoading&&following.length>0&&feedItems.length===0&&(
+        <div style={{textAlign:"center",padding:"56px 20px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:"#bbb"}}>No new listings from sellers you follow yet.</div>
+      )}
+      {!feedLoading&&feedItems.length>0&&(
+        <div style={S.grid} className="shop-grid">
+          {feedItems.map((item,idx)=>{
+            const accent=CARD_COLORS[idx%CARD_COLORS.length];
+            return(
+              <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
+                <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
+                  {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
+                </Thumb>
+                <div style={S.cardBody} className="card-body">
+                  <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
+                  <p style={S.cardName} className="card-name">{item.name}</p>
+                  <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span></div>
+                </div>
+                <div style={{...S.accentBar,background:accent}}/>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
   // Small "⚡ FAST SELLER" badge for sellers flagged fast_seller=true on their profile.
   // Reuses the same overlay badge style as RESERVED / NEW / FITS YOU. On the main grid
   // it stacks above the FITS YOU badge (which also sits bottom-left) so the two never
@@ -179,7 +183,6 @@ export default function Shop({
   };
   return (
     <>
-      <ShopTabs/>
       {/* NEW ARRIVALS page header — replaces the hero when this view is the
           /new-arrivals page. The search bar + filters + grid below are shared
           with the main shop, so every filter works here too. */}
@@ -192,14 +195,32 @@ export default function Shop({
       )}
       {!newArrivals&&(
       <section style={S.hero} className="hero-section">
+        {/* Logged-in users get a personalised "welcome back" hero (greeting +
+            shopping-first CTAs) so the homepage no longer looks identical to the
+            logged-out marketing pitch. Logged-out visitors keep the original
+            DESI FITS REHOMED marketing hero. */}
         <div style={S.heroLeft} className="hero-left">
-          <p style={S.heroTag}>THE MARKETPLACE FOR</p>
-          <h1 style={S.heroH}><span style={S.heroLine1}>DESI</span><span style={S.heroLine2}>FITS</span><span style={S.heroLine3}>REHOMED.</span></h1>
-          <p style={S.heroSub}>Buy or Resell South Asian fashion</p>
-          <div style={S.heroCtas}>
-            <button className="hbtn" style={S.heroBtnPrimary} onClick={()=>user?setView("add"):(setAuthMode("signup"),setView("auth"))}>LIST YOUR PIECE →</button>
-            <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"})}><span style={{display:"inline-flex",alignItems:"center",gap:8}}>BROWSE DROPS <ArrowDown width={16} height={16}/></span></button>
-          </div>
+          {user ? (
+            <>
+              <p style={S.heroTag}>WELCOME BACK{firstName?",":""}</p>
+              <h1 style={S.heroH}><span style={S.heroLine1}>HEY</span><span style={S.heroLine2}>{(firstName||"THERE").toUpperCase()}</span><span style={S.heroLine3}>WHAT'S NEW.</span></h1>
+              <p style={S.heroSub}>Fresh drops from across the community — pick up where you left off.</p>
+              <div style={S.heroCtas}>
+                <button className="hbtn" style={S.heroBtnPrimary} onClick={()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"})}><span style={{display:"inline-flex",alignItems:"center",gap:8}}>BROWSE DROPS <ArrowDown width={16} height={16}/></span></button>
+                <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>setView("add")}>LIST YOUR PIECE →</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p style={S.heroTag}>THE MARKETPLACE FOR</p>
+              <h1 style={S.heroH}><span style={S.heroLine1}>DESI</span><span style={S.heroLine2}>FITS</span><span style={S.heroLine3}>REHOMED.</span></h1>
+              <p style={S.heroSub}>Buy or Resell South Asian fashion</p>
+              <div style={S.heroCtas}>
+                <button className="hbtn" style={S.heroBtnPrimary} onClick={()=>(setAuthMode("signup"),setView("auth"))}>LIST YOUR PIECE →</button>
+                <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"})}><span style={{display:"inline-flex",alignItems:"center",gap:8}}>BROWSE DROPS <ArrowDown width={16} height={16}/></span></button>
+              </div>
+            </>
+          )}
         </div>
         <div style={S.heroRight} className="hero-right">
           {[
@@ -307,6 +328,13 @@ export default function Shop({
         )}
       </div>
 
+      {/* BROWSE tab row — sits below the hero + search bar (logged-in only). */}
+      <ShopTabs/>
+
+      {/* FOLLOWING tab shows the followed-sellers feed in the grid position; the
+          ALL LISTINGS tab (and logged-out / new-arrivals) shows the main grid. */}
+      {followingActive ? <FollowingFeed/> : (
+      <>
       {hasFilters&&<div style={{padding:"12px 24px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:2,color:"#bbb",borderBottom:"1px solid #f0f0f0"}}>{visible.length} RESULT{visible.length!==1?"S":""}{search?` FOR "${search.toUpperCase()}"`:""}  <span style={{color:"#FF1493",cursor:"pointer",marginLeft:12}} onClick={clearFilters}>CLEAR</span></div>}
 
       <div style={S.gridWrap}>
@@ -367,11 +395,13 @@ export default function Shop({
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* NEW ARRIVALS — the 4 most recent listings (last 14 days). Horizontal
           scroll rail on mobile, grid on desktop. Hidden on the new-arrivals page
           itself, while filtering, and when there are no recent listings. */}
-      {!newArrivals&&!hasFilters&&homeArrivals.length>0&&(
+      {!newArrivals&&!hasFilters&&!followingActive&&homeArrivals.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:16,marginBottom:20,flexWrap:"wrap"}}>
             <div>
@@ -405,7 +435,7 @@ export default function Shop({
       {/* SHOP THE LOOK — curated outfit collections. Hidden entirely when no
           looks exist or while the buyer is filtering/searching the grid. The rail
           scrolls horizontally on mobile and is a 3-up grid on desktop. */}
-      {!newArrivals&&!hasFilters&&looks.length>0&&(
+      {!newArrivals&&!hasFilters&&!followingActive&&looks.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:16,marginBottom:20,flexWrap:"wrap"}}>
             <div>
@@ -422,12 +452,12 @@ export default function Shop({
 
       {/* STYLE INSPIRATION — homepage style-feed preview. Hidden when no posts
           exist or while the buyer is filtering/searching the grid. */}
-      {!newArrivals&&!hasFilters&&homeStylePosts.length>0&&(
+      {!newArrivals&&!hasFilters&&!followingActive&&homeStylePosts.length>0&&(
         <StyleInspiration posts={homeStylePosts} profilesMap={homeStyleProfiles} onOpen={openStyleFeed} />
       )}
 
       {/* NEW IN */}
-      {!newArrivals&&!hasFilters&&newListings.length>0&&(
+      {!newArrivals&&!hasFilters&&!followingActive&&newListings.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><Sparkles width={16} height={16}/> NEW IN — LAST 48 HOURS</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
@@ -453,7 +483,7 @@ export default function Shop({
       )}
 
       {/* PRICE DROPS */}
-      {!newArrivals&&!hasFilters&&priceDrops.length>0&&(
+      {!newArrivals&&!hasFilters&&!followingActive&&priceDrops.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><TrendingDown width={16} height={16}/> PRICE DROPS</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
@@ -486,7 +516,7 @@ export default function Shop({
       )}
 
       {/* TRENDING */}
-      {!newArrivals&&!hasFilters&&trendingItems.length>0&&(
+      {!newArrivals&&!hasFilters&&!followingActive&&trendingItems.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 48px",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #BF5AF2",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><Flame width={16} height={16}/> TRENDING — MOST VIEWED</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">

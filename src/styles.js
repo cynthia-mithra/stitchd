@@ -96,6 +96,10 @@ export const CSS=`
        sharing the second line equally and compactly. */
     .search-box{flex:1 1 100% !important;}
     .search-action-btn{flex:1 1 0 !important;min-width:0 !important;}
+    /* BROWSE tabs — full width on mobile so ALL LISTINGS / FOLLOWING split the
+       row evenly; auto width on desktop (default). */
+    .shop-tabs{width:100% !important;}
+    .shop-tab{flex:1 1 0 !important;text-align:center !important;padding-left:0 !important;padding-right:0 !important;}
     /* PROBLEM 3 — two-column listing grid with proportionally scaled cards. */
     .shop-grid{grid-template-columns:1fr 1fr !important;gap:8px !important;}
     .card-top{height:150px !important;}
