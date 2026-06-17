@@ -62,36 +62,39 @@ export const CSS=`
        grid the bubbles now form a SLIGHTLY-OVERLAPPING, STAGGERED FLOATING cluster —
        the same playful arrangement as the desktop hero (keeps the divider border). */
     .hero-section{flex-direction:row !important;min-height:0 !important;}
-    /* Split the hero text 58% / bubbles 42% on mobile so the writing column has
-       more room while the overlapping cluster can still stagger without clipping. */
-    .hero-left{flex:0 0 58% !important;padding:24px 14px !important;}
+    /* Split the hero text 55% / bubbles 45% on mobile. The bubble column is WIDER
+       than before (was 42%) because the bubbles are now BIGGER (up to 130px), and a
+       wider column keeps even the largest disc fully inside the right edge. */
+    .hero-left{flex:0 0 55% !important;padding:24px 14px !important;}
     /* The bubble column is the POSITIONING CONTEXT for the absolutely-placed bubbles
        (position:relative + overflow:hidden are inherited from the inline heroRight
        style). A min-height guarantees a tall-enough canvas for the cluster even when
        the heading text is short, and overflow:hidden clips any float-animation
        overshoot so there is never horizontal page scroll. */
-    .hero-right{flex:0 0 42% !important;padding:0 !important;min-height:360px !important;}
+    .hero-right{flex:0 0 45% !important;padding:0 !important;min-height:380px !important;}
     /* OVERLAPPING FLOATING CLUSTER (mobile): bubbles stay position:absolute (from the
        inline style) and we override only top/left/size per bubble with !important.
-       Sizes are BIGGER now (74–96px). Crucially, sizes are
-       fixed px while left is a PERCENTAGE of the column width: the column is narrowest
-       on the smallest phone (~40% of 320px ≈ 128px), so designing the fit there
-       guarantees every wider phone has MORE room — no bubble can be clipped or cut off
-       by the right edge, and there is no horizontal overflow. The right-edge fit holds
-       even at the larger sizes: left bubbles sit at ~2–3% (≈4px) so a 96px bubble ends
-       near 100px (well inside 128px), and right bubbles sit at ~36–37% (≈47px) so a
-       76px bubble ends near 123px (still inside 128px). Bubbles alternate
-       left/right and step down ~14% each, so they overlap vertically for the staggered
+       Sizes are now BIGGER and VARIED (80–130px) and mirror the desktop pattern: the
+       three LARGE discs (130/120/125) hug the LEFT edge (left 0–1%), the MEDIUM/SMALL
+       discs (100/80/105) sit in the RIGHT column. No two ADJACENT bubbles share a size.
+       Crucially, sizes are fixed px while left is a PERCENTAGE of the column width: the
+       column is narrowest on the smallest phone (~45% of 320px ≈ 144px), so designing
+       the fit there guarantees every wider phone has MORE room — no bubble can be
+       clipped or cut off by the right edge, and there is no horizontal overflow. The
+       right-edge fit holds even at these larger sizes: the 130px disc at left 0% ends
+       at 130px (inside 144px); right-column discs sit at ~24–38% (≈35–55px) so a 100px
+       disc ends near 140px and an 80px disc near 135px — all inside 144px. Bubbles
+       alternate left/right and step down so they overlap vertically for the staggered
        floating look while every right edge stays well inside the column. The inline
        'floatbob' animation (which animates transform) is left untouched, so they keep
        bobbing exactly like the desktop hero. */
     .hero-bubble{border-width:3px !important;box-shadow:0 6px 22px rgba(0,0,0,0.16) !important;}
-    .hero-bubble:nth-child(1){top:1%  !important;left:3%  !important;width:96px !important;height:96px !important;}
-    .hero-bubble:nth-child(2){top:15% !important;left:36% !important;width:76px !important;height:76px !important;}
-    .hero-bubble:nth-child(3){top:30% !important;left:3%  !important;width:94px !important;height:94px !important;}
-    .hero-bubble:nth-child(4){top:45% !important;left:36% !important;width:76px !important;height:76px !important;}
-    .hero-bubble:nth-child(5){top:59% !important;left:2%  !important;width:94px !important;height:94px !important;}
-    .hero-bubble:nth-child(6){top:73% !important;left:37% !important;width:74px !important;height:74px !important;}
+    .hero-bubble:nth-child(1){top:2%  !important;left:0%  !important;width:130px !important;height:130px !important;}
+    .hero-bubble:nth-child(2){top:4%  !important;left:28% !important;width:100px !important;height:100px !important;}
+    .hero-bubble:nth-child(3){top:30% !important;left:1%  !important;width:120px !important;height:120px !important;}
+    .hero-bubble:nth-child(4){top:40% !important;left:38% !important;width:80px  !important;height:80px  !important;}
+    .hero-bubble:nth-child(5){top:58% !important;left:0%  !important;width:125px !important;height:125px !important;}
+    .hero-bubble:nth-child(6){top:56% !important;left:24% !important;width:105px !important;height:105px !important;}
     /* PROBLEM 2 — search field full-width on its own line, FILTERS/FIT/TAILORS
        sharing the second line equally and compactly. */
     .search-box{flex:1 1 100% !important;}
