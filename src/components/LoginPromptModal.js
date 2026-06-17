@@ -13,7 +13,15 @@ const BODY = {
   comment: "Create a free account to ask questions on listings.",
   follow: "Create a free account to follow sellers and tailors.",
   book: "Create a free account to book alterations with tailors.",
+  listing: "Create a free account to browse listings, buy pre-loved South Asian fashion, and sell your own pieces.",
   default: "Create a free account to get the most out of Stitch'd.",
+};
+
+// Heading also swaps per context. Tapping a listing card while logged out gets a
+// listings-specific headline; everything else keeps the generic JOIN STITCH'D.
+const HEADING = {
+  listing: "JOIN STITCH'D TO VIEW LISTINGS",
+  default: "JOIN STITCH'D",
 };
 
 // One reusable sign-up gate, used everywhere a logged-out buyer taps an action
@@ -25,11 +33,12 @@ const BODY = {
 export default function LoginPromptModal({ open, context = "default", onAuth = () => {}, onClose = () => {} }) {
   if (!open) return null;
   const body = BODY[context] || BODY.default;
+  const heading = HEADING[context] || HEADING.default;
   return (
     <div style={S.modalOverlay} onClick={onClose}>
       <div onClick={e => e.stopPropagation()}
         style={{ background: "#fff", border: "3px solid #111", borderRadius: 0, maxWidth: 420, width: "100%", padding: 32, textAlign: "center" }}>
-        <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 28, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.05, marginBottom: 14 }}>JOIN STITCH'D</h2>
+        <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 28, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.05, marginBottom: 14 }}>{heading}</h2>
         <p style={{ fontSize: 15, color: "#444", lineHeight: 1.6, marginBottom: 24 }}>{body}</p>
         <button className="hbtn"
           style={{ width: "100%", background: PINK, color: "#fff", border: "2px solid #111", borderRadius: 0, padding: "15px 24px", fontSize: 16, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, letterSpacing: 3, cursor: "pointer", marginBottom: 18 }}
