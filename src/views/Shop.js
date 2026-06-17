@@ -210,20 +210,15 @@ export default function Shop({
             // exact shape of the image. With objectFit:cover at that matching aspect there is no
             // crop at all — the full figure shows, head-to-hem — and borderRadius:50% rounds the
             // box into a clean disc-shaped bubble that hugs the colored circle with no white gap.
-            // VARIED, BIGGER sizes (desktop): the three LARGE discs (180/170/175) sit in the
-            // LEFT column at small left% so they never reach the right edge; the MEDIUM/SMALL
-            // discs (140/110/145) sit in the RIGHT column. No two ADJACENT bubbles share a size,
-            // and every right-edge stays inside heroRight even at its narrowest desktop width
-            // (~601px viewport ⇒ heroRight ≈ 267px): e.g. menswear 110px at left 52% ends ≈249px.
-            // On LAPTOP/DESKTOP (≥1024px) heroRight is much wider, so a `min-width:1024px` rule
-            // in styles.js (.hero-bubble:nth-child) steps these up to 230/180/220/150/225/185
-            // — same large-left/medium-right pattern — for a bigger hero where there's room.
-            {img:"/Images/sharara.png",     top:"4%",  left:"2%",  size:180, delay:"0s",   ar:1254/1254},
-            {img:"/Images/indo_western.png",top:"6%",  left:"42%", size:140, delay:"0.7s", ar:1254/1254},
-            {img:"/Images/saree.png",       top:"33%", left:"5%",  size:170, delay:"1.4s", ar:1254/1254},
-            {img:"/Images/menswear.png",    top:"40%", left:"52%", size:110, delay:"2.1s", ar:1254/1254},
-            {img:"/Images/lehenga.png",     top:"60%", left:"3%",  size:175, delay:"2.8s", ar:1254/1254},
-            {img:"/Images/anarkali.png",    top:"58%", left:"40%", size:145, delay:"3.5s", ar:1254/1254},
+            // VARIED sizes (desktop, 130–175px) that all sit comfortably inside the hero white
+            // space so the cluster never spills below the hero / pushes the page down. Positions
+            // are percentages so the arrangement auto-scales with the column width.
+            {img:"/Images/sharara.png",     top:"2%",  left:"5%",  size:170, delay:"0s",   ar:1254/1254},
+            {img:"/Images/indo_western.png",top:"30%", left:"55%", size:150, delay:"0.7s", ar:1254/1254},
+            {img:"/Images/saree.png",       top:"55%", left:"8%",  size:175, delay:"1.4s", ar:1254/1254},
+            {img:"/Images/menswear.png",    top:"8%",  left:"65%", size:130, delay:"2.1s", ar:1254/1254},
+            {img:"/Images/lehenga.png",     top:"62%", left:"58%", size:148, delay:"2.8s", ar:1254/1254},
+            {img:"/Images/anarkali.png",    top:"28%", left:"2%",  size:135, delay:"3.5s", ar:1254/1254},
           ].map((b,i)=>(
             <div key={i} className="hero-bubble" style={{position:"absolute",top:b.top,left:b.left,width:b.size,height:Math.round(b.size*b.ar),borderRadius:"50%",overflow:"hidden",animation:`floatbob 4s ease-in-out ${b.delay} infinite`,boxShadow:"0 12px 40px rgba(0,0,0,0.18)",border:"4px solid #111"}}>
               <img src={b.img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center"}}/>
