@@ -210,6 +210,9 @@ export default function Shop({
             // exact shape of the image. With objectFit:cover at that matching aspect there is no
             // crop at all — the full figure shows, head-to-hem — and borderRadius:50% rounds the
             // box into a clean disc-shaped bubble that hugs the colored circle with no white gap.
+            // VARIED sizes (desktop, 130–175px) that all sit comfortably inside the hero white
+            // space so the cluster never spills below the hero / pushes the page down. Positions
+            // are percentages so the arrangement auto-scales with the column width.
             {img:"/Images/sharara.png",     top:"2%",  left:"5%",  size:170, delay:"0s",   ar:1254/1254},
             {img:"/Images/indo_western.png",top:"30%", left:"55%", size:150, delay:"0.7s", ar:1254/1254},
             {img:"/Images/saree.png",       top:"55%", left:"8%",  size:175, delay:"1.4s", ar:1254/1254},

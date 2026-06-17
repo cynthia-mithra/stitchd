@@ -73,7 +73,7 @@ export const CSS=`
     .hero-right{flex:0 0 42% !important;padding:0 !important;min-height:360px !important;}
     /* OVERLAPPING FLOATING CLUSTER (mobile): bubbles stay position:absolute (from the
        inline style) and we override only top/left/size per bubble with !important.
-       Sizes are BIGGER now (74–96px). Crucially, sizes are
+       Sizes are VARIED (74–96px). Crucially, sizes are
        fixed px while left is a PERCENTAGE of the column width: the column is narrowest
        on the smallest phone (~40% of 320px ≈ 128px), so designing the fit there
        guarantees every wider phone has MORE room — no bubble can be clipped or cut off
