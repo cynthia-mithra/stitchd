@@ -3312,23 +3312,41 @@ export default function App() {
     return [{label:"BECOME A TAILOR", icon:tailorIcon, run:openTailorApply}];
   })();
 
-  const navMenuItems = [
-    {label:"✦ NEW ARRIVALS", run:()=>{clearFilters();setView("newarrivals");}},
-    {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();loadMyPromotions();setView("dashboard");}},
-    {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
-    {label:"MY OFFERS",      icon:<Tag width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadBuyerOffers();setView("offers");}},
-    {label:"MY WISHLIST",    icon:<Heart width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadMyWishlist();setView("wishlist");}},
-    {label:"ALTERATION REQUESTS", icon:<Scissors width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openAlterations},
-    {label:"SAVED SEARCHES",  run:()=>{loadSavedSearches();setView("saved-searches");}},
-    {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
-    {label:"STYLE FEED",     icon:<Sparkles width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openStyleFeed},
-    {label:"MY FOLLOWING",   run:()=>{loadFollowingList();setView("following-list");}},
-    {label:"MESSAGES",       run:openMessages},
-    {label:"MY PROFILE",     run:()=>{load2FAFactors();setView("editprofile");}},
-    // Phase 15 — tailor profile entry, varying by application status.
-    ...tailorNavItems,
-    {label:"HOW TO MEASURE", run:()=>{setPrevView(view);setView("measuring");}},
-    {label:"LOG OUT",        run:handleSignOut, danger:true},
+  // Issue #173 — the dropdown / hamburger menu is grouped into labelled sections
+  // with subtle dividers rather than one flat list. We only REORGANISE the
+  // existing entries (same labels, same navigation) — nothing is added or
+  // removed. The TAILORING section header only appears for an approved (or
+  // suspended, who keep profile access) tailor; for everyone else the single
+  // tailor entry (BECOME A TAILOR / pending / unsuccessful) folds into SELLING
+  // so it is never dropped.
+  const tailorApproved = !!myTailor && (myTailor.status==="approved" || myTailor.status==="suspended");
+  const navSections = [
+    {label:"DISCOVER", items:[
+      {label:"✦ NEW ARRIVALS", run:()=>{clearFilters();setView("newarrivals");}},
+      {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
+    ]},
+    {label:"BUYING", items:[
+      {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
+      {label:"MY OFFERS",      icon:<Tag width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadBuyerOffers();setView("offers");}},
+      {label:"MY WISHLIST",    icon:<Heart width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadMyWishlist();setView("wishlist");}},
+      {label:"SAVED SEARCHES", run:()=>{loadSavedSearches();setView("saved-searches");}},
+      {label:"ALTERATION REQUESTS", icon:<Scissors width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openAlterations},
+    ]},
+    {label:"SELLING", items:[
+      {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();loadMyPromotions();setView("dashboard");}},
+      ...(tailorApproved ? [] : tailorNavItems),
+    ]},
+    ...(tailorApproved ? [{label:"TAILORING", items:tailorNavItems}] : []),
+    {label:"ACCOUNT", items:[
+      {label:"MY PROFILE",     run:()=>{load2FAFactors();setView("editprofile");}},
+      {label:"MY FOLLOWING",   run:()=>{loadFollowingList();setView("following-list");}},
+      {label:"STYLE FEED",     icon:<Sparkles width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openStyleFeed},
+      {label:"MESSAGES",       run:openMessages},
+      {label:"HOW TO MEASURE", run:()=>{setPrevView(view);setView("measuring");}},
+    ]},
+    {label:null, items:[
+      {label:"LOG OUT",        run:handleSignOut, danger:true},
+    ]},
   ];
   const runNavItem = (item)=>{ setNavMenuOpen(false); setMobileNavOpen(false); item.run(); };
 
@@ -3364,8 +3382,14 @@ export default function App() {
                   <button className="hbtn" style={S.navIconBtn} aria-label="Account menu"><User width={18} height={18} style={{verticalAlign:"middle"}}/></button>
                   {navMenuOpen&&(
                     <div style={S.navDropdown}>
-                      {navMenuItems.map((it,i)=>(
-                        <button key={it.label} className={`nav-drop-item${it.danger?" nav-drop-item-danger":""}`} style={{...S.navDropItem,borderBottom:i===navMenuItems.length-1?"none":"1px solid #111",...(it.danger?S.navDropItemDanger:{})}} onClick={()=>runNavItem(it)}>{it.icon}{it.label}</button>
+                      {navSections.map((sec,si)=>(
+                        <React.Fragment key={sec.label||`sec-${si}`}>
+                          {si>0&&<div style={S.navDropDivider}/>}
+                          {sec.label&&<div style={S.navDropSectionLabel}>{sec.label}</div>}
+                          {sec.items.map(it=>(
+                            <button key={it.label} className={`nav-drop-item${it.danger?" nav-drop-item-danger":""}`} style={{...S.navDropItem,...(it.danger?S.navDropItemDanger:{})}} onClick={()=>runNavItem(it)}>{it.icon}{it.label}</button>
+                          ))}
+                        </React.Fragment>
                       ))}
                     </div>
                   )}
@@ -3391,8 +3415,14 @@ export default function App() {
             <span style={S.mobileNavTitle}>MENU</span>
             <button style={S.mobileNavClose} aria-label="Close menu" onClick={()=>setMobileNavOpen(false)}><X width={26} height={26}/></button>
           </div>
-          {navMenuItems.map(it=>(
-            <button key={it.label} className="nav-mob-item" style={{...S.mobileNavItem,...(it.danger?S.navDropItemDanger:{})}} onClick={()=>runNavItem(it)}>{it.icon}{it.label}</button>
+          {navSections.map((sec,si)=>(
+            <React.Fragment key={sec.label||`msec-${si}`}>
+              {si>0&&<div style={S.mobileNavDivider}/>}
+              {sec.label&&<div style={S.mobileNavSectionLabel}>{sec.label}</div>}
+              {sec.items.map(it=>(
+                <button key={it.label} className="nav-mob-item" style={{...S.mobileNavItem,...(it.danger?S.navDropItemDanger:{})}} onClick={()=>runNavItem(it)}>{it.icon}{it.label}</button>
+              ))}
+            </React.Fragment>
           ))}
         </div>
       )}
