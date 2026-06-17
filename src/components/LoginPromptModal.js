@@ -12,7 +12,7 @@ const BODY = {
   review: "Create a free account to leave reviews on Stitch'd.",
   comment: "Create a free account to ask questions on listings.",
   follow: "Create a free account to follow sellers and tailors.",
-  book: "Create a free account to book alterations with tailors.",
+  book: "Create a free account to book alterations and connect with our vetted South Asian fashion tailors.",
   listing: "Create a free account to browse listings, buy pre-loved South Asian fashion, and sell your own pieces.",
   default: "Create a free account to get the most out of Stitch'd.",
 };
@@ -21,6 +21,7 @@ const BODY = {
 // listings-specific headline; everything else keeps the generic JOIN STITCH'D.
 const HEADING = {
   listing: "JOIN STITCH'D TO VIEW LISTINGS",
+  book: "JOIN STITCH'D TO BOOK A TAILOR",
   default: "JOIN STITCH'D",
 };
 
