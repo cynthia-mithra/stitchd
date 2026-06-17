@@ -120,6 +120,10 @@ export default function App() {
   // or sign up — instead of the default bounce to the shop. Normal LOG IN / SIGN
   // UP from the nav leaves this null, preserving the existing behaviour.
   const [postAuthView, setPostAuthView] = useState(null);
+  // A logged-out buyer who taps a listing card is gated behind the sign-up
+  // prompt; this remembers which listing they tapped so we can drop them on its
+  // detail page (not just the shop) once they're in. Cleared once consumed.
+  const [pendingDetail, setPendingDetail] = useState(null);
   const [sel,       setSel]       = useState(null);
   const [selImgIdx, setSelImgIdx] = useState(0);
   const [toast,     setToast]     = useState("");
@@ -2798,10 +2802,19 @@ export default function App() {
 
   // Login gate → /auth. Remembers the current page so we can return here once
   // the buyer is signed in. Used by the reusable LoginPromptModal everywhere.
-  function gateAuth(mode){ setPostAuthView(view); setAuthMode(mode==="signup"?"signup":"login"); setView("auth"); window.scrollTo(0,0); }
+  // `pending` (optional) is the listing the buyer tapped while logged out — we
+  // remember it so postAuthNavigate can open its detail page after they sign in.
+  function gateAuth(mode, pending){ setPostAuthView(view); setPendingDetail(pending||null); setAuthMode(mode==="signup"?"signup":"login"); setView("auth"); window.scrollTo(0,0); }
   // Where to land after a successful sign in/up: the gated page the buyer came
   // from (set by gateAuth), else the default shop. Cleared once consumed.
   function postAuthDest(){ const v=postAuthView; setPostAuthView(null); return v||"shop"; }
+  // Runs after a successful sign in / sign up. If the buyer was gated tapping a
+  // listing card, drop them on that listing's detail page; otherwise return to
+  // the page they came from (or the shop).
+  function postAuthNavigate(){
+    if(pendingDetail){ const item=pendingDetail; setPendingDetail(null); setPostAuthView(null); openDetail(item); }
+    else setView(postAuthDest());
+  }
 
   async function handleAuth(e){
     e.preventDefault(); setALoading(true); setAError("");
@@ -2812,7 +2825,7 @@ export default function App() {
         flash("📧 Check your email for your 6-digit code!");
       } else {
         const s=await auth.signIn(aForm.email,aForm.password);
-        auth.saveSession(s); setSession(s); flash("🩷 Welcome back!"); setView(postAuthDest());
+        auth.saveSession(s); setSession(s); flash("🩷 Welcome back!"); postAuthNavigate();
       }
     }catch(e){ setAError(e.message); }
     finally{ setALoading(false); }
@@ -2824,7 +2837,7 @@ export default function App() {
       const s=await auth.verifyOTP(otpEmail,otpCode);
       auth.saveSession(s); setSession(s);
       setOtpStep("form"); setOtpCode(""); setOtpEmail("");
-      flash("🩷 Welcome to Stitch'd!"); setView(postAuthDest());
+      flash("🩷 Welcome to Stitch'd!"); postAuthNavigate();
     }catch(e){ setAError("Invalid or expired code. Try again."); }
     finally{ setALoading(false); }
   }
@@ -3400,8 +3413,8 @@ export default function App() {
               </>
             ):(
               <>
-                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{setPostAuthView(null);setAuthMode("login");setView("auth");}}>LOG IN</button>
-                <button className="hbtn" style={S.hBtn} onClick={()=>{setPostAuthView(null);setAuthMode("signup");setView("auth");}}>SIGN UP</button>
+                <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>{setPostAuthView(null);setPendingDetail(null);setAuthMode("login");setView("auth");}}>LOG IN</button>
+                <button className="hbtn" style={S.hBtn} onClick={()=>{setPostAuthView(null);setPendingDetail(null);setAuthMode("signup");setView("auth");}}>SIGN UP</button>
               </>
             )}
           </div>

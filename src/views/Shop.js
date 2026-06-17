@@ -54,6 +54,11 @@ export default function Shop({
   // /auth. `gate` holds the active context while the modal is open.
   const [gate, setGate] = React.useState(null);
   const requireAuth = (context, action) => { if (user) action(); else setGate(context); };
+  // Tapping a listing card while logged out doesn't open the detail page — it
+  // shows the sign-up gate instead. We stash the tapped item so App can route the
+  // buyer straight to that listing once they've signed up / logged in.
+  const [pendingItem, setPendingItem] = React.useState(null);
+  const viewListing = (item) => { if (user) openDetail(item); else { setPendingItem(item); setGate("listing"); } };
   // First name for the personalised logged-in hero greeting (falls back through
   // full_name → username → email handle). Logged-out visitors see the generic
   // marketing hero instead.
@@ -97,7 +102,7 @@ export default function Shop({
           {feedItems.map((item,idx)=>{
             const accent=CARD_COLORS[idx%CARD_COLORS.length];
             return(
-              <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
+              <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>viewListing(item)}>
                 <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                   {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                 </Thumb>
@@ -345,7 +350,7 @@ export default function Shop({
             {visible.map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
-                <article key={item.id} className="scard" style={{...S.card,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
+                <article key={item.id} className="scard" style={{...S.card,opacity:item.sold?0.55:1}} onClick={()=>viewListing(item)}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                     <PromotedLabel item={item}/>
@@ -414,7 +419,7 @@ export default function Shop({
             {homeArrivals.map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
-                <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
+                <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <div style={{position:"absolute",top:12,left:12,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
                     <FastBadge sellerId={item.user_id}/>
@@ -464,7 +469,7 @@ export default function Shop({
             {newListings.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
-                <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
+                <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <div style={{position:"absolute",top:12,left:12,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
                     <FastBadge sellerId={item.user_id}/>
@@ -491,7 +496,7 @@ export default function Shop({
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               const drop=item.prev_price?Math.round(((item.prev_price-item.price)/item.prev_price)*100):0;
               return(
-                <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
+                <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     {drop>0&&<div style={{position:"absolute",top:12,left:12,background:"#FF9500",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>-{drop}%</div>}
                     <FastBadge sellerId={item.user_id}/>
@@ -523,7 +528,7 @@ export default function Shop({
             {trendingItems.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
-                <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
+                <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <div style={{position:"absolute",top:12,left:12,background:"#BF5AF2",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3,display:"inline-flex",alignItems:"center",gap:4}}><Eye width={11} height={11}/> {item.views}</div>
                     <FastBadge sellerId={item.user_id}/>
@@ -540,7 +545,7 @@ export default function Shop({
           </div>
         </div>
       )}
-      <LoginPromptModal open={!!gate} context={gate||"default"} onClose={()=>setGate(null)} onAuth={m=>{ setGate(null); onGateAuth(m); }}/>
+      <LoginPromptModal open={!!gate} context={gate||"default"} onClose={()=>{ setGate(null); setPendingItem(null); }} onAuth={m=>{ const it=pendingItem; setGate(null); setPendingItem(null); onGateAuth(m, it); }}/>
     </>
   );
 }
