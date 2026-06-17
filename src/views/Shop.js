@@ -54,6 +54,10 @@ export default function Shop({
   // /auth. `gate` holds the active context while the modal is open.
   const [gate, setGate] = React.useState(null);
   const requireAuth = (context, action) => { if (user) action(); else setGate(context); };
+  // First name for the personalised logged-in hero greeting (falls back through
+  // full_name → username → email handle). Logged-out visitors see the generic
+  // marketing hero instead.
+  const firstName = ((profile?.full_name&&profile.full_name.trim())||profile?.username||user?.email?.split("@")[0]||"").split(" ")[0];
   if(view!=="shop"&&view!=="newarrivals") return null;
   const followingActive = !!user && view==="shop" && shopTab==="following";
   // BROWSE tab row — shown below the hero + search bar for logged-in users (not on
@@ -191,14 +195,32 @@ export default function Shop({
       )}
       {!newArrivals&&(
       <section style={S.hero} className="hero-section">
+        {/* Logged-in users get a personalised "welcome back" hero (greeting +
+            shopping-first CTAs) so the homepage no longer looks identical to the
+            logged-out marketing pitch. Logged-out visitors keep the original
+            DESI FITS REHOMED marketing hero. */}
         <div style={S.heroLeft} className="hero-left">
-          <p style={S.heroTag}>THE MARKETPLACE FOR</p>
-          <h1 style={S.heroH}><span style={S.heroLine1}>DESI</span><span style={S.heroLine2}>FITS</span><span style={S.heroLine3}>REHOMED.</span></h1>
-          <p style={S.heroSub}>Buy or Resell South Asian fashion</p>
-          <div style={S.heroCtas}>
-            <button className="hbtn" style={S.heroBtnPrimary} onClick={()=>user?setView("add"):(setAuthMode("signup"),setView("auth"))}>LIST YOUR PIECE →</button>
-            <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"})}><span style={{display:"inline-flex",alignItems:"center",gap:8}}>BROWSE DROPS <ArrowDown width={16} height={16}/></span></button>
-          </div>
+          {user ? (
+            <>
+              <p style={S.heroTag}>WELCOME BACK{firstName?",":""}</p>
+              <h1 style={S.heroH}><span style={S.heroLine1}>HEY</span><span style={S.heroLine2}>{(firstName||"THERE").toUpperCase()}</span><span style={S.heroLine3}>WHAT'S NEW.</span></h1>
+              <p style={S.heroSub}>Fresh drops from across the community — pick up where you left off.</p>
+              <div style={S.heroCtas}>
+                <button className="hbtn" style={S.heroBtnPrimary} onClick={()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"})}><span style={{display:"inline-flex",alignItems:"center",gap:8}}>BROWSE DROPS <ArrowDown width={16} height={16}/></span></button>
+                <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>setView("add")}>LIST YOUR PIECE →</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p style={S.heroTag}>THE MARKETPLACE FOR</p>
+              <h1 style={S.heroH}><span style={S.heroLine1}>DESI</span><span style={S.heroLine2}>FITS</span><span style={S.heroLine3}>REHOMED.</span></h1>
+              <p style={S.heroSub}>Buy or Resell South Asian fashion</p>
+              <div style={S.heroCtas}>
+                <button className="hbtn" style={S.heroBtnPrimary} onClick={()=>(setAuthMode("signup"),setView("auth"))}>LIST YOUR PIECE →</button>
+                <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"})}><span style={{display:"inline-flex",alignItems:"center",gap:8}}>BROWSE DROPS <ArrowDown width={16} height={16}/></span></button>
+              </div>
+            </>
+          )}
         </div>
         <div style={S.heroRight} className="hero-right">
           {[
