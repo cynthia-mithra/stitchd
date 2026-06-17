@@ -215,6 +215,9 @@ export default function Shop({
             // discs (140/110/145) sit in the RIGHT column. No two ADJACENT bubbles share a size,
             // and every right-edge stays inside heroRight even at its narrowest desktop width
             // (~601px viewport ⇒ heroRight ≈ 267px): e.g. menswear 110px at left 52% ends ≈249px.
+            // On LAPTOP/DESKTOP (≥1024px) heroRight is much wider, so a `min-width:1024px` rule
+            // in styles.js (.hero-bubble:nth-child) steps these up to 230/180/220/150/225/185
+            // — same large-left/medium-right pattern — for a bigger hero where there's room.
             {img:"/Images/sharara.png",     top:"4%",  left:"2%",  size:180, delay:"0s",   ar:1254/1254},
             {img:"/Images/indo_western.png",top:"6%",  left:"42%", size:140, delay:"0.7s", ar:1254/1254},
             {img:"/Images/saree.png",       top:"33%", left:"5%",  size:170, delay:"1.4s", ar:1254/1254},

@@ -118,6 +118,24 @@ export const CSS=`
     .fg2{grid-template-columns:1fr !important;}
     .profile-header{flex-direction:column !important;align-items:center !important;text-align:center;}
   }
+  /* LAPTOP / DESKTOP (≥1024px) — the hero canvas (heroRight ≈ 45% of the viewport)
+     is far wider here than the narrowest desktop width the inline sizes are tuned
+     for (~601px ⇒ heroRight ≈ 267px), so the bubbles can be noticeably BIGGER and
+     still never reach the right edge. Same VARIED pattern as the base sizes: the
+     three LARGE discs (230/220/225) stay in the LEFT column, the MEDIUM/SMALL discs
+     (180/150/185) in the RIGHT — no two adjacent share a size. The fit holds at the
+     1024px breakpoint itself, where heroRight ≈ 461px: the rightmost disc (menswear
+     150px at left 52% ≈ 240px) ends ≈390px, comfortably inside, and every left-column
+     disc (≤230px at left ≤5% ≈ 23px) ends ≤253px. left/top stay percentages so the
+     positions auto-scale, and the inline 'floatbob' animation is left untouched. */
+  @media(min-width:1024px){
+    .hero-bubble:nth-child(1){width:230px !important;height:230px !important;}
+    .hero-bubble:nth-child(2){width:180px !important;height:180px !important;}
+    .hero-bubble:nth-child(3){width:220px !important;height:220px !important;}
+    .hero-bubble:nth-child(4){width:150px !important;height:150px !important;}
+    .hero-bubble:nth-child(5){width:225px !important;height:225px !important;}
+    .hero-bubble:nth-child(6){width:185px !important;height:185px !important;}
+  }
   /* MOBILE — hide the scrolling category ticker strip in the navbar (SAREES ✦
      LEHENGAS ✦ …). The pink marquee banner (S.ticker) below the header and the
      navbar's logo / heart / LOG IN / SIGN UP buttons are intentionally untouched.
