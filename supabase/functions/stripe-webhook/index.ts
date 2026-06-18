@@ -49,13 +49,61 @@ const sbHeaders = {
   "Content-Type": "application/json",
 };
 
-// PostgREST rejects the whole insert if a column doesn't exist (PGRST204). The
-// orders schema varies between deployments, so drop any missing column and
-// retry rather than losing the whole record — same approach as src/lib/db.js.
+// PostgREST rejects the whole request if a column doesn't exist. On an insert
+// that's PGRST204 ("Could not find the 'x' column"); on a SELECT it's Postgres
+// error 42703 ("column listings.x does not exist"). The schema varies between
+// deployments, so detect either form, drop the offending column and retry rather
+// than losing the whole record / query — same approach as src/lib/db.js.
 const missingColumn = (msg: string) => {
-  const m = /Could not find the '([^']+)' column/.exec(msg || "");
+  const m = /Could not find the '([^']+)' column/.exec(msg || "") ||
+    /column (?:[\w.]+\.)?"?([\w]+)"? does not exist/.exec(msg || "");
   return m ? m[1] : null;
 };
+
+// Listing fields the sale path needs: id/name/price/user_id are REQUIRED (orders,
+// notifications, emails); image_url/images are OPTIONAL email thumbnails that some
+// older deployments don't have. Fetch with column-healing so a missing optional
+// column 400s only that column away instead of failing the entire fetch — which
+// is exactly the bug behind "[webhook] per-id listing fetch failed". Mirrors the
+// self-healing the rest of the codebase already relies on.
+type ListingRow = {
+  id: string;
+  name: string;
+  price: string | number;
+  user_id: string;
+  image_url?: string;
+  images?: unknown;
+};
+const LISTING_REQUIRED = "id,name,price,user_id";
+const LISTING_OPTIONAL = ["image_url", "images"];
+// Returns the rows, or null if the fetch genuinely failed (network / non-column
+// error) so callers can distinguish a failure from a legitimate empty result.
+async function fetchListingsHealing(filter: string): Promise<ListingRow[] | null> {
+  let optional = [...LISTING_OPTIONAL];
+  for (let i = 0; i <= LISTING_OPTIONAL.length; i++) {
+    const select = [LISTING_REQUIRED, ...optional].filter(Boolean).join(",");
+    const url = `${SUPABASE_URL}/rest/v1/listings?${filter}&select=${select}`;
+    const r = await fetch(url, {
+      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+    }).catch(() => null);
+    if (r && r.ok) return (await r.json().catch(() => [])) as ListingRow[];
+    const text = r ? await r.text().catch(() => "(no body)") : "(network error)";
+    const col = missingColumn(text);
+    if (col && optional.includes(col)) {
+      optional = optional.filter((c) => c !== col);
+      continue; // drop the missing optional column and retry
+    }
+    console.error(
+      "[webhook] listings fetch failed:",
+      r ? r.status : "(network)",
+      text,
+      "| url:",
+      url,
+    );
+    return null;
+  }
+  return null;
+}
 async function insertHealing(table: string, body: Record<string, unknown>) {
   let payload = { ...body };
   for (let i = 0; i < 30; i++) {
@@ -617,15 +665,6 @@ Deno.serve(async (req) => {
     }
   } catch { /* no/!invalid bundle metadata — proceed as a normal sale */ }
 
-  type ListingRow = {
-    id: string;
-    name: string;
-    price: string | number;
-    user_id: string;
-    image_url?: string;
-    images?: unknown;
-  };
-
   try {
     // Re-fetch authoritative listing data (price + seller) for the order rows.
     // The ids are bare UUIDs (stripe-checkout stores `listings.map(l => l.id)`),
@@ -633,26 +672,10 @@ Deno.serve(async (req) => {
     // id in double quotes was unnecessary, so encode them plainly. Note there is
     // deliberately NO status filter here: a listing already flipped to 'sold'
     // (e.g. a Stripe retry, or the offer path) must still resolve so the order
-    // rows + emails are produced.
-    const select = "select=id,name,price,user_id,image_url,images";
+    // rows + emails are produced. fetchListingsHealing drops any optional column
+    // (image_url/images) the deployment lacks instead of 400-ing the whole query.
     const ids = listingIds.map((id) => encodeURIComponent(id)).join(",");
-    const listingsUrl = `${SUPABASE_URL}/rest/v1/listings?id=in.(${ids})&${select}`;
-    const r = await fetch(listingsUrl, {
-      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
-    });
-    let listings: ListingRow[] = [];
-    if (r.ok) {
-      listings = await r.json();
-    } else {
-      // A failed fetch used to be swallowed into an empty array, which looked
-      // identical to "no matching rows" in the logs. Surface the real status/body
-      // so an auth/encoding/transient failure is distinguishable from a true miss.
-      console.error(
-        "[webhook] sale path — listings fetch failed:",
-        r.status,
-        await r.text().catch(() => "(no body)"),
-      );
-    }
+    let listings = (await fetchListingsHealing(`id=in.(${ids})`)) ?? [];
 
     // Fallback — if the batch query returned nothing but we DO have ids, re-fetch
     // each id individually. This both works around any `in.()` quirk and makes the
@@ -662,15 +685,11 @@ Deno.serve(async (req) => {
       console.warn("[webhook] sale path — batch fetch returned 0 rows; retrying per id");
       const perId = await Promise.all(
         listingIds.map(async (id) => {
-          const ir = await fetch(
-            `${SUPABASE_URL}/rest/v1/listings?id=eq.${encodeURIComponent(id)}&${select}&limit=1`,
-            { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
-          ).catch(() => null);
-          if (!ir || !ir.ok) {
-            console.error("[webhook] per-id listing fetch failed for", id, ir ? ir.status : "(network)");
+          const rows = await fetchListingsHealing(`id=eq.${encodeURIComponent(id)}&limit=1`);
+          if (rows === null) {
+            console.error("[webhook] per-id listing fetch failed for", id);
             return null;
           }
-          const rows = (await ir.json().catch(() => [])) as ListingRow[];
           if (!rows[0]) console.warn("[webhook] no listing row matched id", id);
           return rows[0] ?? null;
         }),
@@ -678,11 +697,10 @@ Deno.serve(async (req) => {
       listings = perId.filter((l): l is ListingRow => !!l);
     }
 
-    // Diagnostics — surface the exact query + inputs so a missing metadata field,
-    // an id/format mismatch or a failed fetch is obvious in the Edge logs rather
-    // than silently skipping the send.
+    // Diagnostics — surface the inputs so a missing metadata field, an id/format
+    // mismatch or a failed fetch is obvious in the Edge logs rather than silently
+    // skipping the send.
     console.log("[webhook] sale path — listing_ids:", JSON.stringify(listingIds));
-    console.log("[webhook] sale path — query:", listingsUrl);
     console.log("[webhook] sale path — listings fetched:", listings.length);
 
     // Phase 12 — buyer details for the order-confirmation + sale emails. The buyer
