@@ -23,6 +23,12 @@ export function esc(s: unknown): string {
 const PINK = "#FF1493";
 const INK = "#111111";
 
+// Web-safe condensed font stack. Barlow Condensed (the website wordmark) isn't a
+// safe email-client font, so fall back to Arial Narrow / Helvetica Neue
+// Condensed — these keep the tall, condensed brand feel wherever the real font
+// can't load. Used for every text element so the whole email reads consistently.
+const FONT = "'Arial Narrow', Arial, 'Helvetica Neue Condensed', 'Helvetica Neue', Helvetica, sans-serif";
+
 // A pink CTA button. `kind:"secondary"` renders an outlined/muted variant for the
 // "REPORT A PROBLEM" style secondary actions.
 function button(label: string, href: string, kind: "primary" | "secondary" = "primary"): string {
@@ -32,7 +38,7 @@ function button(label: string, href: string, kind: "primary" | "secondary" = "pr
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0;">
     <tr><td style="border-radius:2px;background:${bg};">
       <a href="${esc(href)}" target="_blank"
-         style="display:inline-block;padding:14px 30px;font-family:Arial,Helvetica,sans-serif;
+         style="display:inline-block;padding:14px 30px;font-family:${FONT};
                 font-size:13px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
                 color:${color};text-decoration:none;border:2px solid ${border};border-radius:2px;">
         ${esc(label)}</a>
@@ -48,14 +54,14 @@ function listingCard(opts: { image?: string; title?: string; price?: string }): 
             style="display:block;width:80px;height:80px;object-fit:cover;border-radius:2px;background:#f2f2f2;">`
     : `<div style="width:80px;height:80px;border-radius:2px;background:#f2f2f2;"></div>`;
   const price = opts.price
-    ? `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:800;color:${INK};margin-top:4px;">${esc(opts.price)}</div>`
+    ? `<div style="font-family:${FONT};font-size:15px;font-weight:800;color:${INK};margin-top:4px;">${esc(opts.price)}</div>`
     : "";
   return `<table role="presentation" cellpadding="0" cellspacing="0" width="100%"
             style="margin:18px 0;background:#fafafa;border-radius:4px;">
     <tr>
       <td style="padding:14px;width:80px;vertical-align:top;">${img}</td>
       <td style="padding:14px 14px 14px 0;vertical-align:top;">
-        <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:${INK};">${esc(opts.title || "")}</div>
+        <div style="font-family:${FONT};font-size:15px;font-weight:700;color:${INK};">${esc(opts.title || "")}</div>
         ${price}
       </td>
     </tr></table>`;
@@ -82,7 +88,7 @@ export function baseTemplate(opts: {
       <!-- Header bar -->
       <tr><td style="background:${INK};padding:22px 28px;">
         <a href="https://stitchd.fit" target="_blank" style="text-decoration:none;">
-          <span style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+          <span style="font-family:${FONT};
                        font-size:30px;font-weight:700;letter-spacing:3px;color:#ffffff;
                        text-transform:uppercase;">STITCH'D</span>
         </a>
@@ -90,17 +96,17 @@ export function baseTemplate(opts: {
 
       <!-- Body -->
       <tr><td style="padding:34px 28px 10px 28px;">
-        <h1 style="margin:0 0 18px 0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+        <h1 style="margin:0 0 18px 0;font-family:${FONT};
                    font-size:34px;line-height:1.1;font-weight:700;letter-spacing:1px;
                    text-transform:uppercase;color:${PINK};">${esc(opts.heading)}</h1>
-        <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#333333;">
+        <div style="font-family:${FONT};font-size:16px;line-height:1.6;color:${INK};">
           ${opts.bodyHtml}
         </div>
       </td></tr>
 
       <!-- Footer -->
       <tr><td style="padding:30px 28px 40px 28px;border-top:1px solid #eeeeee;">
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#999999;">
+        <p style="margin:0;font-family:${FONT};font-size:12px;line-height:1.6;color:#999999;">
           2026 Stitch'd &middot;
           <a href="https://stitchd.fit" target="_blank" style="color:#999999;text-decoration:underline;">stitchd.fit</a>
           &middot;
@@ -314,7 +320,7 @@ export const templates = {
         bodyHtml:
           p(`<strong>${esc(who)}</strong> made an offer on your listing:`) +
           listingCard({ image: d.image, title: d.title }) +
-          `<div style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount || "")}</div>` +
+          `<div style="font-family:${FONT};font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount || "")}</div>` +
           (d.message
             ? `<blockquote style="margin:0 0 16px 0;padding:12px 16px;border-left:3px solid ${PINK};background:#fafafa;color:#555;font-style:italic;">${esc(d.message)}</blockquote>`
             : "") +
@@ -340,7 +346,7 @@ export const templates = {
         bodyHtml:
           p("Great news — the seller accepted your offer:") +
           listingCard({ image: d.image, title: d.title }) +
-          `<div style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount || "")}</div>` +
+          `<div style="font-family:${FONT};font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount || "")}</div>` +
           p("<strong>Complete your purchase within 24 hours</strong> or the offer will expire.") +
           button("Complete purchase", `${ctx.site}/offers`),
       }),
@@ -364,7 +370,7 @@ export const templates = {
         bodyHtml: d.counter
           ? p("Your offer wasn't accepted, but the seller has suggested a different price:") +
             listingCard({ image: d.image, title: d.title }) +
-            `<div style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.counter)}</div>` +
+            `<div style="font-family:${FONT};font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.counter)}</div>` +
             p("Make a new offer to take the seller up on it.") +
             button("Make a new offer", listingLink)
           : p("Your offer was not accepted this time.") +
@@ -393,7 +399,7 @@ export const templates = {
           p("The seller accepted your offer — but you haven't completed your purchase yet:") +
           listingCard({ image: d.image, title: d.title }) +
           (d.amount
-            ? `<div style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount)}</div>`
+            ? `<div style="font-family:${FONT};font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount)}</div>`
             : "") +
           p(`<strong>You have ${hrs} hour${hrs === 1 ? "" : "s"} left to complete your purchase</strong> before the offer expires and the listing reopens to other buyers.`) +
           button("Complete purchase", `${ctx.site}/offers`),
@@ -428,7 +434,7 @@ export const templates = {
   ) {
     const who = d.buyerName || "A buyer";
     const list = (d.alterations || []).length
-      ? `<ul style="margin:0 0 16px 0;padding-left:20px;color:#333;">${(d.alterations || []).map((a) => `<li style="margin:0 0 4px 0;">${esc(a)}</li>`).join("")}</ul>`
+      ? `<ul style="margin:0 0 16px 0;padding-left:20px;color:${INK};">${(d.alterations || []).map((a) => `<li style="margin:0 0 4px 0;">${esc(a)}</li>`).join("")}</ul>`
       : "";
     return {
       subject: "New alteration request — Stitch'd",
@@ -464,7 +470,7 @@ export const templates = {
         bodyHtml:
           p(`<strong>${esc(who)}</strong> has sent you a quote for your alteration request:`) +
           listingCard({ image: d.image, title: d.title }) +
-          `<div style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount || "")}</div>` +
+          `<div style="font-family:${FONT};font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount || "")}</div>` +
           (d.message
             ? `<blockquote style="margin:0 0 16px 0;padding:12px 16px;border-left:3px solid ${PINK};background:#fafafa;color:#555;font-style:italic;">${esc(d.message)}</blockquote>`
             : "") +
@@ -504,7 +510,7 @@ export const templates = {
   ) {
     const who = d.buyerName || "A buyer";
     const list = (d.alterations || []).length
-      ? `<ul style="margin:0 0 16px 0;padding-left:20px;color:#333;">${(d.alterations || []).map((a) => `<li style="margin:0 0 4px 0;">${esc(a)}</li>`).join("")}</ul>`
+      ? `<ul style="margin:0 0 16px 0;padding-left:20px;color:${INK};">${(d.alterations || []).map((a) => `<li style="margin:0 0 4px 0;">${esc(a)}</li>`).join("")}</ul>`
       : "";
     return {
       subject: "Booking confirmed — Stitch'd",
