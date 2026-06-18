@@ -1,0 +1,65 @@
+name: Deploy Supabase Edge Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
+  workflow_dispatch:        # allow manual runs (and the secrets job) from the Actions tab
+
+env:
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  PROJECT_REF: zhstooqgkyuzxseylsbk
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Auto-discovers every function dir, skips the _shared helper, and keeps
+      # going if one fails — then fails the job at the end so failures are visible.
+      - name: Deploy Edge Functions
+        run: |
+          failed=()
+          for dir in supabase/functions/*/; do
+            name=$(basename "$dir")
+            [ "$name" = "_shared" ] && continue
+            echo "::group::Deploying $name"
+            if supabase functions deploy "$name" --project-ref "$PROJECT_REF"; then
+              echo "✅ $name"
+            else
+              echo "::warning::Failed to deploy $name"
+              failed+=("$name")
+            fi
+            echo "::endgroup::"
+          done
+          if [ ${#failed[@]} -ne 0 ]; then
+            echo "::error::Failed to deploy: ${failed[*]}"
+            exit 1
+          fi
+
+  # Run this once (Actions tab → this workflow → "Run workflow") after the
+  # secrets below are added. No need to re-run it on every push.
+  set-secrets:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Set Supabase secrets
+        run: |
+          supabase secrets set \
+            STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
+            STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
+            RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}" \
+            SITE_URL="https://stitchd.fit" \
+            --project-ref "$PROJECT_REF"
