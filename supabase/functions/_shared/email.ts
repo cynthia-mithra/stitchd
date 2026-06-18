@@ -119,8 +119,18 @@ export async function verifyUnsubscribe(userId: string, sig: string): Promise<bo
 // ── Resend delivery ───────────────────────────────────────────────────────────
 
 export async function sendViaResend(to: string, subject: string, html: string): Promise<{ ok: boolean; error?: string }> {
-  if (!RESEND_API_KEY) return { ok: false, error: "RESEND_API_KEY not configured" };
-  if (!to) return { ok: false, error: "no recipient" };
+  // Log every send attempt so it's traceable in the Edge Function logs, and make
+  // the two "silent" early-returns below noisy — these used to fail without any
+  // log line, so a missing key or empty recipient looked like nothing happened.
+  console.log(`[email] attempting send to: ${to || "(none)"} | subject: ${subject}`);
+  if (!RESEND_API_KEY) {
+    console.error("[email] send aborted: RESEND_API_KEY not configured");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+  if (!to) {
+    console.error("[email] send aborted: no recipient address");
+    return { ok: false, error: "no recipient" };
+  }
   try {
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -129,12 +139,13 @@ export async function sendViaResend(to: string, subject: string, html: string): 
     });
     if (!r.ok) {
       const text = await r.text();
-      console.error("Resend send failed:", r.status, text);
+      console.error("[email] Resend send failed:", r.status, text);
       return { ok: false, error: `Resend ${r.status}: ${text}` };
     }
+    console.log(`[email] sent successfully to: ${to}`);
     return { ok: true };
   } catch (e) {
-    console.error("Resend send threw:", (e as Error).message);
+    console.error("[email] Resend send threw:", (e as Error).message);
     return { ok: false, error: (e as Error).message };
   }
 }

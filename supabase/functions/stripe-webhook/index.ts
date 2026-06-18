@@ -553,6 +553,13 @@ Deno.serve(async (req) => {
 
   const session = event.data.object as Stripe.Checkout.Session;
 
+  // Diagnostics — surface the data the email branches depend on so a missing
+  // metadata field or unset secret is obvious in the Edge Function logs rather
+  // than silently skipping the send.
+  console.log("[webhook] checkout.session.completed:", session.id);
+  console.log("[webhook] session metadata:", JSON.stringify(session.metadata ?? {}));
+  console.log("[webhook] RESEND_API_KEY present:", !!Deno.env.get("RESEND_API_KEY"));
+
   // Phase 13 — a promotion checkout (metadata.type='promotion') is handled on a
   // completely separate path; the sale logic below is left exactly as it was.
   if (session.metadata?.type === "promotion") {
@@ -618,6 +625,11 @@ Deno.serve(async (req) => {
       image_url?: string;
       images?: unknown;
     }> = r.ok ? await r.json() : [];
+
+    // Diagnostics — if listing_ids is missing/empty or the re-fetch returns no
+    // rows, the loop below never runs and no emails are sent; make that visible.
+    console.log("[webhook] sale path — listing_ids:", JSON.stringify(listingIds));
+    console.log("[webhook] sale path — listings fetched:", listings.length);
 
     // Phase 12 — buyer details for the order-confirmation + sale emails. The buyer
     // email comes straight off the Stripe session (works even for guest checkout);
@@ -685,12 +697,21 @@ Deno.serve(async (req) => {
         // is a known user; guests (no buyer_id) always get the receipt.
         const buyerProfile = buyerId ? await getProfile(buyerId) : null;
         if (buyerEmail && buyerProfile?.email_notifications !== false) {
+          console.log("[webhook] sending order confirmation to buyer:", buyerEmail);
           const { subject, html } = await render(
             "order_confirmation",
             { title: l.name, image, price: priceStr, orderRef },
             buyerId,
           );
-          await sendViaResend(buyerEmail, subject, html);
+          const res = await sendViaResend(buyerEmail, subject, html);
+          if (!res.ok) console.error("[webhook] buyer order-confirmation NOT sent:", res.error);
+        } else {
+          console.log(
+            "[webhook] buyer email skipped — email:",
+            buyerEmail || "(none)",
+            "| email_notifications:",
+            buyerProfile?.email_notifications,
+          );
         }
 
         // Email 2 — sale notification (seller).
@@ -698,13 +719,19 @@ Deno.serve(async (req) => {
         if (sellerProfile?.email_notifications !== false) {
           const sellerEmail = await emailForUser(l.user_id);
           if (sellerEmail) {
+            console.log("[webhook] sending sale notification to seller:", sellerEmail);
             const { subject, html } = await render(
               "sale",
               { title: l.name, image, price: priceStr, buyerFirstName: buyerName },
               l.user_id,
             );
-            await sendViaResend(sellerEmail, subject, html);
+            const res = await sendViaResend(sellerEmail, subject, html);
+            if (!res.ok) console.error("[webhook] seller sale email NOT sent:", res.error);
+          } else {
+            console.log("[webhook] seller email skipped — no address for user:", l.user_id);
           }
+        } else {
+          console.log("[webhook] seller email skipped — email_notifications disabled:", l.user_id);
         }
       } catch (e) {
         console.error("Phase 12 email send error:", (e as Error).message);
