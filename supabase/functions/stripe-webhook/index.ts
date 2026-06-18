@@ -18,7 +18,14 @@
 // Then add the function URL as a webhook endpoint in the Stripe dashboard
 // listening for `checkout.session.completed`.
 
-import Stripe from "https://esm.sh/stripe@17.5.0?target=deno";
+// Use Deno's native npm specifier rather than the esm.sh build. esm.sh bundles a
+// `node:process` polyfill whose microtask/nextTick shim calls
+// `Deno.core.runMicrotasks()`, which the current Supabase Edge Runtime no longer
+// supports — that threw "Deno.core.runMicrotasks() is not supported in this
+// environment" on every checkout.session.completed event and aborted the sale
+// path. The `npm:` specifier uses Deno's built-in Node compatibility layer (the
+// approach Supabase's own Stripe examples use) and avoids that broken shim.
+import Stripe from "npm:stripe@17.5.0";
 import {
   emailForUser,
   firstName,
