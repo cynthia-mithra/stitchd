@@ -610,25 +610,72 @@ Deno.serve(async (req) => {
     }
   } catch { /* no/!invalid bundle metadata — proceed as a normal sale */ }
 
+  type ListingRow = {
+    id: string;
+    name: string;
+    price: string | number;
+    user_id: string;
+    image_url?: string;
+    images?: unknown;
+  };
+
   try {
     // Re-fetch authoritative listing data (price + seller) for the order rows.
-    const ids = listingIds.map((id) => `"${id}"`).join(",");
-    const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/listings?id=in.(${ids})&select=id,name,price,user_id,image_url,images`,
-      { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
-    );
-    const listings: Array<{
-      id: string;
-      name: string;
-      price: string | number;
-      user_id: string;
-      image_url?: string;
-      images?: unknown;
-    }> = r.ok ? await r.json() : [];
+    // The ids are bare UUIDs (stripe-checkout stores `listings.map(l => l.id)`),
+    // and PostgREST's `in.()` matches UUID columns WITHOUT quoting — wrapping each
+    // id in double quotes was unnecessary, so encode them plainly. Note there is
+    // deliberately NO status filter here: a listing already flipped to 'sold'
+    // (e.g. a Stripe retry, or the offer path) must still resolve so the order
+    // rows + emails are produced.
+    const select = "select=id,name,price,user_id,image_url,images";
+    const ids = listingIds.map((id) => encodeURIComponent(id)).join(",");
+    const listingsUrl = `${SUPABASE_URL}/rest/v1/listings?id=in.(${ids})&${select}`;
+    const r = await fetch(listingsUrl, {
+      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+    });
+    let listings: ListingRow[] = [];
+    if (r.ok) {
+      listings = await r.json();
+    } else {
+      // A failed fetch used to be swallowed into an empty array, which looked
+      // identical to "no matching rows" in the logs. Surface the real status/body
+      // so an auth/encoding/transient failure is distinguishable from a true miss.
+      console.error(
+        "[webhook] sale path — listings fetch failed:",
+        r.status,
+        await r.text().catch(() => "(no body)"),
+      );
+    }
 
-    // Diagnostics — if listing_ids is missing/empty or the re-fetch returns no
-    // rows, the loop below never runs and no emails are sent; make that visible.
+    // Fallback — if the batch query returned nothing but we DO have ids, re-fetch
+    // each id individually. This both works around any `in.()` quirk and makes the
+    // logs show exactly which ids resolve, so one unresolved id can't silently
+    // block the emails for the whole order.
+    if (listings.length === 0 && listingIds.length > 0) {
+      console.warn("[webhook] sale path — batch fetch returned 0 rows; retrying per id");
+      const perId = await Promise.all(
+        listingIds.map(async (id) => {
+          const ir = await fetch(
+            `${SUPABASE_URL}/rest/v1/listings?id=eq.${encodeURIComponent(id)}&${select}&limit=1`,
+            { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
+          ).catch(() => null);
+          if (!ir || !ir.ok) {
+            console.error("[webhook] per-id listing fetch failed for", id, ir ? ir.status : "(network)");
+            return null;
+          }
+          const rows = (await ir.json().catch(() => [])) as ListingRow[];
+          if (!rows[0]) console.warn("[webhook] no listing row matched id", id);
+          return rows[0] ?? null;
+        }),
+      );
+      listings = perId.filter((l): l is ListingRow => !!l);
+    }
+
+    // Diagnostics — surface the exact query + inputs so a missing metadata field,
+    // an id/format mismatch or a failed fetch is obvious in the Edge logs rather
+    // than silently skipping the send.
     console.log("[webhook] sale path — listing_ids:", JSON.stringify(listingIds));
+    console.log("[webhook] sale path — query:", listingsUrl);
     console.log("[webhook] sale path — listings fetched:", listings.length);
 
     // Phase 12 — buyer details for the order-confirmation + sale emails. The buyer
