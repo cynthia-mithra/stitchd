@@ -162,5 +162,16 @@ ALTER TABLE tailor_payouts ADD COLUMN IF NOT EXISTS stripe_transfer_id text;
 ALTER TABLE tailor_payouts ADD COLUMN IF NOT EXISTS paid_at            timestamp with time zone;
 ALTER TABLE tailor_payouts ADD COLUMN IF NOT EXISTS failure_reason     text;
 
--- ── 7. Reload PostgREST's schema cache so the API sees the new tables now ────
+-- ── 7. Match the project's access model: RLS off on the tailor tables ────────
+-- The rest of the app's tables run with row-level security disabled (access is
+-- controlled at the app layer). If RLS is enabled on these tables, every write
+-- fails with "new row violates row-level security policy". Disable it to match.
+ALTER TABLE tailors              DISABLE ROW LEVEL SECURITY;
+ALTER TABLE tailor_portfolio     DISABLE ROW LEVEL SECURITY;
+ALTER TABLE alteration_requests  DISABLE ROW LEVEL SECURITY;
+ALTER TABLE tailor_payouts       DISABLE ROW LEVEL SECURITY;
+ALTER TABLE tailor_reviews       DISABLE ROW LEVEL SECURITY;
+ALTER TABLE tailor_availability  DISABLE ROW LEVEL SECURITY;
+
+-- ── 8. Reload PostgREST's schema cache so the API sees the new tables now ────
 NOTIFY pgrst, 'reload schema';
