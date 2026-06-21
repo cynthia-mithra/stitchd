@@ -2,7 +2,7 @@ import React from "react";
 import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Plane, Instagram, UserPlus, UserCheck, Tag, Calendar, Clock, Users } from "lucide-react";
 import { SIZES, CARD_COLORS, catEmoji, currencySymbol, listingGender } from "../lib/constants";
 import { S } from "../styles";
-import { Sec, F, Tog, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
+import { Sec, F, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 import LoginPromptModal from "../components/LoginPromptModal";
 
 export default function Profile({
@@ -11,6 +11,8 @@ export default function Profile({
   profForm, setProfForm, saveProfile, profSaving,
   twoFAStep, setTwoFAStep, twoFAData, setTwoFAData, twoFACode, setTwoFACode,
   twoFAFactors, twoFALoading, confirm2FA, disable2FA, load2FAFactors, setup2FA,
+  // tailoring — single entry point into the Phase 15 application/dashboard flow
+  onBecomeTailor = () => {}, tailorCtaLabel = "BECOME A TAILOR",
   // profile / storefront
   viewedProfile, profileListings, reviews, isFollowing, toggleFollow, openDetail,
   followerCount = 0,
@@ -85,25 +87,9 @@ export default function Profile({
               </F>
             </div>
             <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><Scissors width={16} height={16}/> TAILOR LISTING</div>
-              <Tog on={profForm.is_tailor} onToggle={()=>setProfForm(f=>({...f,is_tailor:!f.is_tailor}))} color="#FF9500" label="LIST ME AS A TAILOR" sub="Show my profile in the tailor directory"/>
-              {profForm.is_tailor&&(
-                <div style={{marginTop:12}}>
-                  <Tog on={profForm.accepting_clients} onToggle={()=>setProfForm(f=>({...f,accepting_clients:!f.accepting_clients}))} color="#34C759" label="ACCEPTING NEW CLIENTS" sub="Turn off if you're fully booked"/>
-                  <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:12}}>
-                    <div>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:10}}>SERVICES OFFERED</p>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                        {["All","Alterations","Taking In","Letting Out","Hemming","Blouse Stitching","Full Stitching","Embroidery","Repairs","Custom Orders"].map(s=>{
-                          const on=(profForm.tailor_services||[]).includes(s);
-                          return<button key={s} type="button" className="hbtn" style={{...S.hBtn,background:on?"#FF9500":"#fff",color:on?"#fff":"#111",border:`2px solid ${on?"#FF9500":"#111"}`,padding:"6px 14px",fontSize:11}} onClick={()=>setProfForm(f=>({...f,tailor_services:on?f.tailor_services.filter(x=>x!==s):[...f.tailor_services,s]}))}>{s.toUpperCase()}</button>;
-                        })}
-                      </div>
-                    </div>
-                    <F l="STARTING PRICE (£)"><div style={{position:"relative"}}><span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#111",fontFamily:"'Barlow',sans-serif",pointerEvents:"none"}}>£</span><input style={{...S.inp,paddingLeft:26}} type="number" placeholder="0.00" value={profForm.tailor_price_from} onChange={e=>setProfForm(f=>({...f,tailor_price_from:e.target.value}))}/></div></F>
-                  </div>
-                </div>
-              )}
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:12,display:"flex",alignItems:"center",gap:8}}><Scissors width={16} height={16}/> OFFER ALTERATIONS</div>
+              <p style={{fontSize:13,color:"#666",lineHeight:1.5,marginBottom:14}}>Want to take in alteration work from buyers? Tailors on Stitch'd have a vetted profile, portfolio, availability calendar and get paid securely through the platform.</p>
+              <button type="button" className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"12px 24px",fontSize:13,letterSpacing:2,display:"inline-flex",alignItems:"center",gap:8}} onClick={()=>onBecomeTailor()}><Scissors width={15} height={15}/> {tailorCtaLabel}</button>
             </div>
             <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><ShieldCheck width={16} height={16}/> TWO-FACTOR AUTHENTICATION</div>
