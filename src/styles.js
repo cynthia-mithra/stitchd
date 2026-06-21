@@ -171,13 +171,16 @@ export const S={
   // Wrapper for the desktop hover dropdown — relative anchor so the panel hangs
   // directly below the icon with no gap (keeps hover continuous on mouse move).
   navDropWrap:{position:"relative",display:"flex",alignItems:"center"},
-  navDropdown:{position:"absolute",top:"100%",right:0,minWidth:210,background:"#fff",border:"2px solid #111",borderRadius:0,zIndex:250,display:"flex",flexDirection:"column",boxShadow:"0 8px 30px rgba(0,0,0,0.15)",paddingBottom:4},
-  // Items use a min 44px tap target; section labels above each group are purely
-  // decorative (#999 Barlow Condensed) and groups are separated by a subtle
-  // 1px #eee divider rather than the heavy 2px #111 chrome used elsewhere.
-  navDropItem:{background:"#fff",border:"none",textAlign:"left",minHeight:44,padding:"0 16px",fontSize:13,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,color:"#111",whiteSpace:"nowrap",textTransform:"uppercase",display:"flex",alignItems:"center"},
+  // Desktop account dropdown. Capped to the viewport height with its own scroll
+  // so every section stays reachable on short screens (mobile uses mobileNav*).
+  navDropdown:{position:"absolute",top:"100%",right:0,minWidth:210,background:"#fff",border:"2px solid #111",borderRadius:0,zIndex:250,display:"flex",flexDirection:"column",boxShadow:"0 8px 30px rgba(0,0,0,0.15)",paddingBottom:4,maxHeight:"calc(100vh - 80px)",overflowY:"auto"},
+  // Condensed rows (32px) so the full menu fits without scrolling on most
+  // screens; section labels above each group are purely decorative (#999 Barlow
+  // Condensed) and groups are separated by a subtle 1px #eee divider rather than
+  // the heavy 2px #111 chrome used elsewhere.
+  navDropItem:{background:"#fff",border:"none",textAlign:"left",minHeight:32,padding:"0 16px",fontSize:13,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,color:"#111",whiteSpace:"nowrap",textTransform:"uppercase",display:"flex",alignItems:"center"},
   navDropItemDanger:{color:"#FF0000",fontWeight:900},
-  navDropSectionLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:1.5,color:"#999",textTransform:"uppercase",padding:"12px 16px 4px",userSelect:"none"},
+  navDropSectionLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#999",textTransform:"uppercase",padding:"7px 16px 2px",userSelect:"none"},
   navDropDivider:{height:1,background:"#eee",border:"none",margin:0},
   // Mobile full-width menu overlay.
   mobileNav:{position:"fixed",top:0,left:0,right:0,bottom:0,width:"100%",background:"#fff",zIndex:600,display:"flex",flexDirection:"column",overflowY:"auto"},
