@@ -99,22 +99,7 @@ export default function Shop({
       )}
       {!feedLoading&&feedItems.length>0&&(
         <div style={S.grid} className="shop-grid">
-          {feedItems.map((item,idx)=>{
-            const accent=CARD_COLORS[idx%CARD_COLORS.length];
-            return(
-              <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>viewListing(item)}>
-                <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
-                  {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-                </Thumb>
-                <div style={S.cardBody} className="card-body">
-                  <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
-                  <p style={S.cardName} className="card-name">{item.name}</p>
-                  <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span></div>
-                </div>
-                <div style={{...S.accentBar,background:accent}}/>
-              </article>
-            );
-          })}
+          {feedItems.map((item,idx)=><ListingCard key={item.id} item={item} idx={idx}/>)}
         </div>
       )}
     </div>
@@ -184,6 +169,52 @@ export default function Shop({
       >
         <Heart width={12} height={12} fill={mine?"#FF1493":"none"} color="#FF1493"/> {count}
       </button>
+    );
+  };
+  // Single source of truth for a listing card, so the FOLLOWING feed and the
+  // main ALL LISTINGS grid render identically (badges, measurements, wishlist,
+  // ratings — the full polished card) rather than two different layouts.
+  const ListingCard = ({ item, idx }) => {
+    const accent=CARD_COLORS[idx%CARD_COLORS.length];
+    return(
+      <article className="scard" style={{...S.card,opacity:item.sold?0.55:1}} onClick={()=>viewListing(item)}>
+        <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
+          {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
+          <PromotedLabel item={item}/>
+          {item.reserved&&!item.sold&&<div style={S.reservedBadge}>RESERVED</div>}
+          {item.prev_price>item.price&&<div style={S.priceDropBadge}>PRICE DROP</div>}
+          {fitsMe(item)===true&&<div style={{...S.fitsBadge,display:"inline-flex",alignItems:"center",gap:5}}><Ruler width={11} height={11}/> FITS YOU</div>}
+          <FastBadge sellerId={item.user_id} raised={fitsMe(item)===true}/>
+          <button aria-label={myWishlist.has(item.id)?"Remove from wishlist":"Add to wishlist"} style={{...S.heartBtn,background:myWishlist.has(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();requireAuth("wishlist",()=>toggleFavourite(item));}}><Heart width={16} height={16} fill={myWishlist.has(item.id)?"#fff":"none"} color={myWishlist.has(item.id)?"#fff":"#111"}/></button>
+          <div style={S.cardOrigin}>{item.origin?.toUpperCase()}</div>
+          {!item.sold&&<BundleSaveBanner sellerId={item.user_id}/>}
+        </Thumb>
+        <div style={S.cardBody} className="card-body">
+          <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}{(item.material||item.fabric)?` · ${(item.material||item.fabric).toUpperCase()}`:""}</p>
+          <p style={S.cardName} className="card-name">{item.name}</p>
+          <VerifiedSellerBadge sellerId={item.user_id}/>
+          {(item.occasions||[]).length>0&&<div style={S.occRow}>{item.occasions.slice(0,3).map(o=><span key={o} style={{...S.occChip,background:OCC_COLOR[o]||"#999",color:"#fff"}}>{o.toUpperCase()}</span>)}</div>}
+          <div style={S.measRow}>
+            {item.size&&item.size!=="Free Size"&&<span style={S.mTag}>{item.size}</span>}
+            {item.bust&&<span style={S.mTag}>B {item.bust}in</span>}
+            {item.waist&&<span style={S.mTag}>W {item.waist}in</span>}
+            {item.can_take_in&&<span style={{...S.mTag,...S.mTagG}}>↔ TAKE IN</span>}
+            {item.spare_fabric&&<span style={{...S.mTag,...S.mTagA}}>+ FABRIC</span>}
+          </div>
+          <div style={S.cardFoot}>
+            <span style={{display:"flex",alignItems:"baseline",gap:8}}>
+              <span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span>
+              {item.prev_price>item.price&&<span style={S.cardPrevPrice}>{currencySymbol(item.currency)}{item.prev_price}</span>}
+            </span>
+            <span style={{display:"flex",alignItems:"center",gap:8}}>
+              <WishCount item={item}/>
+              <SellerRating sellerId={item.user_id}/>
+              {item.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,display:"inline-flex",alignItems:"center",gap:4}}><Eye width={12} height={12}/> {item.views}</span>}
+            </span>
+          </div>
+        </div>
+        <div style={{...S.accentBar,background:accent}}/>
+      </article>
     );
   };
   return (
@@ -347,49 +378,7 @@ export default function Shop({
         {error&&<div style={S.errorBanner}>{error}<button style={S.retryBtn} onClick={fetchItems}>RETRY</button></div>}
         {!loading&&!error&&(
           <div style={S.grid} className="shop-grid">
-            {visible.map((item,idx)=>{
-              const accent=CARD_COLORS[idx%CARD_COLORS.length];
-              return(
-                <article key={item.id} className="scard" style={{...S.card,opacity:item.sold?0.55:1}} onClick={()=>viewListing(item)}>
-                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
-                    {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-                    <PromotedLabel item={item}/>
-                    {item.reserved&&!item.sold&&<div style={S.reservedBadge}>RESERVED</div>}
-                    {item.prev_price>item.price&&<div style={S.priceDropBadge}>PRICE DROP</div>}
-                    {fitsMe(item)===true&&<div style={{...S.fitsBadge,display:"inline-flex",alignItems:"center",gap:5}}><Ruler width={11} height={11}/> FITS YOU</div>}
-                    <FastBadge sellerId={item.user_id} raised={fitsMe(item)===true}/>
-                    <button aria-label={myWishlist.has(item.id)?"Remove from wishlist":"Add to wishlist"} style={{...S.heartBtn,background:myWishlist.has(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();requireAuth("wishlist",()=>toggleFavourite(item));}}><Heart width={16} height={16} fill={myWishlist.has(item.id)?"#fff":"none"} color={myWishlist.has(item.id)?"#fff":"#111"}/></button>
-                    <div style={S.cardOrigin}>{item.origin?.toUpperCase()}</div>
-                    {!item.sold&&<BundleSaveBanner sellerId={item.user_id}/>}
-                  </Thumb>
-                  <div style={S.cardBody} className="card-body">
-                    <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()} · {(item.material||item.fabric)?.toUpperCase()}</p>
-                    <p style={S.cardName} className="card-name">{item.name}</p>
-                    <VerifiedSellerBadge sellerId={item.user_id}/>
-                    {(item.occasions||[]).length>0&&<div style={S.occRow}>{item.occasions.slice(0,3).map(o=><span key={o} style={{...S.occChip,background:OCC_COLOR[o]||"#999",color:"#fff"}}>{o.toUpperCase()}</span>)}</div>}
-                    <div style={S.measRow}>
-                      {item.size&&item.size!=="Free Size"&&<span style={S.mTag}>{item.size}</span>}
-                      {item.bust&&<span style={S.mTag}>B {item.bust}in</span>}
-                      {item.waist&&<span style={S.mTag}>W {item.waist}in</span>}
-                      {item.can_take_in&&<span style={{...S.mTag,...S.mTagG}}>↔ TAKE IN</span>}
-                      {item.spare_fabric&&<span style={{...S.mTag,...S.mTagA}}>+ FABRIC</span>}
-                    </div>
-                    <div style={S.cardFoot}>
-                      <span style={{display:"flex",alignItems:"baseline",gap:8}}>
-                        <span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span>
-                        {item.prev_price>item.price&&<span style={S.cardPrevPrice}>{currencySymbol(item.currency)}{item.prev_price}</span>}
-                      </span>
-                      <span style={{display:"flex",alignItems:"center",gap:8}}>
-                        <WishCount item={item}/>
-                        <SellerRating sellerId={item.user_id}/>
-                        {item.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,display:"inline-flex",alignItems:"center",gap:4}}><Eye width={12} height={12}/> {item.views}</span>}
-                      </span>
-                    </div>
-                  </div>
-                  <div style={{...S.accentBar,background:accent}}/>
-                </article>
-              );
-            })}
+            {visible.map((item,idx)=><ListingCard key={item.id} item={item} idx={idx}/>)}
             {visible.length===0&&(
               <div style={S.empty}>
                 <p style={{display:"flex",justifyContent:"center"}}>{hasFilters?<Search width={60} height={60}/>:<Shirt width={60} height={60}/>}</p>
