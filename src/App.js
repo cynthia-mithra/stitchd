@@ -143,7 +143,7 @@ export default function App() {
   const [error,     setError]     = useState("");
   const [aError,    setAError]    = useState("");
   const [profile,   setProfile]   = useState(null);
-  const [profForm,  setProfForm]  = useState({username:"",full_name:"",location:"",region:"",currency:"USD",bio:"",specialises_in:[],avatar_url:"",avatarFile:null,avatarPreview:"",bust:"",waist:"",hips:"",height:"",preferred_size:"",is_tailor:false,tailor_services:[],tailor_price_from:"",accepting_clients:true});
+  const [profForm,  setProfForm]  = useState({username:"",full_name:"",location:"",region:"",currency:"USD",bio:"",specialises_in:[],avatar_url:"",avatarFile:null,avatarPreview:"",bust:"",waist:"",hips:"",height:"",preferred_size:""});
   const [profSaving,setProfSaving]= useState(false);
   const [viewedProfile,setViewedProfile]=useState(null);
   const [profileListings,setProfileListings]=useState([]);
@@ -281,8 +281,6 @@ export default function App() {
   const [typeFilter,     setTypeFilter]     = useState("All");
   const [condFilter,     setCondFilter]     = useState("All");
   const [showSizeMatch,  setShowSizeMatch]  = useState(false);
-  const [showTailorDir,  setShowTailorDir]  = useState(false);
-  const [tailorProfiles, setTailorProfiles] = useState([]);
   const [myOrders,       setMyOrders]       = useState([]);
   // Phase 13 — promoted listings. `myPromotions` backs the dashboard ANALYTICS
   // PROMOTIONS history; `promoteBusyId` is the listing id whose checkout session
@@ -297,22 +295,14 @@ export default function App() {
   const [priceDrops,     setPriceDrops]     = useState([]);
   const [trendingItems,  setTrendingItems]  = useState([]);
   const [ordersTab,      setOrdersTab]      = useState("all");
-  const [tailorServices,    setTailorServices]    = useState([]);
-  const [myTailorServices,  setMyTailorServices]  = useState([]);
-  const [tailorBookings,    setTailorBookings]    = useState([]);
-  const [showTailorMarket,  setShowTailorMarket]  = useState(false);
-  const [selectedService,   setSelectedService]   = useState(null);
-  const [tailorServiceForm, setTailorServiceForm] = useState({title:"",description:"",service_type:"All",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});
-  const [showTailorForm,    setShowTailorForm]    = useState(false);
-  const [editingService,    setEditingService]    = useState(null);
-  const [tailorSearch,      setTailorSearch]      = useState("");
-  const [tailorTypeFilter,  setTailorTypeFilter]  = useState("All");
-  const [bookingNotes,      setBookingNotes]      = useState("");
-  const [showBookingForm,   setShowBookingForm]   = useState(false);
-  // ── Phase 15 — Tailor profiles (separate from the tailor_services marketplace
-  // above). `myTailor` is the signed-in user's tailor row (application/profile)
-  // or null. The apply flow, dashboard edit form, portfolio and public profile
-  // each get their own state.
+  // Phase 15 — public tailor directory (browse approved tailors). Backed by the
+  // `tailors` table (status='approved'); replaces the retired tailor_services
+  // marketplace as the buyer-facing discovery surface.
+  const [directoryTailors,  setDirectoryTailors]  = useState([]);
+  const [directoryLoading,  setDirectoryLoading]  = useState(false);
+  // ── Phase 15 — Tailor profiles (the single tailor system). `myTailor` is the
+  // signed-in user's tailor row (application/profile) or null. The apply flow,
+  // dashboard edit form, portfolio and public profile each get their own state.
   const [myTailor,          setMyTailor]          = useState(null);
   const [applyForm,         setApplyForm]         = useState(null);
   const [applyBusy,         setApplyBusy]         = useState(false);
@@ -630,6 +620,7 @@ export default function App() {
   useEffect(()=>{
     const path=window.location.pathname.replace(/\/+$/,"");
     if(path==="/tailors/apply"){ openTailorApply(); return; }
+    if(path==="/tailors"){ openTailorDirectory(); return; }
     const m=path.match(/^\/tailors\/([0-9a-fA-F-]{8,})$/);
     if(m&&m[1]) openTailorPublic(m[1]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -651,7 +642,7 @@ export default function App() {
 
   useEffect(()=>{
     if(user&&token){
-      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",bio:p.bio||"",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||"",is_tailor:p.is_tailor||false,tailor_services:p.tailor_services||[],tailor_price_from:p.tailor_price_from||"",accepting_clients:p.accepting_clients!==false});setStoreForm({storefront_tagline:p.storefront_tagline||"",storefront_bio:p.storefront_bio||"",storefront_location:p.storefront_location||"",storefront_instagram:p.storefront_instagram||"",storefront_banner_url:p.storefront_banner_url||"",bannerFile:null,bannerPreview:p.storefront_banner_url||""});} });
+      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",bio:p.bio||"",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||""});setStoreForm({storefront_tagline:p.storefront_tagline||"",storefront_bio:p.storefront_bio||"",storefront_location:p.storefront_location||"",storefront_instagram:p.storefront_instagram||"",storefront_banner_url:p.storefront_banner_url||"",bannerFile:null,bannerPreview:p.storefront_banner_url||""});} });
       loadConversations();
       db.getFollowing(user.id,token).then(setFollowing);
       db.getNotifications(user.id,token).then(setNotifications);
@@ -1712,58 +1703,14 @@ export default function App() {
   }
   useEffect(()=>{ loadIdentityVerifiedSellers(); },[]);
 
-  async function loadTailors(){
-    const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_tailor=eq.true`,{headers:hdrs(token)});
-    if(r.ok) setTailorProfiles(await r.json());
-  }
-
-  async function loadTailorMarket(){
-    const services=await db.getTailorServices(token);
-    setTailorServices(services);
-    const tailorIds=[...new Set(services.map(s=>s.tailor_id).filter(Boolean))];
-    const profs=[];
-    await Promise.all(tailorIds.map(async id=>{ const p=await db.getProfile(id,token); if(p)profs.push(p); }));
-    setTailorProfiles(profs);
-    if(user) {
-      const mine=await db.getMyTailorServices(user.id,token);
-      setMyTailorServices(mine);
-      const bookings=await db.getMyTailorBookings(user.id,token);
-      setTailorBookings(bookings);
-    }
-  }
-
-  async function saveTailorService(){
-    if(!tailorServiceForm.title||!tailorServiceForm.price_from){flash("Add a title and starting price.");return;}
-    if(!tailorServiceForm.service_type){flash("Please select a service type");return;}
-    try{
-      const imageUrls=await Promise.all((tailorServiceForm.images||[]).map(f=>uploadImage(f,token)));
-      const payload={tailor_id:user.id,title:tailorServiceForm.title,description:tailorServiceForm.description,service_type:tailorServiceForm.service_type,price_from:parseFloat(tailorServiceForm.price_from),price_to:tailorServiceForm.price_to?parseFloat(tailorServiceForm.price_to):null,turnaround_days:tailorServiceForm.turnaround_days?parseInt(tailorServiceForm.turnaround_days):null,location:tailorServiceForm.location,images:imageUrls,active:true};
-      if(editingService){ await db.updateTailorService(editingService.id,payload,token); flash("✓ Service updated!"); }
-      else { await db.insertTailorService(payload,token); flash("🩷 Service listed!"); }
-      setShowTailorForm(false); setEditingService(null);
-      setTailorServiceForm({title:"",description:"",service_type:"All",price_from:"",price_to:"",turnaround_days:"",location:"",images:[],imagePreviews:[]});
-      await loadTailorMarket();
-    }catch(e){flash("Failed to save service.");}
-  }
-
-  async function deleteTailorService(id){
-    try{await db.deleteTailorService(id,token);setMyTailorServices(p=>p.filter(s=>s.id!==id));flash("Service deleted.");}
-    catch(e){flash("Failed to delete.");}
-  }
-
-  async function bookTailor(service){
-    if(!user){setAuthMode("login");setView("auth");return;}
-    if(service.tailor_id===user.id){flash("You can't book yourself!");return;}
-    try{
-      const booking=await db.createTailorBooking({service_id:service.id,tailor_id:service.tailor_id,buyer_id:user.id,status:"pending",price:service.price_from,notes:bookingNotes,payment_status:"unpaid"},token);
-      let conv=await db.findConversation(user.id,service.tailor_id,null,token);
-      if(!conv) conv=await db.createConversation({listing_id:null,buyer_id:user.id,seller_id:service.tailor_id,last_message:`Booking request: ${service.title}`,last_message_at:new Date().toISOString()},token);
-      await db.sendMessage({conversation_id:conv.id,sender_id:user.id,content:`✂️ BOOKING REQUEST\n\nService: ${service.title}\nStarting from: ${currencySymbol(profile?.currency)}${service.price_from}\nTurnaround: ${service.turnaround_days?`${service.turnaround_days} days`:"TBC"}\n\nNotes: ${bookingNotes||"No notes added"}`,message_type:"text"},token);
-      await notify(service.tailor_id,"booking",`✂️ New booking request!`,`${profile?.username||"Someone"} wants to book "${service.title}"`,conv.id);
-      setShowBookingForm(false); setBookingNotes(""); setSelectedService(null);
-      flash("🎉 Booking request sent! Check your messages.");
-      await loadConversations(); setView("messages");
-    }catch(e){flash("Failed to send booking.");}
+  // Phase 15 — open the public tailor directory (browse approved tailors). Loads
+  // fresh each time so a newly-approved tailor shows without a refresh.
+  async function openTailorDirectory(){
+    setView("tailor-directory"); window.scrollTo(0,0);
+    setDirectoryLoading(true);
+    try{ setDirectoryTailors(await db.getApprovedTailors(token)); }
+    catch(e){ setDirectoryTailors([]); }
+    finally{ setDirectoryLoading(false); }
   }
 
   function fitsMe(item){
@@ -2855,7 +2802,7 @@ export default function App() {
     try{
       let avatar_url=profForm.avatar_url||"";
       if(profForm.avatarFile) avatar_url=await uploadImage(profForm.avatarFile,token);
-      const p={id:user.id,username:profForm.username,full_name:profForm.full_name,location:profForm.location,region:profForm.region,currency:profForm.currency,bio:profForm.bio||null,specialises_in:profForm.specialises_in,avatar_url,bust:profForm.bust||null,waist:profForm.waist||null,hips:profForm.hips||null,height:profForm.height||null,preferred_size:profForm.preferred_size||null,is_tailor:profForm.is_tailor,tailor_services:profForm.tailor_services,tailor_price_from:profForm.tailor_price_from||null,accepting_clients:profForm.accepting_clients};
+      const p={id:user.id,username:profForm.username,full_name:profForm.full_name,location:profForm.location,region:profForm.region,currency:profForm.currency,bio:profForm.bio||null,specialises_in:profForm.specialises_in,avatar_url,bust:profForm.bust||null,waist:profForm.waist||null,hips:profForm.hips||null,height:profForm.height||null,preferred_size:profForm.preferred_size||null};
       const [saved]=await db.upsertProfile(p,token);
       setProfile(saved); setProfForm(f=>({...f,avatar_url,avatarFile:null,avatarPreview:avatar_url}));
       flash("✓ Profile saved!");
@@ -3337,6 +3284,7 @@ export default function App() {
     {label:"DISCOVER", items:[
       {label:"✦ NEW ARRIVALS", run:()=>{clearFilters();setView("newarrivals");}},
       {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
+      {label:"FIND A TAILOR",  icon:<Scissors width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openTailorDirectory},
     ]},
     {label:"BUYING", items:[
       {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
@@ -4280,6 +4228,7 @@ export default function App() {
         viewedProfile={viewedProfile} profileListings={profileListings} reviews={reviews}
         isFollowing={isFollowing} toggleFollow={toggleFollow} openDetail={openDetail}
         followerCount={followerCount} onGateAuth={gateAuth}
+        onBecomeTailor={tailorNavItems[0].run} tailorCtaLabel={tailorNavItems[0].label}
       />
 
       {/* MY FOLLOWING (Phase 13) */}
@@ -4342,21 +4291,8 @@ export default function App() {
         flash={flash}
       />
 
-      {/* TAILOR MARKETPLACE */}
-      <Tailors
-        view={view} setView={setView} user={user} profile={profile}
-        tailorServices={tailorServices} tailorProfiles={tailorProfiles}
-        tailorSearch={tailorSearch} setTailorSearch={setTailorSearch}
-        tailorTypeFilter={tailorTypeFilter} setTailorTypeFilter={setTailorTypeFilter}
-        tailorServiceForm={tailorServiceForm} setTailorServiceForm={setTailorServiceForm}
-        showTailorForm={showTailorForm} setShowTailorForm={setShowTailorForm}
-        editingService={editingService} setEditingService={setEditingService}
-        selectedService={selectedService} setSelectedService={setSelectedService}
-        showBookingForm={showBookingForm} setShowBookingForm={setShowBookingForm}
-        bookingNotes={bookingNotes} setBookingNotes={setBookingNotes}
-        bookTailor={bookTailor} saveTailorService={saveTailorService}
-        prevView={prevView}
-      />
+      {/* HOW TO MEASURE guide */}
+      <Tailors view={view} setView={setView} user={user} prevView={prevView}/>
 
       {/* TAILOR PROFILES — Phase 15 (apply / dashboard / public profile) */}
       <TailorProfiles
@@ -4375,6 +4311,7 @@ export default function App() {
         onToggleAvailabilityEnabled={toggleAvailabilityEnabled} onSaveAvailabilitySettings={saveAvailabilitySettings}
         onSetDayAvailability={setDayAvailability} onSetDaySlots={setDaySlots}
         onMarkRangeUnavailable={markRangeUnavailable} onMarkAllAvailable={markAllAvailable}
+        directoryTailors={directoryTailors} directoryLoading={directoryLoading} onBecomeTailor={tailorNavItems[0].run}
         publicTailor={publicTailor} publicTailorLoading={publicTailorLoading}
         publicTailorReviews={publicTailorReviews} publicReviewBuyers={publicReviewBuyers}
         publicAvailability={publicAvailability} onSendAlterationRequest={sendAlterationRequestFromProfile}
@@ -4385,7 +4322,7 @@ export default function App() {
       {/* ALTERATIONS — Phase 15 buyer page (/alterations) */}
       <Alterations
         view={view} setView={setView} loading={buyerAlterationsLoading} requests={buyerAlterations}
-        onMessageTailor={messageTailorFromRequest} onFindTailor={()=>{loadTailorMarket();setView("tailors");window.scrollTo(0,0);}}
+        onMessageTailor={messageTailorFromRequest} onFindTailor={openTailorDirectory}
         onAcceptQuote={acceptAlterationQuote} onDeclineQuote={declineAlterationQuote}
         onConfirmCompletion={confirmAlterationCompletion} checkoutId={alterCheckoutId}
         onLeaveReview={openTailorReview} reviews={buyerReviews}
@@ -4399,7 +4336,7 @@ export default function App() {
         initialPreferredDate={preferredDateHint}
         getTailorAvailability={(id)=>db.getTailorAvailability(id,token)}
         openTailorProfile={(id)=>{ try{ window.open(`/tailors/${id}`,"_blank","noopener"); }catch(e){} }}
-        browseAllTailors={()=>{ setAlterReqOpen(false); loadTailorMarket(); setView("tailors"); window.scrollTo(0,0); }}
+        browseAllTailors={()=>{ setAlterReqOpen(false); openTailorDirectory(); }}
       />
 
       {/* LEAVE A REVIEW modal — Phase 15 (opened from /alterations) */}
@@ -4445,7 +4382,7 @@ export default function App() {
         showSizeMatch={showSizeMatch} setShowSizeMatch={setShowSizeMatch}
         showVerifiedOnly={showVerifiedOnly} setShowVerifiedOnly={setShowVerifiedOnly}
         occFilter={occFilter} togOccFilter={togOccFilter} colourFilter={colourFilter} togColourFilter={togColourFilter}
-        loadTailorMarket={loadTailorMarket}
+        openTailorDirectory={openTailorDirectory}
         visible={isNewArrivals?newArrivalItems:visible} loading={loading} error={error} fetchItems={fetchItems}
         newArrivals={isNewArrivals} homeArrivals={homeArrivals} goNewArrivals={()=>{clearFilters();setView("newarrivals");}}
         openDetail={openDetail} fitsMe={fitsMe}

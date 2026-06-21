@@ -1,5 +1,5 @@
 import React from "react";
-import { Scissors, MapPin, Instagram, Globe, Trash2, Plus, ArrowUp, ArrowDown, X, ExternalLink, Mail, Check, CheckCircle, CreditCard, AlertTriangle, ArrowUpRight, Wallet, Clock, Calendar, ChevronLeft, ChevronRight, Save, Plane } from "lucide-react";
+import { Scissors, MapPin, Instagram, Globe, Trash2, Plus, ArrowUp, ArrowDown, X, ExternalLink, Mail, Check, CheckCircle, CreditCard, AlertTriangle, ArrowUpRight, Wallet, Clock, Calendar, ChevronLeft, ChevronRight, Save, Plane, Search } from "lucide-react";
 import { S } from "../styles";
 import { F, Stars, Thumb } from "../components/Shared";
 import { RatingSummary, ReviewList } from "../components/Reviews";
@@ -58,6 +58,8 @@ function UploadTile({ preview, onPick, onClear, label="ADD PHOTO", height="100%"
 export default function TailorProfiles({
   view, setView, user, flash,
   myTailor,
+  // directory (Phase 15 — browse approved tailors)
+  directoryTailors = [], directoryLoading = false, onBecomeTailor = () => {},
   // apply
   applyForm, setApplyForm, applyBusy, submitApplication,
   // dashboard
@@ -85,12 +87,101 @@ export default function TailorProfiles({
   onGateAuth = () => {},
 }) {
   const [lightbox,setLightbox]=React.useState(null);
+  // Directory browse/filter state (local to the directory view).
+  const [dirSearch,setDirSearch]=React.useState("");
+  const [dirSpec,setDirSpec]=React.useState("All");
 
   // ── helpers shared across the apply + edit forms ──────────────────────────
   const toggleSpec=(setter)=>(s)=>setter(f=>({...f,specialisms:(f.specialisms||[]).includes(s)?f.specialisms.filter(x=>x!==s):[...(f.specialisms||[]),s]}));
 
+  // Tailor card status for the BECOME / MANAGE CTA on the directory hero.
+  const myTailorStatus=myTailor&&myTailor.status;
+  const becomeCtaLabel=(myTailorStatus==="approved"||myTailorStatus==="suspended")?"MY TAILOR PROFILE":(myTailorStatus==="pending"?"APPLICATION PENDING":"BECOME A TAILOR");
+
   return (
     <>
+      {/* ══════════════════════ TAILOR DIRECTORY ══════════════════════ */}
+      {view==="tailor-directory"&&(
+        <div style={{minHeight:"100vh",background:"#fff"}}>
+          <div style={{background:"#E0FAF7",borderBottom:"3px solid #111",padding:"48px 24px 40px"}}>
+            <div style={{maxWidth:1200,margin:"0 auto"}}>
+              <button style={{...S.back,color:TEAL,marginBottom:16}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:TEAL,marginBottom:8}}>VETTED FOR ALTERATIONS &amp; STITCHING</p>
+              <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(48px,8vw,100px)",fontWeight:900,color:"#111",lineHeight:.9,letterSpacing:-2,marginBottom:16}}>FIND A<br/><span style={{color:TEAL}}>TAILOR.</span></h1>
+              <p style={{fontFamily:"'Barlow',sans-serif",fontSize:15,color:"#444",maxWidth:560,lineHeight:1.5,marginBottom:20}}>Browse approved South Asian tailors. Open a profile to see their portfolio, availability and reviews, then send an alteration request on any piece.</p>
+              <button className="hbtn" style={{...S.hBtn,background:"#111",color:"#fff",border:"2px solid #111",padding:"14px 28px",fontSize:13,letterSpacing:2,display:"inline-flex",alignItems:"center",gap:8}} onClick={onBecomeTailor}><Scissors width={15} height={15}/> {becomeCtaLabel}</button>
+            </div>
+          </div>
+          <div style={{maxWidth:1200,margin:"0 auto",padding:"32px 16px"}}>
+            <div style={{display:"flex",gap:10,marginBottom:24,flexWrap:"wrap",alignItems:"stretch"}}>
+              <div style={{flex:1,minWidth:200,display:"flex",alignItems:"center",border:"2px solid #111",background:"#fff"}}>
+                <span style={{padding:"0 12px",color:"#bbb",display:"flex",alignItems:"center"}}><Search width={16} height={16}/></span>
+                <input style={{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,padding:"12px 0",background:"transparent"}} placeholder="SEARCH BY NAME OR LOCATION..." value={dirSearch} onChange={e=>setDirSearch(e.target.value)}/>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:28}}>
+              {["All",...TAILOR_SPECIALISMS].map(t=>(
+                <button key={t} className="fpill" style={{...S.pill,...(dirSpec===t?{...S.pillOn,background:TEAL,borderColor:TEAL}:{})}} onClick={()=>setDirSpec(t)}>{t}</button>
+              ))}
+            </div>
+            {directoryLoading?(
+              <div style={S.loadingWrap}><div style={S.spinner}/><p style={S.loadingText}>LOADING TAILORS…</p></div>
+            ):(()=>{
+              const q=dirSearch.trim().toLowerCase();
+              const list=(directoryTailors||[]).filter(t=>{
+                const matchSearch=!q||(t.display_name||"").toLowerCase().includes(q)||(t.location||"").toLowerCase().includes(q);
+                const matchSpec=dirSpec==="All"||(t.specialisms||[]).includes(dirSpec);
+                return matchSearch&&matchSpec;
+              });
+              if(list.length===0) return (
+                <div style={{textAlign:"center",padding:"80px 20px",border:"3px dashed #e0e0e0"}}>
+                  <p style={{display:"flex",justifyContent:"center",marginBottom:16}}><Scissors width={64} height={64} color="#ccc"/></p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:900,marginBottom:8,color:"#bbb"}}>NO TAILORS FOUND.</p>
+                  <p style={{fontSize:15,color:"#999",marginBottom:20}}>{(directoryTailors||[]).length?"Try a different search or specialism.":"Approved tailors will appear here soon."}</p>
+                  <button className="hbtn" style={{...S.hBtn,background:TEAL,border:"none",padding:"14px 28px",fontSize:14}} onClick={onBecomeTailor}>{becomeCtaLabel} →</button>
+                </div>
+              );
+              return (
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:3}}>
+                  {list.map(t=>(
+                    <button key={t.id} className="scard" onClick={()=>openTailorPublic(t.id,true)}
+                      style={{textAlign:"left",cursor:"pointer",background:"#fff",border:"3px solid #111",overflow:"hidden",display:"flex",flexDirection:"column",padding:0}}>
+                      <div style={{height:160,background:t.banner_image_url?`#111 url(${t.banner_image_url}) center/cover no-repeat`:TEAL,position:"relative"}}>
+                        <div style={{position:"absolute",left:16,bottom:-30,width:64,height:64,borderRadius:"50%",border:"3px solid #111",overflow:"hidden",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {t.profile_image_url?<img src={t.profile_image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<Scissors width={26} height={26} color="#111"/>}
+                        </div>
+                      </div>
+                      <div style={{padding:"40px 18px 18px",flex:1,display:"flex",flexDirection:"column"}}>
+                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#111",lineHeight:1.1}}>{t.display_name}</p>
+                        {t.location&&<p style={{fontSize:13,color:"#888",display:"flex",alignItems:"center",gap:5,marginTop:4}}><MapPin width={13} height={13}/> {t.location}</p>}
+                        {Number(t.review_count)>0&&(
+                          <span style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:8,fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:"#111"}}>
+                            <Stars value={Number(t.average_rating)||0} size={13} color={PINK}/> <span style={{fontWeight:800}}>{(Number(t.average_rating)||0).toFixed(1)}</span> <span style={{color:"#999"}}>({t.review_count})</span>
+                          </span>
+                        )}
+                        {(t.specialisms||[]).length>0&&(
+                          <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:12}}>
+                            {t.specialisms.slice(0,3).map(s=>(
+                              <span key={s} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:1,color:"#111",border:"1.5px solid #111",padding:"3px 8px"}}>{s.toUpperCase()}</span>
+                            ))}
+                            {t.specialisms.length>3&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,color:"#999",padding:"3px 4px"}}>+{t.specialisms.length-3}</span>}
+                          </div>
+                        )}
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"2px solid #f5f5f5",paddingTop:12,marginTop:"auto"}}>
+                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#111"}}>{t.price_from_pence!=null?<>From {gbp(t.price_from_pence)}</>:"Get a quote"}</span>
+                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1.5,color:TEAL,display:"inline-flex",alignItems:"center",gap:4}}>VIEW <ArrowUpRight width={14} height={14}/></span>
+                        </div>
+                      </div>
+                      <div style={{height:4,background:TEAL,width:"100%"}}/>
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* ══════════════════════ APPLICATION FLOW ══════════════════════ */}
       {view==="tailor-apply"&&applyForm&&(
         <main style={{...S.main,maxWidth:720}}>

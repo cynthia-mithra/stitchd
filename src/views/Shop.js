@@ -26,7 +26,7 @@ export default function Shop({
   showVerifiedOnly = false, setShowVerifiedOnly = () => {},
   occFilter = [], togOccFilter = () => {},
   colourFilter = [], togColourFilter = () => {},
-  loadTailorMarket,
+  openTailorDirectory = () => {},
   visible, loading, error, fetchItems,
   newArrivals = false, homeArrivals = [], goNewArrivals = () => {},
   openDetail, fitsMe,
@@ -273,7 +273,7 @@ export default function Shop({
               active. Logged-out buyers are prompted to log in on tap (handled in
               openSaveSearch). Outlined, 2px #111, no radius, Barlow Condensed. */}
           {hasFilters&&<button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>requireAuth("default",openSaveSearch)}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Bookmark width={15} height={15}/> SAVE THIS SEARCH</span></button>}
-          <button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={()=>{loadTailorMarket();setView("tailors");}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Scissors width={16} height={16}/> TAILORS</span></button>
+          <button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={openTailorDirectory}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Scissors width={16} height={16}/> TAILORS</span></button>
         </div>
         {(showSuggestions&&searchSuggestions.length>0)||(showSavedSearches&&savedSearches.length>0)?(
           <div style={{position:"absolute",top:"100%",left:10,width:"calc(100% - 20px)",maxWidth:560,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
