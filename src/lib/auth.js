@@ -49,7 +49,11 @@ export function isTokenExpired(token,skewMs=60000){
 // bucket defaults to "listings" (every listing photo goes there); Shop the Look
 // cover images pass bucket="looks" instead (see uploadLookImage). Both buckets
 // must exist and be public in Supabase Storage.
-export async function uploadImage(file,t,bucket="listings"){
+// Upload to `bucket`. If that bucket doesn't exist yet (e.g. a newer feature's
+// storage migration hasn't been applied to the project), and a `fallbackBucket`
+// is given, retry once against it so the feature keeps working rather than the
+// whole action failing on a missing bucket.
+export async function uploadImage(file,t,bucket="listings",fallbackBucket=null){
   const ext=file.name.split(".").pop();
   const path=`${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   const r=await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t||SUPABASE_KEY}`,"Content-Type":file.type||"application/octet-stream","x-upsert":"true"},body:file});
@@ -57,6 +61,9 @@ export async function uploadImage(file,t,bucket="listings"){
     let detail="";
     try{ const j=await r.clone().json(); detail=j.message||j.error||j.msg||JSON.stringify(j); }
     catch{ try{ detail=await r.text(); }catch{ detail=""; } }
+    if(fallbackBucket&&fallbackBucket!==bucket&&(r.status===404||/bucket not found/i.test(detail))){
+      return uploadImage(file,t,fallbackBucket);
+    }
     throw new Error(`Image upload failed (HTTP ${r.status}): ${detail||r.statusText}`);
   }
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
@@ -81,6 +88,7 @@ export const uploadStylePostImage=(file,t)=>uploadImage(file,t,"style-posts");
 
 // Phase 15 — tailor profile/banner images live in the public "tailor-profiles"
 // bucket; portfolio images in the public "tailor-portfolio" bucket (both created
-// by the phase15 migration).
-export const uploadTailorProfileImage=(file,t)=>uploadImage(file,t,"tailor-profiles");
-export const uploadTailorPortfolioImage=(file,t)=>uploadImage(file,t,"tailor-portfolio");
+// by the phase15 migration). Fall back to the always-present "listings" bucket so
+// registration still works if those buckets haven't been created on the project.
+export const uploadTailorProfileImage=(file,t)=>uploadImage(file,t,"tailor-profiles","listings");
+export const uploadTailorPortfolioImage=(file,t)=>uploadImage(file,t,"tailor-portfolio","listings");
