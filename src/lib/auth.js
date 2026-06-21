@@ -49,10 +49,11 @@ export function isTokenExpired(token,skewMs=60000){
 // bucket defaults to "listings" (every listing photo goes there); Shop the Look
 // cover images pass bucket="looks" instead (see uploadLookImage). Both buckets
 // must exist and be public in Supabase Storage.
-// Upload to `bucket`. If that bucket doesn't exist yet (e.g. a newer feature's
-// storage migration hasn't been applied to the project), and a `fallbackBucket`
-// is given, retry once against it so the feature keeps working rather than the
-// whole action failing on a missing bucket.
+// Upload to `bucket`. If that bucket can't accept the upload — it doesn't exist
+// yet (migration not applied) OR storage RLS blocks writes to it (no INSERT
+// policy) — and a `fallbackBucket` is given, retry once against it so the feature
+// keeps working rather than the whole action failing. The fallback should be a
+// bucket known to accept logged-in uploads (e.g. "listings").
 export async function uploadImage(file,t,bucket="listings",fallbackBucket=null){
   const ext=file.name.split(".").pop();
   const path=`${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
@@ -61,7 +62,10 @@ export async function uploadImage(file,t,bucket="listings",fallbackBucket=null){
     let detail="";
     try{ const j=await r.clone().json(); detail=j.message||j.error||j.msg||JSON.stringify(j); }
     catch{ try{ detail=await r.text(); }catch{ detail=""; } }
-    if(fallbackBucket&&fallbackBucket!==bucket&&(r.status===404||/bucket not found/i.test(detail))){
+    // Bucket missing (404 / "bucket not found") or write blocked by storage RLS
+    // (400 / "row-level security") → fall back to a bucket that accepts uploads.
+    const recoverable=r.status===404||r.status===400||/bucket not found|row-level security|violates.*policy/i.test(detail);
+    if(fallbackBucket&&fallbackBucket!==bucket&&recoverable){
       return uploadImage(file,t,fallbackBucket);
     }
     throw new Error(`Image upload failed (HTTP ${r.status}): ${detail||r.statusText}`);
