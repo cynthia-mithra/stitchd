@@ -1156,11 +1156,10 @@ function PublicAvailability({ tailor, rows = [], selected, onSelect = () => {} }
 }
 
 // The public /tailors/<id> profile.
-function PublicProfile({ tailor, setView, flash, onOpenImage, user, onGateAuth = () => {}, reviews = [], reviewBuyers = {}, availability = [], onSendAlterationRequest = () => {} }) {
+function PublicProfile({ tailor, setView, onOpenImage, user, onGateAuth = () => {}, reviews = [], reviewBuyers = {}, availability = [], onSendAlterationRequest = () => {} }) {
   // Logged-out buyers can browse the whole profile, but booking a tailor is
   // gated — tapping BOOK opens the shared sign-up prompt (context: book).
   const [gateOpen,setGateOpen]=React.useState(false);
-  const onBook=()=>{ if(user){ flash("Booking coming soon!"); } else { setGateOpen(true); } };
   // Availability section (Part 3) — only when the tailor has switched it on.
   const showAvailability=!!tailor.availability_enabled;
   const [selectedDate,setSelectedDate]=React.useState(null);
@@ -1176,19 +1175,24 @@ function PublicProfile({ tailor, setView, flash, onOpenImage, user, onGateAuth =
   return (
     <>
       {/* HEADER */}
-      <div style={{position:"relative",marginBottom:64}}>
-        <div style={{height:200,width:"100%",background:tailor.banner_image_url?`#111 url(${tailor.banner_image_url}) center/cover`:PINK,borderBottom:"3px solid #111"}}/>
-        <div style={{position:"absolute",left:24,bottom:-44,width:88,height:88,borderRadius:"50%",border:"2px solid #111",overflow:"hidden",background:PINK,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          {tailor.profile_image_url?<img src={tailor.profile_image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<Scissors width={36} height={36} color="#fff"/>}
+      <div style={{padding:"16px 24px 0"}}>
+        <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
+      </div>
+      <div style={{position:"relative",margin:"8px 24px 58px"}}>
+        <div style={{height:"clamp(150px,26vw,200px)",width:"100%",border:"2px solid #111",overflow:"hidden",position:"relative",
+          background:tailor.banner_image_url?`#111 url(${tailor.banner_image_url}) center/cover no-repeat`:`linear-gradient(135deg, ${PINK} 0%, #FF5CAE 55%, ${TEAL} 185%)`}}>
+          {!tailor.banner_image_url&&<Scissors width={170} height={170} color="rgba(255,255,255,0.16)" style={{position:"absolute",right:6,bottom:-28,transform:"rotate(-12deg)"}}/>}
+        </div>
+        <div style={{position:"absolute",left:20,bottom:-46,width:96,height:96,borderRadius:"50%",border:"3px solid #111",boxShadow:"0 0 0 4px #fff",overflow:"hidden",background:PINK,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          {tailor.profile_image_url?<img src={tailor.profile_image_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<Scissors width={38} height={38} color="#fff"/>}
         </div>
       </div>
 
       <div style={{padding:"0 24px"}}>
-        <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
         <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(36px,6vw,56px)",fontWeight:900,letterSpacing:-1,lineHeight:1,marginBottom:8}}>{tailor.display_name}</h1>
-        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:700,color:"#666",display:"flex",alignItems:"center",gap:6,marginBottom:10}}><MapPin width={16} height={16}/> {tailor.location}</p>
+        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:700,color:"#666",display:"flex",alignItems:"center",gap:6,marginBottom:12}}><MapPin width={16} height={16}/> {tailor.location}</p>
         {/* Overall rating (Part 3) — stars + average + count, or a no-reviews note. */}
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18}}>
           {reviewCount>0?(
             <>
               <Stars value={avgRating} size={16}/>
@@ -1202,19 +1206,21 @@ function PublicProfile({ tailor, setView, flash, onOpenImage, user, onGateAuth =
             </>
           )}
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:20,flexWrap:"wrap",marginBottom:18}}>
-          {tailor.price_from_pence!=null&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:PINK}}>From £{poundsFromPence(tailor.price_from_pence)}</span>}
-          {tailor.turnaround_days&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:700,color:"#666"}}>Typically {turnaroundLabel(tailor.turnaround_days)}</span>}
+
+        {/* INFO TILES — quick at-a-glance pricing/turnaround */}
+        <div style={{display:"flex",flexWrap:"wrap",gap:10,marginBottom:20}}>
+          {tailor.price_from_pence!=null&&<InfoTile label="STARTING FROM" value={`£${poundsFromPence(tailor.price_from_pence)}`} accent={PINK}/>}
+          {tailor.turnaround_days&&<InfoTile label="TURNAROUND" value={turnaroundLabel(tailor.turnaround_days)}/>}
+          <InfoTile label="RESPONSE" value="< 24 hrs"/>
         </div>
-        <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:18}}>
-          {igUrl&&<a href={igUrl} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:6,color:"#111",textDecoration:"none",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,fontSize:14}}><Instagram width={18} height={18}/> @{igHandle}</a>}
-          {website&&<a href={website} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:6,color:"#111",textDecoration:"none",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,fontSize:14}}><Globe width={18} height={18}/> Website</a>}
-        </div>
-        <button className="hbtn"
-          style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px 40px",fontSize:16,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,cursor:"pointer",marginBottom:40}}
-          onClick={onBook}>
-          BOOK THIS TAILOR
-        </button>
+
+        {/* SOCIAL */}
+        {(igUrl||website)&&(
+          <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:24}}>
+            {igUrl&&<a href={igUrl} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:6,color:"#111",textDecoration:"none",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,fontSize:14}}><Instagram width={18} height={18}/> @{igHandle}</a>}
+            {website&&<a href={website} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:6,color:"#111",textDecoration:"none",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,fontSize:14}}><Globe width={18} height={18}/> Website</a>}
+          </div>
+        )}
 
         {/* AVAILABILITY (Part 3) — read-only next-4-weeks calendar, shown only when
             the tailor has enabled it. Otherwise just the SEND ALTERATION REQUEST CTA. */}
@@ -1291,10 +1297,10 @@ function PublicProfile({ tailor, setView, flash, onOpenImage, user, onGateAuth =
           ):(
             <div style={{textAlign:"center",padding:"40px 20px",border:"3px dashed #e0e0e0"}}>
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#bbb",marginBottom:8}}>NO REVIEWS YET</p>
-              <p style={{fontSize:14,color:"#999",marginBottom:18}}>Be the first to book and review this tailor</p>
+              <p style={{fontSize:14,color:"#999",marginBottom:18}}>Be the first to work with this tailor</p>
               <button className="hbtn"
-                style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer"}}
-                onClick={onBook}>BOOK THIS TAILOR</button>
+                style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}
+                onClick={sendRequest}><Scissors width={16} height={16}/> REQUEST AN ALTERATION</button>
             </div>
           )}
         </Section>
@@ -1311,6 +1317,16 @@ function Section({ heading, children }) {
     <div style={{marginBottom:40,paddingBottom:32,borderBottom:"1px solid #f0f0f0"}}>
       <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:900,letterSpacing:3,borderLeft:`4px solid ${PINK}`,paddingLeft:12,marginBottom:18}}>{heading}</h2>
       {children}
+    </div>
+  );
+}
+
+// Small bordered stat tile for the public profile header (price / turnaround …).
+function InfoTile({ label, value, accent="#111" }) {
+  return (
+    <div style={{border:"2px solid #111",borderRadius:0,padding:"11px 18px",minWidth:118}}>
+      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:5}}>{label}</div>
+      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:accent,lineHeight:1}}>{value}</div>
     </div>
   );
 }
