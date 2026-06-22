@@ -43,4 +43,9 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS stripe_account_id          text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS stripe_onboarding_complete boolean DEFAULT false;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS stripe_onboarding_url      text;
 
+-- Match the project's access model (app-layer control, RLS off) so the client can
+-- read the ledger. Without this, RLS-enabled-by-default blocks every read and the
+-- wallet shows empty even though credits exist.
+ALTER TABLE wallet_transactions DISABLE ROW LEVEL SECURITY;
+
 NOTIFY pgrst, 'reload schema';
