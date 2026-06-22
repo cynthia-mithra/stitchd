@@ -41,10 +41,30 @@ import PublicWishlist from "./views/PublicWishlist";
 import ShareWishlistModal from "./components/ShareWishlistModal";
 import Legal, { LEGAL_VIEWS } from "./views/Legal";
 import Footer from "./components/Footer";
+import NotFound from "./views/NotFound";
 
 // URL path → view for the static legal pages, derived from the views Legal.js
 // owns so the two never drift (e.g. "/terms" → "terms").
 const LEGAL_PATHS = Object.fromEntries(LEGAL_VIEWS.map(v => [`/${v}`, v]));
+
+// Every URL path the app knows how to route on a cold load. Anything that
+// matches none of these is an unknown link → the custom 404 (see the routing
+// effect). Keep in sync with the path handlers in the mount effects above.
+function isKnownPath(raw) {
+  const path = (raw || "/").replace(/\/+$/, "") || "/";
+  const EXACT = new Set([
+    "/", "/terms", "/privacy", "/returns", "/saved-searches", "/offers",
+    "/alterations", "/wallet", "/tailor-dashboard", "/tailors", "/tailors/apply",
+  ]);
+  if (EXACT.has(path)) return true;
+  if (path.includes("/bag")) return true;
+  if (path.endsWith("/dashboard")) return true;
+  if (path.includes("order-success")) return true;
+  if (/^\/wishlist\/[^/]+$/.test(path)) return true;
+  if (/^\/post\/[^/]+$/.test(path)) return true;
+  if (/^\/tailors\/[0-9a-fA-F-]{8,}$/.test(path)) return true;
+  return false;
+}
 
 // Issue #115 — a listing may have at most this many photos (and at least 1).
 const MAX_LISTING_IMAGES = 8;
@@ -659,6 +679,14 @@ export default function App() {
     if(path==="/tailors"){ openTailorDirectory(); return; }
     const m=path.match(/^\/tailors\/([0-9a-fA-F-]{8,})$/);
     if(m&&m[1]) openTailorPublic(m[1]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  // Custom 404 — on a cold load, if the URL path matches none of the routes the
+  // app knows, show the branded not-found page instead of silently falling back
+  // to the shop. Runs once on mount; in-app navigation is all view-state driven.
+  useEffect(()=>{
+    if(!isKnownPath(window.location.pathname)) setView("notfound");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
@@ -4775,6 +4803,13 @@ export default function App() {
           </div>
         </main>
       )}
+
+      {/* CUSTOM 404 — unknown URL on a cold load (see isKnownPath + routing effect). */}
+      <NotFound
+        view={view}
+        onHome={()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("shop"); window.scrollTo(0,0); }}
+        onBrowse={()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("newarrivals"); window.scrollTo(0,0); }}
+      />
 
       {/* GLOBAL FOOTER — appears on every page (modals/overlays render on top and
           are unaffected; the Stripe checkout is an external hosted page). */}
