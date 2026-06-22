@@ -676,6 +676,24 @@ export default function App() {
     setView("shop");
   },[]);
 
+  // Footer link router: the editorial footer spans app views (not just legal
+  // pages), so map each footer view-key to the right action + loaders.
+  const footerNav=useCallback((v)=>{
+    switch(v){
+      case "terms":       goLegal("terms","/terms"); return;
+      case "privacy":     goLegal("privacy","/privacy"); return;
+      case "returns":     goLegal("returns","/returns"); return;
+      case "tailors":     openTailorDirectory(); return;
+      case "newarrivals": clearFilters(); setView("newarrivals"); window.scrollTo(0,0); return;
+      case "measuring":   setPrevView(view); setView("measuring"); window.scrollTo(0,0); return;
+      case "sell":
+        if(user){ setView("add"); } else { setPostAuthView("add"); setAuthMode("signup"); setView("auth"); }
+        window.scrollTo(0,0); return;
+      default:            window.history.replaceState({},"","/"); setView("shop"); window.scrollTo(0,0);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[goLegal,user,view]);
+
   useEffect(()=>{
     if(user&&token){
       db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",bio:p.bio||"",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||""});setStoreForm({storefront_tagline:p.storefront_tagline||"",storefront_bio:p.storefront_bio||"",storefront_location:p.storefront_location||"",storefront_instagram:p.storefront_instagram||"",storefront_banner_url:p.storefront_banner_url||"",bannerFile:null,bannerPreview:p.storefront_banner_url||""});} });
@@ -4760,7 +4778,7 @@ export default function App() {
 
       {/* GLOBAL FOOTER — appears on every page (modals/overlays render on top and
           are unaffected; the Stripe checkout is an external hosted page). */}
-      <Footer onNav={goLegal} />
+      <Footer onNav={footerNav} />
     </div>
   );
 }

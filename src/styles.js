@@ -12,7 +12,10 @@ export const CSS=`
   /* Mobile menu rows go pink on tap. */
   .nav-mob-item:active{color:#FF1493 !important;background:#fff5fa !important;}
   /* Footer links (T&Cs, Privacy, Returns, Contact) turn pink on hover. */
+  .footer-link{transition:color .15s ease;}
   .footer-link:hover{color:#FF1493 !important;}
+  .footer-social{transition:border-color .15s ease,color .15s ease;}
+  .footer-social:hover{border-color:#FF1493 !important;color:#FF1493 !important;}
   /* The hamburger is mobile-only; the profile-icon dropdown is desktop/iPad-only. */
   .nav-hamburger{display:none !important;}
   .fpill{transition:all .14s !important;}
