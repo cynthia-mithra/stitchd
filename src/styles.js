@@ -19,7 +19,6 @@ export const CSS=`
   .fpill:hover{background:#111 !important;color:#fff !important;}
   @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-  @keyframes floatbob{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-14px) rotate(5deg)}}
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
   input:focus,select:focus,textarea:focus{border-color:#FF1493 !important;box-shadow:0 0 0 3px rgba(255,20,147,0.1) !important;outline:none;}
@@ -61,37 +60,9 @@ export const CSS=`
        takes the LEFT and the bubbles sit to the RIGHT, but instead of a neat wrapping
        grid the bubbles now form a SLIGHTLY-OVERLAPPING, STAGGERED FLOATING cluster —
        the same playful arrangement as the desktop hero (keeps the divider border). */
-    .hero-section{flex-direction:row !important;min-height:0 !important;}
-    /* Split the hero text 58% / bubbles 42% on mobile so the writing column has
-       more room while the overlapping cluster can still stagger without clipping. */
-    .hero-left{flex:0 0 58% !important;padding:24px 14px !important;}
-    /* The bubble column is the POSITIONING CONTEXT for the absolutely-placed bubbles
-       (position:relative + overflow:hidden are inherited from the inline heroRight
-       style). A min-height guarantees a tall-enough canvas for the cluster even when
-       the heading text is short, and overflow:hidden clips any float-animation
-       overshoot so there is never horizontal page scroll. */
-    .hero-right{flex:0 0 42% !important;padding:0 !important;min-height:360px !important;}
-    /* OVERLAPPING FLOATING CLUSTER (mobile): bubbles stay position:absolute (from the
-       inline style) and we override only top/left/size per bubble with !important.
-       Sizes are VARIED (74–96px). Crucially, sizes are
-       fixed px while left is a PERCENTAGE of the column width: the column is narrowest
-       on the smallest phone (~40% of 320px ≈ 128px), so designing the fit there
-       guarantees every wider phone has MORE room — no bubble can be clipped or cut off
-       by the right edge, and there is no horizontal overflow. The right-edge fit holds
-       even at the larger sizes: left bubbles sit at ~2–3% (≈4px) so a 96px bubble ends
-       near 100px (well inside 128px), and right bubbles sit at ~36–37% (≈47px) so a
-       76px bubble ends near 123px (still inside 128px). Bubbles alternate
-       left/right and step down ~14% each, so they overlap vertically for the staggered
-       floating look while every right edge stays well inside the column. The inline
-       'floatbob' animation (which animates transform) is left untouched, so they keep
-       bobbing exactly like the desktop hero. */
-    .hero-bubble{border-width:3px !important;box-shadow:0 6px 22px rgba(0,0,0,0.16) !important;}
-    .hero-bubble:nth-child(1){top:1%  !important;left:3%  !important;width:96px !important;height:96px !important;}
-    .hero-bubble:nth-child(2){top:15% !important;left:36% !important;width:76px !important;height:76px !important;}
-    .hero-bubble:nth-child(3){top:30% !important;left:3%  !important;width:94px !important;height:94px !important;}
-    .hero-bubble:nth-child(4){top:45% !important;left:36% !important;width:76px !important;height:76px !important;}
-    .hero-bubble:nth-child(5){top:59% !important;left:2%  !important;width:94px !important;height:94px !important;}
-    .hero-bubble:nth-child(6){top:73% !important;left:37% !important;width:74px !important;height:74px !important;}
+    /* Type-led hero (no imagery) — just tighten the spacing on small screens. */
+    .hero-section{min-height:0 !important;padding:36px 18px !important;}
+    .hero-left{padding:0 !important;}
     /* PROBLEM 2 — search field full-width on its own line, FILTERS/FIT/TAILORS
        sharing the second line equally and compactly. */
     .search-box{flex:1 1 100% !important;}
@@ -195,15 +166,21 @@ export const S={
   ticker:{background:"#FF1493",overflow:"hidden",borderBottom:"2px solid #111",height:36,display:"flex",alignItems:"center"},
   tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2.5,color:"#fff",animation:"ticker 22s linear infinite",paddingLeft:"100%"},
   toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"12px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,zIndex:999,borderRadius:0,whiteSpace:"nowrap",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"},
-  hero:{borderBottom:"3px solid #111",display:"flex",minHeight:"80vh",overflow:"hidden"},
-  heroLeft:{flex:"0 0 55%",padding:"40px 32px",borderRight:"3px solid #111",display:"flex",flexDirection:"column",justifyContent:"center"},
-  heroTag:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:20},
-  heroH:{display:"flex",flexDirection:"column",marginBottom:28},
+  // Type-led editorial hero: a single, centred column (no imagery). Bold stacked
+  // headline + brand statement + CTAs + a value-prop strip.
+  hero:{borderBottom:"3px solid #111",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",minHeight:"68vh",padding:"64px 24px",overflow:"hidden"},
+  heroLeft:{maxWidth:780,display:"flex",flexDirection:"column",alignItems:"center"},
+  heroTag:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:5,color:"#FF1493",marginBottom:20},
+  heroH:{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:24},
   heroLine1:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#111"},
   heroLine2:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#FF1493"},
   heroLine3:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#fff",WebkitTextStroke:"2px #111"},
-  heroSub:{fontSize:16,color:"#555",lineHeight:1.7,maxWidth:440,marginBottom:36},
-  heroCtas:{display:"flex",gap:14,flexWrap:"wrap"},
+  heroSub:{fontSize:17,color:"#555",lineHeight:1.6,maxWidth:460,margin:"0 auto 32px",fontFamily:"'Barlow',sans-serif"},
+  heroCtas:{display:"flex",gap:14,flexWrap:"wrap",justifyContent:"center"},
+  // Editorial value-prop strip beneath the CTAs (replaces the old hero imagery).
+  heroProps:{display:"flex",flexWrap:"wrap",justifyContent:"center",alignItems:"center",gap:"10px 22px",marginTop:40,paddingTop:26,borderTop:"2px solid #111",maxWidth:680},
+  heroProp:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#111",textTransform:"uppercase",display:"inline-flex",alignItems:"center",gap:8},
+  heroPropDot:{width:7,height:7,borderRadius:"50%",flexShrink:0},
   heroBtnPrimary:{background:"#FF1493",color:"#fff",border:"2px solid #FF1493",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
   heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
   heroRight:{flex:1,position:"relative",background:"#fafafa",minHeight:300,overflow:"hidden"},
