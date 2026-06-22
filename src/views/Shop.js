@@ -72,10 +72,13 @@ export default function Shop({
   const ShopTabs = () => (!user||newArrivals) ? null : (
     <div style={{maxWidth:1300,margin:"0 auto",padding:"28px 24px 0"}}>
       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:3,color:"#999",textTransform:"uppercase",margin:"0 0 10px"}}>BROWSE</p>
-      <div className="shop-tabs" style={{display:"flex",gap:0,borderBottom:"2px solid #111"}}>
-        {[["all","ALL LISTINGS"],["following","FOLLOWING"]].map(([k,l])=>(
+      {/* Self-contained segmented toggle — a bordered box split into two segments,
+          active one filled pink. No full-width underline (which left a dangling
+          line across the page). */}
+      <div className="shop-tabs" style={{display:"inline-flex",border:"2px solid #111",borderRadius:0,overflow:"hidden"}}>
+        {[["all","ALL LISTINGS"],["following","FOLLOWING"]].map(([k,l],i)=>(
           <button key={k} className="hbtn shop-tab" onClick={()=>{ setShopTab(k); if(k==="following") loadFeed(); }}
-            style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,padding:"11px 26px",border:"2px solid #111",borderBottom:"none",borderLeft:k==="all"?"2px solid #111":"none",background:shopTab===k?"#FF1493":"#fff",color:shopTab===k?"#fff":"#111",cursor:"pointer",borderRadius:0,marginBottom:-2}}>{l}</button>
+            style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,padding:"12px 30px",border:"none",borderLeft:i>0?"2px solid #111":"none",background:shopTab===k?"#FF1493":"#fff",color:shopTab===k?"#fff":"#111",cursor:"pointer",borderRadius:0}}>{l}</button>
         ))}
       </div>
     </div>
