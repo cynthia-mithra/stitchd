@@ -12,6 +12,9 @@ export const CSS=`
   /* Unified button feel: a confident lift + soft shadow on hover (replaces the
      old dated scale-down), and a quick press-down on click. Applies to every
      CTA site-wide since .hbtn is the shared button class. */
+  /* Sticky header lifts off the page with a hairline shadow only once scrolled. */
+  .nav-header{transition:box-shadow .25s ease,background .25s ease;}
+  .nav-header.scrolled{box-shadow:0 6px 26px rgba(0,0,0,0.09);}
   .hbtn{transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .18s ease,filter .18s ease !important;}
   .hbtn:hover{transform:translateY(-2px) !important;box-shadow:0 9px 22px rgba(0,0,0,0.18) !important;filter:brightness(1.05) !important;}
   .hbtn:active{transform:translateY(0) !important;box-shadow:0 3px 9px rgba(0,0,0,0.16) !important;}
@@ -137,7 +140,10 @@ export const CSS=`
 
 export const S={
   root:{minHeight:"100vh",background:"#fff",color:"#111",fontFamily:"'Barlow',sans-serif"},
-  header:{background:"#fff",borderBottom:"3px solid #111",position:"sticky",top:0,zIndex:200},
+  // Frosted-glass sticky header: a near-opaque white with a backdrop blur so
+  // content scrolls subtly beneath it. The hairline lift-off shadow is added
+  // only once scrolled (see .nav-header.scrolled in CSS).
+  header:{background:"rgba(255,255,255,0.82)",backdropFilter:"saturate(180%) blur(12px)",WebkitBackdropFilter:"saturate(180%) blur(12px)",borderBottom:"3px solid #111",position:"sticky",top:0,zIndex:200},
   // overflow is left VISIBLE here so the desktop/iPad profile-icon dropdown (which
   // hangs below this 52px bar via position:absolute) isn't clipped. `overflow-x:auto`
   // would force `overflow-y` to auto too and crop the dropdown to nothing. Horizontal

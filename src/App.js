@@ -136,6 +136,9 @@ export default function App() {
   const [items,     setItems]     = useState([]);
   const [view,      setView]      = useState("shop");
   const [prevView,  setPrevView]  = useState("shop");
+  // Drives the sticky header's scroll state — once the page scrolls a little, the
+  // header gains a hairline shadow (it's frosted glass at rest). See nav-header CSS.
+  const [scrolled,  setScrolled]  = useState(false);
   const [authMode,  setAuthMode]  = useState("login");
   // When a login gate (LoginPromptModal) sends a logged-out buyer to /auth, we
   // stash the page they were on so we can return them there after they sign in
@@ -688,6 +691,15 @@ export default function App() {
   useEffect(()=>{
     if(!isKnownPath(window.location.pathname)) setView("notfound");
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  // Sticky header shadow — flips `scrolled` on once the page has moved past a few
+  // pixels so the frosted header lifts off the content with a hairline shadow.
+  useEffect(()=>{
+    const onScroll=()=>setScrolled(window.scrollY>6);
+    onScroll();
+    window.addEventListener("scroll",onScroll,{passive:true});
+    return ()=>window.removeEventListener("scroll",onScroll);
   },[]);
 
   // Footer navigation: switch to a legal `view` without a full reload and push the
@@ -3467,7 +3479,7 @@ export default function App() {
       <style>{CSS}</style>
 
       {/* HEADER */}
-      <header style={S.header}>
+      <header className={"nav-header"+(scrolled?" scrolled":"")} style={S.header}>
         <div className="nav-hwrap" style={S.hWrap}>
           <div className="nav-logo" style={S.logoWrap} onClick={()=>setView("shop")}><span style={S.logoText}>STITCH'D</span></div>
           <div className="nav-category-strip" style={S.hMid}><div style={S.marqueeTrack}><span style={S.marqueeInner}>{Array(4).fill("SOUTH ASIAN PRE-LOVED FASHION \u00a0✦\u00a0 SAREES \u00a0✦\u00a0 LEHENGAS \u00a0✦\u00a0 SHERWANIS \u00a0✦\u00a0 REAL MEASUREMENTS \u00a0✦\u00a0 ").join("")}</span></div></div>
