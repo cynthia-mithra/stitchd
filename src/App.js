@@ -1447,6 +1447,21 @@ export default function App() {
     }catch(e){ flash("Failed to update order status."); }
   }
 
+  // Buyer confirms they've received the item and it's all OK (Vinted-style):
+  // mark the order completed and RELEASE the seller's held earnings from pending
+  // to their withdrawable balance.
+  async function confirmOrderReceived(order){
+    if(!order||order.buyer_id!==user?.id) return;
+    try{
+      await db.updateOrder(order.id,{status:"completed"},token);
+      setMyOrders(p=>p.map(o=>o.id===order.id?{...o,status:"completed"}:o));
+      if(order.listing_id) await db.releaseSaleEarnings(order.listing_id,token);
+      const title=items.find(i=>i.id===order.listing_id)?.name||"your order";
+      if(order.seller_id) await notify(order.seller_id,"sale","💸 Payment released",`The buyer confirmed receipt of "${title}" — your earnings are now available to withdraw.`,order.listing_id);
+      flash("Thanks for confirming! The seller's payment has been released.",6000);
+    }catch(e){ flash("Couldn't confirm receipt. Please try again."); }
+  }
+
   // Open (or reuse) the conversation tied to an order, working for BOTH parties:
   // the buyer "MESSAGE SELLER" and the seller "MESSAGE BUYER" land in the same
   // thread because the conversation is keyed by the order's fixed buyer/seller ids
@@ -4433,6 +4448,7 @@ export default function App() {
         ordersTab={ordersTab} setOrdersTab={setOrdersTab} ordersLoading={ordersLoading} myOrders={myOrders}
         orderProfiles={orderProfiles}
         updateOrderStatus={updateOrderStatus}
+        confirmOrderReceived={confirmOrderReceived}
         startOrderConversation={startOrderConversation}
         openDispute={openDispute}
       />

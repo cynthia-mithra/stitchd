@@ -537,6 +537,10 @@ export const db = {
   // Newest first. Balance is derived client-side as the sum of every non-'failed'
   // row's amount_pence (credits positive, withdrawals negative).
   async getWalletTransactions(uid,t){ if(!uid)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // Release a held sale credit to the seller's withdrawable balance once the buyer
+  // confirms receipt (Vinted-style escrow). Keyed on the listing (sells once), so
+  // it flips that listing's pending 'sale' credit → 'available'.
+  async releaseSaleEarnings(listingId,t){ if(!listingId)return; await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?listing_id=eq.${listingId}&type=eq.sale&status=eq.pending`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({status:"available"})}); },
 
   // Fire the tailor-approved email (resolved server-side from the tailor id).
   fireTailorApprovedEmail(tailorId){ if(tailorId) fireEmail({type:"tailor_approved",tailorId}); },

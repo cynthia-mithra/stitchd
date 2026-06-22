@@ -1,5 +1,5 @@
 import React from "react";
-import { Package, Mail, AlertCircle } from "lucide-react";
+import { Package, Mail, AlertCircle, CheckCircle } from "lucide-react";
 import { S } from "../styles";
 import { VerifiedBadge } from "../components/Shared";
 
@@ -11,6 +11,7 @@ import { VerifiedBadge } from "../components/Shared";
 // model so the badge + seller dropdown stay consistent no matter what's stored.
 const normaliseStatus = (s) => {
   const v = String(s || "").toLowerCase();
+  if (v === "completed" || v === "received") return "completed";
   if (v === "dispatched" || v === "shipped") return "dispatched";
   if (v === "delivered") return "delivered";
   return "pending"; // paid / pending / disputed / anything else
@@ -21,6 +22,7 @@ const STATUS_BADGE = {
   pending:    { label: "PENDING",    background: "#111",     color: "#fff" },
   dispatched: { label: "DISPATCHED", background: "#00E5CC",  color: "#111" },
   delivered:  { label: "DELIVERED",  background: "#FF1493",  color: "#fff" },
+  completed:  { label: "COMPLETED",  background: "#34C759",  color: "#fff" },
 };
 const STATUS_FLOW = ["pending", "dispatched", "delivered"];
 
@@ -28,7 +30,7 @@ export default function Orders({
   view, setView, user, items,
   ordersTab, setOrdersTab, ordersLoading, myOrders,
   orderProfiles = {},
-  updateOrderStatus, startOrderConversation,
+  updateOrderStatus, confirmOrderReceived = () => {}, startOrderConversation,
   openDispute = () => {},
 }) {
   if (view !== "orders") return null;
@@ -109,26 +111,47 @@ export default function Orders({
                         <Mail width={14} height={14} /> MESSAGE SELLER
                       </button>
                     )}
+                    {/* BUYER → confirm receipt (Vinted-style). Releases the seller's
+                        held earnings. Shown once the item is on its way and not yet
+                        completed. */}
+                    {isBuyer && status !== "pending" && status !== "completed" && (
+                      <button className="hbtn" style={{ ...S.hBtn, background: "#34C759", color: "#fff", border: "2px solid #111", borderRadius: 0, fontSize: 11, padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => { if (window.confirm("Confirm you've received this item and everything's OK? This releases the seller's payment.")) confirmOrderReceived(order); }}>
+                        <CheckCircle width={14} height={14} /> CONFIRM RECEIVED
+                      </button>
+                    )}
                     {/* BUYER → report a problem (dispute). Only once the item has been
                         dispatched/delivered — i.e. status is not PENDING (issue PART 2). */}
-                    {isBuyer && status !== "pending" && (
+                    {isBuyer && status !== "pending" && status !== "completed" && (
                       <button className="hbtn" style={{ ...S.hBtn, background: "#fff", color: "#111", border: "2px solid #111", borderRadius: 0, fontSize: 11, padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => openDispute(order)}>
                         <AlertCircle width={14} height={14} /> REPORT A PROBLEM
                       </button>
                     )}
+                    {isBuyer && status === "completed" && (
+                      <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: "#34C759", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                        <CheckCircle width={14} height={14} /> RECEIVED · PAYMENT RELEASED
+                      </span>
+                    )}
                     {/* SELLER → status dropdown + message the buyer */}
                     {!isBuyer && (
                       <>
-                        <label style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: "#888" }}>STATUS</label>
-                        <select
-                          value={status}
-                          onChange={e => updateOrderStatus(order.id, e.target.value)}
-                          style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 1, padding: "8px 12px", border: "2px solid #111", borderRadius: 0, background: "#fff", color: "#111", cursor: "pointer" }}
-                        >
-                          {STATUS_FLOW.map(s => (
-                            <option key={s} value={s}>{STATUS_BADGE[s].label}</option>
-                          ))}
-                        </select>
+                        {status !== "completed" ? (
+                          <>
+                            <label style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: "#888" }}>STATUS</label>
+                            <select
+                              value={status}
+                              onChange={e => updateOrderStatus(order.id, e.target.value)}
+                              style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 1, padding: "8px 12px", border: "2px solid #111", borderRadius: 0, background: "#fff", color: "#111", cursor: "pointer" }}
+                            >
+                              {STATUS_FLOW.map(s => (
+                                <option key={s} value={s}>{STATUS_BADGE[s].label}</option>
+                              ))}
+                            </select>
+                          </>
+                        ) : (
+                          <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: "#34C759", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <CheckCircle width={14} height={14} /> PAYMENT RELEASED
+                          </span>
+                        )}
                         {startOrderConversation && order.buyer_id && (
                           <button className="hbtn" style={{ ...S.hBtn, background: "#fff", color: "#111", border: "2px solid #111", borderRadius: 0, fontSize: 11, padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => startOrderConversation(order)}>
                             <Mail width={14} height={14} /> MESSAGE BUYER
