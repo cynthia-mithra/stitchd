@@ -291,7 +291,6 @@ export default function App() {
   const [ordersLoading,  setOrdersLoading]  = useState(false);
   const [deliveryAddress,setDeliveryAddress]= useState({name:"",line1:"",line2:"",city:"",postcode:"",country:"UK"});
   const [showAddressForm,setShowAddressForm]= useState(false);
-  const [newListings,    setNewListings]    = useState([]);
   const [priceDrops,     setPriceDrops]     = useState([]);
   const [trendingItems,  setTrendingItems]  = useState([]);
   const [ordersTab,      setOrdersTab]      = useState("all");
@@ -1430,8 +1429,8 @@ export default function App() {
   }
 
   async function loadHomeSections(){
-    const [newL,drops,trending]=await Promise.all([db.getNewListings(token),db.getPriceDrops(token),db.getTrending(token)]);
-    setNewListings(newL); setPriceDrops(drops); setTrendingItems(trending);
+    const [drops,trending]=await Promise.all([db.getPriceDrops(token),db.getTrending(token)]);
+    setPriceDrops(drops); setTrendingItems(trending);
   }
 
   useEffect(()=>{ loadHomeSections(); },[]);
@@ -3229,11 +3228,11 @@ export default function App() {
     return visible.filter(i=>i.created_at&&new Date(i.created_at).getTime()>=cutoff);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[visible]);
-  // The homepage rail wants the 4 most recent *available* arrivals, independent
+  // The homepage rail wants the most recent *available* arrivals, independent
   // of the shop filters (it only renders when no filter is active anyway).
   const homeArrivals = useMemo(()=>{
     const cutoff=Date.now()-NEW_ARRIVAL_MS;
-    return items.filter(i=>!i.sold&&i.status!=="inactive"&&!vacationSellers.has(i.user_id)&&i.created_at&&new Date(i.created_at).getTime()>=cutoff).slice(0,4);
+    return items.filter(i=>!i.sold&&i.status!=="inactive"&&!vacationSellers.has(i.user_id)&&i.created_at&&new Date(i.created_at).getTime()>=cutoff).slice(0,8);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[items,vacationSellers]);
   // Phase 14 — resolve the wishlisted listing_ids (most-recent-first) to full
@@ -4388,7 +4387,7 @@ export default function App() {
         visible={isNewArrivals?newArrivalItems:visible} loading={loading} error={error} fetchItems={fetchItems}
         newArrivals={isNewArrivals} homeArrivals={homeArrivals} goNewArrivals={()=>{clearFilters();setView("newarrivals");}}
         openDetail={openDetail} fitsMe={fitsMe}
-        newListings={newListings} priceDrops={priceDrops} trendingItems={trendingItems}
+        priceDrops={priceDrops} trendingItems={trendingItems}
         sellerRatings={sellerRatings} fastSellers={fastSellers} verifiedSellers={verifiedSellers}
         bundleCardSellers={bundleCardSellers}
         wishlistCounts={wishlistCounts} myWishlist={myWishlist} toggleFavourite={toggleFavourite}

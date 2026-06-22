@@ -11,6 +11,25 @@ import { LookCard } from "./Looks";
 import { StyleInspiration } from "./StyleFeed";
 import LoginPromptModal from "../components/LoginPromptModal";
 
+// Shared header for every homepage rail (New Arrivals, Shop the Look, Price
+// Drops, Trending) so they read consistently: an accent-coloured icon + bold
+// title + subtitle, with an optional "VIEW ALL" on the right.
+function RailHeader({ icon, title, subtitle, accent = "#111", onViewAll }) {
+  return (
+    <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:16,marginBottom:20,flexWrap:"wrap"}}>
+      <div>
+        <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(24px,4vw,34px)",fontWeight:900,letterSpacing:-0.5,lineHeight:1,color:"#111",display:"flex",alignItems:"center",gap:10,margin:0}}>
+          {icon&&<span style={{color:accent,display:"inline-flex"}}>{icon}</span>} {title}
+        </h2>
+        {subtitle&&<p style={{fontFamily:"'Barlow',sans-serif",fontSize:14,color:"#888",margin:"5px 0 0"}}>{subtitle}</p>}
+      </div>
+      {onViewAll&&(
+        <button className="hbtn" style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#FF1493",textTransform:"uppercase",display:"inline-flex",alignItems:"center",gap:6,padding:0}} onClick={onViewAll}>VIEW ALL <ArrowRight width={15} height={15}/></button>
+      )}
+    </div>
+  );
+}
+
 export default function Shop({
   view,
   user, profile, setView, setAuthMode, onGateAuth = () => {},
@@ -30,7 +49,7 @@ export default function Shop({
   visible, loading, error, fetchItems,
   newArrivals = false, homeArrivals = [], goNewArrivals = () => {},
   openDetail, fitsMe,
-  newListings, priceDrops, trendingItems,
+  priceDrops, trendingItems,
   sellerRatings = {},
   fastSellers = new Set(),
   verifiedSellers = new Set(),
@@ -400,13 +419,7 @@ export default function Shop({
           itself, while filtering, and when there are no recent listings. */}
       {!newArrivals&&!hasFilters&&!followingActive&&homeArrivals.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
-          <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:16,marginBottom:20,flexWrap:"wrap"}}>
-            <div>
-              <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(28px,5vw,40px)",fontWeight:900,letterSpacing:-0.5,lineHeight:1,color:"#111",display:"flex",alignItems:"center",gap:10}}><Sparkles width={28} height={28}/> NEW ARRIVALS</h2>
-              <p style={{fontFamily:"'Barlow',sans-serif",fontSize:14,color:"#888",marginTop:4}}>Fresh drops. Updated daily.</p>
-            </div>
-            <button className="hbtn" style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#FF1493",textTransform:"uppercase",display:"inline-flex",alignItems:"center",gap:6,padding:0}} onClick={goNewArrivals}>VIEW ALL <ArrowRight width={15} height={15}/></button>
-          </div>
+          <RailHeader icon={<Sparkles width={26} height={26}/>} title="NEW ARRIVALS" subtitle="Fresh drops, updated daily" accent="#34C759" onViewAll={goNewArrivals}/>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
             {homeArrivals.map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
@@ -434,13 +447,7 @@ export default function Shop({
           scrolls horizontally on mobile and is a 3-up grid on desktop. */}
       {!newArrivals&&!hasFilters&&!followingActive&&looks.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
-          <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:16,marginBottom:20,flexWrap:"wrap"}}>
-            <div>
-              <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(28px,5vw,40px)",fontWeight:900,letterSpacing:-0.5,lineHeight:1,color:"#111"}}>SHOP THE LOOK</h2>
-              <p style={{fontFamily:"'Barlow',sans-serif",fontSize:14,color:"#888",marginTop:4}}>Complete outfits, all pre-loved</p>
-            </div>
-            <button className="hbtn" style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#FF1493",textTransform:"uppercase",display:"inline-flex",alignItems:"center",gap:6,padding:0}} onClick={()=>setView("looks")}>VIEW ALL <ArrowRight width={15} height={15}/></button>
-          </div>
+          <RailHeader icon={<Sparkles width={26} height={26}/>} title="SHOP THE LOOK" subtitle="Complete outfits, all pre-loved" accent="#FF1493" onViewAll={()=>setView("looks")}/>
           <div className="looks-grid looks-rail">
             {looks.slice(0,6).map(look=><LookCard key={look.id} look={look} onOpen={openLook}/>)}
           </div>
@@ -453,36 +460,10 @@ export default function Shop({
         <StyleInspiration posts={homeStylePosts} profilesMap={homeStyleProfiles} onOpen={openStyleFeed} />
       )}
 
-      {/* NEW IN */}
-      {!newArrivals&&!hasFilters&&!followingActive&&newListings.length>0&&(
-        <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><Sparkles width={16} height={16}/> NEW IN — LAST 48 HOURS</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
-            {newListings.slice(0,8).map((item,idx)=>{
-              const accent=CARD_COLORS[idx%CARD_COLORS.length];
-              return(
-                <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
-                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
-                    <div style={{position:"absolute",top:12,left:12,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
-                    <FastBadge sellerId={item.user_id}/>
-                  </Thumb>
-                  <div style={S.cardBody} className="card-body">
-                    <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
-                    <p style={S.cardName} className="card-name">{item.name}</p>
-                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span><span style={{display:"flex",alignItems:"center",gap:8}}><WishCount item={item}/><SellerRating sellerId={item.user_id}/></span></div>
-                  </div>
-                  <div style={{...S.accentBar,background:accent}}/>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* PRICE DROPS */}
       {!newArrivals&&!hasFilters&&!followingActive&&priceDrops.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><TrendingDown width={16} height={16}/> PRICE DROPS</div>
+          <RailHeader icon={<TrendingDown width={26} height={26}/>} title="PRICE DROPS" subtitle="Recently reduced by their sellers" accent="#FF9500"/>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
             {priceDrops.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
@@ -515,7 +496,7 @@ export default function Shop({
       {/* TRENDING */}
       {!newArrivals&&!hasFilters&&!followingActive&&trendingItems.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 48px",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #BF5AF2",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><Flame width={16} height={16}/> TRENDING — MOST VIEWED</div>
+          <RailHeader icon={<Flame width={26} height={26}/>} title="TRENDING" subtitle="The most-viewed pieces right now" accent="#BF5AF2"/>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
             {trendingItems.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
