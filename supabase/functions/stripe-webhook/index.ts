@@ -104,6 +104,32 @@ async function fetchListingsHealing(filter: string): Promise<ListingRow[] | null
   }
   return null;
 }
+// ── Wallet — credit the seller's earnings on a completed sale ─────────────────
+// Stitch'd keeps an 8% commission; the rest is credited to the seller's wallet as
+// an 'available' balance they can withdraw. Idempotent on (listing_id, session)
+// via the wallet_tx_sale_unique index, so a retried webhook can't double-credit
+// (the duplicate insert simply fails the unique constraint and is ignored).
+const WALLET_COMMISSION_RATE = 0.08;
+async function creditSellerWallet(
+  sellerId: string | null | undefined,
+  grossPence: number,
+  ctx: { listingId?: string; sessionId?: string; orderId?: string; description?: string },
+) {
+  if (!sellerId || !Number.isFinite(grossPence) || grossPence <= 0) return;
+  const netPence = Math.round(grossPence * (1 - WALLET_COMMISSION_RATE));
+  if (netPence <= 0) return;
+  await insertHealing("wallet_transactions", {
+    user_id: sellerId,
+    type: "sale",
+    amount_pence: netPence,
+    status: "available",
+    listing_id: ctx.listingId ?? null,
+    stripe_session_id: ctx.sessionId ?? null,
+    order_id: ctx.orderId ?? null,
+    description: ctx.description ?? "Sale earnings (after 8% fee)",
+  });
+}
+
 async function insertHealing(table: string, body: Record<string, unknown>) {
   let payload = { ...body };
   for (let i = 0; i < 30; i++) {
@@ -302,6 +328,13 @@ async function handleOffer(session: Stripe.Checkout.Session) {
     stripe_session_id: session.id,
     status: "paid",
     offer_accepted: true,
+  });
+
+  // 3b. Credit the seller's wallet (offer amount − 8% commission).
+  await creditSellerWallet(sellerId, offerPence, {
+    listingId,
+    sessionId: session.id,
+    description: `Sale: ${title} (offer)`,
   });
 
   // 4. In-app notifications — seller + buyer.
@@ -747,6 +780,13 @@ Deno.serve(async (req) => {
               bundle_discount_amount_pence: Math.round((pence * bundle.percentage) / 100),
             }
           : {}),
+      });
+
+      // 2b. Credit the seller's wallet (sale price − 8% commission).
+      await creditSellerWallet(l.user_id, pence, {
+        listingId: l.id,
+        sessionId: stripeSessionId,
+        description: `Sale: ${l.name}`,
       });
 
       // 3. Notify the seller (in-app).

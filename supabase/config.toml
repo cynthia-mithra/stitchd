@@ -87,3 +87,9 @@ verify_jwt = false
 
 [functions.process-tailor-payout]
 verify_jwt = false
+
+[functions.seller-connect]
+verify_jwt = false
+
+[functions.wallet-withdraw]
+verify_jwt = false

@@ -13,6 +13,7 @@ import { startCheckout, startOfferCheckout, startAlterationCheckout, verifySessi
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
 import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } from "./lib/connect";
+import { startSellerConnect, verifySellerConnect, withdrawFromWallet } from "./lib/wallet";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock } from "lucide-react";
@@ -22,6 +23,7 @@ import PricingGuide from "./components/PricingGuide";
 import Tailors from "./views/Tailors";
 import TailorProfiles from "./views/TailorProfiles";
 import Alterations, { RequestAlterationModal, gbp } from "./views/Alterations";
+import WalletView from "./views/Wallet";
 import Detail from "./views/Detail";
 import Shop from "./views/Shop";
 import Auth from "./views/Auth";
@@ -299,6 +301,12 @@ export default function App() {
   // marketplace as the buyer-facing discovery surface.
   const [directoryTailors,  setDirectoryTailors]  = useState([]);
   const [directoryLoading,  setDirectoryLoading]  = useState(false);
+  // Wallet — seller earnings ledger + Stripe Connect payout state.
+  const [walletTxns,        setWalletTxns]        = useState([]);
+  const [walletLoading,     setWalletLoading]     = useState(false);
+  const [payoutBusy,        setPayoutBusy]        = useState(false);
+  const [withdrawBusy,      setWithdrawBusy]      = useState(false);
+  const [walletConnectReturn,setWalletConnectReturn]=useState(null);
   // ── Phase 15 — Tailor profiles (the single tailor system). `myTailor` is the
   // signed-in user's tailor row (application/profile) or null. The apply flow,
   // dashboard edit form, portfolio and public profile each get their own state.
@@ -571,6 +579,13 @@ export default function App() {
       try{ if(new URLSearchParams(window.location.search).get("paid")==="true"){ setTimeout(()=>flash("Payment received — your booking is confirmed!",6000),400); } }catch(e){}
       setView("alterations");
       window.history.replaceState({},"","/alterations");
+    } else if(path==="/wallet"){
+      // Wallet deep link + Stripe Connect onboarding return (?connect=success).
+      // Data loads via the view-watching effect; the connect return is verified
+      // once the session is ready (see the wallet connect-return effect below).
+      try{ const c=new URLSearchParams(window.location.search).get("connect"); if(c) setWalletConnectReturn(c); }catch(e){}
+      setView("wallet");
+      window.history.replaceState({},"","/wallet");
     } else if(path==="/tailor-dashboard"){
       // Phase 15 — Stripe Connect onboarding return. ?connect=success means the
       // tailor finished the hosted flow; ?connect=refresh means the link expired.
@@ -591,6 +606,28 @@ export default function App() {
   // /alterations, so the page is current after navigating to it or deep-linking.
   useEffect(()=>{ if(view==="alterations"&&user&&token) loadBuyerAlterations(); // eslint-disable-next-line react-hooks/exhaustive-deps
   },[view,user,token]);
+
+  // Wallet — (re)load the ledger whenever the wallet view is open with a session
+  // (covers a cold /wallet deep link, where openWallet ran before auth resolved).
+  useEffect(()=>{ if(view==="wallet"&&user&&token) loadWallet(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[view,user,token]);
+
+  // Wallet — Stripe Connect onboarding return. After ?connect=success, confirm
+  // details_submitted against Stripe and flip the local onboarding flag.
+  useEffect(()=>{
+    if(!walletConnectReturn||!user||!token) return;
+    const wasSuccess=walletConnectReturn==="success";
+    setWalletConnectReturn(null);
+    (async()=>{
+      try{ const res=await verifySellerConnect(user.id);
+        const done=!!(res&&res.onboarding_complete);
+        setProfile(p=>p?{...p,stripe_onboarding_complete:done}:p);
+        if(done) flash("Your bank account is connected — you can withdraw now.");
+        else if(wasSuccess) flash("Almost there — finish your payout setup to withdraw.",6000);
+      }catch(e){}
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[walletConnectReturn,user,token]);
 
   // Phase 14 — public shared wishlist deep link (/wishlist/<slug>). A shared link
   // lands here on a cold load with no login required; we detect the slug, switch
@@ -1710,6 +1747,39 @@ export default function App() {
     try{ setDirectoryTailors(await db.getApprovedTailors(token)); }
     catch(e){ setDirectoryTailors([]); }
     finally{ setDirectoryLoading(false); }
+  }
+
+  // ── Wallet ────────────────────────────────────────────────────────────────
+  async function loadWallet(){
+    if(!user||!token) return;
+    setWalletLoading(true);
+    try{ setWalletTxns(await db.getWalletTransactions(user.id,token)); }
+    catch(e){ setWalletTxns([]); }
+    finally{ setWalletLoading(false); }
+  }
+  function openWallet(){ setView("wallet"); window.scrollTo(0,0); loadWallet(); }
+  // Start (or resume) Stripe Connect onboarding so the seller can withdraw.
+  async function setupWalletPayouts(){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    setPayoutBusy(true);
+    try{
+      const res=await startSellerConnect(user.id); // redirects on success; returns {onboarding_complete} if done
+      if(res&&res.onboarding_complete){ setProfile(p=>p?{...p,stripe_onboarding_complete:true}:p); flash("Your bank account is connected — you can withdraw now."); }
+    }catch(e){ flash(errMsg(e)); }
+    finally{ setPayoutBusy(false); }
+  }
+  // Withdraw an amount (pence) to the seller's bank, then refresh the ledger.
+  async function withdrawWallet(amountPence,onDone){
+    if(!user) return;
+    setWithdrawBusy(true);
+    try{
+      const res=await withdrawFromWallet(user.id,amountPence);
+      if(res&&res.needs_onboarding){ flash("Finish your payout setup first."); setProfile(p=>p?{...p,stripe_onboarding_complete:false}:p); return; }
+      flash(`${gbp(amountPence)} is on its way to your bank.`,6000);
+      if(typeof onDone==="function") onDone();
+      await loadWallet();
+    }catch(e){ if(e&&e.data&&e.data.needs_onboarding){ flash("Finish your payout setup first."); setProfile(p=>p?{...p,stripe_onboarding_complete:false}:p); } else flash(errMsg(e)); }
+    finally{ setWithdrawBusy(false); }
   }
 
   function fitsMe(item){
@@ -3296,6 +3366,7 @@ export default function App() {
     ]},
     {label:"SELLING", items:[
       {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();loadMyPromotions();setView("dashboard");}},
+      {label:"MY WALLET",      icon:<Wallet width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openWallet},
       ...(tailorApproved ? [] : tailorNavItems),
     ]},
     ...(tailorApproved ? [{label:"TAILORING", items:tailorNavItems}] : []),
@@ -4345,6 +4416,15 @@ export default function App() {
         open={!!reviewReq} onClose={()=>setReviewReq(null)}
         tailor={reviewReq&&reviewReq.tailors} busy={reviewBusy}
         onSubmit={submitTailorReview}
+      />
+
+      {/* WALLET — seller earnings balance, withdrawals (Stripe Connect) */}
+      <WalletView
+        view={view} setView={setView} user={user}
+        transactions={walletTxns} loading={walletLoading}
+        onboarded={!!(profile&&profile.stripe_onboarding_complete&&profile.stripe_account_id)}
+        onSetupPayouts={setupWalletPayouts} payoutBusy={payoutBusy}
+        onWithdraw={withdrawWallet} withdrawBusy={withdrawBusy}
       />
 
       {/* ORDERS */}
