@@ -20,7 +20,7 @@ export default function NotFound({ view, onHome = () => {}, onBrowse = () => {} 
       <p style={S.head}>THIS PAGE WENT OUT OF STYLE.</p>
       <p style={S.sub}>The link's broken or the piece has moved on — let's get you back to the good stuff.</p>
       <div style={S.ctas}>
-        <button className="hbtn" style={S.primary} onClick={onHome}>BACK TO SHOP →</button>
+        <button className="hbtn" style={S.primary} onClick={onHome}>BACK TO SHOP <span className="btn-arrow">→</span></button>
         <button className="hbtn" style={S.secondary} onClick={onBrowse}>NEW ARRIVALS ↓</button>
       </div>
     </div>

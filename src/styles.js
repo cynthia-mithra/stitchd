@@ -9,8 +9,16 @@ export const CSS=`
      the same subtle scale so the grid feels alive without being busy. */
   .card-top img,.card-top span{transition:transform .5s cubic-bezier(.22,1,.36,1) !important;}
   .scard:hover .card-top img,.scard:hover .card-top span{transform:scale(1.07) !important;}
-  .hbtn{transition:all .14s ease !important;}
-  .hbtn:hover{transform:scale(0.96) !important;filter:brightness(0.9) !important;}
+  /* Unified button feel: a confident lift + soft shadow on hover (replaces the
+     old dated scale-down), and a quick press-down on click. Applies to every
+     CTA site-wide since .hbtn is the shared button class. */
+  .hbtn{transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .18s ease,filter .18s ease !important;}
+  .hbtn:hover{transform:translateY(-2px) !important;box-shadow:0 9px 22px rgba(0,0,0,0.18) !important;filter:brightness(1.05) !important;}
+  .hbtn:active{transform:translateY(0) !important;box-shadow:0 3px 9px rgba(0,0,0,0.16) !important;}
+  /* Signature micro-interaction: a trailing arrow wrapped in .btn-arrow slides
+     right as the button lifts. Opt-in per CTA so only intentional arrows move. */
+  .btn-arrow{display:inline-block;transition:transform .2s cubic-bezier(.22,1,.36,1);}
+  .hbtn:hover .btn-arrow{transform:translateX(5px);}
   /* Desktop nav dropdown items turn pink on hover; the LOG OUT item keeps its red. */
   .nav-drop-item:hover{color:#FF1493 !important;}
   .nav-drop-item-danger:hover{color:#FF0000 !important;}

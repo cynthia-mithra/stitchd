@@ -3487,7 +3487,7 @@ export default function App() {
                 <button className="hbtn" style={{...S.hBtn,background:showNotifs?"#FF1493":"#fff",color:showNotifs?"#fff":"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setShowNotifs(p=>!p)}>
                   <Bell width={18} height={18} style={{verticalAlign:"middle"}}/> {unreadNotifs>0&&<span style={S.wishBadge}>{unreadNotifs}</span>}
                 </button>
-                <button className="hbtn" style={S.hBtn} onClick={()=>setView("add")}>LIST IT →</button>
+                <button className="hbtn" style={S.hBtn} onClick={()=>setView("add")}>LIST IT <span className="btn-arrow">→</span></button>
 
                 {/* DESKTOP / IPAD: profile icon with hover dropdown holding the rest */}
                 <div className="nav-dropdown-wrap" style={S.navDropWrap} onMouseEnter={()=>setNavMenuOpen(true)} onMouseLeave={()=>setNavMenuOpen(false)}>

@@ -297,7 +297,7 @@ export default function Shop({
               <p style={S.heroSub}>Fresh drops from across the community — pick up where you left off.</p>
               <div style={S.heroCtas}>
                 <button className="hbtn" style={S.heroBtnPrimary} onClick={()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"})}><span style={{display:"inline-flex",alignItems:"center",gap:8}}>BROWSE DROPS <ArrowDown width={16} height={16}/></span></button>
-                <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>setView("add")}>LIST YOUR PIECE →</button>
+                <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>setView("add")}>LIST YOUR PIECE <span className="btn-arrow">→</span></button>
               </div>
             </>
           ) : (
@@ -306,7 +306,7 @@ export default function Shop({
               <h1 style={S.heroH}><span style={S.heroLine1}>DESI</span><span style={S.heroLine2}>FITS</span><span style={S.heroLine3}>REHOMED.</span></h1>
               <p style={S.heroSub}>Buy or Resell South Asian fashion</p>
               <div style={S.heroCtas}>
-                <button className="hbtn" style={S.heroBtnPrimary} onClick={()=>(setAuthMode("signup"),setView("auth"))}>LIST YOUR PIECE →</button>
+                <button className="hbtn" style={S.heroBtnPrimary} onClick={()=>(setAuthMode("signup"),setView("auth"))}>LIST YOUR PIECE <span className="btn-arrow">→</span></button>
                 <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"})}><span style={{display:"inline-flex",alignItems:"center",gap:8}}>BROWSE DROPS <ArrowDown width={16} height={16}/></span></button>
               </div>
             </>
