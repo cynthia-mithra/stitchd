@@ -2,8 +2,13 @@ export const CSS=`
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,800&family=Barlow:wght@400;500;600&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{background:#fff;}
-  .scard{transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s !important;cursor:pointer;}
-  .scard:hover{transform:translateY(-8px) rotate(-0.5deg) !important;box-shadow:0 24px 60px rgba(0,0,0,0.13) !important;}
+  .scard{transition:transform .28s cubic-bezier(.22,1,.36,1),box-shadow .28s ease !important;cursor:pointer;}
+  .scard:hover{transform:translateY(-6px) !important;box-shadow:0 22px 50px rgba(0,0,0,0.14) !important;}
+  /* Trendy product-card interaction: the cover image gently zooms inside its
+     fixed (overflow:hidden) frame while the card lifts. Emoji-only cards get
+     the same subtle scale so the grid feels alive without being busy. */
+  .card-top img,.card-top span{transition:transform .5s cubic-bezier(.22,1,.36,1) !important;}
+  .scard:hover .card-top img,.scard:hover .card-top span{transform:scale(1.07) !important;}
   .hbtn{transition:all .14s ease !important;}
   .hbtn:hover{transform:scale(0.96) !important;filter:brightness(0.9) !important;}
   /* Desktop nav dropdown items turn pink on hover; the LOG OUT item keeps its red. */
