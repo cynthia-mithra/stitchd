@@ -108,16 +108,21 @@ export default function Shop({
   // one yet.
   const FollowingFeed = () => (
     <div style={S.gridWrap}>
-      {feedLoading&&<div style={S.loadingWrap}><div style={S.spinner}/></div>}
+      {feedLoading&&<SkeletonGrid count={6}/>}
       {!feedLoading&&following.length===0&&(
-        <div style={{textAlign:"center",padding:"56px 20px"}}>
-          <p style={{display:"flex",justifyContent:"center",marginBottom:12,color:"#ccc"}}><Heart width={48} height={48}/></p>
-          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,marginBottom:18}}>Follow sellers to see their listings here</p>
-          <button className="hbtn" style={{...S.hBtn,fontSize:13,padding:"12px 22px",border:"2px solid #111"}} onClick={()=>setShopTab("all")}>DISCOVER SELLERS →</button>
+        <div style={S.empty}>
+          <div style={S.emptyIcon}><Heart width={40} height={40}/></div>
+          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,margin:"20px 0 6px",letterSpacing:-0.5}}>YOUR FEED'S EMPTY.</p>
+          <p style={S.emptySub}>Follow sellers you love and their newest drops land right here.</p>
+          <button className="hbtn" style={S.hBtn} onClick={()=>setShopTab("all")}>DISCOVER SELLERS →</button>
         </div>
       )}
       {!feedLoading&&following.length>0&&feedItems.length===0&&(
-        <div style={{textAlign:"center",padding:"56px 20px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:"#bbb"}}>No new listings from sellers you follow yet.</div>
+        <div style={S.empty}>
+          <div style={S.emptyIcon}><Sparkles width={40} height={40}/></div>
+          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,margin:"20px 0 6px",letterSpacing:-0.5}}>ALL CAUGHT UP.</p>
+          <p style={S.emptySub}>No new listings from sellers you follow — check back soon.</p>
+        </div>
       )}
       {!feedLoading&&feedItems.length>0&&(
         <div style={S.grid} className="shop-grid">
@@ -239,6 +244,33 @@ export default function Shop({
       </article>
     );
   };
+  // Polished loading placeholder that mirrors the real card layout (image,
+  // category line, name, meta tags, price) so the grid keeps its shape while
+  // listings load — a shimmer sweeps across each grey block. Used by both the
+  // main grid and the FOLLOWING feed so loading looks identical everywhere.
+  const SkBlock = ({ w="100%", h=12, mb=0, r=2 }) => (
+    <div style={{width:w,height:h,marginBottom:mb,borderRadius:r,background:"linear-gradient(90deg,#f3f3f3 25%,#e9e9e9 50%,#f3f3f3 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s ease-in-out infinite"}}/>
+  );
+  const SkeletonCard = () => (
+    <div style={{...S.card,borderColor:"#eee",cursor:"default"}} aria-hidden="true">
+      <SkBlock h={200} r={0}/>
+      <div style={{padding:"16px 18px",background:"#fff",flex:1}}>
+        <SkBlock w="42%" h={9} mb={12}/>
+        <SkBlock w="82%" h={16} mb={8}/>
+        <SkBlock w="55%" h={16} mb={16}/>
+        <div style={{display:"flex",gap:6,marginBottom:16}}>
+          <SkBlock w={44} h={18}/><SkBlock w={56} h={18}/>
+        </div>
+        <SkBlock w="34%" h={22}/>
+      </div>
+      <div style={{height:4,width:"100%",background:"#eee"}}/>
+    </div>
+  );
+  const SkeletonGrid = ({ count=8 }) => (
+    <div style={S.grid} className="shop-grid">
+      {Array(count).fill(0).map((_,i)=><SkeletonCard key={i}/>)}
+    </div>
+  );
   return (
     <>
       {/* NEW ARRIVALS page header — replaces the hero when this view is the
@@ -379,16 +411,17 @@ export default function Shop({
       {hasFilters&&<div style={{padding:"12px 24px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:2,color:"#bbb",borderBottom:"1px solid #f0f0f0"}}>{visible.length} RESULT{visible.length!==1?"S":""}{search?` FOR "${search.toUpperCase()}"`:""}  <span style={{color:"#FF1493",cursor:"pointer",marginLeft:12}} onClick={clearFilters}>CLEAR</span></div>}
 
       <div style={S.gridWrap}>
-        {loading&&<div style={S.grid} className="shop-grid">{Array(8).fill(0).map((_,i)=><div key={i} style={{...S.card,borderColor:"#f0f0f0"}}><div style={{height:200,background:"linear-gradient(90deg,#f5f5f5 25%,#ececec 50%,#f5f5f5 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s infinite"}}/><div style={{padding:"16px 18px",background:"#fff"}}><div style={{height:16,background:"#f0f0f0",borderRadius:2,marginBottom:8,width:"80%"}}/><div style={{height:20,background:"#f0f0f0",borderRadius:2,width:"30%"}}/></div></div>)}</div>}
+        {loading&&<SkeletonGrid/>}
         {error&&<div style={S.errorBanner}>{error}<button style={S.retryBtn} onClick={fetchItems}>RETRY</button></div>}
         {!loading&&!error&&(
           <div style={S.grid} className="shop-grid">
             {visible.map((item,idx)=><ListingCard key={item.id} item={item} idx={idx}/>)}
             {visible.length===0&&(
               <div style={S.empty}>
-                <p style={{display:"flex",justifyContent:"center"}}>{hasFilters?<Search width={60} height={60}/>:<Shirt width={60} height={60}/>}</p>
-                <p style={{fontSize:28,fontWeight:900,margin:"12px 0 6px",fontFamily:"'Barlow Condensed',sans-serif"}}>{hasFilters?"NO RESULTS.":"NOTHING HERE YET."}</p>
-                {hasFilters?<button className="hbtn" style={S.hBtn} onClick={clearFilters}>CLEAR FILTERS</button>:<button className="hbtn" style={S.hBtn} onClick={()=>user?setView("add"):(setAuthMode("signup"),setView("auth"))}>LIST IT →</button>}
+                <div style={S.emptyIcon}>{hasFilters?<Search width={40} height={40}/>:<Shirt width={40} height={40}/>}</div>
+                <p style={{fontSize:30,fontWeight:900,margin:"20px 0 6px",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:-0.5}}>{hasFilters?"NO MATCHES.":"NOTHING HERE YET."}</p>
+                <p style={S.emptySub}>{hasFilters?"Try loosening a filter or two — your perfect piece might be one tweak away.":"Be the first to list a piece and start the rail."}</p>
+                {hasFilters?<button className="hbtn" style={S.hBtn} onClick={clearFilters}>CLEAR FILTERS</button>:<button className="hbtn" style={S.hBtn} onClick={()=>user?setView("add"):(setAuthMode("signup"),setView("auth"))}>LIST YOUR PIECE →</button>}
               </div>
             )}
           </div>

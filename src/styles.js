@@ -254,7 +254,9 @@ export const S={
   cardFoot:{display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"2px solid #f5f5f5",paddingTop:12,marginTop:"auto"},
   cardPrice:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,letterSpacing:-0.5},
   accentBar:{height:4,width:"100%"},
-  empty:{gridColumn:"1/-1",textAlign:"center",padding:"80px 20px"},
+  empty:{gridColumn:"1/-1",textAlign:"center",padding:"80px 20px",display:"flex",flexDirection:"column",alignItems:"center"},
+  emptyIcon:{width:88,height:88,border:"3px solid #111",borderRadius:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#111"},
+  emptySub:{fontFamily:"'Barlow',sans-serif",fontSize:15,color:"#999",lineHeight:1.55,maxWidth:380,margin:"0 0 24px"},
   main:{maxWidth:1200,margin:"0 auto",padding:"20px 12px"},
   back:{background:"none",border:"none",color:"#999",fontSize:12,cursor:"pointer",marginBottom:32,padding:0,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase"},
   // Product-page layout: image card (left) sits next to the details (right) and
