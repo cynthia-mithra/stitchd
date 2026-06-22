@@ -52,7 +52,7 @@ async function availableBalance(userId: string): Promise<number> {
   if (!r || !r.ok) return 0;
   const rows: Array<{ type: string; amount_pence: number; status: string }> = await r.json().catch(() => []);
   return rows
-    .filter((t) => t.status !== "failed" && !(t.type === "sale" && t.status === "pending"))
+    .filter((t) => t.status !== "failed" && (t.type !== "sale" || t.status === "available"))
     .reduce((s, t) => s + (Number(t.amount_pence) || 0), 0);
 }
 
@@ -119,9 +119,16 @@ Deno.serve(async (req) => {
       });
       transferId = transfer.id;
     } catch (e) {
-      const reason = (e as Error).message || "Stripe transfer failed.";
-      await patchTx(txRow.id, { status: "failed", failure_reason: reason.slice(0, 480) });
-      return json({ error: reason }, 502);
+      const raw = (e as Error).message || "Stripe transfer failed.";
+      await patchTx(txRow.id, { status: "failed", failure_reason: raw.slice(0, 480) });
+      // Friendly message — the seller shouldn't see Stripe's raw "insufficient
+      // available funds … dashboard.stripe.com" text. The withdrawal row was
+      // marked failed, so the wallet balance is unchanged.
+      const insufficient = /insufficient|balance/i.test(raw);
+      const friendly = insufficient
+        ? "We couldn't complete the withdrawal right now — the payment balance is still settling. Your wallet balance is unchanged; please try again shortly."
+        : "We couldn't complete the withdrawal right now. Your wallet balance is unchanged; please try again.";
+      return json({ error: friendly, code: insufficient ? "balance_settling" : "transfer_failed" }, 502);
     }
 
     await patchTx(txRow.id, { status: "paid", stripe_transfer_id: transferId });

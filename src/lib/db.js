@@ -541,6 +541,14 @@ export const db = {
   // confirms receipt (Vinted-style escrow). Keyed on the listing (sells once), so
   // it flips that listing's pending 'sale' credit → 'available'.
   async releaseSaleEarnings(listingId,t){ if(!listingId)return; await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?listing_id=eq.${listingId}&type=eq.sale&status=eq.pending`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({status:"available"})}); },
+  // Dispute hold: a buyer reported a problem → keep the credit held (pending →
+  // disputed) so it can't auto-release until an admin resolves it.
+  async holdDisputedEarnings(listingId,t){ if(!listingId)return; await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?listing_id=eq.${listingId}&type=eq.sale&status=eq.pending`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({status:"disputed"})}); },
+  // Dispute resolution: release to the seller (resolved) or reverse so they're not
+  // paid (refunded). Acts on whichever held state the credit is in.
+  async settleDisputedEarnings(listingId,release,t){ if(!listingId)return; await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?listing_id=eq.${listingId}&type=eq.sale&status=in.(pending,disputed)`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({status:release?"available":"failed"})}); },
+  // Bulk-release held credits by id (used by the auto-release safety net).
+  async releaseWalletCreditsByIds(ids,t){ if(!ids||!ids.length)return; await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?id=in.(${ids.join(",")})`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({status:"available"})}); },
 
   // Fire the tailor-approved email (resolved server-side from the tailor id).
   fireTailorApprovedEmail(tailorId){ if(tailorId) fireEmail({type:"tailor_approved",tailorId}); },

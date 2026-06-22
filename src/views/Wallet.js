@@ -6,18 +6,19 @@ import { F } from "../components/Shared";
 const PINK = "#FF1493";
 const gbp = (pence) => `£${(Math.abs(Number(pence) || 0) / 100).toFixed(2)}`;
 
-// Available (withdrawable) balance = every non-failed row EXCEPT sale credits
-// still held pending the buyer's confirmation (Vinted-style escrow).
+// Available (withdrawable) balance: a sale only counts once 'available' (released);
+// withdrawals (pending/paid) reduce it; 'failed' is ignored. So held sale credits
+// (pending or disputed) are excluded.
 export function walletBalancePence(txns = []) {
   return txns
-    .filter((t) => t.status !== "failed" && !(t.type === "sale" && t.status === "pending"))
+    .filter((t) => t.status !== "failed" && (t.type !== "sale" || t.status === "available"))
     .reduce((s, t) => s + (Number(t.amount_pence) || 0), 0);
 }
 
-// Earnings held until buyers confirm receipt (not yet withdrawable).
+// Earnings held until buyers confirm receipt / a dispute resolves (not withdrawable).
 export function walletPendingInPence(txns = []) {
   return txns
-    .filter((t) => t.type === "sale" && t.status === "pending")
+    .filter((t) => t.type === "sale" && (t.status === "pending" || t.status === "disputed"))
     .reduce((s, t) => s + (Number(t.amount_pence) || 0), 0);
 }
 
@@ -137,6 +138,7 @@ export default function Wallet({
             const credit = (Number(t.amount_pence) || 0) >= 0;
             const failed = t.status === "failed";
             const pending = t.status === "pending";
+            const disputed = t.status === "disputed";
             return (
               <div key={t.id} style={{ border: "2px solid #111", padding: "13px 16px", display: "flex", alignItems: "center", gap: 14, opacity: failed ? 0.55 : 1 }}>
                 <div style={{ width: 36, height: 36, borderRadius: "50%", border: "2px solid #111", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: credit ? "#34C75922" : "#f2f2f2", color: credit ? "#1a8c3e" : "#111" }}>
@@ -146,8 +148,9 @@ export default function Wallet({
                   <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, color: "#111", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.description || (credit ? "Sale earnings" : "Withdrawal")}</p>
                   <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, color: "#999", letterSpacing: 0.5, margin: "2px 0 0", display: "flex", alignItems: "center", gap: 6 }}>
                     {new Date(t.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                    {pending && <span style={{ color: "#FF9500", display: "inline-flex", alignItems: "center", gap: 3 }}><Clock width={11} height={11} /> PENDING</span>}
-                    {failed && <span style={{ color: PINK, display: "inline-flex", alignItems: "center", gap: 3 }}><AlertTriangle width={11} height={11} /> FAILED</span>}
+                    {pending && <span style={{ color: "#FF9500", display: "inline-flex", alignItems: "center", gap: 3 }}><Clock width={11} height={11} /> {t.type === "sale" ? "AWAITING BUYER" : "PENDING"}</span>}
+                    {disputed && <span style={{ color: "#FF9500", display: "inline-flex", alignItems: "center", gap: 3 }}><AlertTriangle width={11} height={11} /> ON HOLD (DISPUTE)</span>}
+                    {failed && <span style={{ color: PINK, display: "inline-flex", alignItems: "center", gap: 3 }}><AlertTriangle width={11} height={11} /> {t.type === "sale" ? "REVERSED" : "FAILED"}</span>}
                   </p>
                 </div>
                 <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 19, fontWeight: 900, letterSpacing: -0.5, color: credit ? "#1a8c3e" : "#111", flexShrink: 0 }}>

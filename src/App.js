@@ -1202,6 +1202,9 @@ export default function App() {
       }
       const o=disputeOrder;
       await db.insertDispute({order_id:o.id,buyer_id:user.id,seller_id:o.seller_id||null,problem_type:disputeForm.problem_type,details:disputeForm.details.trim(),photo_url,status:"open"},token);
+      // Dispute hold — keep the seller's earnings held (won't auto-release) until
+      // an admin resolves it.
+      if(o.listing_id) await db.holdDisputedEarnings(o.listing_id,token);
       // Notify the Stitch'd admin(s) — type='dispute', routed to each is_admin user.
       const title=items.find(i=>i.id===o.listing_id)?.name||"an order";
       const admins=await db.getAdmins(token);
@@ -1243,6 +1246,12 @@ export default function App() {
     try{
       await db.updateDispute(id,{status:newStatus},token);
       setAdminDisputes(p=>p.map(x=>x.id===id?{...x,status:newStatus}:x));
+      // Settle the held earnings on resolution: 'resolved' releases them to the
+      // seller; 'refunded' reverses them so the seller isn't paid. The listing id
+      // comes from the embedded order on the dispute row.
+      const listingId=(d&&d.orders&&d.orders.listing_id)||null;
+      if(listingId&&newStatus==="resolved") await db.settleDisputedEarnings(listingId,true,token);
+      if(listingId&&newStatus==="refunded") await db.settleDisputedEarnings(listingId,false,token);
       if(d&&d.buyer_id){
         const label=newStatus.replace(/_/g," ").toUpperCase();
         await notify(d.buyer_id,"dispute","⚖️ Dispute update",`Your dispute has been updated to: ${label}`,d.order_id);
@@ -1765,10 +1774,19 @@ export default function App() {
   }
 
   // ── Wallet ────────────────────────────────────────────────────────────────
+  // Auto-release safety net: held earnings the buyer never confirmed are released
+  // 14 days after the sale (disputed credits are left held for the admin).
+  const AUTO_RELEASE_MS = 14*24*60*60*1000;
   async function loadWallet(){
     if(!user||!token) return;
     setWalletLoading(true);
-    try{ setWalletTxns(await db.getWalletTransactions(user.id,token)); }
+    try{
+      let txns=await db.getWalletTransactions(user.id,token);
+      const cutoff=Date.now()-AUTO_RELEASE_MS;
+      const due=txns.filter(t=>t.type==="sale"&&t.status==="pending"&&t.created_at&&new Date(t.created_at).getTime()<cutoff).map(t=>t.id);
+      if(due.length){ try{ await db.releaseWalletCreditsByIds(due,token); txns=txns.map(t=>due.includes(t.id)?{...t,status:"available"}:t); }catch(e){} }
+      setWalletTxns(txns);
+    }
     catch(e){ setWalletTxns([]); }
     finally{ setWalletLoading(false); }
   }
