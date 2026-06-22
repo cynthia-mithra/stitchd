@@ -533,6 +533,11 @@ export const db = {
   async insertPortfolioItems(rows,t){ if(!rows.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(rows)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async updatePortfolioItem(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
   async deletePortfolioItem(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
+  // ── Wallet — a seller's earnings ledger (sale credits + withdrawals) ──────────
+  // Newest first. Balance is derived client-side as the sum of every non-'failed'
+  // row's amount_pence (credits positive, withdrawals negative).
+  async getWalletTransactions(uid,t){ if(!uid)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+
   // Fire the tailor-approved email (resolved server-side from the tailor id).
   fireTailorApprovedEmail(tailorId){ if(tailorId) fireEmail({type:"tailor_approved",tailorId}); },
   // On submission: confirm to the applicant, and alert each admin to review it.
