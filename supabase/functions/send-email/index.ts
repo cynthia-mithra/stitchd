@@ -386,6 +386,47 @@ async function resolveTemplated(
       };
     }
 
+    case "tailor_application_received": {
+      // Phase 15 — confirm to the applicant that their tailor application landed.
+      // Resolve the applicant (recipient) + display name from the tailor id.
+      let userId: string | null = body.userId ?? null;
+      let displayName: string | undefined;
+      if (body.tailorId) {
+        const tailor = await sbGetOne<{ user_id: string; display_name: string }>(
+          `tailors?id=eq.${body.tailorId}&select=user_id,display_name&limit=1`,
+        );
+        if (!userId) userId = tailor?.user_id ?? null;
+        displayName = tailor?.display_name;
+      }
+      if (!userId) return { skip: "no user" };
+      const prof = await getProfile(userId);
+      if (prof?.email_notifications === false) return { skip: "unsubscribed" };
+      const to = await emailForUser(userId);
+      if (!to) return { skip: "no email" };
+      return { to, userId, data: { displayName } };
+    }
+
+    case "tailor_application_admin": {
+      // Phase 15 — alert an admin that a new tailor application needs review. This
+      // is an operational alert, so it deliberately does NOT honour the
+      // email_notifications unsubscribe flag. `userId` is the admin recipient;
+      // the applicant's name/location come from the tailor id.
+      const adminId: string | null = body.userId ?? null;
+      if (!adminId) return { skip: "no admin" };
+      const to = await emailForUser(adminId);
+      if (!to) return { skip: "no email" };
+      let displayName: string | undefined;
+      let location: string | undefined;
+      if (body.tailorId) {
+        const tailor = await sbGetOne<{ display_name: string; location: string }>(
+          `tailors?id=eq.${body.tailorId}&select=display_name,location&limit=1`,
+        );
+        displayName = tailor?.display_name;
+        location = tailor?.location;
+      }
+      return { to, userId: adminId, data: { displayName, location, tailorId: body.tailorId ?? null } };
+    }
+
     case "welcome": {
       const userId: string | null = body.userId ?? null;
       if (!userId) return { skip: "no user" };

@@ -96,6 +96,14 @@ curl -X POST $FN -H 'Content-Type: application/json' \
 # Phase 15 — new tailor review (recipient is the tailor, resolved from the review)
 curl -X POST $FN -H 'Content-Type: application/json' \
   -d '{"type":"tailor_review","reviewId":"<tailor review id>"}'
+
+# Phase 15 — tailor application received (recipient is the applicant, resolved from the tailor)
+curl -X POST $FN -H 'Content-Type: application/json' \
+  -d '{"type":"tailor_application_received","tailorId":"<tailor id>"}'
+
+# Phase 15 — new tailor application for admin review (recipient is the admin in userId)
+curl -X POST $FN -H 'Content-Type: application/json' \
+  -d '{"type":"tailor_application_admin","tailorId":"<tailor id>","userId":"<admin user id>"}'
 ```
 
 > **Phase 15 — booking confirmation emails.** The two "booking confirmed" emails
