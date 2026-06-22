@@ -55,11 +55,16 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: Set Supabase secrets
+      - name: Set Supabase secrets (only those provided — never clobbers existing)
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: |
-          supabase secrets set \
-            STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
-            STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
-            RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}" \
-            SITE_URL="https://stitchd.fit" \
-            --project-ref "$PROJECT_REF"
+          args=()
+          [ -n "$STRIPE_SECRET_KEY" ]     && args+=("STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY")
+          [ -n "$STRIPE_WEBHOOK_SECRET" ] && args+=("STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET")
+          [ -n "$RESEND_API_KEY" ]        && args+=("RESEND_API_KEY=$RESEND_API_KEY")
+          args+=("SITE_URL=https://stitchd.fit")
+          echo "Setting ${#args[@]} secret(s) (SITE_URL always; others only if provided)."
+          supabase secrets set "${args[@]}" --project-ref "$PROJECT_REF"
