@@ -6,9 +6,19 @@ import { F } from "../components/Shared";
 const PINK = "#FF1493";
 const gbp = (pence) => `£${(Math.abs(Number(pence) || 0) / 100).toFixed(2)}`;
 
-// Available balance = sum of every non-failed row (credits +, withdrawals −).
+// Available (withdrawable) balance = every non-failed row EXCEPT sale credits
+// still held pending the buyer's confirmation (Vinted-style escrow).
 export function walletBalancePence(txns = []) {
-  return txns.filter((t) => t.status !== "failed").reduce((s, t) => s + (Number(t.amount_pence) || 0), 0);
+  return txns
+    .filter((t) => t.status !== "failed" && !(t.type === "sale" && t.status === "pending"))
+    .reduce((s, t) => s + (Number(t.amount_pence) || 0), 0);
+}
+
+// Earnings held until buyers confirm receipt (not yet withdrawable).
+export function walletPendingInPence(txns = []) {
+  return txns
+    .filter((t) => t.type === "sale" && t.status === "pending")
+    .reduce((s, t) => s + (Number(t.amount_pence) || 0), 0);
 }
 
 export default function Wallet({
@@ -21,6 +31,7 @@ export default function Wallet({
   if (view !== "wallet") return null;
 
   const balance = walletBalancePence(transactions);
+  const pendingIn = walletPendingInPence(transactions);
   const pendingOut = transactions
     .filter((t) => t.type === "withdrawal" && t.status === "pending")
     .reduce((s, t) => s + Math.abs(Number(t.amount_pence) || 0), 0);
@@ -59,6 +70,11 @@ export default function Wallet({
       <div style={{ border: "3px solid #111", padding: "26px 24px", marginBottom: 22, background: "#111", color: "#fff" }}>
         <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 2, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>AVAILABLE BALANCE</p>
         <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 56, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: "#fff" }}>{gbp(balance)}</div>
+        {pendingIn > 0 && (
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 0.5, color: "#FFD166", marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
+            <Clock width={14} height={14} /> {gbp(pendingIn)} pending — released when buyers confirm receipt
+          </p>
+        )}
         {pendingOut > 0 && (
           <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 0.5, color: "#00E5CC", marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
             <Clock width={14} height={14} /> {gbp(pendingOut)} withdrawal in progress

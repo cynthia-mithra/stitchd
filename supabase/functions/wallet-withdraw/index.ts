@@ -42,15 +42,18 @@ const sbHeaders = {
 };
 const fmt = (p: number) => `£${(p / 100).toFixed(2).replace(/\.00$/, "")}`;
 
-// Available balance = sum of every non-failed transaction (credits +, withdrawals −).
+// Available (withdrawable) balance = every non-failed transaction EXCEPT sale
+// credits still held 'pending' the buyer's confirmation (Vinted-style escrow).
 async function availableBalance(userId: string): Promise<number> {
   const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/wallet_transactions?user_id=eq.${userId}&select=amount_pence,status`,
+    `${SUPABASE_URL}/rest/v1/wallet_transactions?user_id=eq.${userId}&select=type,amount_pence,status`,
     { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
   ).catch(() => null);
   if (!r || !r.ok) return 0;
-  const rows: Array<{ amount_pence: number; status: string }> = await r.json().catch(() => []);
-  return rows.filter((t) => t.status !== "failed").reduce((s, t) => s + (Number(t.amount_pence) || 0), 0);
+  const rows: Array<{ type: string; amount_pence: number; status: string }> = await r.json().catch(() => []);
+  return rows
+    .filter((t) => t.status !== "failed" && !(t.type === "sale" && t.status === "pending"))
+    .reduce((s, t) => s + (Number(t.amount_pence) || 0), 0);
 }
 
 async function patchTx(id: string, patch: Record<string, unknown>) {

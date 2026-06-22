@@ -105,10 +105,12 @@ async function fetchListingsHealing(filter: string): Promise<ListingRow[] | null
   return null;
 }
 // ── Wallet — credit the seller's earnings on a completed sale ─────────────────
-// Stitch'd keeps an 8% commission; the rest is credited to the seller's wallet as
-// an 'available' balance they can withdraw. Idempotent on (listing_id, session)
-// via the wallet_tx_sale_unique index, so a retried webhook can't double-credit
-// (the duplicate insert simply fails the unique constraint and is ignored).
+// Stitch'd keeps an 8% commission; the rest is credited to the seller's wallet.
+// The credit is held as 'pending' (Vinted-style escrow) and only released to the
+// withdrawable balance when the buyer confirms they've received the item.
+// Idempotent on (listing_id, session) via the wallet_tx_sale_unique index, so a
+// retried webhook can't double-credit (the duplicate insert fails the unique
+// constraint and is ignored).
 const WALLET_COMMISSION_RATE = 0.08;
 async function creditSellerWallet(
   sellerId: string | null | undefined,
@@ -122,7 +124,7 @@ async function creditSellerWallet(
     user_id: sellerId,
     type: "sale",
     amount_pence: netPence,
-    status: "available",
+    status: "pending", // held until the buyer confirms receipt
     listing_id: ctx.listingId ?? null,
     stripe_session_id: ctx.sessionId ?? null,
     order_id: ctx.orderId ?? null,
