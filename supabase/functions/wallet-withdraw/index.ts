@@ -52,7 +52,7 @@ async function availableBalance(userId: string): Promise<number> {
   if (!r || !r.ok) return 0;
   const rows: Array<{ type: string; amount_pence: number; status: string }> = await r.json().catch(() => []);
   return rows
-    .filter((t) => t.status !== "failed" && !(t.type === "sale" && t.status === "pending"))
+    .filter((t) => t.status !== "failed" && (t.type !== "sale" || t.status === "available"))
     .reduce((s, t) => s + (Number(t.amount_pence) || 0), 0);
 }
 
