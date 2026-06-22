@@ -58,8 +58,8 @@ export default function Footer({ onNav = () => {} }) {
             <span style={S.wordmark}>STITCH'D</span>
             <p style={S.tagline}>The UK marketplace for pre-loved South Asian fashion. Real measurements, measured fits only.</p>
             <div style={S.socials}>
-              <a href="https://instagram.com/stitchd" target="_blank" rel="noreferrer" aria-label="Instagram" className="footer-social" style={S.social}><Instagram width={18} height={18} /></a>
-              <a href="https://tiktok.com/@stitchd" target="_blank" rel="noreferrer" className="footer-social" style={S.socialText}>TIKTOK</a>
+              <a href="https://instagram.com/stitchd_fit" target="_blank" rel="noreferrer" aria-label="Instagram" className="footer-social" style={S.social}><Instagram width={18} height={18} /></a>
+              <a href="https://instagram.com/stitchd_fit" target="_blank" rel="noreferrer" className="footer-social" style={S.socialText}>@STITCHD_FIT</a>
             </div>
           </div>
 
