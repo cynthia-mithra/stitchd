@@ -107,9 +107,9 @@ export const CSS=`
     .card-cat{font-size:9px !important;}
     .card-name{font-size:16px !important;margin-bottom:6px !important;}
     .card-price{font-size:20px !important;}
-    .detail-wrap{flex-direction:column !important;}
-    .detail-img{border-right:none !important;border-bottom:3px solid #111 !important;}
-    .detail-info{padding:16px !important;}
+    .detail-wrap{flex-direction:column !important;gap:16px !important;}
+    .detail-img{position:static !important;max-width:none !important;}
+    .detail-info{padding:4px 2px 0 !important;}
     .msg-layout{flex-direction:column !important;height:auto !important;min-height:80vh;}
     .msg-sidebar{width:100% !important;border-right:none !important;border-bottom:3px solid #111 !important;max-height:200px;}
     .dash-grid{grid-template-columns:1fr !important;}
@@ -272,13 +272,17 @@ export const S={
   empty:{gridColumn:"1/-1",textAlign:"center",padding:"80px 20px"},
   main:{maxWidth:1200,margin:"0 auto",padding:"20px 12px"},
   back:{background:"none",border:"none",color:"#999",fontSize:12,cursor:"pointer",marginBottom:32,padding:0,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase"},
-  detailWrap:{display:"flex",flexWrap:"wrap",gap:0,border:"3px solid #111"},
-  detailImgWrap:{flex:"0 0 300px",minWidth:"min(300px,100%)",display:"flex",flexDirection:"column",borderRight:"3px solid #111"},
-  detailPanel:{flex:1,minHeight:320,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"},
-  thumbRow:{display:"flex",gap:0,borderTop:"2px solid #111",overflowX:"auto"},
+  // Product-page layout: image card (left) sits next to the details (right) and
+  // sticks while the long details column scrolls. align-items:flex-start stops
+  // the image stretching to the details' height (which made it a thin strip).
+  detailWrap:{display:"flex",flexWrap:"wrap",alignItems:"flex-start",gap:24},
+  detailImgWrap:{flex:"1 1 400px",maxWidth:520,position:"sticky",top:16,alignSelf:"flex-start",display:"flex",flexDirection:"column",border:"3px solid #111",background:"#fff"},
+  // Defined portrait ratio so the photo is a proper product image, not stretched.
+  detailPanel:{width:"100%",aspectRatio:"4 / 5",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"},
+  thumbRow:{display:"flex",gap:0,borderTop:"3px solid #111",overflowX:"auto"},
   thumb:{width:70,height:70,flexShrink:0,cursor:"pointer",border:"2px solid transparent",overflow:"hidden",transition:"border-color .15s"},
   imgNav:{position:"absolute",top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",color:"#fff",border:"none",width:36,height:36,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:5,fontWeight:900},
-  detailInfo:{flex:1,minWidth:"min(280px,100%)",padding:"20px 16px"},
+  detailInfo:{flex:"1 1 380px",minWidth:"min(300px,100%)",padding:"2px 0 0"},
   detailName:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:44,fontWeight:900,color:"#111",lineHeight:1,marginBottom:10,letterSpacing:-1},
   detailPrice:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:56,fontWeight:900,marginBottom:16,letterSpacing:-2},
   dBlock:{marginBottom:24,paddingBottom:24,borderBottom:"1px solid #f0f0f0"},

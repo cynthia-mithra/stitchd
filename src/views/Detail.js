@@ -155,7 +155,7 @@ export default function Detail({
           <div style={S.detailWrap} className="detail-wrap">
             <div style={S.detailImgWrap} className="detail-img">
               <div style={{...S.detailPanel,background:selImages.length>0?"#000":selColor,overflow:"hidden"}}>
-                {selImages.length>0?<img src={selImages[selImgIdx]} alt={sel.name} style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.92}}/>:<span style={{fontSize:120}}>{sel.emoji||catEmoji(sel.category)}</span>}
+                {selImages.length>0?<img src={selImages[selImgIdx]} alt={sel.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:120}}>{sel.emoji||catEmoji(sel.category)}</span>}
                 {sel.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                 {sel.reserved&&!sel.sold&&<div style={S.reservedBadge}>RESERVED</div>}
                 {selImages.length>1&&(
