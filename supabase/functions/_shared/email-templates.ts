@@ -636,6 +636,36 @@ export const templates = {
     };
   },
 
+  // 24 — Tailor application received (applicant). Confirms we got the application.
+  tailor_application_received(d: { displayName?: string }, ctx: BuildCtx) {
+    return {
+      subject: "We've received your tailor application — Stitch'd",
+      html: baseTemplate({
+        heading: "Application received.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`Thanks${d.displayName ? `, ${esc(d.displayName)}` : ""} — we've received your application to become a Stitch'd tailor.`) +
+          p("Our team will review it and get back to you within 3 working days. We'll email you as soon as there's an update.") +
+          button("Browse Stitch'd", `${ctx.site}/`),
+      }),
+    };
+  },
+
+  // 25 — New tailor application (admin). Operational alert prompting a review.
+  tailor_application_admin(d: { displayName?: string; location?: string; tailorId?: string }, ctx: BuildCtx) {
+    return {
+      subject: "New tailor application to review — Stitch'd",
+      html: baseTemplate({
+        heading: "New tailor application.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p(`A new tailor application has been submitted${d.displayName ? ` by <strong>${esc(d.displayName)}</strong>` : ""}${d.location ? ` <span style="color:#888;">(${esc(d.location)})</span>` : ""}.`) +
+          p("Review their profile, specialisms and portfolio, then approve or decline from the admin dashboard.") +
+          button("Review application", `${ctx.site}/dashboard`),
+      }),
+    };
+  },
+
   // 7 — Welcome (new user)
   welcome(_d: Record<string, unknown>, ctx: BuildCtx) {
     return {

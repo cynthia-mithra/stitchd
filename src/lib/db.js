@@ -535,6 +535,9 @@ export const db = {
   async deletePortfolioItem(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   // Fire the tailor-approved email (resolved server-side from the tailor id).
   fireTailorApprovedEmail(tailorId){ if(tailorId) fireEmail({type:"tailor_approved",tailorId}); },
+  // On submission: confirm to the applicant, and alert each admin to review it.
+  fireTailorApplicationReceivedEmail(tailorId){ if(tailorId) fireEmail({type:"tailor_application_received",tailorId}); },
+  fireTailorApplicationAdminEmail(tailorId,adminUserId){ if(tailorId&&adminUserId) fireEmail({type:"tailor_application_admin",tailorId,userId:adminUserId}); },
 
   // ── Phase 15 — Request alterations on a listing ───────────────────────────
   // A buyer picks an approved tailor and describes the alterations they need.

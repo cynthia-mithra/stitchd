@@ -1790,8 +1790,10 @@ export default function App() {
         await db.insertPortfolioItems(prows,token).catch(()=>{});
       }
       setMyTailor(row);
-      // Notify every admin of the new application.
-      try{ const admins=await db.getAdmins(token); await Promise.all((admins||[]).map(a=>notify(a.id,"tailor_application","New tailor application",`New tailor application from ${row.display_name}`,row.id))); }catch(e){}
+      // Email the applicant to confirm we've received their application.
+      if(row&&row.id) db.fireTailorApplicationReceivedEmail(row.id);
+      // Notify + email every admin so they know there's an application to review.
+      try{ const admins=await db.getAdmins(token); await Promise.all((admins||[]).map(a=>notify(a.id,"tailor_application","New tailor application",`New tailor application from ${row.display_name}`,row.id))); (admins||[]).forEach(a=>db.fireTailorApplicationAdminEmail(row.id,a.id)); }catch(e){}
       flash("Application submitted! We'll review it within 3 working days.",6000);
       setApplyForm(null);
       setView("shop"); window.scrollTo(0,0);
