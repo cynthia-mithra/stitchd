@@ -185,8 +185,11 @@ export const S={
   // #eee divider between groups.
   mobileNavSectionLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:2,color:"#999",textTransform:"uppercase",padding:"16px 20px 6px",userSelect:"none"},
   mobileNavDivider:{height:1,background:"#eee",border:"none",margin:0},
-  ticker:{background:"#FF1493",overflow:"hidden",borderBottom:"2px solid #111",height:36,display:"flex",alignItems:"center"},
-  tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2.5,color:"#fff",animation:"ticker 22s linear infinite",paddingLeft:"100%"},
+  // Refined brand ticker — a slimmer, calmer strip: shorter, lighter weight,
+  // wider tracking, slightly translucent type and a slower scroll so it reads as
+  // a tasteful detail rather than a loud banner.
+  ticker:{background:"#FF1493",overflow:"hidden",borderBottom:"2px solid #111",height:28,display:"flex",alignItems:"center"},
+  tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:3.5,color:"rgba(255,255,255,0.92)",animation:"ticker 36s linear infinite",paddingLeft:"100%"},
   toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"12px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,zIndex:999,borderRadius:0,whiteSpace:"nowrap",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"},
   // Type-led editorial hero: a single, centred column (no imagery). Bold stacked
   // headline + brand statement + CTAs + a value-prop strip.
