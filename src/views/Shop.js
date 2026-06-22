@@ -436,7 +436,7 @@ export default function Shop({
       {!newArrivals&&!hasFilters&&!followingActive&&homeArrivals.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <RailHeader icon={<Sparkles width={26} height={26}/>} title="NEW ARRIVALS" subtitle="Fresh drops, updated daily" accent="#34C759" onViewAll={goNewArrivals}/>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:16}} className="shop-grid">
             {homeArrivals.map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
@@ -480,7 +480,7 @@ export default function Shop({
       {!newArrivals&&!hasFilters&&!followingActive&&priceDrops.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <RailHeader icon={<TrendingDown width={26} height={26}/>} title="PRICE DROPS" subtitle="Recently reduced by their sellers" accent="#FF9500"/>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:16}} className="shop-grid">
             {priceDrops.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               const drop=item.prev_price?Math.round(((item.prev_price-item.price)/item.prev_price)*100):0;
@@ -513,7 +513,7 @@ export default function Shop({
       {!newArrivals&&!hasFilters&&!followingActive&&trendingItems.length>0&&(
         <div style={{maxWidth:1300,margin:"48px auto 48px",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <RailHeader icon={<Flame width={26} height={26}/>} title="TRENDING" subtitle="The most-viewed pieces right now" accent="#BF5AF2"/>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3}} className="shop-grid">
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:16}} className="shop-grid">
             {trendingItems.slice(0,8).map((item,idx)=>{
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(

@@ -80,7 +80,7 @@ export const CSS=`
     .shop-tabs{width:100% !important;}
     .shop-tab{flex:1 1 0 !important;text-align:center !important;padding-left:0 !important;padding-right:0 !important;}
     /* PROBLEM 3 — two-column listing grid with proportionally scaled cards. */
-    .shop-grid{grid-template-columns:1fr 1fr !important;gap:8px !important;}
+    .shop-grid{grid-template-columns:1fr 1fr !important;gap:12px !important;}
     .card-top{height:150px !important;}
     .card-body{padding:11px !important;}
     .card-cat{font-size:9px !important;}
@@ -216,13 +216,13 @@ export const S={
   filterPills:{display:"flex",flexWrap:"wrap",gap:6},
   pill:{background:"#fff",border:"1.5px solid #e0e0e0",padding:"6px 14px",fontSize:11,cursor:"pointer",color:"#888",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1.5,whiteSpace:"nowrap",borderRadius:0,flexShrink:0},
   pillOn:{background:"#111",border:"1.5px solid #111",color:"#fff"},
-  gridWrap:{padding:"20px 10px",maxWidth:1300,margin:"0 auto",background:"#fff"},
+  gridWrap:{padding:"24px 18px",maxWidth:1300,margin:"0 auto",background:"#fff"},
   loadingWrap:{display:"flex",flexDirection:"column",alignItems:"center",padding:"80px 0",gap:16},
   spinner:{width:36,height:36,border:"4px solid #f0f0f0",borderTop:"4px solid #FF1493",borderRadius:"50%",animation:"spin 0.8s linear infinite"},
   loadingText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:3,color:"#bbb"},
   errorBanner:{background:"#fff0f0",border:"2px solid #FF1493",padding:"16px 24px",marginBottom:24,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1,display:"flex",alignItems:"center",gap:16},
   retryBtn:{background:"#FF1493",color:"#fff",border:"none",padding:"6px 16px",fontSize:12,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2},
-  grid:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:3},
+  grid:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:16},
   // Uniform card: flex column at full row height so every card in a row ends flush.
   // Border is a fixed 2px solid #111 for ALL cards (no per-category coloured border) —
   // the category accent now lives only on the label, price and bottom accentBar.
