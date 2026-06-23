@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Scissors, Zap, Heart, Ruler, Eye, ArrowDown, ArrowRight, Sparkles, TrendingDown, Flame, Shirt, BadgeCheck, Bookmark } from "lucide-react";
+import { Search, Scissors, Zap, Heart, Ruler, Eye, ArrowDown, ArrowRight, Sparkles, TrendingDown, Flame, Shirt, BadgeCheck, Bookmark, Recycle, ShieldCheck } from "lucide-react";
 import {
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, ALL_CATEGORIES,
   CONDITIONS, SIZES, OCCASIONS, COLOURS, OCC_COLOR, CARD_COLORS,
@@ -331,9 +331,13 @@ export default function Shop({
           )}
           {/* Editorial value-prop strip — replaces the old hero imagery with a
               confident statement of what makes Stitch'd different. */}
-          <div style={S.heroProps}>
-            {[["REAL MEASUREMENTS","#FF1493"],["SOUTH ASIAN PRE-LOVED","#00E5CC"],["UK · SECURE GBP CHECKOUT","#111"]].map(([label,dot])=>(
-              <span key={label} style={S.heroProp}><span style={{...S.heroPropDot,background:dot}}/>{label}</span>
+          <div className="hero-props">
+            {[
+              {Icon:Ruler,      label:"Real measurements", accent:"#FF1493"},
+              {Icon:Recycle,    label:"South Asian pre-loved", accent:"#00E5CC"},
+              {Icon:ShieldCheck,label:"Secure UK checkout", accent:"#111"},
+            ].map(({Icon,label,accent})=>(
+              <span key={label} className="hero-prop"><Icon width={17} height={17} color={accent} strokeWidth={2.4}/> {label}</span>
             ))}
           </div>
         </div>
