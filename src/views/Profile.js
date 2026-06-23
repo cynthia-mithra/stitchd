@@ -71,6 +71,19 @@ export default function Profile({
                 })}
               </div>
             </Sec>
+            <Sec label="RETURN ADDRESS">
+              <p style={{fontSize:13,color:"#666",lineHeight:1.5,marginBottom:14}}>Where you post your sold items from. Used for postage labels and returns — only shared with couriers, never shown publicly.</p>
+              <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                <F l="FULL NAME"><input style={S.inp} placeholder="e.g. Nasreen Ahmed" value={profForm.ship_from_name} onChange={e=>setProfForm(f=>({...f,ship_from_name:e.target.value}))}/></F>
+                <F l="ADDRESS LINE 1"><input style={S.inp} placeholder="123 Main Street" value={profForm.ship_from_line1} onChange={e=>setProfForm(f=>({...f,ship_from_line1:e.target.value}))}/></F>
+                <F l="ADDRESS LINE 2 (OPTIONAL)"><input style={S.inp} placeholder="Flat 2" value={profForm.ship_from_line2} onChange={e=>setProfForm(f=>({...f,ship_from_line2:e.target.value}))}/></F>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                  <F l="CITY"><input style={S.inp} placeholder="London" value={profForm.ship_from_city} onChange={e=>setProfForm(f=>({...f,ship_from_city:e.target.value}))}/></F>
+                  <F l="POSTCODE"><input style={S.inp} placeholder="E1 6RF" value={profForm.ship_from_postcode} onChange={e=>setProfForm(f=>({...f,ship_from_postcode:e.target.value}))}/></F>
+                </div>
+                <F l="COUNTRY"><input style={S.inp} placeholder="UK" value={profForm.ship_from_country} onChange={e=>setProfForm(f=>({...f,ship_from_country:e.target.value}))}/></F>
+              </div>
+            </Sec>
             <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:profSaving?0.5:1}} onClick={saveProfile}>{profSaving?"SAVING...":"SAVE PROFILE →"}</button>
             <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #007AFF",paddingLeft:12,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><Ruler width={16} height={16}/> MY MEASUREMENTS</div>

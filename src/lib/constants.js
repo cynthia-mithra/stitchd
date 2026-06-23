@@ -152,6 +152,21 @@ const TRACK_URL = {
   "InPost":     (n) => `https://inpost.co.uk/tracking?number=${n}`,
   "DPD":        (n) => `https://track.dpd.co.uk/parcels/${n}`,
 };
+// Whether prepaid label generation is live. Flip to true once a courier API key
+// is set on the buy-label Edge Function (provider chosen via SHIPPING_PROVIDER).
+// Until then the GENERATE LABEL action stays hidden and sellers enter tracking
+// numbers by hand.
+export const SHIPPING_LABELS_ENABLED = false;
+
+// Rough parcel weight (grams) inferred from a postage option label's "up to Nkg"
+// band, so a label call can be sized without asking the seller to weigh it. Falls
+// back to 1kg when no band is present.
+export function parcelWeightGrams(label) {
+  const m = /up to\s*([\d.]+)\s*kg/i.exec(String(label || ""));
+  if (m) return Math.round(parseFloat(m[1]) * 1000);
+  return 1000;
+}
+
 export function trackingUrl(carrierLabel, number) {
   if (!number) return null;
   const name = String(carrierLabel || "").split("·")[0].trim();

@@ -96,3 +96,6 @@ verify_jwt = false
 
 [functions.refund-order]
 verify_jwt = false
+
+[functions.buy-label]
+verify_jwt = false

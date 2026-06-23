@@ -1,7 +1,7 @@
 import React from "react";
 import { Package, Mail, AlertCircle, CheckCircle, Star, Truck, ExternalLink } from "lucide-react";
 import { S } from "../styles";
-import { trackingUrl } from "../lib/constants";
+import { trackingUrl, SHIPPING_LABELS_ENABLED } from "../lib/constants";
 import { VerifiedBadge } from "../components/Shared";
 
 // Post-purchase order history (issue PART 2 & PART 5).
@@ -37,7 +37,7 @@ export default function Orders({
   updateOrderStatus, confirmOrderReceived = () => {}, startOrderConversation,
   openDispute = () => {},
   onReviewOrder = () => {}, reviewedListings = new Set(),
-  saveOrderTracking = () => {},
+  saveOrderTracking = () => {}, onBuyLabel = () => {},
 }) {
   if (view !== "orders") return null;
   if (!user) return null;
@@ -219,6 +219,9 @@ export default function Orders({
                           <Truck width={15} height={15} style={{ flexShrink: 0 }} />
                           <input value={val} onChange={e => setTrackInputs(p => ({ ...p, [order.id]: e.target.value }))} placeholder="Tracking number" style={{ flex: "1 1 160px", minWidth: 0, border: "2px solid #111", borderRadius: 0, padding: "8px 12px", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700 }} />
                           <button className="hbtn" onClick={() => { saveOrderTracking(order, val); setTrackEditing(p => ({ ...p, [order.id]: false })); }} style={{ ...S.hBtn, background: "#111", border: "none", borderRadius: 0, fontSize: 11, padding: "9px 16px", display: "inline-flex", alignItems: "center", gap: 6 }}><Truck width={14} height={14} /> SAVE TRACKING</button>
+                          {SHIPPING_LABELS_ENABLED && (
+                            <button className="hbtn" onClick={() => onBuyLabel(order)} style={{ ...S.hBtn, background: "#FF1493", border: "none", borderRadius: 0, fontSize: 11, padding: "9px 16px", display: "inline-flex", alignItems: "center", gap: 6 }}><Package width={14} height={14} /> GENERATE LABEL</button>
+                          )}
                         </div>
                       );
                     }

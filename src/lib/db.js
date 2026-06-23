@@ -61,7 +61,18 @@ export const db = {
   async remove(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   async getProfile(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   async getProfilesByIds(ids,t){ if(!ids.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${ids.join(",")})&select=id,full_name,username`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  async upsertProfile(profile,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation,resolution=merge-duplicates"},body:JSON.stringify(profile)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json();
+  async upsertProfile(profile,t){
+    // Self-healing: if the deployment is missing an optional column (e.g. the new
+    // ship_from_* return-address fields before their migration is run), drop it
+    // and retry rather than failing the whole profile save.
+    let payload={...profile}; let d=null;
+    for(let i=0;i<12;i++){
+      const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation,resolution=merge-duplicates"},body:JSON.stringify(payload)});
+      if(r.ok){ d=await r.json(); break; }
+      const text=await r.text(); const m=/Could not find the '([^']+)' column/.exec(text); const col=m&&m[1];
+      if(col&&col!=="id"&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
+      throw new Error(text);
+    }
     // Email 7 — welcome. Fired on every upsert; send-email dedupes via the
     // welcome_email_sent flag so a returning user is only ever welcomed once.
     if(profile&&profile.id) fireEmail({type:"welcome",userId:profile.id});

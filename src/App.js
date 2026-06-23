@@ -13,7 +13,7 @@ import { startCheckout, startOfferCheckout, startAlterationCheckout, verifySessi
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
 import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } from "./lib/connect";
-import { startSellerConnect, verifySellerConnect, withdrawFromWallet, refundOrder, refundAlteration } from "./lib/wallet";
+import { startSellerConnect, verifySellerConnect, withdrawFromWallet, refundOrder, refundAlteration, buyShippingLabel } from "./lib/wallet";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock } from "lucide-react";
@@ -178,7 +178,7 @@ export default function App() {
   const [error,     setError]     = useState("");
   const [aError,    setAError]    = useState("");
   const [profile,   setProfile]   = useState(null);
-  const [profForm,  setProfForm]  = useState({username:"",full_name:"",location:"",region:"",currency:"USD",bio:"",specialises_in:[],avatar_url:"",avatarFile:null,avatarPreview:"",bust:"",waist:"",hips:"",height:"",preferred_size:""});
+  const [profForm,  setProfForm]  = useState({username:"",full_name:"",location:"",region:"",currency:"USD",bio:"",specialises_in:[],avatar_url:"",avatarFile:null,avatarPreview:"",bust:"",waist:"",hips:"",height:"",preferred_size:"",ship_from_name:"",ship_from_line1:"",ship_from_line2:"",ship_from_city:"",ship_from_postcode:"",ship_from_country:"UK"});
   const [profSaving,setProfSaving]= useState(false);
   const [viewedProfile,setViewedProfile]=useState(null);
   const [profileListings,setProfileListings]=useState([]);
@@ -772,7 +772,7 @@ export default function App() {
 
   useEffect(()=>{
     if(user&&token){
-      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",bio:p.bio||"",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||""});setStoreForm({storefront_tagline:p.storefront_tagline||"",storefront_bio:p.storefront_bio||"",storefront_location:p.storefront_location||"",storefront_instagram:p.storefront_instagram||"",storefront_banner_url:p.storefront_banner_url||"",bannerFile:null,bannerPreview:p.storefront_banner_url||""});} });
+      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"",currency:p.currency||"USD",bio:p.bio||"",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||"",ship_from_name:p.ship_from_name||"",ship_from_line1:p.ship_from_line1||"",ship_from_line2:p.ship_from_line2||"",ship_from_city:p.ship_from_city||"",ship_from_postcode:p.ship_from_postcode||"",ship_from_country:p.ship_from_country||"UK"});setStoreForm({storefront_tagline:p.storefront_tagline||"",storefront_bio:p.storefront_bio||"",storefront_location:p.storefront_location||"",storefront_instagram:p.storefront_instagram||"",storefront_banner_url:p.storefront_banner_url||"",bannerFile:null,bannerPreview:p.storefront_banner_url||""});} });
       loadConversations();
       db.getFollowing(user.id,token).then(setFollowing);
       db.getNotifications(user.id,token).then(setNotifications);
@@ -3094,12 +3094,28 @@ export default function App() {
     try{
       let avatar_url=profForm.avatar_url||"";
       if(profForm.avatarFile) avatar_url=await uploadImage(profForm.avatarFile,token);
-      const p={id:user.id,username:profForm.username,full_name:profForm.full_name,location:profForm.location,region:profForm.region,currency:profForm.currency,bio:profForm.bio||null,specialises_in:profForm.specialises_in,avatar_url,bust:profForm.bust||null,waist:profForm.waist||null,hips:profForm.hips||null,height:profForm.height||null,preferred_size:profForm.preferred_size||null};
+      const p={id:user.id,username:profForm.username,full_name:profForm.full_name,location:profForm.location,region:profForm.region,currency:profForm.currency,bio:profForm.bio||null,specialises_in:profForm.specialises_in,avatar_url,bust:profForm.bust||null,waist:profForm.waist||null,hips:profForm.hips||null,height:profForm.height||null,preferred_size:profForm.preferred_size||null,ship_from_name:profForm.ship_from_name||null,ship_from_line1:profForm.ship_from_line1||null,ship_from_line2:profForm.ship_from_line2||null,ship_from_city:profForm.ship_from_city||null,ship_from_postcode:profForm.ship_from_postcode||null,ship_from_country:profForm.ship_from_country||null};
       const [saved]=await db.upsertProfile(p,token);
       setProfile(saved); setProfForm(f=>({...f,avatar_url,avatarFile:null,avatarPreview:avatar_url}));
       flash("✓ Profile saved!");
     }catch(e){ flash("Failed to save profile."); }
     finally{ setProfSaving(false); }
+  }
+
+  // Seller buys a prepaid label for an order (when a courier API is configured);
+  // on success the tracking number is written + opened for printing. Resolves
+  // with a friendly message when label generation isn't set up yet.
+  async function buyOrderLabel(order){
+    try{
+      const res=await buyShippingLabel(order.id,user?.id);
+      if(res&&res.configured===false){ flash(res.error||"Shipping labels aren't set up yet."); return; }
+      if(res&&res.error){ flash(res.error); return; }
+      if(res&&res.tracking_number){
+        setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null}:o));
+        if(res.label_url){ try{ window.open(res.label_url,"_blank"); }catch(e){} }
+        flash("Label created — tracking added.");
+      } else flash("Couldn't create a label.");
+    }catch(e){ flash(errMsg(e)); }
   }
 
   async function openProfile(userId){
@@ -4748,7 +4764,7 @@ export default function App() {
         startOrderConversation={startOrderConversation}
         openDispute={openDispute}
         onReviewOrder={openOrderReview} reviewedListings={myReviewedListings}
-        saveOrderTracking={saveOrderTracking}
+        saveOrderTracking={saveOrderTracking} onBuyLabel={buyOrderLabel}
       />
 
       {/* MY OFFERS (buyer) — Phase 14 offer checkout */}

@@ -68,6 +68,14 @@ export async function refundOrder(orderId, adminId) {
   return callFn("refund-order", { order_id: orderId, admin_id: adminId }, "Refund");
 }
 
+// Seller (or admin): buy a prepaid shipping label for an order. Returns
+// { configured, tracking_number, label_url } — when the courier API isn't set up
+// yet it resolves with { configured:false } rather than throwing.
+export async function buyShippingLabel(orderId, userId) {
+  if (!orderId) throw new Error("Missing order.");
+  return callFn("buy-label", { order_id: orderId, user_id: userId }, "Shipping label");
+}
+
 // Admin: refund a tailoring booking (alteration) to the buyer when a tailoring
 // dispute is resolved as "refunded". Returns { refunded, refund_id, amount_pence }.
 export async function refundAlteration(alterationRequestId, adminId) {
