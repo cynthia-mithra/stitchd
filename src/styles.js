@@ -14,6 +14,28 @@ export const CSS=`
      the same subtle scale so the grid feels alive without being busy. */
   .card-top img,.card-top span{transition:transform .5s cubic-bezier(.22,1,.36,1) !important;}
   .scard:hover .card-top img,.scard:hover .card-top span{transform:scale(1.07) !important;}
+  /* Zoned image overlays — status chips stack vertically so they never collide. */
+  .card-ov{position:absolute;display:flex;flex-direction:column;align-items:flex-start;gap:5px;z-index:5;pointer-events:none;}
+  .card-ov-tl{top:10px;left:10px;}
+  .card-ov-bl{bottom:10px;left:10px;}
+  /* Wishlist heart — sharp, frosted, on-theme (square to match the design). */
+  .card-heart{position:absolute;top:10px;right:10px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.8);backdrop-filter:saturate(160%) blur(6px);-webkit-backdrop-filter:saturate(160%) blur(6px);border:2px solid #111;border-radius:0;cursor:pointer;z-index:6;transition:transform .15s ease,background .15s ease;}
+  .card-heart:hover{transform:scale(1.1);}
+  /* Frosted hover price — a glass bar that slides up over the image on hover. */
+  .card-hover-price{position:absolute;left:0;right:0;bottom:0;z-index:7;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 13px;background:rgba(255,255,255,0.7);backdrop-filter:saturate(180%) blur(10px);-webkit-backdrop-filter:saturate(180%) blur(10px);border-top:2px solid #111;transform:translateY(102%);transition:transform .3s cubic-bezier(.22,1,.36,1);pointer-events:none;}
+  .scard:hover .card-hover-price{transform:translateY(0);}
+  .card-hover-price .chp-price{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;letter-spacing:-0.5px;color:#111;line-height:1;}
+  .card-hover-price .chp-view{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:11px;letter-spacing:2px;color:#FF1493;display:inline-flex;align-items:center;gap:5px;}
+  /* Touch / no-hover devices never reveal the hover bar. */
+  @media(hover:none){.card-hover-price{display:none;}}
+  @media(max-width:600px){
+    .card-ov{gap:4px;}
+    .card-ov-tl{top:7px;left:7px;}
+    .card-ov-bl{bottom:7px;left:7px;}
+    .card-ov span{font-size:8px !important;padding:2px 6px !important;letter-spacing:1px !important;}
+    .card-heart{width:27px;height:27px;top:7px;right:7px;}
+    .card-hover-price .chp-price{font-size:18px;}
+  }
   /* Unified button feel: a confident lift + soft shadow on hover (replaces the
      old dated scale-down), and a quick press-down on click. Applies to every
      CTA site-wide since .hbtn is the shared button class. */

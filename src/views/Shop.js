@@ -203,18 +203,36 @@ export default function Shop({
   // ratings — the full polished card) rather than two different layouts.
   const ListingCard = ({ item, idx }) => {
     const accent=CARD_COLORS[idx%CARD_COLORS.length];
+    const saved=myWishlist.has(item.id);
+    // Shared chip used by the zoned image-overlay stacks (top-left status,
+    // bottom-left fit/seller) so every badge is sharp, uppercase and consistent.
+    const ovChip={display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",borderRadius:0,whiteSpace:"nowrap",lineHeight:1.4};
     return(
       <article className="scard" style={{...S.card,opacity:item.sold?0.55:1}} onClick={()=>viewListing(item)}>
         <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
           {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-          <PromotedLabel item={item}/>
-          {item.reserved&&!item.sold&&<div style={S.reservedBadge}>RESERVED</div>}
-          {item.prev_price>item.price&&<div style={S.priceDropBadge}>PRICE DROP</div>}
-          {fitsMe(item)===true&&<div style={{...S.fitsBadge,display:"inline-flex",alignItems:"center",gap:5}}><Ruler width={11} height={11}/> FITS YOU</div>}
-          <FastBadge sellerId={item.user_id} raised={fitsMe(item)===true}/>
-          <button aria-label={myWishlist.has(item.id)?"Remove from wishlist":"Add to wishlist"} style={{...S.heartBtn,background:myWishlist.has(item.id)?"#FF1493":"rgba(255,255,255,0.85)"}} onClick={e=>{e.stopPropagation();requireAuth("wishlist",()=>toggleFavourite(item));}}><Heart width={16} height={16} fill={myWishlist.has(item.id)?"#fff":"none"} color={myWishlist.has(item.id)?"#fff":"#111"}/></button>
-          <div style={S.cardOrigin}>{item.origin?.toUpperCase()}</div>
+          {/* TOP-LEFT — status chips, stacked so they never collide */}
+          <div className="card-ov card-ov-tl">
+            {isPromoted(item)&&<span style={{...ovChip,background:"#FF1493",color:"#fff"}}><Zap width={11} height={11} fill="currentColor"/> PROMOTED</span>}
+            {item.prev_price>item.price&&<span style={{...ovChip,background:"#00E5CC",color:"#111"}}>PRICE DROP</span>}
+            {item.reserved&&!item.sold&&<span style={{...ovChip,background:"#FF9500",color:"#fff"}}>RESERVED</span>}
+            {item.origin&&<span style={{...ovChip,background:"rgba(0,0,0,0.55)",color:"#fff",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)"}}>{item.origin.toUpperCase()}</span>}
+          </div>
+          {/* TOP-RIGHT — wishlist heart (sharp, frosted, on-theme) */}
+          <button className="card-heart" aria-label={saved?"Remove from wishlist":"Add to wishlist"} style={saved?{background:"#FF1493",borderColor:"#FF1493"}:null} onClick={e=>{e.stopPropagation();requireAuth("wishlist",()=>toggleFavourite(item));}}><Heart width={15} height={15} fill={saved?"#fff":"none"} color={saved?"#fff":"#111"}/></button>
+          {/* BOTTOM-LEFT — fit + seller chips */}
+          <div className="card-ov card-ov-bl">
+            {fitsMe(item)===true&&<span style={{...ovChip,background:"#34C759",color:"#fff"}}><Ruler width={11} height={11}/> FITS YOU</span>}
+            {fastSellers.has(item.user_id)&&<span style={{...ovChip,background:"#007AFF",color:"#fff"}}><Zap width={11} height={11} fill="currentColor"/> FAST SELLER</span>}
+          </div>
           {!item.sold&&<BundleSaveBanner sellerId={item.user_id}/>}
+          {/* HOVER PRICE — frosted bar slides up on hover (desktop pointer only) */}
+          {!item.sold&&(
+            <div className="card-hover-price">
+              <span className="chp-price">{currencySymbol(item.currency)}{item.price}</span>
+              <span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span>
+            </div>
+          )}
         </Thumb>
         <div style={S.cardBody} className="card-body">
           <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}{(item.material||item.fabric)?` · ${(item.material||item.fabric).toUpperCase()}`:""}</p>
@@ -444,6 +462,7 @@ export default function Shop({
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <div style={{position:"absolute",top:12,left:12,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
                     <FastBadge sellerId={item.user_id}/>
+                    {!item.sold&&<div className="card-hover-price"><span className="chp-price">{currencySymbol(item.currency)}{item.price}</span><span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span></div>}
                   </Thumb>
                   <div style={S.cardBody} className="card-body">
                     <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
@@ -489,6 +508,7 @@ export default function Shop({
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     {drop>0&&<div style={{position:"absolute",top:12,left:12,background:"#FF9500",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>-{drop}%</div>}
                     <FastBadge sellerId={item.user_id}/>
+                    {!item.sold&&<div className="card-hover-price"><span className="chp-price">{currencySymbol(item.currency)}{item.price}</span><span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span></div>}
                   </Thumb>
                   <div style={S.cardBody} className="card-body">
                     <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
@@ -521,6 +541,7 @@ export default function Shop({
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <div style={{position:"absolute",top:12,left:12,background:"#BF5AF2",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3,display:"inline-flex",alignItems:"center",gap:4}}><Eye width={11} height={11}/> {item.views}</div>
                     <FastBadge sellerId={item.user_id}/>
+                    {!item.sold&&<div className="card-hover-price"><span className="chp-price">{currencySymbol(item.currency)}{item.price}</span><span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span></div>}
                   </Thumb>
                   <div style={S.cardBody} className="card-body">
                     <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
