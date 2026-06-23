@@ -60,3 +60,10 @@ export async function withdrawFromWallet(userId, amountPence) {
   if (!userId) throw new Error("You need to be signed in.");
   return callFn("wallet-withdraw", { user_id: userId, amount_pence: amountPence }, "Withdrawal");
 }
+
+// Admin: issue a real Stripe refund to the buyer for an order (called when a
+// dispute is resolved as "refunded"). Returns { refunded, refund_id, amount_pence }.
+export async function refundOrder(orderId, adminId) {
+  if (!orderId) throw new Error("Missing order.");
+  return callFn("refund-order", { order_id: orderId, admin_id: adminId }, "Refund");
+}

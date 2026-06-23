@@ -13,7 +13,7 @@ import { startCheckout, startOfferCheckout, startAlterationCheckout, verifySessi
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
 import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } from "./lib/connect";
-import { startSellerConnect, verifySellerConnect, withdrawFromWallet } from "./lib/wallet";
+import { startSellerConnect, verifySellerConnect, withdrawFromWallet, refundOrder } from "./lib/wallet";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock } from "lucide-react";
@@ -1317,13 +1317,29 @@ export default function App() {
       // seller; 'refunded' reverses them so the seller isn't paid. The listing id
       // comes from the embedded order on the dispute row.
       const listingId=(d&&d.orders&&d.orders.listing_id)||null;
+      const label=newStatus.replace(/_/g," ").toUpperCase();
       if(listingId&&newStatus==="resolved") await db.settleDisputedEarnings(listingId,true,token);
-      if(listingId&&newStatus==="refunded") await db.settleDisputedEarnings(listingId,false,token);
-      if(d&&d.buyer_id){
-        const label=newStatus.replace(/_/g," ").toUpperCase();
+      let refundFailed=false;
+      if(newStatus==="refunded"){
+        // Stop the seller being paid, then issue the REAL Stripe refund to the buyer.
+        if(listingId) await db.settleDisputedEarnings(listingId,false,token);
+        if(d&&d.order_id){
+          try{ await refundOrder(d.order_id, user.id); }
+          catch(e){ refundFailed=true; }
+        }
+      }
+      // The refund function notifies the buyer with the refund detail itself; for
+      // every other status send the generic dispute-update notification.
+      if(d&&d.buyer_id&&newStatus!=="refunded"){
         await notify(d.buyer_id,"dispute","⚖️ Dispute update",`Your dispute has been updated to: ${label}`,d.order_id);
       }
-      flash(`Dispute marked ${newStatus.replace(/_/g," ").toUpperCase()}.`);
+      if(newStatus==="refunded"){
+        flash(refundFailed
+          ? "Dispute marked REFUNDED, but the auto-refund failed — issue it manually in Stripe."
+          : "Dispute REFUNDED — the buyer has been refunded.",7000);
+      }else{
+        flash(`Dispute marked ${label}.`);
+      }
     }catch(e){ flash("Failed to update dispute."); }
   }
 
