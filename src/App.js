@@ -1628,7 +1628,9 @@ export default function App() {
       setMyWishlist(prev=>{ const n=new Set(prev); has?n.add(id):n.delete(id); return n; });
       setWishlistCounts(prev=>({...prev,[id]:Math.max(0,(prev[id]||0)+(has?1:-1))}));
       setWishlistOrder(prev=> has?[id,...prev.filter(x=>x!==id)]:prev.filter(x=>x!==id));
-      flash("Couldn't update wishlist. Try again.");
+      // Surface the real PostgREST error so the cause is diagnosable from the UI
+      // (RLS / missing table / constraint) without needing the network tab.
+      flash("Wishlist error: "+String(e&&e.message?e.message:e).slice(0,160),7000);
     }
   }
 
