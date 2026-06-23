@@ -240,7 +240,7 @@ export default function Detail({
                 <div style={S.guaranteeList}>
                   <span style={S.guaranteePoint}><Shield width={16} height={16} color="#00E5CC" style={{flexShrink:0}}/> Secure checkout powered by Stripe</span>
                   <span style={S.guaranteePoint}><MessageCircle width={16} height={16} color="#00E5CC" style={{flexShrink:0}}/> Message the seller directly before you buy</span>
-                  <span style={S.guaranteePoint}><Clock width={16} height={16} color="#00E5CC" style={{flexShrink:0}}/> Report an issue within 48 hours of delivery</span>
+                  <span style={S.guaranteePoint}><Clock width={16} height={16} color="#00E5CC" style={{flexShrink:0}}/> Report an issue within 5 days of delivery</span>
                 </div>
               </div>
               {/* NEED ALTERATIONS? — connect with a Stitch'd tailor (Phase 15). */}

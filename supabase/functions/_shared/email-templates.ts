@@ -200,7 +200,7 @@ export const templates = {
         unsubscribeUrl: ctx.unsub,
         bodyHtml:
           listingCard({ image: d.image, title: d.title }) +
-          p("Your order has been marked as delivered. If something isn't right, you have 48 hours to report a problem.") +
+          p("Your order has been marked as delivered. If something isn't right, you have 5 days to report a problem.") +
           button("Leave a review", listingLink) +
           button("Report a problem", `${ctx.site}/orders`, "secondary"),
       }),

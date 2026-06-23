@@ -35,7 +35,7 @@ const PAGES = {
       },
       {
         heading: "4. Buying on Stitch'd",
-        body: "All sales are between the buyer and seller. Stitch'd facilitates payment via Stripe but is not responsible for the physical condition of items received. Buyers must report issues within 48 hours of delivery.",
+        body: "All sales are between the buyer and seller. Stitch'd facilitates payment via Stripe but is not responsible for the physical condition of items received. Buyers must report issues within 5 days of delivery.",
       },
       {
         heading: "5. Payments and Fees",
@@ -115,7 +115,7 @@ const PAGES = {
       },
       {
         heading: "3. How to Request a Return",
-        body: "Contact us within 48 hours of receiving your item at hello@stitchd.fit with your order reference and photographs of the issue. We will review your case within 3 working days.",
+        body: "Contact us within 5 days of receiving your item at hello@stitchd.fit with your order reference and photographs of the issue. We will review your case within 3 working days.",
       },
       {
         heading: "4. Refunds",
