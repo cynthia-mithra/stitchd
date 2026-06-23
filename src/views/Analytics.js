@@ -230,6 +230,20 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
   const avgViews = myItems.length > 0 ? totalViews / myItems.length : 0;
   const mostViewed = myItems.reduce((best, i) => ((i.views || 0) > (best?.views || 0) ? i : best), null);
   const rating = user ? sellerRatings[user.id] : null;
+  // Avg sale price (period) and lifetime sell-through (sold ÷ everything listed).
+  const avgSalePrice = salesCount > 0 ? totalEarnings / salesCount : 0;
+  const listedTotal = soldCount + activeCount;
+  const sellThrough = listedTotal > 0 ? (soldCount / listedTotal) * 100 : 0;
+  // Buyer loyalty (lifetime): how many distinct buyers, and how many bought 2+ times.
+  const buyerCounts = {};
+  sellerOrders.forEach(o => { if (o.buyer_id) buyerCounts[o.buyer_id] = (buyerCounts[o.buyer_id] || 0) + 1; });
+  const uniqueBuyers = Object.keys(buyerCounts).length;
+  const repeatBuyers = Object.values(buyerCounts).filter(n => n > 1).length;
+  // Earnings split by category (period) for the SALES BY CATEGORY bars.
+  const catEarnings = {};
+  periodOrders.forEach(o => { const l = myItems.find(i => i.id === o.listing_id); const cat = (l?.category || "Other").toUpperCase(); catEarnings[cat] = (catEarnings[cat] || 0) + orderAmount(o); });
+  const catRows = Object.entries(catEarnings).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const catMax = Math.max(...catRows.map(([, v]) => v), 1);
 
   const buckets = buildBuckets(periodOrders, period, now);
 
@@ -263,6 +277,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
         <div style={ST.sectionLabel}><TrendingUp width={15} height={15} /> OVERVIEW</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 12 }} className="analytics-stat-grid">
           <StatCard label="Total Earnings" value={gbp(totalEarnings)} sub={`from ${salesCount} sale${salesCount === 1 ? "" : "s"}`} />
+          <StatCard label="Avg Sale Price" value={gbp(avgSalePrice)} sub={salesCount > 0 ? "per sale this period" : "no sales yet"} />
           <StatCard label="Active Listings" value={activeCount} sub={`${soldCount} sold all time`} />
           <StatCard label="Total Views" value={totalViews} sub="across all listings" />
           <StatCard label="Saves / Wishlists" value={totalSaves} sub="across all listings" />
@@ -273,6 +288,28 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
       <div>
         <div style={ST.sectionLabel}>EARNINGS OVER TIME</div>
         <EarningsChart buckets={buckets} />
+      </div>
+
+      {/* SECTION 2b — SALES BY CATEGORY */}
+      <div>
+        <div style={ST.sectionLabel}>SALES BY CATEGORY</div>
+        {catRows.length === 0 ? (
+          <div style={{ border: "2px solid #111", padding: "40px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 1, color: "#bbb" }}>
+            NO SALES IN THIS PERIOD
+          </div>
+        ) : (
+          <div style={{ border: "2px solid #111", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+            {catRows.map(([cat, total], i) => (
+              <div key={cat} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: "#111", width: 110, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cat}</span>
+                <div style={{ flex: 1, height: 16, background: "#f3f3f3", position: "relative" }}>
+                  <div style={{ width: `${Math.max(4, (total / catMax) * 100)}%`, height: "100%", background: CARD_COLORS[i % CARD_COLORS.length] }} />
+                </div>
+                <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 900, color: "#111", width: 64, textAlign: "right", flexShrink: 0 }}>{gbp(total)}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* SECTION 3 — LISTING PERFORMANCE TABLE */}
@@ -339,6 +376,8 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
         <div style={ST.sectionLabel}>ENGAGEMENT</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 12 }} className="analytics-stat-grid">
           <StatCard label="Conversion Rate" value={`${conversionRate.toFixed(1)}%`} sub="views that became sales" />
+          <StatCard label="Sell-Through Rate" value={`${sellThrough.toFixed(0)}%`} sub={`${soldCount} of ${listedTotal} listed`} />
+          <StatCard label="Repeat Buyers" value={repeatBuyers} sub={`${uniqueBuyers} unique buyer${uniqueBuyers === 1 ? "" : "s"}`} />
           <StatCard label="Avg Views / Listing" value={avgViews.toFixed(1)} sub="per listing" />
           <StatCard
             label="Most Viewed"
