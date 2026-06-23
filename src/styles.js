@@ -77,12 +77,12 @@ export const CSS=`
   .reveal.in{opacity:1;transform:none;}
   /* Hero value-prop "trust bar" — 3 equal cells in a sharp bordered row with
      vertical dividers; stacks with horizontal dividers on mobile. */
-  .hero-props{display:flex;flex-wrap:wrap;justify-content:center;margin-top:40px;border:2px solid #111;max-width:760px;width:100%;background:#fff;}
-  .hero-prop{flex:1 1 0;min-width:190px;display:flex;align-items:center;justify-content:center;gap:9px;padding:15px 16px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:2px;color:#111;text-transform:uppercase;white-space:nowrap;}
-  .hero-prop + .hero-prop{border-left:2px solid #111;}
+  .hero-props{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:34px;max-width:780px;width:100%;}
+  .hero-prop{display:flex;align-items:center;justify-content:center;gap:9px;padding:8px 24px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:2px;color:#111;text-transform:uppercase;white-space:nowrap;}
+  .hero-prop + .hero-prop{border-left:1px solid #e2e2e2;}
   @media(max-width:600px){
-    .hero-prop{flex:1 1 100%;justify-content:flex-start;padding:13px 18px;}
-    .hero-prop + .hero-prop{border-left:none;border-top:2px solid #111;}
+    .hero-prop{flex:1 1 100%;padding:9px 18px;}
+    .hero-prop + .hero-prop{border-left:none;}
   }
   @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
   input:focus,select:focus,textarea:focus{border-color:#FF1493 !important;box-shadow:0 0 0 3px rgba(255,20,147,0.1) !important;outline:none;}
