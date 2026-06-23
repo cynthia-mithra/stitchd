@@ -47,6 +47,16 @@ import NotFound from "./views/NotFound";
 // owns so the two never drift (e.g. "/terms" → "terms").
 const LEGAL_PATHS = Object.fromEntries(LEGAL_VIEWS.map(v => [`/${v}`, v]));
 
+// Chat day-separator label: TODAY / YESTERDAY / "12 Jun 2026".
+function msgDayLabel(ts) {
+  if (!ts) return "";
+  const d = new Date(ts), today = new Date(), y = new Date(); y.setDate(today.getDate() - 1);
+  const same = (a, b) => a.toDateString() === b.toDateString();
+  if (same(d, today)) return "TODAY";
+  if (same(d, y)) return "YESTERDAY";
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }).toUpperCase();
+}
+
 // Every URL path the app knows how to route on a cold load. Anything that
 // matches none of these is an unknown link → the custom 404 (see the routing
 // effect). Keep in sync with the path handlers in the mount effects above.
@@ -4348,18 +4358,22 @@ export default function App() {
                   const otherProfile=convProfiles[otherId];
                   const isActive=activeConv?.id===conv.id;
                   const listing=items.find(i=>i.id===conv.listing_id);
+                  const unread=conv.unread_count||0;
                   return(
-                    <div key={conv.id} style={{...S.convItem,background:isActive?"#fff0f8":"#fff",borderLeft:isActive?"4px solid #FF1493":"4px solid transparent"}} onClick={()=>openConversation(conv)}>
-                      <div style={S.convAvatar}>
-                        {otherProfile?.avatar_url?<img src={otherProfile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#fff"}}>{(otherProfile?.full_name||otherProfile?.username||"?")[0].toUpperCase()}</span>}
+                    <div key={conv.id} style={{...S.convItem,background:isActive?"#fff0f8":unread>0?"#fffafd":"#fff",borderLeft:isActive?"4px solid #FF1493":"4px solid transparent"}} onClick={()=>openConversation(conv)}>
+                      <div style={{position:"relative"}}>
+                        <div style={S.convAvatar}>
+                          {otherProfile?.avatar_url?<img src={otherProfile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#fff"}}>{(otherProfile?.full_name||otherProfile?.username||"?")[0].toUpperCase()}</span>}
+                        </div>
+                        {unread>0&&<span style={{position:"absolute",top:-3,right:-3,minWidth:18,height:18,padding:"0 5px",borderRadius:9,background:"#FF1493",color:"#fff",border:"2px solid #fff",fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center"}}>{unread>9?"9+":unread}</span>}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
-                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#111"}}>{otherProfile?.full_name||otherProfile?.username||"Seller"}</span>
-                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb"}}>{conv.last_message_at?new Date(conv.last_message_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}).toUpperCase():""}</span>
+                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:unread>0?900:800,color:"#111"}}>{otherProfile?.full_name||otherProfile?.username||"Seller"}</span>
+                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:unread>0?"#FF1493":"#bbb",fontWeight:unread>0?800:400}}>{conv.last_message_at?new Date(conv.last_message_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}).toUpperCase():""}</span>
                         </div>
                         {listing&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#FF1493",fontWeight:700,letterSpacing:1,marginBottom:2}}>{listing.name?.toUpperCase()}</p>}
-                        <p style={{fontSize:12,color:"#888",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{conv.last_message||"Start a conversation"}</p>
+                        <p style={{fontSize:12,color:unread>0?"#111":"#888",fontWeight:unread>0?700:400,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{conv.last_message||"Start a conversation"}</p>
                       </div>
                     </div>
                   );
@@ -4388,14 +4402,26 @@ export default function App() {
                       </div>
                     </div>
                     <div id="chat-messages" style={S.chatMessages}>
-                      {messages.map(msg=>{
+                      {messages.length===0&&(
+                        <div style={{textAlign:"center",padding:"32px 16px",color:"#bbb"}}>
+                          <p style={{display:"flex",justifyContent:"center",marginBottom:8}}><MessageCircle width={30} height={30} color="#ddd"/></p>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,letterSpacing:0.5,color:"#bbb"}}>This is the start of your conversation with {otherProfile?.full_name||otherProfile?.username||"this seller"}.</p>
+                          <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#ccc",marginTop:4}}>Say hello 👋</p>
+                        </div>
+                      )}
+                      {messages.map((msg,mi)=>{
                         const isMine=msg.sender_id===user.id;
                         const isSeller=activeConv&&user.id===activeConv.seller_id;
                         const isOffer=msg.message_type==="offer";
                         const offerPending=isOffer&&msg.offer_status==="pending";
                         const canRespond=isOffer&&offerPending&&isSeller;
+                        // Day separator when the date changes from the previous message.
+                        const dl=msgDayLabel(msg.created_at);
+                        const showDay=mi===0||msgDayLabel(messages[mi-1].created_at)!==dl;
                         return(
-                          <div key={msg.id} style={{display:"flex",justifyContent:isMine?"flex-end":"flex-start",marginBottom:12}}>
+                          <React.Fragment key={msg.id}>
+                          {showDay&&<div style={{textAlign:"center",margin:"6px 0 14px"}}><span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:2,color:"#bbb",background:"#f0f0f0",padding:"3px 12px",borderRadius:10}}>{dl}</span></div>}
+                          <div style={{display:"flex",justifyContent:isMine?"flex-end":"flex-start",marginBottom:12}}>
                             {isOffer?(
                               <div style={{...S.offerCard,border:`2px solid ${msg.offer_status==="accepted"?"#34C759":msg.offer_status==="declined"?"#FF3B30":"#FF1493"}`,maxWidth:"80%"}}>
                                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
@@ -4427,6 +4453,7 @@ export default function App() {
                               </div>
                             )}
                           </div>
+                          </React.Fragment>
                         );
                       })}
                     </div>
