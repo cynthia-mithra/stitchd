@@ -1,5 +1,5 @@
 import React from "react";
-import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Plane, Instagram, UserPlus, UserCheck, Tag, Calendar, Clock, Users } from "lucide-react";
+import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Plane, Instagram, UserPlus, UserCheck, Tag, Calendar, Clock, Users, ArrowRight } from "lucide-react";
 import { SIZES, CARD_COLORS, catEmoji, currencySymbol, listingGender } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
@@ -160,13 +160,13 @@ export default function Profile({
               #FF1493 fallback. Avatar overlaps the bottom-left. */}
           <div style={{position:"relative",margin:"0 12px"}}>
             <div style={{width:"100%",height:"clamp(140px,28vw,200px)",background:sf.storefront_banner_url?`#FF1493 url(${sf.storefront_banner_url}) center/cover no-repeat`:"#FF1493",border:"2px solid #111"}}/>
-            <div style={{position:"absolute",left:18,bottom:-40,width:80,height:80,borderRadius:"50%",border:"2px solid #111",overflow:"hidden",background:"#FF1493",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              {sf.avatar_url?<img src={sf.avatar_url} alt={sf.full_name||sf.username} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:34,fontWeight:900,color:"#fff"}}>{(sf.full_name||sf.username||"S")[0].toUpperCase()}</span>}
+            <div style={{position:"absolute",left:18,bottom:-44,width:90,height:90,borderRadius:"50%",border:"3px solid #111",overflow:"hidden",background:"#FF1493",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 24px rgba(0,0,0,0.18)"}}>
+              {sf.avatar_url?<img src={sf.avatar_url} alt={sf.full_name||sf.username} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:38,fontWeight:900,color:"#fff"}}>{(sf.full_name||sf.username||"S")[0].toUpperCase()}</span>}
             </div>
           </div>
 
           {/* SELLER INFO */}
-          <div style={{padding:"52px 18px 0"}}>
+          <div style={{padding:"58px 18px 0"}}>
             {sf.vacation_mode&&(
               <div style={{display:"flex",alignItems:"center",gap:10,background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"12px 14px",marginBottom:18,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:0.5,fontSize:14}}>
                 <Plane width={18} height={18} color="#FF1493"/> This seller is currently on vacation and not accepting orders.
@@ -232,9 +232,10 @@ export default function Profile({
               {gridItems.map((item,idx)=>{
                 const accent=CARD_COLORS[idx%CARD_COLORS.length];
                 return(
-                  <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
-                    <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
+                  <article key={item.id} className="scard" style={S.card} onClick={()=>openDetail(item)}>
+                    <div className="card-top" style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
                       {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
+                      {!item.sold&&<div className="card-hover-price"><span className="chp-price">{currencySymbol(item.currency)}{item.price}</span><span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span></div>}
                     </div>
                     <div style={S.cardBody}>
                       <p style={{...S.cardCatLabel,color:accent}}>{item.category?.toUpperCase()}</p>
@@ -251,7 +252,7 @@ export default function Profile({
           {reviews.length>0&&(
             <div style={{marginTop:48,padding:"0 18px"}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>REVIEWS ({reviews.length})</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:3}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
                 {reviews.map(r=>(
                   <div key={r.id} style={{border:"2px solid #111",borderRadius:0,padding:"14px 16px"}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:6,flexWrap:"wrap"}}>
