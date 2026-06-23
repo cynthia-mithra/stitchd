@@ -1,5 +1,5 @@
 import React from "react";
-import { Scissors, MapPin, ExternalLink, Mail, ArrowLeft, CreditCard, Check, Star, X, Calendar } from "lucide-react";
+import { Scissors, MapPin, ExternalLink, Mail, ArrowLeft, CreditCard, Check, Star, X, Calendar, AlertCircle } from "lucide-react";
 import { S } from "../styles";
 import { Stars, Thumb } from "../components/Shared";
 import { RatingChip } from "../components/Reviews";
@@ -32,6 +32,7 @@ const STATUS_STYLE = {
   declined:  {background:"#e6e6e6", color:"#999"},
   completed: {background:INK,  color:"#fff"},
   cancelled: {background:"#e6e6e6", color:"#999"},
+  disputed:  {background:"#FF9500", color:"#fff"},
 };
 export function StatusBadge({ status }) {
   const st=(status||"pending").toLowerCase();
@@ -290,6 +291,7 @@ export default function Alterations({
   view, setView, loading = false, requests = [], reviews = [],
   onMessageTailor = () => {}, onFindTailor = () => {}, onAcceptQuote = () => {},
   onDeclineQuote = () => {}, onConfirmCompletion = () => {}, onLeaveReview = () => {},
+  onReportProblem = () => {},
   checkoutId = null,
 }) {
   // Confirm modals: declining a quote, and confirming a completed booking.
@@ -423,10 +425,24 @@ export default function Alterations({
                   )
                 )}
 
+                {/* ── DISPUTED — buyer reported a problem; Stitch'd reviewing ── */}
+                {st==="disputed"&&(
+                  <div style={{border:"2px solid #FF9500",background:"#fff7ec",padding:14,display:"flex",flexDirection:"column",gap:6}}>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#111",display:"inline-flex",alignItems:"center",gap:8}}><AlertCircle width={16} height={16} color="#FF9500"/> PROBLEM REPORTED</p>
+                    <p style={{fontSize:13,color:"#555",lineHeight:1.5}}>Stitch'd is reviewing your report and will be in touch. The tailor's payment is on hold until it's resolved.</p>
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                   <button className="hbtn" onClick={()=>onMessageTailor(req)}
                     style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"11px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}><Mail width={15} height={15}/> MESSAGE TAILOR</button>
+                  {/* Report a problem — available once paid (accepted/completed) and the
+                      payout hasn't been released, so it can still be held for review. */}
+                  {(st==="accepted"||st==="completed")&&!payoutPaid&&(
+                    <button className="hbtn" onClick={()=>onReportProblem(req)}
+                      style={{background:"#fff",color:"#FF9500",border:"2px solid #FF9500",borderRadius:0,padding:"11px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}><AlertCircle width={15} height={15}/> REPORT A PROBLEM</button>
+                  )}
                   {st==="declined"&&(
                     <button className="hbtn" onClick={onFindTailor}
                       style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"11px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}><Scissors width={15} height={15}/> FIND ANOTHER TAILOR</button>

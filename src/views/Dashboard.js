@@ -588,7 +588,9 @@ export default function Dashboard({
                   ):(
                     <div style={{display:"flex",flexDirection:"column",gap:10}}>
                       {adminDisputes.map(d=>{
-                        const ref=`#${String(d.order_id||"").slice(-8).toUpperCase()}`;
+                        const isAlteration=!!d.alteration_request_id;
+                        const ref=`#${String(d.order_id||d.alteration_request_id||"").slice(-8).toUpperCase()}`;
+                        const altName=d.alteration_requests&&((d.alteration_requests.listings&&d.alteration_requests.listings.name)||d.alteration_requests.garment_type);
                         const date=d.created_at?new Date(d.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase():"";
                         const STATUSES=[["open","OPEN"],["under_review","UNDER REVIEW"],["resolved","RESOLVED"],["refunded","REFUNDED"]];
                         const cur=(d.status||"open").toLowerCase();
@@ -596,6 +598,8 @@ export default function Dashboard({
                           <div key={d.id} style={{border:"2px solid #111",padding:"14px 16px",fontFamily:"'Barlow Condensed',sans-serif"}}>
                             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
                               <span style={{background:"#111",color:"#fff",padding:"3px 10px",fontSize:11,fontWeight:800,letterSpacing:1}}>{ref}</span>
+                              <span style={{background:isAlteration?"#FF9500":"#00E5CC",color:isAlteration?"#fff":"#111",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5}}>{isAlteration?"TAILORING":"PURCHASE"}</span>
+                              {isAlteration&&altName&&<span style={{fontSize:11,color:"#888",letterSpacing:0.5}}>{altName}</span>}
                               <span style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{date}</span>
                             </div>
                             <p style={{fontSize:16,fontWeight:900,color:"#FF1493",marginBottom:2}}>{d.problem_type}</p>

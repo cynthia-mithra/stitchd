@@ -283,6 +283,9 @@ export default function App() {
   // Phase 11 — dispute resolution. `disputeOrder` is the order a buyer is raising a
   // problem with (null = modal closed); `disputeForm` holds the form state.
   const [disputeOrder, setDisputeOrder] = useState(null);
+  // "order" (a purchase) or "alteration" (a tailoring booking) — drives both the
+  // problem-type options shown and how submitDispute records/holds funds.
+  const [disputeKind,  setDisputeKind]  = useState("order");
   const [disputeForm,  setDisputeForm]  = useState({problem_type:"",details:"",photoFile:null,photoPreview:""});
   const [disputeBusy,  setDisputeBusy]  = useState(false);
   const [disputeDone,  setDisputeDone]  = useState(false);
@@ -1248,7 +1251,16 @@ export default function App() {
     if(!user){ setAuthMode("login"); setView("auth"); return; }
     setDisputeForm({problem_type:"",details:"",photoFile:null,photoPreview:""});
     setDisputeDone(false);
+    setDisputeKind("order");
     setDisputeOrder(order);
+  }
+  // Same modal, for a tailoring booking (the alteration_requests row is passed in).
+  function openAlterationDispute(req){
+    if(!user){ setAuthMode("login"); setView("auth"); return; }
+    setDisputeForm({problem_type:"",details:"",photoFile:null,photoPreview:""});
+    setDisputeDone(false);
+    setDisputeKind("alteration");
+    setDisputeOrder(req);
   }
   function closeDispute(){ setDisputeOrder(null); setDisputeDone(false); }
   function setDisputePhoto(file){
@@ -1268,14 +1280,25 @@ export default function App() {
         catch(e){ /* a failed photo upload shouldn't block the dispute itself */ }
       }
       const o=disputeOrder;
-      await db.insertDispute({order_id:o.id,buyer_id:user.id,seller_id:o.seller_id||null,problem_type:disputeForm.problem_type,details:disputeForm.details.trim(),photo_url,status:"open"},token);
-      // Dispute hold — keep the seller's earnings held (won't auto-release) until
-      // an admin resolves it.
-      if(o.listing_id) await db.holdDisputedEarnings(o.listing_id,token);
-      // Notify the Stitch'd admin(s) — type='dispute', routed to each is_admin user.
-      const title=items.find(i=>i.id===o.listing_id)?.name||"an order";
       const admins=await db.getAdmins(token);
-      await Promise.all((admins||[]).map(a=>notify(a.id,"dispute","⚠️ New dispute raised",`A buyer reported a problem with "${title}": ${disputeForm.problem_type}`,o.listing_id)));
+      if(disputeKind==="alteration"){
+        // Tailoring dispute — link to the alteration request, mark it 'disputed'
+        // (the tailor's payout only releases on buyer confirmation, so this both
+        // freezes it and replaces the confirm UI with an under-review state).
+        await db.insertDispute({alteration_request_id:o.id,order_id:null,buyer_id:user.id,seller_id:o.tailors?.user_id||null,problem_type:disputeForm.problem_type,details:disputeForm.details.trim(),photo_url,status:"open"},token);
+        try{ await db.updateAlterationRequest(o.id,{status:"disputed"},token); }catch(e){}
+        setBuyerAlterations(prev=>prev.map(r=>r.id===o.id?{...r,status:"disputed"}:r));
+        const name=o.listings?.name||o.garment_type||"an alteration";
+        await Promise.all((admins||[]).map(a=>notify(a.id,"dispute","⚠️ New tailoring dispute",`A buyer reported a problem with the alteration of "${name}": ${disputeForm.problem_type}`,o.listing_id||null)));
+      }else{
+        await db.insertDispute({order_id:o.id,buyer_id:user.id,seller_id:o.seller_id||null,problem_type:disputeForm.problem_type,details:disputeForm.details.trim(),photo_url,status:"open"},token);
+        // Dispute hold — keep the seller's earnings held (won't auto-release) until
+        // an admin resolves it.
+        if(o.listing_id) await db.holdDisputedEarnings(o.listing_id,token);
+        // Notify the Stitch'd admin(s) — type='dispute', routed to each is_admin user.
+        const title=items.find(i=>i.id===o.listing_id)?.name||"an order";
+        await Promise.all((admins||[]).map(a=>notify(a.id,"dispute","⚠️ New dispute raised",`A buyer reported a problem with "${title}": ${disputeForm.problem_type}`,o.listing_id)));
+      }
       setDisputeDone(true);
       setTimeout(()=>{ closeDispute(); },2000);
     }catch(e){ flash("Failed to submit dispute."); }
@@ -1313,30 +1336,36 @@ export default function App() {
     try{
       await db.updateDispute(id,{status:newStatus},token);
       setAdminDisputes(p=>p.map(x=>x.id===id?{...x,status:newStatus}:x));
-      // Settle the held earnings on resolution: 'resolved' releases them to the
-      // seller; 'refunded' reverses them so the seller isn't paid. The listing id
-      // comes from the embedded order on the dispute row.
-      const listingId=(d&&d.orders&&d.orders.listing_id)||null;
       const label=newStatus.replace(/_/g," ").toUpperCase();
-      if(listingId&&newStatus==="resolved") await db.settleDisputedEarnings(listingId,true,token);
+      const isAlteration=!!(d&&d.alteration_request_id);
+      // Listing id (purchase disputes only) drives the seller wallet settlement.
+      const listingId=(d&&d.orders&&d.orders.listing_id)||null;
       let refundFailed=false;
+      if(newStatus==="resolved"){
+        if(isAlteration){ try{ await db.updateAlterationRequest(d.alteration_request_id,{status:"completed"},token); }catch(e){} }
+        else if(listingId){ await db.settleDisputedEarnings(listingId,true,token); }
+      }
       if(newStatus==="refunded"){
-        // Stop the seller being paid, then issue the REAL Stripe refund to the buyer.
-        if(listingId) await db.settleDisputedEarnings(listingId,false,token);
-        if(d&&d.order_id){
-          try{ await refundOrder(d.order_id, user.id); }
-          catch(e){ refundFailed=true; }
+        if(isAlteration){
+          // No automated tailoring refund yet — cancel the booking; admin refunds in Stripe.
+          try{ await db.updateAlterationRequest(d.alteration_request_id,{status:"cancelled"},token); }catch(e){}
+        }else{
+          // Stop the seller being paid, then issue the REAL Stripe refund to the buyer.
+          if(listingId) await db.settleDisputedEarnings(listingId,false,token);
+          if(d&&d.order_id){ try{ await refundOrder(d.order_id,user.id); }catch(e){ refundFailed=true; } }
         }
       }
-      // The refund function notifies the buyer with the refund detail itself; for
-      // every other status send the generic dispute-update notification.
-      if(d&&d.buyer_id&&newStatus!=="refunded"){
-        await notify(d.buyer_id,"dispute","⚖️ Dispute update",`Your dispute has been updated to: ${label}`,d.order_id);
+      // The order-refund function notifies the buyer itself; otherwise send the
+      // generic dispute-update notification.
+      if(d&&d.buyer_id&&!(newStatus==="refunded"&&!isAlteration)){
+        await notify(d.buyer_id,"dispute","⚖️ Dispute update",`Your dispute has been updated to: ${label}`,d.order_id||d.alteration_request_id||null);
       }
       if(newStatus==="refunded"){
-        flash(refundFailed
-          ? "Dispute marked REFUNDED, but the auto-refund failed — issue it manually in Stripe."
-          : "Dispute REFUNDED — the buyer has been refunded.",7000);
+        flash(isAlteration
+          ? "Dispute REFUNDED — booking cancelled. Refund the buyer manually in Stripe (tailoring refunds aren't automated yet)."
+          : (refundFailed
+            ? "Dispute marked REFUNDED, but the auto-refund failed — issue it manually in Stripe."
+            : "Dispute REFUNDED — the buyer has been refunded."),7000);
       }else{
         flash(`Dispute marked ${label}.`);
       }
@@ -3925,7 +3954,9 @@ export default function App() {
 
       {/* REPORT A PROBLEM MODAL (issue PART 2) — buyer dispute on an order. */}
       {disputeOrder&&(()=>{
-        const PROBLEMS=["Item not received","Item is significantly not as described","Item is damaged","Wrong item received","Other"];
+        const PROBLEMS=disputeKind==="alteration"
+          ? ["Alteration not as agreed","Garment damaged by the tailor","Work not completed","Item not returned","Other"]
+          : ["Item not received","Item is significantly not as described","Item is damaged","Wrong item received","Other"];
         const canSubmit=!!disputeForm.problem_type&&!!disputeForm.details.trim()&&!disputeBusy;
         return (
         <div style={S.modalOverlay} onClick={()=>!disputeBusy&&closeDispute()}>
@@ -4516,6 +4547,7 @@ export default function App() {
         onMessageTailor={messageTailorFromRequest} onFindTailor={openTailorDirectory}
         onAcceptQuote={acceptAlterationQuote} onDeclineQuote={declineAlterationQuote}
         onConfirmCompletion={confirmAlterationCompletion} checkoutId={alterCheckoutId}
+        onReportProblem={openAlterationDispute}
         onLeaveReview={openTailorReview} reviews={buyerReviews}
       />
 
