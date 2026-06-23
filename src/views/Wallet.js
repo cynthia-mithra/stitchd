@@ -68,19 +68,26 @@ export default function Wallet({
       </div>
 
       {/* BALANCE CARD */}
-      <div style={{ border: "3px solid #111", padding: "26px 24px", marginBottom: 22, background: "#111", color: "#fff" }}>
-        <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 2, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>AVAILABLE BALANCE</p>
-        <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 56, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: "#fff" }}>{gbp(balance)}</div>
-        {pendingIn > 0 && (
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 0.5, color: "#FFD166", marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
-            <Clock width={14} height={14} /> {gbp(pendingIn)} pending — released when buyers confirm receipt
-          </p>
-        )}
-        {pendingOut > 0 && (
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 0.5, color: "#00E5CC", marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
-            <Clock width={14} height={14} /> {gbp(pendingOut)} withdrawal in progress
-          </p>
-        )}
+      <div style={{ position: "relative", overflow: "hidden", borderRadius: 0, border: "3px solid #111", borderTop: `6px solid ${PINK}`, padding: "28px 26px", marginBottom: 22, background: "linear-gradient(135deg,#1d1d1d 0%,#111 55%)", color: "#fff" }}>
+        <WalletIcon style={{ position: "absolute", right: -14, bottom: -20, width: 130, height: 130, color: "rgba(255,255,255,0.05)" }} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 2.5, color: "rgba(255,255,255,0.55)", marginBottom: 8 }}>AVAILABLE BALANCE</p>
+          <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: "clamp(48px,12vw,60px)", fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: "#fff" }}>{gbp(balance)}</div>
+          {(pendingIn > 0 || pendingOut > 0) && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
+              {pendingIn > 0 && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,209,102,0.4)", padding: "6px 12px", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 0.5, color: "#FFD166" }}>
+                  <Clock width={13} height={13} /> {gbp(pendingIn)} held · released on buyer confirmation
+                </span>
+              )}
+              {pendingOut > 0 && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(0,229,204,0.4)", padding: "6px 12px", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 0.5, color: "#00E5CC" }}>
+                  <Clock width={13} height={13} /> {gbp(pendingOut)} withdrawal in progress
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* WITHDRAW / SETUP */}
@@ -127,21 +134,21 @@ export default function Wallet({
       {loading ? (
         <div style={S.loadingWrap}><div style={S.spinner} /><p style={S.loadingText}>LOADING…</p></div>
       ) : transactions.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "50px 20px", border: "3px dashed #e0e0e0" }}>
-          <p style={{ display: "flex", justifyContent: "center", marginBottom: 12, color: "#ccc" }}><WalletIcon width={44} height={44} /></p>
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 900, color: "#bbb", marginBottom: 6 }}>NO EARNINGS YET</p>
-          <p style={{ fontSize: 14, color: "#999" }}>When you make a sale, your earnings show up here to withdraw.</p>
+        <div style={S.empty}>
+          <div style={S.emptyIcon}><WalletIcon width={40} height={40} /></div>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 30, fontWeight: 900, margin: "20px 0 6px", letterSpacing: -0.5 }}>NO EARNINGS YET.</p>
+          <p style={S.emptySub}>When you make a sale, your earnings land here, ready to withdraw to your bank.</p>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {transactions.map((t) => {
             const credit = (Number(t.amount_pence) || 0) >= 0;
             const failed = t.status === "failed";
             const pending = t.status === "pending";
             const disputed = t.status === "disputed";
             return (
-              <div key={t.id} style={{ border: "2px solid #111", padding: "13px 16px", display: "flex", alignItems: "center", gap: 14, opacity: failed ? 0.55 : 1 }}>
-                <div style={{ width: 36, height: 36, borderRadius: "50%", border: "2px solid #111", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: credit ? "#34C75922" : "#f2f2f2", color: credit ? "#1a8c3e" : "#111" }}>
+              <div key={t.id} className="order-card" style={{ border: "2px solid #111", borderLeft: `6px solid ${credit ? "#34C759" : "#111"}`, padding: "13px 16px", display: "flex", alignItems: "center", gap: 14, opacity: failed ? 0.55 : 1, background: "#fff" }}>
+                <div style={{ width: 36, height: 36, borderRadius: 0, border: "2px solid #111", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: credit ? "#34C75922" : "#f2f2f2", color: credit ? "#1a8c3e" : "#111" }}>
                   {credit ? <ArrowDownLeft width={18} height={18} /> : <ArrowUpRight width={18} height={18} />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
