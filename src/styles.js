@@ -111,6 +111,10 @@ export const CSS=`
     .fg4{grid-template-columns:1fr 1fr !important;}
     .fg2{grid-template-columns:1fr !important;}
     .profile-header{flex-direction:column !important;align-items:center !important;text-align:center;}
+    /* Auth split stacks: brand banner on top, form below. */
+    .auth-split{flex-direction:column !important;}
+    .auth-brand{padding:24px !important;gap:18px !important;flex-direction:row !important;flex-wrap:wrap !important;align-items:center !important;justify-content:space-between !important;}
+    .auth-brand-props{display:none !important;}
   }
   /* MOBILE — hide the scrolling category ticker strip in the navbar (SAREES ✦
      LEHENGAS ✦ …). The pink marquee banner (S.ticker) below the header and the
@@ -350,6 +354,16 @@ export const S={
   aError:{background:"#fff0f0",border:"1.5px solid #FF1493",padding:"10px 14px",fontSize:13,color:"#FF1493",fontWeight:600},
   authSwitch:{textAlign:"center",marginTop:20,fontSize:13,color:"#888"},
   authSwitchLink:{color:"#FF1493",fontWeight:800,cursor:"pointer",textDecoration:"underline"},
+  // Split-screen auth: a black brand panel beside the form, framed as one block.
+  authMain:{maxWidth:960,margin:"0 auto",padding:"20px 12px"},
+  authSplit:{display:"flex",border:"3px solid #111",background:"#fff",overflow:"hidden"},
+  authBrand:{flex:"1 1 44%",background:"#111",color:"#fff",padding:"clamp(28px,4vw,48px)",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:32,minWidth:0},
+  authBrandWord:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(40px,5vw,62px)",fontWeight:900,letterSpacing:1,lineHeight:.92},
+  authBrandTag:{fontFamily:"'Barlow',sans-serif",fontSize:15,color:"rgba(255,255,255,0.72)",lineHeight:1.65,marginTop:14},
+  authBrandProps:{display:"flex",flexDirection:"column",gap:14},
+  authBrandProp:{display:"flex",alignItems:"center",gap:11,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",color:"#fff"},
+  authBrandDot:{width:8,height:8,borderRadius:"50%",flexShrink:0},
+  authFormCol:{flex:"1 1 56%",padding:"clamp(24px,4vw,44px)",minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center"},
   wishBadge:{position:"absolute",top:-6,right:-6,background:"#FF1493",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Barlow Condensed',sans-serif"},
   notifPanel:{position:"fixed",top:96,right:16,width:360,background:"#fff",border:"3px solid #111",zIndex:300,boxShadow:"0 8px 40px rgba(0,0,0,0.15)",maxHeight:500,display:"flex",flexDirection:"column"},
   notifHeader:{padding:"14px 16px",borderBottom:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fafafa"},
