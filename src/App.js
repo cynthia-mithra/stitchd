@@ -234,6 +234,10 @@ export default function App() {
   // recently-viewed list below. No Supabase sync in this issue.
   const [bag,        setBag]        = useState(()=>{ try{return JSON.parse(localStorage.getItem("stitchd_bag"))||[];}catch{return[];} });
   const [showBag,    setShowBag]    = useState(false);
+  // Bag checkout has two steps: review items → pick delivery (Vinted-style). The
+  // chosen courier/option is added to the Stripe total and recorded on the order.
+  const [bagStep,    setBagStep]    = useState("items");
+  const [bagShipping,setBagShipping]= useState(null);
   const [checkingOut,setCheckingOut]= useState(false);
   // Order-success page state: {status:'loading'|'ok'|'error', items, amount}.
   const [orderResult,setOrderResult]= useState(null);
@@ -720,6 +724,10 @@ export default function App() {
     if(el&&el.animate) el.animate([{opacity:0.35},{opacity:1}],{duration:240,easing:"cubic-bezier(.22,1,.36,1)"});
   },[view]);
 
+  // Reset the bag's delivery step whenever it closes, so it always reopens on the
+  // item-review step with no stale shipping selection.
+  useEffect(()=>{ if(!showBag){ setBagStep("items"); setBagShipping(null); } },[showBag]);
+
   // Sticky header shadow — flips `scrolled` on once the page has moved past a few
   // pixels so the frosted header lifts off the content with a hairline shadow.
   useEffect(()=>{
@@ -1005,39 +1013,41 @@ export default function App() {
   // PROCEED TO CHECKOUT → create a Stripe Checkout Session server-side and
   // redirect to the hosted checkout page. No Stripe secret key ever touches
   // the frontend (see src/lib/checkout.js + the stripe-checkout Edge Function).
-  async function doCheckout(){
+  async function doCheckout(shipping){
     if(checkingOut||!bag.length) return;
     setCheckingOut(true);
     flash("Taking you to secure checkout…");
     try{
-      await startCheckout(bag,{buyerId:user?.id,buyerEmail:user?.email});
+      const ship = shipping && shipping.selectedPrice
+        ? { label: `${shipping.name} · ${shipping.selectedPrice.label}`, amount_pence: Math.round((shipping.selectedPrice.price||0)*100) }
+        : null;
+      await startCheckout(bag,{buyerId:user?.id,buyerEmail:user?.email,shipping:ship});
     }catch(e){
       flash(`Checkout failed: ${errMsg(e)}`);
       setCheckingOut(false);
     }
   }
 
-  // BUY NOW (single listing) → same hosted-checkout redirect as the bag. Stripe
-  // blocks card entry when its checkout is embedded in a modal/iframe, so we hand
-  // the buyer straight to Stripe's hosted page via window.location.href (inside
-  // startCheckout) instead of opening the in-page payment modal.
-  //
-  // Deliberately NO sign-in gate here: this mirrors the bag's doCheckout, which
-  // lets guests check out and passes a null buyer id / empty email so Stripe's
-  // hosted page collects the email itself. The old `if(!user) → setView("auth")`
-  // guard bounced signed-out buyers (and anyone whose session had silently
-  // expired) straight back to the login screen instead of to Stripe — the
-  // "click buy now and it just sends me to sign in again" bug.
-  async function buyNow(listing){
-    if(!listing||checkingOut) return;
-    setCheckingOut(true);
-    flash("Taking you to secure checkout…");
-    try{
-      await startCheckout([listing],{buyerId:user?.id,buyerEmail:user?.email});
-    }catch(e){
-      flash(`Checkout failed: ${errMsg(e)}`);
-      setCheckingOut(false);
-    }
+  // BUY NOW (single listing) → funnel through the bag so the buyer also picks a
+  // delivery option (Vinted-style) before paying, rather than going straight to
+  // Stripe. Adds the item to the bag if it isn't already there, then opens the
+  // bag on the item-review step. No sign-in gate (guests can still check out).
+  function buyNow(listing){
+    if(!listing) return;
+    setBag(prev=>{
+      if(prev.some(b=>b.id===listing.id)) return prev;
+      const snapshot={
+        id:listing.id,name:listing.name,price:listing.price,currency:listing.currency,
+        image:listing.image_url||(listing.images&&listing.images[0])||"",
+        emoji:listing.emoji||catEmoji(listing.category),
+        seller:listing.seller_username||listing.seller_name||listing.username||"",
+        sellerId:listing.user_id||listing.seller_id||null,sold:!!listing.sold,
+      };
+      const next=[...prev,snapshot];
+      localStorage.setItem("stitchd_bag",JSON.stringify(next));
+      return next;
+    });
+    setBagStep("items"); setShowBag(true);
   }
 
   function shareItem(item){
@@ -3739,9 +3749,66 @@ export default function App() {
                     <span style={S.bagTotalVal}>{currencySymbol(bag[0]?.currency)}{bagTotal.toFixed(2)}</span>
                   </div>
                 )}
-                <button className="hbtn" style={{...S.bagCheckoutBtn,opacity:checkingOut?0.6:1,cursor:checkingOut?"wait":"pointer"}} onClick={doCheckout} disabled={checkingOut}>{checkingOut?"REDIRECTING…":"PROCEED TO CHECKOUT"}</button>
-                <p style={S.bagGuarantee}><Lock width={13} height={13}/> Secure checkout · Stitch'd Buyer Guarantee</p>
-                <button style={S.bagContinue} onClick={()=>setShowBag(false)}>CONTINUE SHOPPING</button>
+                {bagStep==="items"?(
+                  <>
+                    <button className="hbtn" style={S.bagCheckoutBtn} onClick={()=>setBagStep("delivery")}>CHOOSE DELIVERY →</button>
+                    <p style={S.bagGuarantee}><Lock width={13} height={13}/> Secure checkout · Stitch'd Buyer Guarantee</p>
+                    <button style={S.bagContinue} onClick={()=>setShowBag(false)}>CONTINUE SHOPPING</button>
+                  </>
+                ):(()=>{
+                  const shipAmt=bagShipping?.selectedPrice?.price||0;
+                  const finalTotal=(bagTotal-bundleDiscountTotal)+shipAmt;
+                  return(
+                  <>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,letterSpacing:2,color:"#999",margin:"4px 0 10px"}}>HOW WOULD YOU LIKE IT DELIVERED?</p>
+                    <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:14}}>
+                      {POSTAGE_OPTIONS.map(carrier=>(
+                        <React.Fragment key={carrier.id}>
+                          {carrier.prices.map(price=>{
+                            const optId=`${carrier.id}-${price.label}`;
+                            const sel=bagShipping?.optId===optId;
+                            return(
+                              <div key={optId} onClick={()=>setBagShipping({...carrier,selectedPrice:price,optId})} style={{border:`2px solid ${sel?"#FF1493":"#e0e0e0"}`,background:sel?"#fff8fc":"#fff",padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:11}}>
+                                <span style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?"#FF1493":"#ccc"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<span style={{width:9,height:9,borderRadius:"50%",background:"#FF1493"}}/>}</span>
+                                {carrier.Icon&&<carrier.Icon width={18} height={18} style={{flexShrink:0,color:"#111"}}/>}
+                                <div style={{flex:1,minWidth:0}}>
+                                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#111",lineHeight:1.1}}>{carrier.name}</p>
+                                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",letterSpacing:0.3}}>{price.label}</p>
+                                </div>
+                                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#111",flexShrink:0}}>{currencySymbol()}{price.price.toFixed(2)}</span>
+                              </div>
+                            );
+                          })}
+                        </React.Fragment>
+                      ))}
+                      {/* Collection in person — free, arranged with the seller. */}
+                      {(()=>{ const sel=bagShipping?.id==="collection"; return(
+                        <div onClick={()=>setBagShipping({id:"collection",name:"Collection in Person",Icon:Handshake,selectedPrice:{price:0,label:"Arrange with seller"},optId:"collection"})} style={{border:`2px solid ${sel?"#34C759":"#e0e0e0"}`,background:sel?"#f0fff4":"#fff",padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:11}}>
+                          <span style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?"#34C759":"#ccc"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<Check width={12} height={12} color="#34C759"/>}</span>
+                          <Handshake width={18} height={18} style={{flexShrink:0,color:"#111"}}/>
+                          <div style={{flex:1,minWidth:0}}>
+                            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#111",lineHeight:1.1}}>Collection in Person</p>
+                            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",letterSpacing:0.3}}>Arrange with seller</p>
+                          </div>
+                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#34C759",flexShrink:0}}>FREE</span>
+                        </div>
+                      );})()}
+                    </div>
+                    {bagShipping&&shipAmt>0&&(
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:0.5,color:"#555"}}>
+                        <span style={{display:"inline-flex",alignItems:"center",gap:6}}>{bagShipping.Icon&&<bagShipping.Icon width={14} height={14}/>} Delivery</span>
+                        <span>{currencySymbol()}{shipAmt.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {bagShipping&&(
+                      <div style={S.bagTotalRow}><span style={S.bagTotalLabel}>TOTAL</span><span style={S.bagTotalVal}>{currencySymbol()}{finalTotal.toFixed(2)}</span></div>
+                    )}
+                    <button className="hbtn" style={{...S.bagCheckoutBtn,opacity:(checkingOut||!bagShipping)?0.5:1,cursor:(checkingOut||!bagShipping)?"not-allowed":"pointer"}} onClick={()=>doCheckout(bagShipping)} disabled={checkingOut||!bagShipping}>{checkingOut?"REDIRECTING…":bagShipping?`PAY ${currencySymbol()}${finalTotal.toFixed(2)} →`:"SELECT A DELIVERY OPTION"}</button>
+                    <p style={S.bagGuarantee}><Lock width={13} height={13}/> Secure checkout · Stitch'd Buyer Guarantee</p>
+                    <button style={S.bagContinue} onClick={()=>setBagStep("items")}>← BACK TO BAG</button>
+                  </>
+                  );
+                })()}
               </div>
             )}
           </div>

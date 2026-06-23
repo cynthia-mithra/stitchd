@@ -38,9 +38,18 @@ module.exports = async (req, res) => {
 
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-    const { listing_ids, buyer_id, buyer_email } = body;
+    const { listing_ids, buyer_id, buyer_email, shipping } = body;
     if (!Array.isArray(listing_ids) || listing_ids.length === 0) {
       return res.status(400).json({ error: "No items to check out." });
+    }
+
+    // Buyer-chosen delivery (Vinted-style). Validate server-side: a sane integer
+    // pence amount, capped at £30, with a short label. Anything dodgy is ignored.
+    let shipPence = 0;
+    let shipLabel = "";
+    if (shipping && Number.isFinite(Number(shipping.amount_pence))) {
+      const p = Math.round(Number(shipping.amount_pence));
+      if (p >= 0 && p <= 3000) { shipPence = p; shipLabel = String(shipping.label || "Delivery").slice(0, 80); }
     }
 
     // Pull authoritative prices straight from Supabase — never trust the client.
@@ -72,6 +81,15 @@ module.exports = async (req, res) => {
         quantity: 1,
       };
     });
+
+    // Delivery as its own line item, so the buyer pays item(s) + shipping and the
+    // courier choice is itemised on Stripe's hosted page (skipped for free pickup).
+    if (shipPence > 0) {
+      line_items.push({
+        price_data: { currency: "gbp", product_data: { name: `Delivery — ${shipLabel}` }, unit_amount: shipPence },
+        quantity: 1,
+      });
+    }
 
     // ── Phase 14 — bundle discounts ──────────────────────────────────────────
     // A seller who has bundle_discount_enabled and 2+ of their items in this
@@ -162,6 +180,7 @@ module.exports = async (req, res) => {
         listing_ids: listings.map((l) => l.id).join(","),
         seller_ids: listings.map((l) => l.user_id).join(","),
         buyer_id: buyer_id || "",
+        ...(shipLabel ? { postage_carrier: shipLabel, postage_pence: String(shipPence) } : {}),
         ...bundleMeta,
       },
     });

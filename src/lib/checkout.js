@@ -3,7 +3,7 @@
 // `/api/stripe-checkout` Vercel function (same origin as the app, so there's no
 // CORS preflight to fail), which builds the GBP Checkout Session server-side and
 // returns the hosted-checkout URL to redirect to.
-export async function startCheckout(bag, { buyerId, buyerEmail } = {}) {
+export async function startCheckout(bag, { buyerId, buyerEmail, shipping } = {}) {
   const listing_ids = (bag || []).map((b) => b.id).filter(Boolean);
   if (!listing_ids.length) throw new Error("Your bag is empty.");
 
@@ -16,7 +16,7 @@ export async function startCheckout(bag, { buyerId, buyerEmail } = {}) {
     res = await fetch(`/api/stripe-checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listing_ids, buyer_id: buyerId || null, buyer_email: buyerEmail || "" }),
+      body: JSON.stringify({ listing_ids, buyer_id: buyerId || null, buyer_email: buyerEmail || "", shipping: shipping || null }),
       signal: controller.signal,
     });
   } catch (e) {
