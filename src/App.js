@@ -693,6 +693,15 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
+  // Page transition — a gentle opacity fade on the content wrapper each time the
+  // view changes. Opacity-only (no transform) so fixed overlays keep working, and
+  // skipped when the user prefers reduced motion.
+  useEffect(()=>{
+    if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const el=document.getElementById("page-view");
+    if(el&&el.animate) el.animate([{opacity:0.35},{opacity:1}],{duration:240,easing:"cubic-bezier(.22,1,.36,1)"});
+  },[view]);
+
   // Sticky header shadow — flips `scrolled` on once the page has moved past a few
   // pixels so the frosted header lifts off the content with a hairline shadow.
   useEffect(()=>{
@@ -3553,6 +3562,9 @@ export default function App() {
 
       <div style={S.ticker}><div style={S.tickerInner}>{Array(4).fill("STITCH'D \u00a0·\u00a0 PRE-LOVED SOUTH ASIAN FASHION \u00a0·\u00a0 BUY. SELL. STYLE. \u00a0·\u00a0 MEASURED FITS ONLY \u00a0·\u00a0 ").join("")}</div></div>
 
+      {/* PAGE CONTENT — wrapped so a gentle fade plays on every view change
+          (opacity-only, so fixed overlays/modals keep working). */}
+      <div id="page-view">
       {/* NOTIFICATION PANEL */}
       {showNotifs&&(
         <div style={S.notifPanel}>
@@ -4822,6 +4834,7 @@ export default function App() {
         onHome={()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("shop"); window.scrollTo(0,0); }}
         onBrowse={()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("newarrivals"); window.scrollTo(0,0); }}
       />
+      </div>{/* /#page-view */}
 
       {/* GLOBAL FOOTER — appears on every page (modals/overlays render on top and
           are unaffected; the Stripe checkout is an external hosted page). */}
