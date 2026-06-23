@@ -3598,7 +3598,7 @@ export default function App() {
           )}
         </div>
       )}
-      {toast&&<div style={S.toast}>{toast}</div>}
+      {toast&&<div className="toast-pop" style={S.toast}>{toast}</div>}
 
       {/* SHOPPING BAG PANEL — slide-in from the right. UI/state only; the checkout
           button is a placeholder until Stripe is wired up in a separate issue. */}

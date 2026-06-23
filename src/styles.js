@@ -47,6 +47,9 @@ export const CSS=`
   @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
   @keyframes spin{to{transform:rotate(360deg)}}
+  /* Toast slides up + fades in (keeps the -50% horizontal centering). */
+  @keyframes toastIn{from{opacity:0;transform:translate(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}
+  .toast-pop{animation:toastIn .28s cubic-bezier(.22,1,.36,1);}
   @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
   input:focus,select:focus,textarea:focus{border-color:#FF1493 !important;box-shadow:0 0 0 3px rgba(255,20,147,0.1) !important;outline:none;}
   ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#eee;border-radius:2px}
@@ -202,7 +205,7 @@ export const S={
   // a tasteful detail rather than a loud banner.
   ticker:{background:"#FF1493",overflow:"hidden",borderBottom:"2px solid #111",height:28,display:"flex",alignItems:"center"},
   tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:3.5,color:"rgba(255,255,255,0.92)",animation:"ticker 36s linear infinite",paddingLeft:"100%"},
-  toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"12px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,zIndex:999,borderRadius:0,whiteSpace:"nowrap",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"},
+  toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"13px 26px",borderLeft:"4px solid #FF1493",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,zIndex:999,borderRadius:0,whiteSpace:"nowrap",boxShadow:"0 10px 34px rgba(0,0,0,0.28)"},
   // Type-led editorial hero: a single, centred column (no imagery). Bold stacked
   // headline + brand statement + CTAs + a value-prop strip.
   hero:{borderBottom:"3px solid #111",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",minHeight:"68vh",padding:"64px 24px",overflow:"hidden"},
@@ -247,7 +250,8 @@ export const S={
   pillOn:{background:"#111",border:"1.5px solid #111",color:"#fff"},
   gridWrap:{padding:"24px 18px",maxWidth:1300,margin:"0 auto",background:"#fff"},
   loadingWrap:{display:"flex",flexDirection:"column",alignItems:"center",padding:"80px 0",gap:16},
-  spinner:{width:36,height:36,border:"4px solid #f0f0f0",borderTop:"4px solid #FF1493",borderRadius:"50%",animation:"spin 0.8s linear infinite"},
+  // Two-tone brand spinner: a pink + teal arc spinning on a light track.
+  spinner:{width:38,height:38,border:"3px solid #f0f0f0",borderTopColor:"#FF1493",borderRightColor:"#00E5CC",borderRadius:"50%",animation:"spin 0.7s linear infinite"},
   loadingText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:3,color:"#bbb"},
   errorBanner:{background:"#fff0f0",border:"2px solid #FF1493",padding:"16px 24px",marginBottom:24,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1,display:"flex",alignItems:"center",gap:16},
   retryBtn:{background:"#FF1493",color:"#fff",border:"none",padding:"6px 16px",fontSize:12,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2},
