@@ -1,6 +1,7 @@
 import React from "react";
-import { Package, Mail, AlertCircle, CheckCircle, Star } from "lucide-react";
+import { Package, Mail, AlertCircle, CheckCircle, Star, Truck, ExternalLink } from "lucide-react";
 import { S } from "../styles";
+import { trackingUrl } from "../lib/constants";
 import { VerifiedBadge } from "../components/Shared";
 
 // Post-purchase order history (issue PART 2 & PART 5).
@@ -36,9 +37,14 @@ export default function Orders({
   updateOrderStatus, confirmOrderReceived = () => {}, startOrderConversation,
   openDispute = () => {},
   onReviewOrder = () => {}, reviewedListings = new Set(),
+  saveOrderTracking = () => {},
 }) {
   if (view !== "orders") return null;
   if (!user) return null;
+
+  // Seller tracking-number entry: per-order input value + which orders are in edit mode.
+  const [trackInputs, setTrackInputs] = React.useState({});
+  const [trackEditing, setTrackEditing] = React.useState({});
 
   const firstName = (uid) => {
     const p = orderProfiles[uid];
@@ -189,6 +195,37 @@ export default function Orders({
                       </>
                     )}
                   </div>
+                  {/* TRACKING — seller adds a number once dispatched; both parties get
+                      a "Track parcel" link to the carrier's tracking page. */}
+                  {(status === "dispatched" || status === "delivered") && (() => {
+                    const hasT = !!order.tracking_number;
+                    const editing = !!trackEditing[order.id] || (!isBuyer && !hasT);
+                    const url = trackingUrl(order.tracking_carrier || order.postage_carrier, order.tracking_number);
+                    const rowStyle = { marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" };
+                    const lblFont = { fontFamily: "'Barlow Condensed',sans-serif" };
+                    if (hasT && !trackEditing[order.id]) {
+                      return (
+                        <div style={rowStyle}>
+                          <span style={{ ...lblFont, fontSize: 12, fontWeight: 800, letterSpacing: 0.5, color: "#111", display: "inline-flex", alignItems: "center", gap: 6 }}><Truck width={15} height={15} /> {order.tracking_carrier ? `${String(order.tracking_carrier).split("·")[0].trim()} · ` : ""}{order.tracking_number}</span>
+                          {url && <a href={url} target="_blank" rel="noreferrer" style={{ ...lblFont, fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: "#FF1493", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}>TRACK PARCEL <ExternalLink width={12} height={12} /></a>}
+                          {!isBuyer && <button onClick={() => { setTrackEditing(p => ({ ...p, [order.id]: true })); setTrackInputs(p => ({ ...p, [order.id]: order.tracking_number || "" })); }} style={{ ...lblFont, background: "none", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 800, letterSpacing: 1, color: "#888", textDecoration: "underline", padding: 0 }}>EDIT</button>}
+                        </div>
+                      );
+                    }
+                    if (!isBuyer) {
+                      const val = trackInputs[order.id] !== undefined ? trackInputs[order.id] : (order.tracking_number || "");
+                      return (
+                        <div style={rowStyle}>
+                          <Truck width={15} height={15} style={{ flexShrink: 0 }} />
+                          <input value={val} onChange={e => setTrackInputs(p => ({ ...p, [order.id]: e.target.value }))} placeholder="Tracking number" style={{ flex: "1 1 160px", minWidth: 0, border: "2px solid #111", borderRadius: 0, padding: "8px 12px", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700 }} />
+                          <button className="hbtn" onClick={() => { saveOrderTracking(order, val); setTrackEditing(p => ({ ...p, [order.id]: false })); }} style={{ ...S.hBtn, background: "#111", border: "none", borderRadius: 0, fontSize: 11, padding: "9px 16px", display: "inline-flex", alignItems: "center", gap: 6 }}><Truck width={14} height={14} /> SAVE TRACKING</button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <p style={{ ...lblFont, marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0", fontSize: 11, color: "#bbb", letterSpacing: 0.5, display: "inline-flex", alignItems: "center", gap: 6 }}><Truck width={14} height={14} /> Tracking will appear here once the seller adds it.</p>
+                    );
+                  })()}
                 </div>
               </div>
             );

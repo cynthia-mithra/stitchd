@@ -142,6 +142,24 @@ export const POSTAGE_OPTIONS = [
   {id:"dpd",name:"DPD",Icon:Truck,prices:[{label:"Next day delivery",price:4.99},{label:"Two day delivery",price:3.99}]},
 ];
 
+// Build a "track your parcel" URL from a stored carrier label (e.g. "Evri ·
+// Small parcel…") and a tracking number. Falls back to a Google search when the
+// carrier isn't one we have a direct tracking page for.
+const TRACK_URL = {
+  "Evri":       (n) => `https://www.evri.com/track/parcel/${n}/details`,
+  "Hermes":     (n) => `https://www.evri.com/track/parcel/${n}/details`,
+  "Royal Mail": (n) => `https://www.royalmail.com/track-your-item#/tracking-results/${n}`,
+  "InPost":     (n) => `https://inpost.co.uk/tracking?number=${n}`,
+  "DPD":        (n) => `https://track.dpd.co.uk/parcels/${n}`,
+};
+export function trackingUrl(carrierLabel, number) {
+  if (!number) return null;
+  const name = String(carrierLabel || "").split("·")[0].trim();
+  const enc = encodeURIComponent(number);
+  const fn = TRACK_URL[name];
+  return fn ? fn(enc) : `https://www.google.com/search?q=${encodeURIComponent((name ? name + " " : "") + "tracking " + number)}`;
+}
+
 // ── Phase 12 — Saved searches ──────────────────────────────────────────────────
 // A saved search persists the buyer's live shop filters as a `filters` jsonb blob
 // (see the phase12 saved_searches migration). buildSearchFilters snapshots the

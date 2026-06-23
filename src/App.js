@@ -1628,6 +1628,22 @@ export default function App() {
     }catch(e){ flash("Failed to update order status."); }
   }
 
+  // Seller adds/updates a tracking number on an order. Stores it (+ the carrier
+  // from the chosen postage so the right tracking link can be built) and pings
+  // the buyer that their parcel is trackable.
+  async function saveOrderTracking(order,number){
+    const num=(number||"").trim();
+    try{
+      await db.updateOrder(order.id,{tracking_number:num||null,tracking_carrier:order.postage_carrier||order.tracking_carrier||null},token);
+      setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:num,tracking_carrier:order.postage_carrier||order.tracking_carrier||null}:o));
+      if(num&&order.buyer_id){
+        const title=items.find(i=>i.id===order.listing_id)?.name||"your order";
+        await notify(order.buyer_id,"order","📦 Tracking added",`${title} is on its way — track it from your orders. Tracking: ${num}`,order.listing_id);
+      }
+      flash(num?"Tracking saved — the buyer's been notified.":"Tracking cleared.");
+    }catch(e){ flash("Couldn't save tracking — the orders table may need the tracking columns."); }
+  }
+
   // Buyer confirms they've received the item and it's all OK (Vinted-style):
   // mark the order completed and RELEASE the seller's held earnings from pending
   // to their withdrawable balance.
@@ -4732,6 +4748,7 @@ export default function App() {
         startOrderConversation={startOrderConversation}
         openDispute={openDispute}
         onReviewOrder={openOrderReview} reviewedListings={myReviewedListings}
+        saveOrderTracking={saveOrderTracking}
       />
 
       {/* MY OFFERS (buyer) — Phase 14 offer checkout */}
