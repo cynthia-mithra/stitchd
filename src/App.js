@@ -237,7 +237,8 @@ export default function App() {
   // Bag checkout has two steps: review items → pick delivery (Vinted-style). The
   // chosen courier/option is added to the Stripe total and recorded on the order.
   const [bagStep,    setBagStep]    = useState("items");
-  const [bagShipping,setBagShipping]= useState(null);
+  // Map of seller group key → chosen delivery option for that seller.
+  const [bagShipping,setBagShipping]= useState({});
   const [checkingOut,setCheckingOut]= useState(false);
   // Order-success page state: {status:'loading'|'ok'|'error', items, amount}.
   const [orderResult,setOrderResult]= useState(null);
@@ -726,7 +727,7 @@ export default function App() {
 
   // Reset the bag's delivery step whenever it closes, so it always reopens on the
   // item-review step with no stale shipping selection.
-  useEffect(()=>{ if(!showBag){ setBagStep("items"); setBagShipping(null); } },[showBag]);
+  useEffect(()=>{ if(!showBag){ setBagStep("items"); setBagShipping({}); } },[showBag]);
 
   // Sticky header shadow — flips `scrolled` on once the page has moved past a few
   // pixels so the frosted header lifts off the content with a hairline shadow.
@@ -997,6 +998,20 @@ export default function App() {
   })();
   const bundleDiscountTotal = bagBundles.reduce((s,b)=>s+b.discount,0);
 
+  // Per-seller delivery (Vinted-style): every seller ships separately, so the bag
+  // groups items by seller and the buyer picks a delivery option for each group.
+  // Legacy snapshots predate `sellerId`, so fall back to the loaded items / a key.
+  const bagSellerGroups = (()=>{
+    const groups=new Map();
+    bag.forEach(b=>{
+      const sid=b.sellerId||items.find(i=>i.id===b.id)?.user_id||"unknown";
+      const key=String(sid);
+      if(!groups.has(key)) groups.set(key,{key,name:b.seller||"Seller",items:[]});
+      groups.get(key).items.push(b);
+    });
+    return [...groups.values()];
+  })();
+
   // Phase 14 — sellers whose "BUNDLE & SAVE X%" card banner should show: the
   // discount is enabled AND they have 2+ active listings (so a bundle is actually
   // possible). Maps seller id → % for the shop grid. The storefront banner has no
@@ -1013,14 +1028,18 @@ export default function App() {
   // PROCEED TO CHECKOUT → create a Stripe Checkout Session server-side and
   // redirect to the hosted checkout page. No Stripe secret key ever touches
   // the frontend (see src/lib/checkout.js + the stripe-checkout Edge Function).
-  async function doCheckout(shipping){
+  async function doCheckout(){
     if(checkingOut||!bag.length) return;
     setCheckingOut(true);
     flash("Taking you to secure checkout…");
     try{
-      const ship = shipping && shipping.selectedPrice
-        ? { label: `${shipping.name} · ${shipping.selectedPrice.label}`, amount_pence: Math.round((shipping.selectedPrice.price||0)*100) }
-        : null;
+      // One delivery selection per seller group → an array Stripe itemises and the
+      // webhook records against each seller's order.
+      const ship = bagSellerGroups.map(g=>{
+        const sel=bagShipping[g.key];
+        if(!sel||!sel.selectedPrice) return null;
+        return { seller_id: g.key, label: `${sel.name} · ${sel.selectedPrice.label}`, amount_pence: Math.round((sel.selectedPrice.price||0)*100) };
+      }).filter(Boolean);
       await startCheckout(bag,{buyerId:user?.id,buyerEmail:user?.email,shipping:ship});
     }catch(e){
       flash(`Checkout failed: ${errMsg(e)}`);
@@ -3756,54 +3775,64 @@ export default function App() {
                     <button style={S.bagContinue} onClick={()=>setShowBag(false)}>CONTINUE SHOPPING</button>
                   </>
                 ):(()=>{
-                  const shipAmt=bagShipping?.selectedPrice?.price||0;
-                  const finalTotal=(bagTotal-bundleDiscountTotal)+shipAmt;
+                  const shipTotal=bagSellerGroups.reduce((s,g)=>s+((bagShipping[g.key]?.selectedPrice?.price)||0),0);
+                  const allChosen=bagSellerGroups.every(g=>bagShipping[g.key]);
+                  const finalTotal=(bagTotal-bundleDiscountTotal)+shipTotal;
+                  const multi=bagSellerGroups.length>1;
+                  const pick=(key,opt)=>setBagShipping(prev=>({...prev,[key]:opt}));
                   return(
                   <>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,letterSpacing:2,color:"#999",margin:"4px 0 10px"}}>HOW WOULD YOU LIKE IT DELIVERED?</p>
-                    <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:14}}>
-                      {POSTAGE_OPTIONS.map(carrier=>(
-                        <React.Fragment key={carrier.id}>
-                          {carrier.prices.map(price=>{
-                            const optId=`${carrier.id}-${price.label}`;
-                            const sel=bagShipping?.optId===optId;
-                            return(
-                              <div key={optId} onClick={()=>setBagShipping({...carrier,selectedPrice:price,optId})} style={{border:`2px solid ${sel?"#FF1493":"#e0e0e0"}`,background:sel?"#fff8fc":"#fff",padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:11}}>
-                                <span style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?"#FF1493":"#ccc"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<span style={{width:9,height:9,borderRadius:"50%",background:"#FF1493"}}/>}</span>
-                                {carrier.Icon&&<carrier.Icon width={18} height={18} style={{flexShrink:0,color:"#111"}}/>}
-                                <div style={{flex:1,minWidth:0}}>
-                                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#111",lineHeight:1.1}}>{carrier.name}</p>
-                                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",letterSpacing:0.3}}>{price.label}</p>
-                                </div>
-                                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#111",flexShrink:0}}>{currencySymbol()}{price.price.toFixed(2)}</span>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,letterSpacing:2,color:"#999",margin:"4px 0 10px"}}>{multi?"CHOOSE DELIVERY FOR EACH SELLER":"HOW WOULD YOU LIKE IT DELIVERED?"}</p>
+                    {bagSellerGroups.map(group=>{
+                      const chosen=bagShipping[group.key];
+                      return(
+                      <div key={group.key} style={{marginBottom:16}}>
+                        {multi&&(
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:1,color:"#FF1493",margin:"0 0 6px",display:"flex",alignItems:"center",gap:6}}><ShoppingBag width={13} height={13}/> {group.name} · {group.items.length} item{group.items.length!==1?"s":""}</p>
+                        )}
+                        <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                          {POSTAGE_OPTIONS.map(carrier=>(
+                            <React.Fragment key={carrier.id}>
+                              {carrier.prices.map(price=>{
+                                const optId=`${carrier.id}-${price.label}`;
+                                const sel=chosen?.optId===optId;
+                                return(
+                                  <div key={optId} onClick={()=>pick(group.key,{...carrier,selectedPrice:price,optId})} style={{border:`2px solid ${sel?"#FF1493":"#e0e0e0"}`,background:sel?"#fff8fc":"#fff",padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:11}}>
+                                    <span style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?"#FF1493":"#ccc"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<span style={{width:9,height:9,borderRadius:"50%",background:"#FF1493"}}/>}</span>
+                                    {carrier.Icon&&<carrier.Icon width={18} height={18} style={{flexShrink:0,color:"#111"}}/>}
+                                    <div style={{flex:1,minWidth:0}}>
+                                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#111",lineHeight:1.1}}>{carrier.name}</p>
+                                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",letterSpacing:0.3}}>{price.label}</p>
+                                    </div>
+                                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#111",flexShrink:0}}>{currencySymbol()}{price.price.toFixed(2)}</span>
+                                  </div>
+                                );
+                              })}
+                            </React.Fragment>
+                          ))}
+                          {(()=>{ const sel=chosen?.id==="collection"; return(
+                            <div onClick={()=>pick(group.key,{id:"collection",name:"Collection in Person",Icon:Handshake,selectedPrice:{price:0,label:"Arrange with seller"},optId:"collection"})} style={{border:`2px solid ${sel?"#34C759":"#e0e0e0"}`,background:sel?"#f0fff4":"#fff",padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:11}}>
+                              <span style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?"#34C759":"#ccc"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<Check width={12} height={12} color="#34C759"/>}</span>
+                              <Handshake width={18} height={18} style={{flexShrink:0,color:"#111"}}/>
+                              <div style={{flex:1,minWidth:0}}>
+                                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#111",lineHeight:1.1}}>Collection in Person</p>
+                                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",letterSpacing:0.3}}>Arrange with seller</p>
                               </div>
-                            );
-                          })}
-                        </React.Fragment>
-                      ))}
-                      {/* Collection in person — free, arranged with the seller. */}
-                      {(()=>{ const sel=bagShipping?.id==="collection"; return(
-                        <div onClick={()=>setBagShipping({id:"collection",name:"Collection in Person",Icon:Handshake,selectedPrice:{price:0,label:"Arrange with seller"},optId:"collection"})} style={{border:`2px solid ${sel?"#34C759":"#e0e0e0"}`,background:sel?"#f0fff4":"#fff",padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:11}}>
-                          <span style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${sel?"#34C759":"#ccc"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<Check width={12} height={12} color="#34C759"/>}</span>
-                          <Handshake width={18} height={18} style={{flexShrink:0,color:"#111"}}/>
-                          <div style={{flex:1,minWidth:0}}>
-                            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#111",lineHeight:1.1}}>Collection in Person</p>
-                            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#888",letterSpacing:0.3}}>Arrange with seller</p>
-                          </div>
-                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#34C759",flexShrink:0}}>FREE</span>
+                              <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#34C759",flexShrink:0}}>FREE</span>
+                            </div>
+                          );})()}
                         </div>
-                      );})()}
-                    </div>
-                    {bagShipping&&shipAmt>0&&(
+                      </div>
+                      );
+                    })}
+                    {shipTotal>0&&(
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:6,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:0.5,color:"#555"}}>
-                        <span style={{display:"inline-flex",alignItems:"center",gap:6}}>{bagShipping.Icon&&<bagShipping.Icon width={14} height={14}/>} Delivery</span>
-                        <span>{currencySymbol()}{shipAmt.toFixed(2)}</span>
+                        <span style={{display:"inline-flex",alignItems:"center",gap:6}}><Package width={14} height={14}/> Delivery{multi?" (all sellers)":""}</span>
+                        <span>{currencySymbol()}{shipTotal.toFixed(2)}</span>
                       </div>
                     )}
-                    {bagShipping&&(
-                      <div style={S.bagTotalRow}><span style={S.bagTotalLabel}>TOTAL</span><span style={S.bagTotalVal}>{currencySymbol()}{finalTotal.toFixed(2)}</span></div>
-                    )}
-                    <button className="hbtn" style={{...S.bagCheckoutBtn,opacity:(checkingOut||!bagShipping)?0.5:1,cursor:(checkingOut||!bagShipping)?"not-allowed":"pointer"}} onClick={()=>doCheckout(bagShipping)} disabled={checkingOut||!bagShipping}>{checkingOut?"REDIRECTING…":bagShipping?`PAY ${currencySymbol()}${finalTotal.toFixed(2)} →`:"SELECT A DELIVERY OPTION"}</button>
+                    <div style={S.bagTotalRow}><span style={S.bagTotalLabel}>TOTAL</span><span style={S.bagTotalVal}>{currencySymbol()}{finalTotal.toFixed(2)}</span></div>
+                    <button className="hbtn" style={{...S.bagCheckoutBtn,opacity:(checkingOut||!allChosen)?0.5:1,cursor:(checkingOut||!allChosen)?"not-allowed":"pointer"}} onClick={doCheckout} disabled={checkingOut||!allChosen}>{checkingOut?"REDIRECTING…":allChosen?`PAY ${currencySymbol()}${finalTotal.toFixed(2)} →`:"SELECT A DELIVERY OPTION"}</button>
                     <p style={S.bagGuarantee}><Lock width={13} height={13}/> Secure checkout · Stitch'd Buyer Guarantee</p>
                     <button style={S.bagContinue} onClick={()=>setBagStep("items")}>← BACK TO BAG</button>
                   </>

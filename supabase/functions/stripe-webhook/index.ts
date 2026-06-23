@@ -753,15 +753,20 @@ Deno.serve(async (req) => {
       return undefined;
     };
 
-    // Buyer-chosen delivery (Vinted-style) carried in the session metadata. The
-    // carrier label goes on every order in this checkout; the postage amount is
-    // recorded once (on the first order) so a multi-item bag isn't charged twice.
-    const postageCarrier = session.metadata?.postage_carrier || null;
-    const postagePence = Number(session.metadata?.postage_pence) || 0;
-    let postageRecorded = false;
+    // Buyer-chosen delivery (Vinted-style, per seller) carried in the session
+    // metadata as a JSON array of { seller_id, pence, label }. Each seller's
+    // carrier label goes on their order(s); the postage amount is recorded once
+    // per seller (the first of that seller's orders) so it isn't counted twice.
+    let postageBySeller: Record<string, { label: string; pence: number }> = {};
+    try {
+      const arr = JSON.parse(session.metadata?.postage || "[]");
+      if (Array.isArray(arr)) arr.forEach((s) => { if (s && s.seller_id) postageBySeller[String(s.seller_id)] = { label: String(s.label || "Delivery"), pence: Number(s.pence) || 0 }; });
+    } catch { /* no/!malformed postage metadata */ }
+    const postageDone = new Set<string>();
 
     for (const l of listings) {
       const pence = Math.round(parseFloat(String(l.price)) * 100);
+      const ship = postageBySeller[String(l.user_id)] || null;
 
       // 1. Mark as sold (set both `status` and the legacy `sold` flag the app uses).
       await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${l.id}`, {
@@ -789,11 +794,11 @@ Deno.serve(async (req) => {
               bundle_discount_amount_pence: Math.round((pence * bundle.percentage) / 100),
             }
           : {}),
-        ...(postageCarrier
-          ? { postage_carrier: postageCarrier, postage_amount: postageRecorded ? 0 : postagePence / 100 }
+        ...(ship
+          ? { postage_carrier: ship.label, postage_amount: postageDone.has(String(l.user_id)) ? 0 : ship.pence / 100 }
           : {}),
       });
-      postageRecorded = true;
+      if (ship) postageDone.add(String(l.user_id));
 
       // 2b. Credit the seller's wallet (sale price − 8% commission).
       await creditSellerWallet(l.user_id, pence, {
