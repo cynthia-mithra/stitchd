@@ -67,3 +67,10 @@ export async function refundOrder(orderId, adminId) {
   if (!orderId) throw new Error("Missing order.");
   return callFn("refund-order", { order_id: orderId, admin_id: adminId }, "Refund");
 }
+
+// Admin: refund a tailoring booking (alteration) to the buyer when a tailoring
+// dispute is resolved as "refunded". Returns { refunded, refund_id, amount_pence }.
+export async function refundAlteration(alterationRequestId, adminId) {
+  if (!alterationRequestId) throw new Error("Missing alteration.");
+  return callFn("refund-order", { alteration_request_id: alterationRequestId, admin_id: adminId }, "Refund");
+}

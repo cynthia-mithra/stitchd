@@ -1,9 +1,9 @@
 // Supabase Edge Function: refund-order
 // -------------------------------------
 // Issues a REAL Stripe refund to the buyer when the Stitch'd admin resolves a
-// dispute as "refunded" (the dispute flow previously only stopped the seller
-// being paid — the buyer's money was never returned). The browser posts
-// { order_id, admin_id }; this function, all server-side:
+// dispute as "refunded" — for BOTH a purchase (order) and a tailoring booking
+// (alteration_request). The browser posts { order_id | alteration_request_id,
+// admin_id }; this function, all server-side:
 //   1. verifies admin_id is a real admin (profiles.is_admin = true),
 //   2. loads the order (Checkout Session id + amount),
 //   3. resolves the Session → payment_intent,
@@ -61,52 +61,71 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const { order_id, admin_id } = await req.json();
-    if (!order_id) return json({ error: "Missing order_id." }, 400);
+    const { order_id, alteration_request_id, admin_id } = await req.json();
+    if (!order_id && !alteration_request_id) return json({ error: "Missing order_id or alteration_request_id." }, 400);
     if (!(await isAdmin(admin_id))) return json({ error: "Not authorised." }, 403);
 
-    // 1. Authoritative order row.
-    const or = await fetch(
-      `${SUPABASE_URL}/rest/v1/orders?id=eq.${order_id}&select=id,buyer_id,listing_id,amount,amount_pence,status,stripe_session_id,stripe_refund_id&limit=1`,
-      { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
-    ).catch(() => null);
-    const order = or && or.ok ? (await or.json().catch(() => []))[0] : null;
-    if (!order) return json({ error: "Order not found." }, 404);
+    // Resolve the thing being refunded into a common shape: the row, its Checkout
+    // Session, the amount to refund, where to record the refund, and the buyer.
+    let table: string; let rowId: string; let buyerId: string | null;
+    let listingId: string | null; let amountPence: number; let sessionId: string | null;
+    let alreadyRefunded: string | null = null; let refundedStatus: string;
 
-    // Idempotency — already refunded.
-    if (order.status === "refunded" || order.stripe_refund_id) {
-      return json({ refunded: true, already: true, refund_id: order.stripe_refund_id ?? null });
+    if (alteration_request_id) {
+      const r = await fetch(
+        `${SUPABASE_URL}/rest/v1/alteration_requests?id=eq.${alteration_request_id}&select=id,buyer_id,listing_id,status,quote_amount_pence,quote_pence,stripe_session_id,stripe_refund_id&limit=1`,
+        { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
+      ).catch(() => null);
+      const a = r && r.ok ? (await r.json().catch(() => []))[0] : null;
+      if (!a) return json({ error: "Alteration not found." }, 404);
+      if (a.stripe_refund_id) return json({ refunded: true, already: true, refund_id: a.stripe_refund_id });
+      table = "alteration_requests"; rowId = a.id; buyerId = a.buyer_id ?? null;
+      listingId = a.listing_id ?? null; sessionId = a.stripe_session_id ?? null;
+      amountPence = Number(a.quote_amount_pence) || Number(a.quote_pence) || 0;
+      refundedStatus = "cancelled";
+    } else {
+      const r = await fetch(
+        `${SUPABASE_URL}/rest/v1/orders?id=eq.${order_id}&select=id,buyer_id,listing_id,amount,amount_pence,status,stripe_session_id,stripe_refund_id&limit=1`,
+        { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
+      ).catch(() => null);
+      const o = r && r.ok ? (await r.json().catch(() => []))[0] : null;
+      if (!o) return json({ error: "Order not found." }, 404);
+      if (o.status === "refunded" || o.stripe_refund_id) {
+        return json({ refunded: true, already: true, refund_id: o.stripe_refund_id ?? null });
+      }
+      table = "orders"; rowId = o.id; buyerId = o.buyer_id ?? null;
+      listingId = o.listing_id ?? null; sessionId = o.stripe_session_id ?? null;
+      amountPence = Number(o.amount_pence) || Math.round(Number(o.amount) * 100) || 0;
+      refundedStatus = "refunded";
     }
 
-    const amountPence = Number(order.amount_pence) || Math.round(Number(order.amount) * 100) || 0;
-    if (amountPence <= 0) return json({ error: "Order has no refundable amount." }, 400);
-    if (!order.stripe_session_id) return json({ error: "Order has no Stripe payment to refund." }, 400);
+    if (amountPence <= 0) return json({ error: "Nothing refundable on this record." }, 400);
+    if (!sessionId) return json({ error: "No Stripe payment found to refund." }, 400);
 
-    // 2 + 3. Session → payment_intent.
+    // Session → payment_intent.
     let paymentIntentId: string | null = null;
     try {
-      const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
       paymentIntentId = typeof session.payment_intent === "string"
         ? session.payment_intent
         : session.payment_intent?.id ?? null;
     } catch (e) {
       return json({ error: `Couldn't load the payment: ${(e as Error).message}` }, 502);
     }
-    if (!paymentIntentId) return json({ error: "No payment found for this order." }, 400);
+    if (!paymentIntentId) return json({ error: "No payment found for this record." }, 400);
 
-    // 4. Partial refund of just this order's amount (handles shared bag sessions).
+    // Refund this record's amount (partial, so a shared bag session only refunds
+    // the disputed item; alteration sessions are single-item so it's the full amount).
     let refundId: string | null = null;
     try {
       const refund = await stripe.refunds.create({
         payment_intent: paymentIntentId,
         amount: amountPence,
-        metadata: { order_id: String(order_id), refunded_by: String(admin_id), stitchd_dispute: "true" },
+        metadata: { refund_target: table, target_id: String(rowId), refunded_by: String(admin_id), stitchd_dispute: "true" },
       });
       refundId = refund.id;
     } catch (e) {
       const raw = (e as Error).message || "Stripe refund failed.";
-      // A bag session can be over-refunded if siblings were already refunded —
-      // surface a clear message rather than Stripe's raw text.
       const tooMuch = /amount|charge has already been refunded|exceeds/i.test(raw);
       return json({
         error: tooMuch
@@ -116,18 +135,18 @@ Deno.serve(async (req) => {
       }, 502);
     }
 
-    // 5. Stamp the order + tell the buyer.
-    await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${order_id}`, {
+    // Stamp the record + tell the buyer.
+    await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${rowId}`, {
       method: "PATCH", headers: sbHeaders,
-      body: JSON.stringify({ status: "refunded", stripe_refund_id: refundId, refunded_at: new Date().toISOString() }),
+      body: JSON.stringify({ status: refundedStatus, stripe_refund_id: refundId, refunded_at: new Date().toISOString() }),
     }).catch(() => {});
 
-    if (order.buyer_id) {
-      await notify(order.buyer_id, {
+    if (buyerId) {
+      await notify(buyerId, {
         type: "dispute",
         title: "💸 Refund issued",
         body: `Your dispute was resolved in your favour — ${fmt(amountPence)} has been refunded to your original payment method (5–10 working days).`,
-        listing_id: order.listing_id ?? null,
+        listing_id: listingId ?? null,
       });
     }
 

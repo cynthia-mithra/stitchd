@@ -13,7 +13,7 @@ import { startCheckout, startOfferCheckout, startAlterationCheckout, verifySessi
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
 import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } from "./lib/connect";
-import { startSellerConnect, verifySellerConnect, withdrawFromWallet, refundOrder } from "./lib/wallet";
+import { startSellerConnect, verifySellerConnect, withdrawFromWallet, refundOrder, refundAlteration } from "./lib/wallet";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock } from "lucide-react";
@@ -1347,25 +1347,24 @@ export default function App() {
       }
       if(newStatus==="refunded"){
         if(isAlteration){
-          // No automated tailoring refund yet — cancel the booking; admin refunds in Stripe.
-          try{ await db.updateAlterationRequest(d.alteration_request_id,{status:"cancelled"},token); }catch(e){}
+          // Cancel the booking (also frees the held payout) and refund the buyer.
+          try{ await refundAlteration(d.alteration_request_id,user.id); }catch(e){ refundFailed=true; }
+          if(refundFailed){ try{ await db.updateAlterationRequest(d.alteration_request_id,{status:"cancelled"},token); }catch(e){} }
         }else{
           // Stop the seller being paid, then issue the REAL Stripe refund to the buyer.
           if(listingId) await db.settleDisputedEarnings(listingId,false,token);
           if(d&&d.order_id){ try{ await refundOrder(d.order_id,user.id); }catch(e){ refundFailed=true; } }
         }
       }
-      // The order-refund function notifies the buyer itself; otherwise send the
-      // generic dispute-update notification.
-      if(d&&d.buyer_id&&!(newStatus==="refunded"&&!isAlteration)){
+      // The refund function notifies the buyer itself when it succeeds; otherwise
+      // send the generic dispute-update notification.
+      if(d&&d.buyer_id&&!(newStatus==="refunded"&&!refundFailed)){
         await notify(d.buyer_id,"dispute","⚖️ Dispute update",`Your dispute has been updated to: ${label}`,d.order_id||d.alteration_request_id||null);
       }
       if(newStatus==="refunded"){
-        flash(isAlteration
-          ? "Dispute REFUNDED — booking cancelled. Refund the buyer manually in Stripe (tailoring refunds aren't automated yet)."
-          : (refundFailed
-            ? "Dispute marked REFUNDED, but the auto-refund failed — issue it manually in Stripe."
-            : "Dispute REFUNDED — the buyer has been refunded."),7000);
+        flash(refundFailed
+          ? "Dispute marked REFUNDED, but the auto-refund failed — issue it manually in Stripe."
+          : "Dispute REFUNDED — the buyer has been refunded.",7000);
       }else{
         flash(`Dispute marked ${label}.`);
       }
