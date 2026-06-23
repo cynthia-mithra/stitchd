@@ -114,7 +114,7 @@ export const db = {
   // /wishlist page can order cards "most recently wishlisted first". Same table,
   // just selecting the timestamp and ordering on it.
   async getMyWishlistDetailed(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?user_id=eq.${uid}&select=listing_id,created_at&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  async addWishlist(uid,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({user_id:uid,listing_id:listingId})}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
+  async addWishlist(uid,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?on_conflict=user_id,listing_id`,{method:"POST",headers:{...hdrs(t),Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({user_id:uid,listing_id:listingId})}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async removeWishlist(uid,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?user_id=eq.${uid}&listing_id=eq.${listingId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   // ── Phase 14 — Shareable wishlists ────────────────────────────────────────
   // A named, public list of saved pieces reachable at /wishlist/<slug>. The
