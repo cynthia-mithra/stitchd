@@ -764,6 +764,15 @@ Deno.serve(async (req) => {
     } catch { /* no/!malformed postage metadata */ }
     const postageDone = new Set<string>();
 
+    // Buyer delivery address (collected by Stripe via shipping_address_collection)
+    // so the seller has somewhere to post to / can buy a label.
+    const shipAddr = (() => {
+      const sd = (session as { shipping_details?: { name?: string; address?: Record<string, string> }; customer_details?: { name?: string; address?: Record<string, string> } });
+      const d = sd.shipping_details || sd.customer_details || null;
+      const a = d?.address; if (!a) return null;
+      return { name: d?.name || buyerName || "", line1: a.line1 || "", line2: a.line2 || "", city: a.city || "", postcode: a.postal_code || "", country: a.country || "GB" };
+    })();
+
     for (const l of listings) {
       const pence = Math.round(parseFloat(String(l.price)) * 100);
       const ship = postageBySeller[String(l.user_id)] || null;
@@ -797,6 +806,7 @@ Deno.serve(async (req) => {
         ...(ship
           ? { postage_carrier: ship.label, postage_amount: postageDone.has(String(l.user_id)) ? 0 : ship.pence / 100 }
           : {}),
+        ...(shipAddr ? { delivery_address: shipAddr } : {}),
       });
       if (ship) postageDone.add(String(l.user_id));
 

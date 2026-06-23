@@ -186,6 +186,9 @@ module.exports = async (req, res) => {
       mode: "payment",
       line_items,
       ...(discounts ? { discounts } : {}),
+      // Collect the buyer's UK delivery address so the seller has somewhere to
+      // post to (and can buy a label). Stored on the order by the webhook.
+      shipping_address_collection: { allowed_countries: ["GB"] },
       success_url: `${origin}/order-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/bag`,
       customer_email: buyer_email || undefined,

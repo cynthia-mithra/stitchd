@@ -126,6 +126,18 @@ export default function Orders({
                   </p>
                   <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18, fontWeight: 900, color: "#FF1493", marginBottom: 10 }}>£{amount.toFixed(2)}</p>
 
+                  {/* SHIP TO — seller only, so they can post the item / buy a label. */}
+                  {!isBuyer && order.delivery_address && (order.delivery_address.line1 || order.delivery_address.postcode) && (
+                    <div style={{ border: "1px solid #e0e0e0", background: "#fafafa", padding: "10px 12px", marginBottom: 12, fontFamily: "'Barlow Condensed',sans-serif" }}>
+                      <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: "#888", marginBottom: 4 }}>SHIP TO</p>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: "#111", lineHeight: 1.4 }}>
+                        {order.delivery_address.name}{order.delivery_address.name ? <br /> : null}
+                        {order.delivery_address.line1}{order.delivery_address.line2 ? `, ${order.delivery_address.line2}` : ""}<br />
+                        {order.delivery_address.city}{order.delivery_address.city ? ", " : ""}{order.delivery_address.postcode}
+                      </p>
+                    </div>
+                  )}
+
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                     {/* BUYER → message the seller */}
                     {isBuyer && startOrderConversation && (
