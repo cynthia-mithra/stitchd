@@ -36,10 +36,68 @@ function weightGrams(label: string): number {
   return m ? Math.round(parseFloat(m[1]) * 1000) : 1000;
 }
 
-// The one place to implement per courier. Should return { tracking_number,
-// label_url } or throw. Left unimplemented until an account/key exists.
-async function callProvider(_payload: unknown): Promise<{ tracking_number: string; label_url?: string }> {
+type LabelPayload = {
+  provider: string;
+  service: string;
+  weight_grams: number;
+  from: Record<string, string>;
+  to: Record<string, string>;
+};
+
+// The one place to implement per courier. Returns { tracking_number, label_url }
+// or throws. Add a branch per provider as accounts are connected.
+async function callProvider(p: LabelPayload): Promise<{ tracking_number: string; label_url?: string }> {
+  if (SHIPPING_PROVIDER === "veeqo") return buyVeeqoLabel(p);
   throw new Error(`Shipping provider "${SHIPPING_PROVIDER}" is not implemented yet.`);
+}
+
+// ── Veeqo (Amazon, UK) — https://developers.veeqo.com ───────────────────────────
+// Auth is the account API key in the `x-api-key` header. Veeqo creates a label by
+// purchasing a shipment for an order against an enabled carrier (Evri / Royal Mail
+// / DPD …). The request shape below is the expected one, but Veeqo's exact
+// order→shipment→label flow and the carrier/remote-shipment ids depend on your
+// account's enabled carriers — VERIFY against the live docs + TEST with a real key
+// before flipping SHIPPING_LABELS_ENABLED on. Kept defensive: any non-OK response
+// or a body without a tracking number throws a clear error rather than guessing.
+async function buyVeeqoLabel(p: LabelPayload): Promise<{ tracking_number: string; label_url?: string }> {
+  const headers = { "x-api-key": SHIPPING_API_KEY, "Content-Type": "application/json", "Accept": "application/json" };
+  const body = {
+    // Carrier/service: map p.service (e.g. "Evri · Small parcel…") to your Veeqo
+    // remote shipping service when you connect carriers; sent through as a hint.
+    remote_shipment_id: undefined,
+    service_carrier: (p.service || "").split("·")[0].trim(),
+    weight: p.weight_grams,            // grams
+    weight_unit: "g",
+    parcel: { weight: p.weight_grams, weight_unit: "g" },
+    ship_from: {
+      first_name: p.from.ship_from_name || "",
+      address1: p.from.ship_from_line1 || "",
+      address2: p.from.ship_from_line2 || "",
+      city: p.from.ship_from_city || "",
+      zip: p.from.ship_from_postcode || "",
+      country: p.from.ship_from_country || "GB",
+    },
+    ship_to: {
+      first_name: p.to.name || "",
+      address1: p.to.line1 || "",
+      address2: p.to.line2 || "",
+      city: p.to.city || "",
+      zip: p.to.postcode || "",
+      country: p.to.country || "GB",
+    },
+  };
+  // Endpoint to confirm against developers.veeqo.com for your label-buying flow.
+  const res = await fetch("https://api.veeqo.com/shipments", {
+    method: "POST", headers, body: JSON.stringify(body),
+  });
+  const text = await res.text().catch(() => "");
+  if (!res.ok) throw new Error(`Veeqo error (${res.status}): ${text.slice(0, 300)}`);
+  let data: Record<string, unknown> = {};
+  try { data = text ? JSON.parse(text) : {}; } catch { /* non-JSON */ }
+  const tracking = (data.tracking_number || data.trackingNumber || (data.shipment as Record<string, unknown>)?.tracking_number) as string | undefined;
+  const labelUrl = (data.label_url || data.labelUrl || (data.shipment as Record<string, unknown>)?.label_url) as string | undefined;
+  if (!tracking) throw new Error("Veeqo returned no tracking number — check the request shape against your account's carriers.");
+  return { tracking_number: String(tracking), label_url: labelUrl ? String(labelUrl) : undefined };
 }
 
 Deno.serve(async (req) => {
