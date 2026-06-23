@@ -6,7 +6,7 @@ import {
   catEmoji, currencySymbol, colourSwatchBg, filterSummary,
 } from "../lib/constants";
 import { S } from "../styles";
-import { Thumb, Stars, VerifiedBadge, ColourSwatches } from "../components/Shared";
+import { Thumb, Stars, VerifiedBadge, ColourSwatches, Reveal } from "../components/Shared";
 import { LookCard } from "./Looks";
 import { StyleInspiration } from "./StyleFeed";
 import LoginPromptModal from "../components/LoginPromptModal";
@@ -434,7 +434,7 @@ export default function Shop({
           scroll rail on mobile, grid on desktop. Hidden on the new-arrivals page
           itself, while filtering, and when there are no recent listings. */}
       {!newArrivals&&!hasFilters&&!followingActive&&homeArrivals.length>0&&(
-        <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
+        <Reveal style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <RailHeader icon={<Sparkles width={26} height={26}/>} title="NEW ARRIVALS" subtitle="Fresh drops, updated daily" accent="#34C759" onViewAll={goNewArrivals}/>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:16}} className="shop-grid">
             {homeArrivals.map((item,idx)=>{
@@ -455,30 +455,30 @@ export default function Shop({
               );
             })}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* SHOP THE LOOK — curated outfit collections. Hidden entirely when no
           looks exist or while the buyer is filtering/searching the grid. The rail
           scrolls horizontally on mobile and is a 3-up grid on desktop. */}
       {!newArrivals&&!hasFilters&&!followingActive&&looks.length>0&&(
-        <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
+        <Reveal style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <RailHeader icon={<Sparkles width={26} height={26}/>} title="SHOP THE LOOK" subtitle="Complete outfits, all pre-loved" accent="#FF1493" onViewAll={()=>setView("looks")}/>
           <div className="looks-grid looks-rail">
             {looks.slice(0,6).map(look=><LookCard key={look.id} look={look} onOpen={openLook}/>)}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* STYLE INSPIRATION — homepage style-feed preview. Hidden when no posts
           exist or while the buyer is filtering/searching the grid. */}
       {!newArrivals&&!hasFilters&&!followingActive&&homeStylePosts.length>0&&(
-        <StyleInspiration posts={homeStylePosts} profilesMap={homeStyleProfiles} onOpen={openStyleFeed} />
+        <Reveal><StyleInspiration posts={homeStylePosts} profilesMap={homeStyleProfiles} onOpen={openStyleFeed} /></Reveal>
       )}
 
       {/* PRICE DROPS */}
       {!newArrivals&&!hasFilters&&!followingActive&&priceDrops.length>0&&(
-        <div style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
+        <Reveal style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <RailHeader icon={<TrendingDown width={26} height={26}/>} title="PRICE DROPS" subtitle="Recently reduced by their sellers" accent="#FF9500"/>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:16}} className="shop-grid">
             {priceDrops.slice(0,8).map((item,idx)=>{
@@ -506,12 +506,12 @@ export default function Shop({
               );
             })}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* TRENDING */}
       {!newArrivals&&!hasFilters&&!followingActive&&trendingItems.length>0&&(
-        <div style={{maxWidth:1300,margin:"48px auto 48px",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
+        <Reveal style={{maxWidth:1300,margin:"48px auto 48px",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
           <RailHeader icon={<Flame width={26} height={26}/>} title="TRENDING" subtitle="The most-viewed pieces right now" accent="#BF5AF2"/>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:16}} className="shop-grid">
             {trendingItems.slice(0,8).map((item,idx)=>{
@@ -532,7 +532,7 @@ export default function Shop({
               );
             })}
           </div>
-        </div>
+        </Reveal>
       )}
       <LoginPromptModal open={!!gate} context={gate||"default"} onClose={()=>{ setGate(null); setPendingItem(null); }} onAuth={m=>{ const it=pendingItem; setGate(null); setPendingItem(null); onGateAuth(m, it); }}/>
     </>

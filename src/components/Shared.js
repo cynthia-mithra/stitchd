@@ -123,4 +123,20 @@ export function Thumb({src,emoji,accent,gradient=false,imgOpacity=1,imgStyle,emo
     </div>
   );
 }
+// Scroll-reveal wrapper — fades + lifts its children into view the first time
+// they enter the viewport (then disconnects). Renders straight away (no hidden
+// state) when the user prefers reduced motion or IntersectionObserver is missing.
+export function Reveal({children,style,className="",delay=0}){
+  const ref=React.useRef(null);
+  const reduce = typeof window!=="undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const [shown,setShown]=React.useState(reduce || typeof IntersectionObserver==="undefined");
+  React.useEffect(()=>{
+    if(shown) return;
+    const el=ref.current; if(!el) return;
+    const io=new IntersectionObserver(([e])=>{ if(e.isIntersecting){ setShown(true); io.disconnect(); } },{threshold:0.06,rootMargin:"0px 0px -40px 0px"});
+    io.observe(el);
+    return ()=>io.disconnect();
+  },[shown]);
+  return <div ref={ref} className={"reveal"+(shown?" in":"")+(className?" "+className:"")} style={{...(delay?{transitionDelay:delay+"ms"}:null),...style}}>{children}</div>;
+}
 export function Tog({on,onToggle,color,label,sub}){return<div style={{display:"flex",alignItems:"flex-start",gap:14,padding:"14px 0",borderBottom:"1px solid #f0f0f0",cursor:"pointer"}} onClick={onToggle}><div style={{width:46,height:26,borderRadius:13,background:on?color:"#e0e0e0",position:"relative",flexShrink:0,transition:"background .2s",border:`2px solid ${on?color:"#ccc"}`}}><div style={{width:18,height:18,borderRadius:"50%",background:"#fff",position:"absolute",top:2,left:on?24:2,transition:"left .18s",boxShadow:"0 2px 6px rgba(0,0,0,0.2)"}}/></div><div><div style={{fontSize:13,fontWeight:800,letterSpacing:0.5,color:"#111"}}>{label}</div><div style={{fontSize:12,color:"#aaa",marginTop:3}}>{sub}</div></div></div>;}

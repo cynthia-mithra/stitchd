@@ -50,6 +50,9 @@ export const CSS=`
   /* Toast slides up + fades in (keeps the -50% horizontal centering). */
   @keyframes toastIn{from{opacity:0;transform:translate(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}
   .toast-pop{animation:toastIn .28s cubic-bezier(.22,1,.36,1);}
+  /* Scroll-reveal: sections fade + lift into view the first time they appear. */
+  .reveal{opacity:0;transform:translateY(20px);transition:opacity .55s ease,transform .55s cubic-bezier(.22,1,.36,1);will-change:opacity,transform;}
+  .reveal.in{opacity:1;transform:none;}
   @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
   input:focus,select:focus,textarea:focus{border-color:#FF1493 !important;box-shadow:0 0 0 3px rgba(255,20,147,0.1) !important;outline:none;}
   ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#eee;border-radius:2px}
