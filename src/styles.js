@@ -1,7 +1,12 @@
 export const CSS=`
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,800&family=Barlow:wght@400;500;600&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:#fff;}
+  /* Global type rhythm: crisper rendering everywhere + sensible defaults that
+     only apply where an element hasn't set its own (inline styles still win). */
+  body{background:#fff;color:#111;font-family:'Barlow',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-feature-settings:"kern" 1;-webkit-text-size-adjust:100%;}
+  p{line-height:1.6;}
+  h1,h2,h3,h4{line-height:1.04;}
+  button,input,select,textarea{font-family:inherit;}
   .scard{transition:transform .28s cubic-bezier(.22,1,.36,1),box-shadow .28s ease !important;cursor:pointer;}
   .scard:hover{transform:translateY(-6px) !important;box-shadow:0 22px 50px rgba(0,0,0,0.14) !important;}
   /* Trendy product-card interaction: the cover image gently zooms inside its
