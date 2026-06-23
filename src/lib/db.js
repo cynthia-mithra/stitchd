@@ -72,6 +72,9 @@ export const db = {
   async getListing(id,t){ if(!id)return null; const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   async incrementViews(id,views,t){ await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({views:(views||0)+1})}); },
   async getReviews(sellerId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?seller_id=eq.${sellerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  // The listing ids a buyer has already reviewed — drives the "Leave a review" vs
+  // "Reviewed" state on their orders so the same purchase isn't reviewed twice.
+  async getMyReviews(uid,t){ if(!uid)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?reviewer_id=eq.${uid}&select=listing_id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getAllReviewStats(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?select=seller_id,rating`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getFastSellers(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?fast_seller=eq.true&select=id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   // Phase 10d — seller tools.

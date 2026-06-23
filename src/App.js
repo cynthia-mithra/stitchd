@@ -275,6 +275,11 @@ export default function App() {
   const [wishlistCounts,setWishlistCounts]= useState({});
   const [myWishlist,    setMyWishlist]    = useState(()=>new Set());
   const [showReview,   setShowReview]   = useState(false);
+  // When a review is started from an order (post-delivery prompt) rather than the
+  // listing page, this holds that order so submitReview targets the right seller.
+  const [reviewOrder,  setReviewOrder]  = useState(null);
+  // Listing ids the buyer has already reviewed (so orders show a "Reviewed" state).
+  const [myReviewedListings, setMyReviewedListings] = useState(new Set());
   const [reviewForm,   setReviewForm]   = useState({rating:5,comment:""});
   const [showReport,   setShowReport]   = useState(false);
   const [reportReason, setReportReason] = useState("");
@@ -1048,14 +1053,28 @@ export default function App() {
     }catch(e){ return revs; }
   }
 
+  // Open the review modal for a delivered/completed order (post-delivery prompt).
+  function openOrderReview(order){
+    if(!user||!order) return;
+    if(myReviewedListings.has(order.listing_id)){ flash("You've already reviewed this order."); return; }
+    setReviewOrder(order); setReviewForm({rating:5,comment:""}); setShowReview(true);
+  }
+  function closeReviewModal(){ setShowReview(false); setReviewOrder(null); }
   async function submitReview(){
-    if(!user||!sel)return;
+    // Target is the order (when prompted from /orders) or the open listing (Detail).
+    const target=reviewOrder
+      ? {listing_id:reviewOrder.listing_id,seller_id:reviewOrder.seller_id}
+      : (sel?{listing_id:sel.id,seller_id:sel.user_id}:null);
+    if(!user||!target||!target.seller_id)return;
     try{
-      await db.insertReview({listing_id:sel.id,reviewer_id:user.id,seller_id:sel.user_id,rating:reviewForm.rating,comment:reviewForm.comment},token);
-      setReviews(await loadReviews(sel.user_id)); setShowReview(false); setReviewForm({rating:5,comment:""});
+      await db.insertReview({listing_id:target.listing_id,reviewer_id:user.id,seller_id:target.seller_id,rating:reviewForm.rating,comment:reviewForm.comment},token);
+      setMyReviewedListings(prev=>{ const s=new Set(prev); s.add(target.listing_id); return s; });
+      // Refresh the open storefront/detail reviews if they're for this same seller.
+      if(sel&&target.seller_id===sel.user_id) setReviews(await loadReviews(sel.user_id));
+      setShowReview(false); setReviewOrder(null); setReviewForm({rating:5,comment:""});
       // Refresh the grid-wide rating lookup so the new review updates card stars too.
       loadSellerRatings();
-      flash("⭐ Review submitted!");
+      flash("⭐ Review submitted — thanks!");
     }catch(e){ flash("Failed to submit review."); }
   }
 
@@ -1544,6 +1563,9 @@ export default function App() {
     const profs={};
     await Promise.all(ids.map(async id=>{ const p=await db.getProfile(id,token); if(p)profs[id]=p; }));
     setOrderProfiles(profs);
+    // Which listings this buyer has already reviewed → drives the order's
+    // "Leave a review" vs "Reviewed" state so a purchase isn't reviewed twice.
+    try{ const mine=await db.getMyReviews(user.id,token); setMyReviewedListings(new Set((mine||[]).map(r=>r.listing_id))); }catch(e){}
     setOrdersLoading(false);
   }
 
@@ -1561,7 +1583,7 @@ export default function App() {
       if(order){
         const title=items.find(i=>i.id===order.listing_id)?.name||"your order";
         if(newStatus==="dispatched") await notify(order.buyer_id,"order","📦 Order dispatched",`Your order ${title} has been dispatched by the seller`,order.listing_id);
-        if(newStatus==="delivered")  await notify(order.buyer_id,"order","✅ Order delivered",`Your order ${title} has been marked as delivered`,order.listing_id);
+        if(newStatus==="delivered")  await notify(order.buyer_id,"order","✅ Order delivered",`Your order ${title} has been marked as delivered. Confirm receipt and leave the seller a review!`,order.listing_id);
       }
       flash(`Order marked ${newStatus.toUpperCase()}.`);
     }catch(e){ flash("Failed to update order status."); }
@@ -3883,11 +3905,11 @@ export default function App() {
 
       {/* REVIEW MODAL */}
       {showReview&&(
-        <div style={S.modalOverlay} onClick={()=>setShowReview(false)}>
+        <div style={S.modalOverlay} onClick={closeReviewModal}>
           <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
               <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>LEAVE A REVIEW</h3>
-              <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowReview(false)}>✕</button>
+              <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={closeReviewModal}>✕</button>
             </div>
             <div style={{marginBottom:20}}>
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:10}}>RATING</p>
@@ -4586,6 +4608,7 @@ export default function App() {
         confirmOrderReceived={confirmOrderReceived}
         startOrderConversation={startOrderConversation}
         openDispute={openDispute}
+        onReviewOrder={openOrderReview} reviewedListings={myReviewedListings}
       />
 
       {/* MY OFFERS (buyer) — Phase 14 offer checkout */}

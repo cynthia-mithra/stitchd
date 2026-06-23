@@ -1,5 +1,5 @@
 import React from "react";
-import { Package, Mail, AlertCircle, CheckCircle } from "lucide-react";
+import { Package, Mail, AlertCircle, CheckCircle, Star } from "lucide-react";
 import { S } from "../styles";
 import { VerifiedBadge } from "../components/Shared";
 
@@ -35,6 +35,7 @@ export default function Orders({
   orderProfiles = {},
   updateOrderStatus, confirmOrderReceived = () => {}, startOrderConversation,
   openDispute = () => {},
+  onReviewOrder = () => {}, reviewedListings = new Set(),
 }) {
   if (view !== "orders") return null;
   if (!user) return null;
@@ -145,6 +146,19 @@ export default function Orders({
                       <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: "#34C759", display: "inline-flex", alignItems: "center", gap: 6 }}>
                         <CheckCircle width={14} height={14} /> RECEIVED · PAYMENT RELEASED
                       </span>
+                    )}
+                    {/* Post-delivery review prompt — once the item's arrived, invite the
+                        buyer to rate the seller (or show a Reviewed state if done). */}
+                    {isBuyer && (status === "delivered" || status === "completed") && (
+                      reviewedListings.has(order.listing_id) ? (
+                        <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: "#FF9500", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <Star width={14} height={14} fill="currentColor" /> REVIEWED
+                        </span>
+                      ) : (
+                        <button className="hbtn" style={{ ...S.hBtn, background: "#fff", color: "#FF9500", border: "2px solid #FF9500", borderRadius: 0, fontSize: 11, padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => onReviewOrder(order)}>
+                          <Star width={14} height={14} /> LEAVE A REVIEW
+                        </button>
+                      )
                     )}
                     {/* SELLER → status dropdown + message the buyer */}
                     {!isBuyer && (
