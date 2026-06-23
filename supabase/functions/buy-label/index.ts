@@ -52,20 +52,22 @@ async function callProvider(p: LabelPayload): Promise<{ tracking_number: string;
 }
 
 // ── Veeqo (Amazon, UK) — https://developers.veeqo.com ───────────────────────────
-// Auth is the account API key in the `x-api-key` header. Veeqo creates a label by
-// purchasing a shipment for an order against an enabled carrier (Evri / Royal Mail
-// / DPD …). The request shape below is the expected one, but Veeqo's exact
-// order→shipment→label flow and the carrier/remote-shipment ids depend on your
-// account's enabled carriers — VERIFY against the live docs + TEST with a real key
-// before flipping SHIPPING_LABELS_ENABLED on. Kept defensive: any non-OK response
-// or a body without a tracking number throws a clear error rather than guessing.
+// Auth is the account API key in the `x-api-key` header; labels are purchased via
+// POST https://api.veeqo.com/shipping/shipments (a shipment created with a chosen
+// service_code returns the tracking number + label).
+//
+// ⚠️ PLAN GATE: Veeqo's *programmatic* Shipping API is Open Beta and only enabled
+// on the ENTERPRISE plan (or Veeqo Appstore partners). On the free plan you buy &
+// print labels in Veeqo's own dashboard and paste the tracking number into the
+// order by hand (which already works) — this branch only does anything once your
+// account has API access. Verify the exact request against developers.veeqo.com
+// and TEST with a real key before enabling SHIPPING_LABELS_ENABLED.
 async function buyVeeqoLabel(p: LabelPayload): Promise<{ tracking_number: string; label_url?: string }> {
   const headers = { "x-api-key": SHIPPING_API_KEY, "Content-Type": "application/json", "Accept": "application/json" };
   const body = {
-    // Carrier/service: map p.service (e.g. "Evri · Small parcel…") to your Veeqo
-    // remote shipping service when you connect carriers; sent through as a hint.
-    remote_shipment_id: undefined,
-    service_carrier: (p.service || "").split("·")[0].trim(),
+    // service_code is the Veeqo shipping service chosen for this shipment; map
+    // p.service (e.g. "Evri · Small parcel…") to one of your account's services.
+    service_code: (p.service || "").split("·")[0].trim(),
     weight: p.weight_grams,            // grams
     weight_unit: "g",
     parcel: { weight: p.weight_grams, weight_unit: "g" },
@@ -86,8 +88,7 @@ async function buyVeeqoLabel(p: LabelPayload): Promise<{ tracking_number: string
       country: p.to.country || "GB",
     },
   };
-  // Endpoint to confirm against developers.veeqo.com for your label-buying flow.
-  const res = await fetch("https://api.veeqo.com/shipments", {
+  const res = await fetch("https://api.veeqo.com/shipping/shipments", {
     method: "POST", headers, body: JSON.stringify(body),
   });
   const text = await res.text().catch(() => "");
