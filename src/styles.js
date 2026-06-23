@@ -12,6 +12,9 @@ export const CSS=`
   /* Unified button feel: a confident lift + soft shadow on hover (replaces the
      old dated scale-down), and a quick press-down on click. Applies to every
      CTA site-wide since .hbtn is the shared button class. */
+  /* Sticky product buy bar slides up from the bottom when toggled .show. */
+  .detail-buybar{transform:translateY(115%);opacity:0;transition:transform .32s cubic-bezier(.22,1,.36,1),opacity .25s ease;pointer-events:none;}
+  .detail-buybar.show{transform:translateY(0);opacity:1;pointer-events:auto;}
   /* Sticky header lifts off the page with a hairline shadow only once scrolled. */
   .nav-header{transition:box-shadow .25s ease,background .25s ease;}
   .nav-header.scrolled{box-shadow:0 6px 26px rgba(0,0,0,0.09);}
@@ -280,7 +283,7 @@ export const S={
   // sticks while the long details column scrolls. align-items:flex-start stops
   // the image stretching to the details' height (which made it a thin strip).
   detailWrap:{display:"flex",flexWrap:"wrap",alignItems:"flex-start",gap:24},
-  detailImgWrap:{flex:"1 1 400px",maxWidth:520,position:"sticky",top:16,alignSelf:"flex-start",display:"flex",flexDirection:"column",border:"3px solid #111",background:"#fff"},
+  detailImgWrap:{flex:"1 1 420px",maxWidth:560,position:"sticky",top:68,alignSelf:"flex-start",display:"flex",flexDirection:"column",border:"3px solid #111",background:"#fff"},
   // Defined portrait ratio so the photo is a proper product image, not stretched.
   detailPanel:{width:"100%",aspectRatio:"4 / 5",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"},
   thumbRow:{display:"flex",gap:0,borderTop:"3px solid #111",overflowX:"auto"},
@@ -382,6 +385,14 @@ export const S={
   // BUYER GUARANTEE BANNER (Detail page) — trust signal below ADD TO BAG.
   // Square 2px #111 frame, white fill, Barlow Condensed throughout.
   guaranteeBanner:{border:"2px solid #111",borderRadius:0,background:"#fff",padding:"16px 18px",marginBottom:16},
+  // Sticky buy bar — slides up from the bottom once the inline ADD TO BAG button
+  // scrolls out of view (see .detail-buybar CSS + the IntersectionObserver in Detail).
+  buyBar:{position:"fixed",left:0,right:0,bottom:0,zIndex:300,background:"rgba(255,255,255,0.9)",backdropFilter:"saturate(180%) blur(12px)",WebkitBackdropFilter:"saturate(180%) blur(12px)",borderTop:"3px solid #111",padding:"10px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,boxShadow:"0 -8px 30px rgba(0,0,0,0.10)"},
+  buyBarInfo:{display:"flex",alignItems:"center",gap:12,minWidth:0},
+  buyBarThumb:{width:46,height:54,border:"2px solid #111",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,background:"#fafafa"},
+  buyBarName:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"42vw",margin:0,lineHeight:1.15},
+  buyBarPrice:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:21,fontWeight:900,letterSpacing:-0.5,margin:0,lineHeight:1.1},
+  buyBarBtn:{background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"13px 28px",fontSize:15,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2.5,textTransform:"uppercase",display:"inline-flex",alignItems:"center",gap:8,flexShrink:0,whiteSpace:"nowrap"},
   guaranteeHeading:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,letterSpacing:2,color:"#FF1493",textTransform:"uppercase",marginBottom:12},
   guaranteeList:{display:"flex",flexDirection:"column",gap:9},
   guaranteePoint:{display:"flex",alignItems:"center",gap:10,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:0.5,color:"#111",lineHeight:1.2},

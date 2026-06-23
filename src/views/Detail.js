@@ -147,6 +147,17 @@ export default function Detail({
     if(ok) closeOffer(); else setOfferSending(false);
   };
   const thumbSrc = sel ? (sel.image_url || (sel.images && sel.images[0]) || "") : "";
+  // Sticky buy bar — show it once the inline ADD TO BAG button scrolls out of
+  // view, so the price + buy action are always one tap away on long pages.
+  const bagBtnRef = React.useRef(null);
+  const [showBuyBar, setShowBuyBar] = React.useState(false);
+  React.useEffect(()=>{
+    const el = bagBtnRef.current;
+    if(!el || view!=="detail"){ setShowBuyBar(false); return; }
+    const io = new IntersectionObserver(([e])=>setShowBuyBar(!e.isIntersecting), {threshold:0});
+    io.observe(el);
+    return ()=>io.disconnect();
+  },[sel, view]);
   return (
     <>
       {view==="detail"&&sel&&(
@@ -195,6 +206,7 @@ export default function Detail({
                 return (
                   <>
                     <button
+                      ref={bagBtnRef}
                       className={sel.sold?"":"hbtn"}
                       disabled={sel.sold}
                       style={{...S.bagAddBtn,...(sel.sold?soldStyle:bagged?baggedStyle:{})}}
@@ -502,6 +514,28 @@ export default function Detail({
           )}
         </main>
       )}
+      {/* STICKY BUY BAR — appears once the inline ADD TO BAG scrolls away. */}
+      {view==="detail"&&sel&&!isOwner(sel)&&(()=>{
+        const bagged=inBag(sel.id);
+        return (
+          <div className={"detail-buybar"+(showBuyBar?" show":"")} style={S.buyBar}>
+            <div style={S.buyBarInfo}>
+              <div style={S.buyBarThumb}>{thumbSrc?<img src={thumbSrc} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span>{sel.emoji||catEmoji(sel.category)}</span>}</div>
+              <div style={{minWidth:0}}>
+                <p style={S.buyBarName}>{sel.name}</p>
+                <p style={{...S.buyBarPrice,color:selColor}}>{currencySymbol(sel.currency)}{sel.price}</p>
+              </div>
+            </div>
+            <button
+              className={sel.sold?"":"hbtn"}
+              disabled={sel.sold}
+              style={{...S.buyBarBtn,...(sel.sold?{background:"#e5e5e5",color:"#999",border:"2px solid #ccc",cursor:"not-allowed"}:bagged?{background:"#111"}:{})}}
+              onClick={()=>{ if(!sel.sold) requireAuth("default",()=>toggleBag(sel)); }}>
+              <ShoppingBag width={17} height={17}/> {sel.sold?"SOLD":bagged?"ADDED":"ADD TO BAG"}
+            </button>
+          </div>
+        );
+      })()}
       <LoginPromptModal open={!!gate} context={gate||"default"} onClose={()=>setGate(null)} onAuth={m=>{ setGate(null); onGateAuth(m); }}/>
     </>
   );
