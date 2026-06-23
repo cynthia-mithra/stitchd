@@ -26,6 +26,9 @@ const STATUS_BADGE = {
 };
 const STATUS_FLOW = ["pending", "dispatched", "delivered"];
 
+// Shimmer block for the loading skeleton rows.
+const SK = { background: "linear-gradient(90deg,#f3f3f3 25%,#e9e9e9 50%,#f3f3f3 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s ease-in-out infinite", borderRadius: 2 };
+
 export default function Orders({
   view, setView, user, items,
   ordersTab, setOrdersTab, ordersLoading, myOrders,
@@ -66,11 +69,23 @@ export default function Orders({
       </div>
 
       {ordersLoading ? (
-        <div style={S.loadingWrap}><div style={S.spinner} /></div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {Array(3).fill(0).map((_, i) => (
+            <div key={i} style={{ border: "2px solid #eee", padding: 20, display: "flex", gap: 16 }}>
+              <div style={{ ...SK, width: 72, height: 72, flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ ...SK, width: "35%", height: 11, marginBottom: 10 }} />
+                <div style={{ ...SK, width: "70%", height: 16, marginBottom: 10 }} />
+                <div style={{ ...SK, width: "25%", height: 18 }} />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "60px 20px" }}>
-          <p style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Package width={48} height={48} /></p>
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 24, fontWeight: 900, marginBottom: 8 }}>NO ORDERS YET</p>
+        <div style={S.empty}>
+          <div style={S.emptyIcon}><Package width={40} height={40} /></div>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 30, fontWeight: 900, margin: "20px 0 6px", letterSpacing: -0.5 }}>NO ORDERS YET.</p>
+          <p style={S.emptySub}>{ordersTab === "selling" ? "Your sales will show up here once someone buys a piece." : "Pieces you buy will appear here — go find something you love."}</p>
           <button className="hbtn" style={S.hBtn} onClick={() => setView("shop")}>BROWSE LISTINGS →</button>
         </div>
       ) : (
@@ -85,7 +100,7 @@ export default function Orders({
               ? new Date(order.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }).toUpperCase()
               : "";
             return (
-              <div key={order.id} style={{ border: "2px solid #111", padding: 20, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+              <div key={order.id} className="order-card" style={{ border: "2px solid #111", borderLeft: `6px solid ${badge.background}`, padding: 20, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start", background: "#fff" }}>
                 <div style={{ width: 72, height: 72, flexShrink: 0, border: "2px solid #111", background: "#f6f6f6", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {listing?.image_url || (listing?.images && listing.images[0])
                     ? <img src={listing.image_url || listing.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />

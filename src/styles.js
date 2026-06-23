@@ -14,6 +14,9 @@ export const CSS=`
      the same subtle scale so the grid feels alive without being busy. */
   .card-top img,.card-top span{transition:transform .5s cubic-bezier(.22,1,.36,1) !important;}
   .scard:hover .card-top img,.scard:hover .card-top span{transform:scale(1.07) !important;}
+  /* Order / row cards lift gently on hover. */
+  .order-card{transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .18s ease;}
+  .order-card:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,0.08);}
   /* Zoned image overlays — status chips stack vertically so they never collide. */
   .card-ov{position:absolute;display:flex;flex-direction:column;align-items:flex-start;gap:5px;z-index:5;pointer-events:none;}
   .card-ov-tl{top:10px;left:10px;}
