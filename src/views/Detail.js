@@ -31,7 +31,7 @@ export default function Detail({
   submitComment = () => {}, deleteComment = () => {}, submitReply = () => {}, profile,
   myOffer = null, submitOffer = () => {}, withdrawOffer = () => {},
   openEdit, markSold, relist, del,
-  similarItems, recentItems = [], openDetail,
+  sellerItems = [], similarItems, recentItems = [], openDetail,
   fastSellers = new Set(),
   verifiedSellers = new Set(),
   identityVerifiedSellers = new Set(),
@@ -352,6 +352,29 @@ export default function Detail({
               )}
             </div>
           </div>
+          {sellerItems.length>0&&(
+            <div style={{marginTop:48}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #111",paddingLeft:12,marginBottom:20}}>MORE FROM THIS SELLER</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:3}}>
+                {sellerItems.map((item,idx)=>{
+                  const accent=CARD_COLORS[idx%CARD_COLORS.length];
+                  return(
+                    <article key={item.id} className="scard" style={{...S.card,borderColor:accent,opacity:item.sold?0.55:1}} onClick={()=>openDetail(item)}>
+                      <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={{...S.cardTop,height:160}} emojiStyle={{fontSize:56}}>
+                        {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
+                      </Thumb>
+                      <div style={{...S.cardBody,padding:"12px 14px 10px"}}>
+                        <p style={{...S.cardCatLabel,color:accent,marginBottom:2}}>{item.category?.toUpperCase()}</p>
+                        <p style={{...S.cardName,fontSize:16,marginBottom:8}}>{item.name}</p>
+                        <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent,fontSize:20}}>{currencySymbol(item.currency)}{item.price}</span></div>
+                      </div>
+                      <div style={{...S.accentBar,background:accent}}/>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {similarItems.length>0&&(
             <div style={{marginTop:48}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>YOU MIGHT ALSO LIKE</div>

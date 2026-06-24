@@ -3536,7 +3536,10 @@ export default function App() {
   // Issue #167 — "YOU MIGHT ALSO LIKE" is a discovery rail, so exclude SOLD
   // (and inactive) pieces the same way the shop grid does. Recently Viewed below
   // deliberately keeps sold items (with a SOLD overlay) and is not filtered here.
-  const similarItems = sel ? items.filter(i=>i.id!==sel.id&&!i.sold&&i.status!=="sold"&&i.status!=="inactive"&&(i.category===sel.category||i.fabric===sel.fabric||i.origin===sel.origin)).slice(0,4) : [];
+  // Other live pieces from the same seller (shown first on Detail), and similar
+  // pieces from OTHER sellers (so the two rails don't duplicate each other).
+  const sellerItems  = sel ? items.filter(i=>i.id!==sel.id&&i.user_id===sel.user_id&&!i.sold&&i.status!=="sold"&&i.status!=="inactive").slice(0,4) : [];
+  const similarItems = sel ? items.filter(i=>i.id!==sel.id&&i.user_id!==sel.user_id&&!i.sold&&i.status!=="sold"&&i.status!=="inactive"&&(i.category===sel.category||i.fabric===sel.fabric||i.origin===sel.origin)).slice(0,4) : [];
   // Phase 12 — recently viewed, in view order (newest first), excluding the
   // current listing, capped at 6 for the Detail "RECENTLY VIEWED" rail.
   const recentItems  = recentlyViewed
@@ -4929,7 +4932,7 @@ export default function App() {
         submitComment={submitComment} deleteComment={deleteComment} submitReply={submitReply} profile={profile}
         myOffer={myOffer} submitOffer={submitOffer} withdrawOffer={withdrawOffer}
         openEdit={openEdit} markSold={markSold} relist={relist} del={del}
-        similarItems={similarItems} recentItems={recentItems} openDetail={openDetail}
+        sellerItems={sellerItems} similarItems={similarItems} recentItems={recentItems} openDetail={openDetail}
         fastSellers={fastSellers} verifiedSellers={verifiedSellers}
         identityVerifiedSellers={identityVerifiedSellers}
         onFindTailor={openAlterationModal}
