@@ -20,7 +20,16 @@
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const SHIPPING_PROVIDER = Deno.env.get("SHIPPING_PROVIDER") ?? "";
-const SHIPPING_API_KEY = Deno.env.get("SHIPPING_API_KEY") ?? "";
+const SHIPPING_API_KEY = Deno.env.get("SHIPPING_API_KEY") ?? "";       // veeqo (x-api-key)
+const P2G_CLIENT_ID = Deno.env.get("P2G_CLIENT_ID") ?? "";            // parcel2go (OAuth2)
+const P2G_CLIENT_SECRET = Deno.env.get("P2G_CLIENT_SECRET") ?? "";
+
+// Whether the configured provider has the credentials it needs.
+function providerConfigured(): boolean {
+  if (SHIPPING_PROVIDER === "parcel2go") return !!(P2G_CLIENT_ID && P2G_CLIENT_SECRET);
+  if (SHIPPING_PROVIDER === "veeqo") return !!SHIPPING_API_KEY;
+  return false;
+}
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -47,8 +56,77 @@ type LabelPayload = {
 // The one place to implement per courier. Returns { tracking_number, label_url }
 // or throws. Add a branch per provider as accounts are connected.
 async function callProvider(p: LabelPayload): Promise<{ tracking_number: string; label_url?: string }> {
+  if (SHIPPING_PROVIDER === "parcel2go") return buyParcel2GoLabel(p);
   if (SHIPPING_PROVIDER === "veeqo") return buyVeeqoLabel(p);
   throw new Error(`Shipping provider "${SHIPPING_PROVIDER}" is not implemented yet.`);
+}
+
+// ── Parcel2Go (UK broker) — https://api-docs.parcel2go.com ──────────────────────
+// OAuth2 client-credentials: POST the client id/secret to the token endpoint, then
+// call the API with the bearer token. Buying a label is a quote → order → label
+// sequence. The shapes below follow the documented API but MUST be verified
+// against api-docs.parcel2go.com and TESTED with real credentials before enabling
+// SHIPPING_LABELS_ENABLED — every call throws a clear error rather than guessing.
+async function p2gToken(): Promise<string> {
+  const res = await fetch("https://www.parcel2go.com/auth/connect/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "client_credentials",
+      client_id: P2G_CLIENT_ID,
+      client_secret: P2G_CLIENT_SECRET,
+      scope: "public_api payment",
+    }),
+  });
+  const text = await res.text().catch(() => "");
+  if (!res.ok) throw new Error(`Parcel2Go auth failed (${res.status}): ${text.slice(0, 200)}`);
+  const tok = JSON.parse(text)?.access_token;
+  if (!tok) throw new Error("Parcel2Go auth returned no access_token.");
+  return tok as string;
+}
+
+async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: string; label_url?: string }> {
+  const token = await p2gToken();
+  const auth = { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" };
+  const weightKg = Math.max(0.1, (p.weight_grams || 1000) / 1000);
+  const collection = {
+    ContactName: p.from.ship_from_name || "", Property: p.from.ship_from_line1 || "",
+    Street: p.from.ship_from_line2 || "", Town: p.from.ship_from_city || "",
+    Postcode: p.from.ship_from_postcode || "", CountryIsoCode: "GBR",
+  };
+  const delivery = {
+    ContactName: p.to.name || "", Property: p.to.line1 || "",
+    Street: p.to.line2 || "", Town: p.to.city || "",
+    Postcode: p.to.postcode || "", CountryIsoCode: "GBR",
+  };
+  const parcels = [{ Weight: weightKg, Length: 30, Width: 25, Height: 5, Value: 20 }];
+
+  // 1) Quote → pick a service (cheapest, or one matching the buyer's chosen carrier).
+  const qRes = await fetch("https://www.parcel2go.com/api/quotes", {
+    method: "POST", headers: auth,
+    body: JSON.stringify({ CollectionAddress: { Postcode: collection.Postcode, Country: "GBR" }, DeliveryAddress: { Postcode: delivery.Postcode, Country: "GBR" }, Parcels: parcels }),
+  });
+  const qText = await qRes.text().catch(() => "");
+  if (!qRes.ok) throw new Error(`Parcel2Go quote failed (${qRes.status}): ${qText.slice(0, 200)}`);
+  const quotes = (JSON.parse(qText)?.Quotes || JSON.parse(qText)?.quotes || []) as Array<Record<string, unknown>>;
+  if (!quotes.length) throw new Error("Parcel2Go returned no services for this route.");
+  const wantCarrier = (p.service || "").split("·")[0].trim().toLowerCase();
+  const chosen = quotes.find((q) => String(q.Service || q.CourierName || "").toLowerCase().includes(wantCarrier)) || quotes[0];
+  const serviceSlug = chosen.Service || chosen.ServiceSlug || chosen.slug;
+
+  // 2) Create + pay the order for that service. (Parcel2Go supports prepay/account/
+  //    card — confirm your account's payment method + the exact order/label fields.)
+  const oRes = await fetch("https://www.parcel2go.com/api/orders", {
+    method: "POST", headers: auth,
+    body: JSON.stringify({ Items: [{ Id: "1", CollectionAddress: collection, DeliveryAddress: delivery, Parcels: parcels, Service: serviceSlug }] }),
+  });
+  const oText = await oRes.text().catch(() => "");
+  if (!oRes.ok) throw new Error(`Parcel2Go order failed (${oRes.status}): ${oText.slice(0, 200)}`);
+  const order = JSON.parse(oText) || {};
+  const tracking = order.TrackingNumber || order.tracking_number || (order.Items?.[0]?.TrackingNumber);
+  const labelUrl = order.LabelUrl || order.label_url || (order.Links?.Label);
+  if (!tracking) throw new Error("Parcel2Go order created but returned no tracking number — verify the order/label flow.");
+  return { tracking_number: String(tracking), label_url: labelUrl ? String(labelUrl) : undefined };
 }
 
 // ── Veeqo (Amazon, UK) — https://developers.veeqo.com ───────────────────────────
@@ -106,8 +184,8 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   // Not configured yet → tell the caller cleanly so the UI can hide the action.
-  if (!SHIPPING_PROVIDER || !SHIPPING_API_KEY) {
-    return json({ configured: false, error: "Shipping labels aren't set up yet. Add SHIPPING_PROVIDER + SHIPPING_API_KEY to enable." }, 200);
+  if (!SHIPPING_PROVIDER || !providerConfigured()) {
+    return json({ configured: false, error: "Shipping labels aren't set up yet. Set SHIPPING_PROVIDER and the provider's credentials (parcel2go: P2G_CLIENT_ID + P2G_CLIENT_SECRET) to enable." }, 200);
   }
 
   try {
