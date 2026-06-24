@@ -57,6 +57,19 @@ export const CSS=`
   .hbtn:hover .btn-arrow{transform:translateX(5px);}
   /* Conversation rows in Messages: gentle tint + pink edge on hover. */
   .conv-item:hover{background:#fff7fc !important;border-left-color:#FF149355 !important;}
+  /* SHOP BY CATEGORY — quick-entry tiles. 6-up grid on desktop, horizontal
+     swipe-scroll on phones (tiles ~42% wide so the next peeks). */
+  .cat-rail{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;}
+  .cat-tile{padding:0;border:none;background:none;cursor:pointer;transition:transform .2s cubic-bezier(.22,1,.36,1);}
+  .cat-tile:hover{transform:translateY(-4px);}
+  .cat-tile-img{position:relative;width:100%;aspect-ratio:1/1;border:2px solid #111;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+  .cat-tile-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .cat-tile-img::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6),transparent 55%);}
+  .cat-tile-label{position:absolute;left:9px;bottom:8px;z-index:2;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:13px;letter-spacing:.5px;color:#fff;text-align:left;line-height:1;}
+  @media(max-width:768px){
+    .cat-rail{display:flex;overflow-x:auto;gap:10px;scroll-snap-type:x mandatory;padding-bottom:6px;}
+    .cat-rail > *{flex:0 0 42%;scroll-snap-align:start;}
+  }
   /* MOBILE BOTTOM NAV — app-style tab bar, phones only. Desktop/iPad keep the
      header nav, so it's hidden by default and only shown ≤768px. The app root
      gets bottom padding on mobile so the footer clears the fixed bar. */

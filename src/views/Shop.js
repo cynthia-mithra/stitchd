@@ -102,6 +102,39 @@ export default function Shop({
       </div>
     </div>
   );
+  // SHOP BY CATEGORY — quick-entry tiles into the main browse categories. Each
+  // tile borrows a representative photo from the current listings (falls back to
+  // a brand monogram), and tapping applies the matching filter + scrolls to the
+  // grid. Only shown on the main, unfiltered shop view.
+  const CATEGORY_TILES = [
+    {label:"Sarees",        apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Saree");},        match:i=>i.category==="Saree"},
+    {label:"Lehengas",      apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Lehenga");},      match:i=>i.category==="Lehenga"},
+    {label:"Salwar Kameez", apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Salwar Kameez");},match:i=>i.category==="Salwar Kameez"},
+    {label:"Sherwani",      apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Sherwani");},     match:i=>i.category==="Sherwani"},
+    {label:"Jewellery",     apply:()=>{clearFilters();setTypeFilter("Jewellery");},                            match:i=>i.listing_type==="Jewellery"},
+    {label:"Shoes",         apply:()=>{clearFilters();setTypeFilter("Shoes");},                                match:i=>i.listing_type==="Shoes"},
+  ];
+  const CategoryRail = () => (
+    <div style={{maxWidth:1300,margin:"0 auto",padding:"28px 24px 0"}}>
+      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",textTransform:"uppercase",margin:"0 0 12px"}}>SHOP BY CATEGORY</p>
+      <div className="cat-rail">
+        {CATEGORY_TILES.map((t,idx)=>{
+          const hit=(visible||[]).find(i=>t.match(i)&&(i.image_url||(i.images&&i.images[0])));
+          const img=hit?(hit.image_url||hit.images[0]):"";
+          const accent=["#FF1493","#00E5CC","#111"][idx%3];
+          const mono=t.label.split(/[\s-]+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
+          return (
+            <button key={t.label} className="cat-tile" onClick={()=>{t.apply();setTimeout(()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"}),60);}} aria-label={`Shop ${t.label}`}>
+              <div className="cat-tile-img" style={{background:img?"#000":accent}}>
+                {img?<img src={img} alt=""/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:"#fff"}}>{mono}</span>}
+                <span className="cat-tile-label">{t.label.toUpperCase()}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
   // FOLLOWING feed — rendered in the grid position below the hero + tabs (same
   // page flow as the ALL LISTINGS grid), so the hero always stays first. Shows a
   // friendly empty state with a DISCOVER SELLERS button when the user follows no
@@ -430,6 +463,7 @@ export default function Shop({
           ALL LISTINGS tab (and logged-out / new-arrivals) shows the main grid. */}
       {followingActive ? <FollowingFeed/> : (
       <>
+      {!newArrivals&&!hasFilters&&<CategoryRail/>}
       {hasFilters&&<div style={{padding:"12px 24px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:2,color:"#6f6f6f",borderBottom:"1px solid #f0f0f0"}}>{visible.length} RESULT{visible.length!==1?"S":""}{search?` FOR "${search.toUpperCase()}"`:""}  <span style={{color:"#FF1493",cursor:"pointer",marginLeft:12}} onClick={clearFilters}>CLEAR</span></div>}
 
       <div style={S.gridWrap}>
