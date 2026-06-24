@@ -113,6 +113,8 @@ export const CSS=`
   }
   @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
   input:focus,select:focus,textarea:focus{border-color:#FF1493 !important;box-shadow:0 0 0 3px rgba(255,20,147,0.1) !important;outline:none;}
+  /* Keyboard-only focus ring for buttons/links/tiles (mouse clicks stay clean). */
+  button:focus-visible,a:focus-visible,[role="button"]:focus-visible,.cat-tile:focus-visible,.bottom-nav-item:focus-visible{outline:3px solid rgba(255,20,147,0.55);outline-offset:2px;}
   ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#eee;border-radius:2px}
   ::selection{background:#FF149333}
   /* SHOP THE LOOK — desktop is a 3-up grid; the homepage rail turns into a

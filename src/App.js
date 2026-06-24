@@ -3662,7 +3662,7 @@ export default function App() {
                 </button>
                 {/* ALWAYS VISIBLE (when signed in): Notifications, then LIST IT.
                     Favourites (heart) sits just before this block. */}
-                <button className="hbtn" style={{...S.hBtn,background:showNotifs?"#FF1493":"#fff",color:showNotifs?"#fff":"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setShowNotifs(p=>!p)}>
+                <button className="hbtn" aria-label="Notifications" style={{...S.hBtn,background:showNotifs?"#FF1493":"#fff",color:showNotifs?"#fff":"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setShowNotifs(p=>!p)}>
                   <Bell width={18} height={18} style={{verticalAlign:"middle"}}/> {unreadNotifs>0&&<span style={S.wishBadge}>{unreadNotifs}</span>}
                 </button>
                 <button className="hbtn" style={S.hBtn} onClick={()=>setView("add")}>LIST IT <span className="btn-arrow">→</span></button>
