@@ -16,7 +16,7 @@ import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } fro
 import { startSellerConnect, verifySellerConnect, withdrawFromWallet, refundOrder, refundAlteration, buyShippingLabel } from "./lib/wallet";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CheckCircle, Info, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import { ReviewModal } from "./components/Reviews";
 import PricingGuide from "./components/PricingGuide";
@@ -849,7 +849,16 @@ export default function App() {
    .sort((a,b)=>(_live(a)?0:1)-(_live(b)?0:1));
   },[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers,occFilter,colourFilter]);
 
-  function flash(m,dur=3500){ setToast(m); setTimeout(()=>setToast(""),dur); }
+  // Toasts carry a type (success / error / info) that picks a leading icon +
+  // accent. The type is inferred from the message so the ~40 existing flash()
+  // calls keep working, but it can be passed explicitly as the 3rd arg.
+  function toastType(m){
+    const s=String(m||"").toLowerCase();
+    if(/can'?t|cannot|couldn'?t|could not|fail|error|invalid|not available|no longer|sold out|add at least|required|isn'?t|unable|denied|expired|went wrong|problem|please /.test(s)) return "error";
+    if(/but the photo|still generating|not ready|hidden|on vacation|resent|check your email|we'll|saved as draft|emailed|setting up/.test(s)) return "info";
+    return "success";
+  }
+  function flash(m,dur=3500,type){ setToast({msg:m,type:type||toastType(m)}); setTimeout(()=>setToast(""),dur); }
 
   useEffect(()=>{
     const el=document.getElementById("chat-messages");
@@ -3746,7 +3755,16 @@ export default function App() {
           )}
         </div>
       )}
-      {toast&&<div className="toast-pop" style={S.toast}>{toast}</div>}
+      {toast&&(()=>{
+        const ic=toast.type==="error"?"#FF3B30":toast.type==="info"?"#00E5CC":"#34C759";
+        const Icon=toast.type==="error"?AlertCircle:toast.type==="info"?Info:CheckCircle;
+        return (
+          <div className="toast-pop" style={{...S.toast,borderLeftColor:ic}}>
+            <Icon width={18} height={18} color={ic} style={{flexShrink:0}}/>
+            <span>{toast.msg}</span>
+          </div>
+        );
+      })()}
 
       {/* SHOPPING BAG PANEL — slide-in from the right. UI/state only; the checkout
           button is a placeholder until Stripe is wired up in a separate issue. */}
