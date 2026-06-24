@@ -91,14 +91,31 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
   const weightKg = Math.max(0.1, (p.weight_grams || 1000) / 1000);
 
   // Parcel2Go addresses: ContactName/Property/Street/Town/Postcode/CountryIsoCode.
+  // It validates that `Street` (the road) is non-empty. Our address lines usually
+  // hold the whole street in line1 ("14 Windermere Close") with line2 blank, so
+  // split a leading house number/name into Property and keep the road in Street —
+  // appending line2 when present — so Street is never empty.
+  const splitAddr = (line1: string, line2: string) => {
+    const l1 = String(line1 || "").trim();
+    const l2 = String(line2 || "").trim();
+    const m = /^(\d+[a-zA-Z]?|flat\s*\d+\w*|unit\s*\d+\w*)\s+(.+)$/i.exec(l1);
+    let property = "";
+    let street = l1;
+    if (m) { property = m[1]; street = m[2]; }
+    if (l2) street = street ? `${street}, ${l2}` : l2;
+    if (!street) street = l1 || l2 || "-";
+    return { property, street };
+  };
+  const cFrom = splitAddr(p.from.ship_from_line1, p.from.ship_from_line2);
+  const cTo = splitAddr(p.to.line1, p.to.line2);
   const collectionAddress = {
     ContactName: p.from.ship_from_name || "Seller", Email: "orders@stitchd.fit", Phone: "07000000000",
-    Property: p.from.ship_from_line1 || "", Street: p.from.ship_from_line2 || "",
+    Property: cFrom.property, Street: cFrom.street,
     Town: p.from.ship_from_city || "", Postcode: p.from.ship_from_postcode || "", CountryIsoCode: "GBR",
   };
   const deliveryAddress = {
     ContactName: p.to.name || "Customer", Email: "orders@stitchd.fit", Phone: "07000000000",
-    Property: p.to.line1 || "", Street: p.to.line2 || "",
+    Property: cTo.property, Street: cTo.street,
     Town: p.to.city || "", Postcode: p.to.postcode || "", CountryIsoCode: "GBR",
   };
 
