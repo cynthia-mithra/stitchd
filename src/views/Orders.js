@@ -220,6 +220,7 @@ export default function Orders({
                         <div style={rowStyle}>
                           <span style={{ ...lblFont, fontSize: 12, fontWeight: 800, letterSpacing: 0.5, color: "#111", display: "inline-flex", alignItems: "center", gap: 6 }}><Truck width={15} height={15} /> {order.tracking_carrier ? `${String(order.tracking_carrier).split("·")[0].trim()} · ` : ""}{order.tracking_number}</span>
                           {url && <a href={url} target="_blank" rel="noreferrer" style={{ ...lblFont, fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: "#FF1493", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}>TRACK PARCEL <ExternalLink width={12} height={12} /></a>}
+                          {!isBuyer && order.label_url && <a href={order.label_url} target="_blank" rel="noreferrer" style={{ ...lblFont, fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: "#111", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5, border: "2px solid #111", padding: "5px 10px" }}><Package width={12} height={12} /> VIEW LABEL</a>}
                           {!isBuyer && <button onClick={() => { setTrackEditing(p => ({ ...p, [order.id]: true })); setTrackInputs(p => ({ ...p, [order.id]: order.tracking_number || "" })); }} style={{ ...lblFont, background: "none", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 800, letterSpacing: 1, color: "#888", textDecoration: "underline", padding: 0 }}>EDIT</button>}
                         </div>
                       );

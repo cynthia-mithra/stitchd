@@ -3111,9 +3111,9 @@ export default function App() {
       if(res&&res.configured===false){ flash(res.error||"Shipping labels aren't set up yet."); return; }
       if(res&&res.error){ flash(res.error); return; }
       if(res&&res.tracking_number){
-        setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null}:o));
-        if(res.label_url){ try{ window.open(res.label_url,"_blank"); }catch(e){} }
-        flash("Label created — tracking added.");
+        setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null,label_url:res.label_url||o.label_url||null}:o));
+        if(res.label_url){ try{ window.open(res.label_url,"_blank"); }catch(e){} flash("Label created — tracking added. Tap VIEW LABEL to print."); }
+        else flash("Tracking added. Parcel2Go emailed your label — it'll also appear here shortly.");
       } else flash("Couldn't create a label.");
     }catch(e){ flash(errMsg(e)); }
   }

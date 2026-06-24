@@ -216,14 +216,19 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
   const tracking = orderLineId || orderId;
   const labelApi = `https://www.parcel2go.com/api/labels/${orderId}?hash=${encodeURIComponent(hash)}&referenceType=OrderId&detailLevel=All&labelMedia=A4&labelFormat=PDF`;
   let labelPublicUrl: string | undefined;
-  for (let attempt = 0; attempt < 6; attempt++) {
+  for (let attempt = 0; attempt < 8; attempt++) {
     const lr = await fetch(labelApi, { headers: { Authorization: `Bearer ${token}`, Accept: "application/pdf" } }).catch(() => null);
-    const ct = lr?.headers.get("content-type") || "";
-    if (lr?.ok && ct.includes("pdf")) {
-      labelPublicUrl = await stashLabelPdf(String(orderId), new Uint8Array(await lr.arrayBuffer()));
-      break;
+    if (lr?.ok) {
+      const buf = new Uint8Array(await lr.arrayBuffer().catch(() => new ArrayBuffer(0)));
+      // Detect a real PDF by its "%PDF" signature rather than trusting the
+      // content-type header (Parcel2Go sometimes returns octet-stream, and a
+      // not-ready label comes back as JSON, which we skip and retry).
+      if (buf.length > 4 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) {
+        labelPublicUrl = await stashLabelPdf(String(orderId), buf);
+        break;
+      }
     }
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, 2000));
   }
   return { tracking_number: String(tracking), label_url: labelPublicUrl };
 }
@@ -334,6 +339,18 @@ Deno.serve(async (req) => {
       headers: { ...sb, "Content-Type": "application/json" },
       body: JSON.stringify({ tracking_number: result.tracking_number, tracking_carrier: order.postage_carrier || null }),
     }).catch(() => {});
+
+    // Persist the label URL separately and best-effort: if the orders table has
+    // no label_url column yet, PostgREST rejects the whole PATCH — keeping it out
+    // of the tracking PATCH above means a missing column can't lose the tracking
+    // number. Once the column exists, the label shows on the order permanently.
+    if (result.label_url) {
+      await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${order_id}`, {
+        method: "PATCH",
+        headers: { ...sb, "Content-Type": "application/json" },
+        body: JSON.stringify({ label_url: result.label_url }),
+      }).catch(() => {});
+    }
 
     return json({ configured: true, tracking_number: result.tracking_number, label_url: result.label_url ?? null });
   } catch (e) {
