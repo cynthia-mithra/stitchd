@@ -65,7 +65,7 @@ export default function Orders({
       <button style={S.back} onClick={() => setView("shop")}>← BACK</button>
       <div style={{ marginBottom: 32, paddingBottom: 24, borderBottom: "3px solid #111", display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
         <div>
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 4, color: "#FF1493", marginBottom: 6 }}>YOUR TRANSACTIONS</p>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 2.5, color: "#FF1493", marginBottom: 6 }}>YOUR TRANSACTIONS</p>
           <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 48, fontWeight: 900, letterSpacing: -1, lineHeight: 1 }}>MY ORDERS</h2>
         </div>
         <div style={{ display: "flex", gap: 6 }}>

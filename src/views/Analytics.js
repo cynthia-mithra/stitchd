@@ -45,7 +45,7 @@ const ST = {
     background: on ? "#FF1493" : "#fff", color: on ? "#fff" : "#111",
   }),
   sectionLabel: {
-    fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 3,
+    fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 2,
     color: "#111", borderLeft: "4px solid #FF1493", paddingLeft: 12, marginBottom: 18,
     display: "flex", alignItems: "center", gap: 8, textTransform: "uppercase",
   },
@@ -266,7 +266,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
     <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
       {/* TIME PERIOD FILTER */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 3, color: "#6f6f6f", marginRight: 4 }}>PERIOD</span>
+        <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#6f6f6f", marginRight: 4 }}>PERIOD</span>
         {PERIODS.map(([v, l]) => (
           <button key={v} className="hbtn" style={ST.filterBtn(period === v)} onClick={() => setPeriod(v)}>{l}</button>
         ))}

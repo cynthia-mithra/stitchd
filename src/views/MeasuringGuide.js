@@ -372,7 +372,7 @@ export default function MeasuringGuide() {
     fontFamily: BC,
     fontSize: 18,
     fontWeight: 900,
-    letterSpacing: 3,
+    letterSpacing: 2,
     cursor: "pointer",
     textTransform: "uppercase",
   });

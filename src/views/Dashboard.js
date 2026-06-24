@@ -219,7 +219,7 @@ export default function Dashboard({
         <main style={S.main}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
           <div style={S.dashHeader}>
-            <div><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:8}}>YOUR CLOSET</p><h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1}}>MY DROPS</h2>{profile?.verified&&<div style={{marginTop:10}}><VerifiedBadge/></div>}</div>
+            <div><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:2.5,color:"#FF1493",marginBottom:8}}>YOUR CLOSET</p><h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1}}>MY DROPS</h2>{profile?.verified&&<div style={{marginTop:10}}><VerifiedBadge/></div>}</div>
             <div style={S.dashStats}>
               <div style={{...S.dashStat,borderTop:"4px solid #FF1493"}}><div style={{...S.dashStatNum,color:"#FF1493"}}>{myItems.length}</div><div style={S.dashStatLabel}>TOTAL</div></div>
               <div style={{...S.dashStat,borderTop:"4px solid #34C759"}}><div style={{...S.dashStatNum,color:"#34C759"}}>{myItems.filter(i=>!i.sold).length}</div><div style={S.dashStatLabel}>LIVE</div></div>
@@ -935,7 +935,7 @@ export default function Dashboard({
           })()}
           <div style={{marginTop:48,marginBottom:bulkMode&&selectedIds.length?96:0}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,paddingBottom:16,borderBottom:"2px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,display:"flex",alignItems:"center",gap:8}}><Gift width={16} height={16}/> MY BUNDLES</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,display:"flex",alignItems:"center",gap:8}}><Gift width={16} height={16}/> MY BUNDLES</div>
               <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",fontSize:11}} onClick={()=>{loadBundles();setView("createbundle");}}>+ CREATE BUNDLE</button>
             </div>
             {bundles.length===0?(
@@ -1202,7 +1202,7 @@ export default function Dashboard({
                 })}
               </div>
             </Sec>
-            <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:(bundleForm.selectedListings.length<2||!bundleForm.name)?0.4:1}} onClick={createBundle} disabled={bundleForm.selectedListings.length<2||!bundleForm.name}><span style={{display:"inline-flex",alignItems:"center",gap:8}}><Gift width={18} height={18}/> CREATE BUNDLE →</span></button>
+            <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:2,opacity:(bundleForm.selectedListings.length<2||!bundleForm.name)?0.4:1}} onClick={createBundle} disabled={bundleForm.selectedListings.length<2||!bundleForm.name}><span style={{display:"inline-flex",alignItems:"center",gap:8}}><Gift width={18} height={18}/> CREATE BUNDLE →</span></button>
           </div>
         </main>
       )}

@@ -84,9 +84,9 @@ export default function Profile({
                 <F l="COUNTRY"><input style={S.inp} placeholder="UK" value={profForm.ship_from_country} onChange={e=>setProfForm(f=>({...f,ship_from_country:e.target.value}))}/></F>
               </div>
             </Sec>
-            <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:profSaving?0.5:1}} onClick={saveProfile}>{profSaving?"SAVING...":"SAVE PROFILE →"}</button>
+            <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:2,opacity:profSaving?0.5:1}} onClick={saveProfile}>{profSaving?"SAVING...":"SAVE PROFILE →"}</button>
             <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #00E5CC",paddingLeft:12,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><Ruler width={16} height={16}/> MY MEASUREMENTS</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #00E5CC",paddingLeft:12,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><Ruler width={16} height={16}/> MY MEASUREMENTS</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
                 {[["bust","BUST (inches)"],["waist","WAIST (inches)"],["hips","HIPS (inches)"],["height","HEIGHT (cm)"]].map(([k,l])=>(
                   <F key={k} l={l}><input style={S.inp} type="number" placeholder="e.g. 34" value={profForm[k]} onChange={e=>setProfForm(f=>({...f,[k]:e.target.value}))}/></F>
@@ -100,12 +100,12 @@ export default function Profile({
               </F>
             </div>
             <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:12,display:"flex",alignItems:"center",gap:8}}><Scissors width={16} height={16}/> OFFER ALTERATIONS</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:12,display:"flex",alignItems:"center",gap:8}}><Scissors width={16} height={16}/> OFFER ALTERATIONS</div>
               <p style={{fontSize:13,color:"#666",lineHeight:1.5,marginBottom:14}}>Want to take in alteration work from buyers? Tailors on Stitch'd have a vetted profile, portfolio, availability calendar and get paid securely through the platform.</p>
               <button type="button" className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"12px 24px",fontSize:13,letterSpacing:2,display:"inline-flex",alignItems:"center",gap:8}} onClick={()=>onBecomeTailor()}><Scissors width={15} height={15}/> {tailorCtaLabel}</button>
             </div>
             <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><ShieldCheck width={16} height={16}/> TWO-FACTOR AUTHENTICATION</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><ShieldCheck width={16} height={16}/> TWO-FACTOR AUTHENTICATION</div>
               {twoFAStep==="enroll"&&twoFAData?(
                 <div>
                   <p style={{fontSize:13,color:"#666",marginBottom:16}}>Scan this QR code with Google Authenticator or Authy.</p>
@@ -218,7 +218,7 @@ export default function Profile({
             {/* BIO */}
             {sf.storefront_bio&&(
               <div style={{marginTop:32}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:14}}>ABOUT THIS SELLER</div>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:14}}>ABOUT THIS SELLER</div>
                 <p style={{fontFamily:"'Barlow',sans-serif",fontSize:15,color:"#444",lineHeight:1.6,margin:0,whiteSpace:"pre-wrap"}}>{sf.storefront_bio}</p>
               </div>
             )}
@@ -234,7 +234,7 @@ export default function Profile({
 
             {/* LISTINGS */}
             <div style={{marginTop:36,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap",marginBottom:18}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12}}>LISTINGS</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12}}>LISTINGS</div>
               <div style={{display:"flex",gap:0}}>
                 {["ALL","WOMEN","MEN"].map(g=>(
                   <button key={g} className="hbtn" onClick={()=>setStoreFilter(g)} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1.5,padding:"7px 16px",border:"2px solid #111",borderLeft:g==="ALL"?"2px solid #111":"none",background:storeFilter===g?"#FF1493":"#fff",color:storeFilter===g?"#fff":"#111",cursor:"pointer",borderRadius:0}}>{g}</button>
@@ -264,7 +264,7 @@ export default function Profile({
           </div>
           {reviews.length>0&&(
             <div style={{marginTop:48,padding:"0 18px"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>REVIEWS ({reviews.length})</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>REVIEWS ({reviews.length})</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
                 {reviews.map(r=>(
                   <div key={r.id} style={{border:"2px solid #111",borderRadius:0,padding:"14px 16px"}}>

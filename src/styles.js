@@ -264,7 +264,7 @@ export const S={
   // headline + brand statement + CTAs + a value-prop strip.
   hero:{borderBottom:"3px solid #111",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",minHeight:"68vh",padding:"64px 24px",overflow:"hidden"},
   heroLeft:{maxWidth:780,display:"flex",flexDirection:"column",alignItems:"center"},
-  heroTag:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:5,color:"#FF1493",marginBottom:20},
+  heroTag:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:3.5,color:"#FF1493",marginBottom:20},
   heroH:{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:24},
   heroLine1:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#111"},
   heroLine2:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#FF1493"},
@@ -275,8 +275,8 @@ export const S={
   heroProps:{display:"flex",flexWrap:"wrap",justifyContent:"center",alignItems:"center",gap:"10px 22px",marginTop:40,paddingTop:26,borderTop:"2px solid #111",maxWidth:680},
   heroProp:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#111",textTransform:"uppercase",display:"inline-flex",alignItems:"center",gap:8},
   heroPropDot:{width:7,height:7,borderRadius:"50%",flexShrink:0},
-  heroBtnPrimary:{background:"#FF1493",color:"#fff",border:"2px solid #FF1493",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
-  heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,borderRadius:0},
+  heroBtnPrimary:{background:"#FF1493",color:"#fff",border:"2px solid #FF1493",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,borderRadius:0},
+  heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,borderRadius:0},
   heroRight:{flex:1,position:"relative",background:"#fafafa",minHeight:300,overflow:"hidden"},
   // Rendered position:relative in Shop.js so the suggestions dropdown anchors to it
   // and the row sits in normal document flow above the grid. No top offset here — a
@@ -298,7 +298,7 @@ export const S={
   filterPanel:{padding:"16px 16px",borderTop:"1px solid #f0f0f0",display:"flex",flexDirection:"column",gap:16},
   filterBtn:{background:"#fff",border:"1px solid #111",borderRadius:0,padding:"0 12px",height:30,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
   filterGroup:{display:"flex",flexDirection:"column",gap:10},
-  filterLabel:{fontSize:10,fontWeight:900,letterSpacing:3,color:"#6b6b6b",fontFamily:"'Barlow Condensed',sans-serif"},
+  filterLabel:{fontSize:10,fontWeight:900,letterSpacing:2,color:"#6b6b6b",fontFamily:"'Barlow Condensed',sans-serif"},
   filterPills:{display:"flex",flexWrap:"wrap",gap:6},
   pill:{background:"#fff",border:"1.5px solid #e0e0e0",padding:"6px 14px",fontSize:11,cursor:"pointer",color:"#888",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1.5,whiteSpace:"nowrap",borderRadius:0,flexShrink:0},
   pillOn:{background:"#111",border:"1.5px solid #111",color:"#fff"},
@@ -306,7 +306,7 @@ export const S={
   loadingWrap:{display:"flex",flexDirection:"column",alignItems:"center",padding:"80px 0",gap:16},
   // Two-tone brand spinner: a pink + teal arc spinning on a light track.
   spinner:{width:38,height:38,border:"3px solid #f0f0f0",borderTopColor:"#FF1493",borderRightColor:"#00E5CC",borderRadius:"50%",animation:"spin 0.7s linear infinite"},
-  loadingText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:3,color:"#6f6f6f"},
+  loadingText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#6f6f6f"},
   errorBanner:{background:"#fff0f0",border:"2px solid #FF1493",padding:"16px 24px",marginBottom:24,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1,display:"flex",alignItems:"center",gap:16},
   retryBtn:{background:"#FF1493",color:"#fff",border:"none",padding:"6px 16px",fontSize:12,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2},
   grid:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:16},
@@ -320,7 +320,7 @@ export const S={
   cardEmoji:{fontSize:80,filter:"drop-shadow(0 6px 16px rgba(0,0,0,0.2))",position:"relative",zIndex:2},
   cardOrigin:{position:"absolute",top:12,left:12,background:"rgba(0,0,0,0.5)",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",backdropFilter:"blur(4px)",zIndex:3},
   soldVeil:{position:"absolute",inset:0,background:"rgba(255,255,255,0.75)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(2px)",zIndex:4},
-  soldStamp:{fontSize:22,fontWeight:900,letterSpacing:6,color:"#111",border:"3px solid #111",padding:"6px 18px",fontFamily:"'Barlow Condensed',sans-serif"},
+  soldStamp:{fontSize:22,fontWeight:900,letterSpacing:2.5,color:"#111",border:"3px solid #111",padding:"6px 18px",fontFamily:"'Barlow Condensed',sans-serif"},
   reservedBadge:{position:"absolute",top:12,right:12,background:"#FF9500",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3},
   // PRICE DROP badge — teal fill, dark ink + 2px dark border, square corners. Sits in the
   // top-right of the card image, offset left of the 32px heart button so the two never overlap.
@@ -360,7 +360,7 @@ export const S={
   detailName:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:44,fontWeight:900,color:"#111",lineHeight:1,marginBottom:10,letterSpacing:-1},
   detailPrice:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:56,fontWeight:900,marginBottom:16,letterSpacing:-2},
   dBlock:{marginBottom:24,paddingBottom:24,borderBottom:"1px solid #f0f0f0"},
-  dBlockTitle:{fontSize:11,fontWeight:900,letterSpacing:3,borderLeft:"4px solid",paddingLeft:10,marginBottom:12,fontFamily:"'Barlow Condensed',sans-serif"},
+  dBlockTitle:{fontSize:11,fontWeight:900,letterSpacing:2,borderLeft:"4px solid",paddingLeft:10,marginBottom:12,fontFamily:"'Barlow Condensed',sans-serif"},
   measBoxRow:{display:"flex",flexWrap:"wrap",gap:10,marginBottom:12},
   measBox:{border:"2px solid",padding:"12px 18px",textAlign:"center",minWidth:72},
   measVal:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900},
@@ -413,7 +413,7 @@ export const S={
   toggleStack:{display:"flex",flexDirection:"column",marginTop:16},
   googleBtn:{display:"flex",alignItems:"center",justifyContent:"center",gap:12,border:"2px solid #111",padding:"14px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:13,letterSpacing:2,color:"#111",textDecoration:"none",marginBottom:20,cursor:"pointer"},
   divider:{display:"flex",alignItems:"center",gap:12,marginBottom:20},
-  dividerText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:3,color:"#808080"},
+  dividerText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#808080"},
   aError:{background:"#fff0f0",border:"1.5px solid #FF1493",padding:"10px 14px",fontSize:13,color:"#FF1493",fontWeight:600},
   authSwitch:{textAlign:"center",marginTop:20,fontSize:13,color:"#888"},
   authSwitchLink:{color:"#FF1493",fontWeight:800,cursor:"pointer",textDecoration:"underline"},
@@ -458,7 +458,7 @@ export const S={
   // ADD TO BAG button on the Detail page. Full width, pink, white uppercase
   // Barlow Condensed, 2px #111 border, no radius. Background/colour are overridden
   // inline for the ADDED (black) and SOLD (grey) states.
-  bagAddBtn:{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:17,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16},
+  bagAddBtn:{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:17,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16},
   // BUYER GUARANTEE BANNER (Detail page) — trust signal below ADD TO BAG.
   // Square 2px #111 frame, white fill, Barlow Condensed throughout.
   guaranteeBanner:{border:"2px solid #111",borderRadius:0,background:"#fff",padding:"16px 18px",marginBottom:16},
@@ -490,9 +490,9 @@ export const S={
   bagRemove:{background:"none",border:"none",cursor:"pointer",color:"#111",display:"flex",alignItems:"center",alignSelf:"flex-start",padding:4,flexShrink:0},
   bagDivider:{borderBottom:"2px solid #111",margin:"16px 0"},
   bagTotalRow:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20},
-  bagTotalLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:3,color:"#111",textTransform:"uppercase"},
+  bagTotalLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:2,color:"#111",textTransform:"uppercase"},
   bagTotalVal:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:"#111",letterSpacing:-1},
-  bagCheckoutBtn:{width:"100%",background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:16,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase"},
+  bagCheckoutBtn:{width:"100%",background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:16,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,textTransform:"uppercase"},
   bagContinue:{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#111",textTransform:"uppercase",textDecoration:"underline",marginTop:16,alignSelf:"center"},
   bagEmpty:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",gap:20,padding:"40px 0"},
   bagEmptyText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2,color:"#111",textTransform:"uppercase"},

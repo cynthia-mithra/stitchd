@@ -30,7 +30,7 @@ export default function NotFound({ view, onHome = () => {}, onBrowse = () => {} 
 const BC = "'Barlow Condensed',sans-serif";
 const S = {
   wrap: { minHeight: "72vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "64px 24px" },
-  tag: { fontFamily: BC, fontSize: 13, fontWeight: 800, letterSpacing: 5, color: "#FF1493", margin: "0 0 8px" },
+  tag: { fontFamily: BC, fontSize: 13, fontWeight: 800, letterSpacing: 3.5, color: "#FF1493", margin: "0 0 8px" },
   code: { fontFamily: BC, fontWeight: 900, fontSize: "clamp(96px,22vw,220px)", lineHeight: 0.85, letterSpacing: -4, margin: 0, display: "flex" },
   d1: { color: "#111" },
   d2: { color: "#FF1493" },
@@ -38,6 +38,6 @@ const S = {
   head: { fontFamily: BC, fontSize: "clamp(26px,5vw,44px)", fontWeight: 900, letterSpacing: -1, color: "#111", margin: "24px 0 8px" },
   sub: { fontFamily: "'Barlow',sans-serif", fontSize: 16, color: "#6b6b6b", lineHeight: 1.6, maxWidth: 420, margin: "0 0 28px" },
   ctas: { display: "flex", gap: 14, flexWrap: "wrap", justifyContent: "center" },
-  primary: { background: "#FF1493", color: "#fff", border: "2px solid #FF1493", borderRadius: 0, padding: "14px 30px", fontFamily: BC, fontWeight: 800, letterSpacing: 3, fontSize: 14, cursor: "pointer" },
-  secondary: { background: "#fff", color: "#111", border: "2px solid #111", borderRadius: 0, padding: "14px 30px", fontFamily: BC, fontWeight: 800, letterSpacing: 3, fontSize: 14, cursor: "pointer" },
+  primary: { background: "#FF1493", color: "#fff", border: "2px solid #FF1493", borderRadius: 0, padding: "14px 30px", fontFamily: BC, fontWeight: 800, letterSpacing: 2, fontSize: 14, cursor: "pointer" },
+  secondary: { background: "#fff", color: "#111", border: "2px solid #111", borderRadius: 0, padding: "14px 30px", fontFamily: BC, fontWeight: 800, letterSpacing: 2, fontSize: 14, cursor: "pointer" },
 };

@@ -4097,7 +4097,7 @@ export default function App() {
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:10}}>COMMENT (OPTIONAL)</p>
               <textarea style={{...S.inp,height:90,resize:"vertical",width:"100%"}} placeholder="Tell others about this seller..." value={reviewForm.comment} onChange={e=>setReviewForm(f=>({...f,comment:e.target.value}))}/>
             </div>
-            <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"14px",fontSize:14,borderRadius:0,letterSpacing:3}} onClick={submitReview}>SUBMIT REVIEW →</button>
+            <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"14px",fontSize:14,borderRadius:0,letterSpacing:2}} onClick={submitReview}>SUBMIT REVIEW →</button>
           </div>
         </div>
       )}
@@ -4295,7 +4295,7 @@ export default function App() {
             return (
             <div style={{background:"#fff",border:"2px solid #111",padding:"40px 32px"}}>
               <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:64,fontWeight:900,letterSpacing:-1.5,lineHeight:0.95,marginBottom:6,color:"#111"}}>IT'S YOURS.</h1>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,letterSpacing:3,color:"#FF1493",textTransform:"uppercase",marginBottom:28}}>Order confirmed</p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,letterSpacing:2,color:"#FF1493",textTransform:"uppercase",marginBottom:28}}>Order confirmed</p>
 
               {/* ORDER SUMMARY CARD(S) */}
               <div style={{border:"2px solid #111",marginBottom:20}}>
@@ -4351,7 +4351,7 @@ export default function App() {
               <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1,marginBottom:8,color:"#111"}}>HMM, SOMETHING'S OFF</h1>
               <div style={{height:4,width:80,background:"#FF1493",marginBottom:24}}/>
               <p style={{fontSize:15,color:"#111",marginBottom:28,lineHeight:1.6}}>We couldn't confirm this payment. If you were charged, don't worry — your order is recorded and the seller notified once Stripe confirms. Otherwise, head back to your bag and try again.</p>
-              <button className="hbtn" style={{width:"100%",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:16,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase"}}
+              <button className="hbtn" style={{width:"100%",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:16,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,textTransform:"uppercase"}}
                 onClick={()=>{ window.history.replaceState({},document.title,"/"); setOrderResult(null); setView("shop"); setShowBag(true); }}>BACK TO BAG</button>
             </div>
           )}
@@ -4375,7 +4375,7 @@ export default function App() {
             <>
               {/* HEADER */}
               <div style={{marginBottom:36,paddingBottom:24,borderBottom:"3px solid #111"}}>
-                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>SAVED PIECES</p>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:2.5,color:"#FF1493",marginBottom:6}}>SAVED PIECES</p>
                 <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,display:"flex",alignItems:"center",gap:12,lineHeight:1}}>MY WISHLIST <Heart width={40} height={40} fill="#FF1493" color="#FF1493"/></h2>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap",marginTop:10}}>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:700,letterSpacing:1,color:"#111"}}>{wishlistItems.length} item{wishlistItems.length===1?"":"s"} saved</p>
@@ -5083,7 +5083,7 @@ export default function App() {
                     <button type="button" className="hbtn" style={{background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,padding:"12px 22px",display:"inline-flex",alignItems:"center",gap:7,cursor:"pointer"}} onClick={goVerifyIdentity}><ShieldCheck width={16} height={16}/> VERIFY MY IDENTITY</button>
                   </div>
                 )}
-                <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"18px",fontSize:17,borderRadius:0,letterSpacing:3,opacity:(!form.name||!form.price||saving||idGate)?0.45:1,cursor:(!form.name||!form.price||saving||idGate)?"not-allowed":"pointer"}} onClick={view==="edit"?saveEdit:add} disabled={!form.name||!form.price||saving||idGate}>
+                <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"18px",fontSize:17,borderRadius:0,letterSpacing:2,opacity:(!form.name||!form.price||saving||idGate)?0.45:1,cursor:(!form.name||!form.price||saving||idGate)?"not-allowed":"pointer"}} onClick={view==="edit"?saveEdit:add} disabled={!form.name||!form.price||saving||idGate}>
                   {saving?"SAVING...":view==="edit"?"SAVE CHANGES →":"PUBLISH LISTING →"}
                 </button>
               </>);

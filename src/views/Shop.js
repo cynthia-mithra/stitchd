@@ -90,7 +90,7 @@ export default function Shop({
   // full width on mobile (.shop-tab via media query) and auto width on desktop.
   const ShopTabs = () => (!user||newArrivals) ? null : (
     <div style={{maxWidth:1300,margin:"0 auto",padding:"28px 24px 0"}}>
-      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:3,color:"#6b6b6b",textTransform:"uppercase",margin:"0 0 10px"}}>BROWSE</p>
+      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",textTransform:"uppercase",margin:"0 0 10px"}}>BROWSE</p>
       {/* Self-contained segmented toggle — a bordered box split into two segments,
           active one filled pink. No full-width underline (which left a dangling
           line across the page). */}

@@ -230,7 +230,7 @@ export default function Detail({
                     </button>
                   </div>
                 ):(
-                  <button type="button" className="hbtn" style={{width:"100%",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:17,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16}} onClick={openOfferModal}>
+                  <button type="button" className="hbtn" style={{width:"100%",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:17,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16}} onClick={openOfferModal}>
                     <Tag width={18} height={18}/> MAKE AN OFFER
                   </button>
                 )
@@ -354,7 +354,7 @@ export default function Detail({
           </div>
           {similarItems.length>0&&(
             <div style={{marginTop:48}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>YOU MIGHT ALSO LIKE</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>YOU MIGHT ALSO LIKE</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:3}}>
                 {similarItems.map((item,idx)=>{
                   const accent=CARD_COLORS[idx%CARD_COLORS.length];
@@ -380,7 +380,7 @@ export default function Detail({
               style as YOU MIGHT ALSO LIKE. Hidden when there's nothing to show. */}
           {recentItems.length>0&&(
             <div style={{marginTop:48}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #00E5CC",paddingLeft:12,marginBottom:20}}>RECENTLY VIEWED</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #00E5CC",paddingLeft:12,marginBottom:20}}>RECENTLY VIEWED</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:3}}>
                 {recentItems.map((item,idx)=>{
                   const accent=CARD_COLORS[idx%CARD_COLORS.length];
@@ -405,7 +405,7 @@ export default function Detail({
               footer: buyers ask questions, the seller can reply inline. Replies
               are shown indented under their question. */}
           <div style={{marginTop:48}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:3,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>QUESTIONS &amp; COMMENTS</div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>QUESTIONS &amp; COMMENTS</div>
             {topComments.length>0&&(
               <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:24}}>
                 {visibleComments.map(c=>{
@@ -503,7 +503,7 @@ export default function Detail({
                   <p style={{fontSize:12,color:"#6f6f6f",letterSpacing:1,textAlign:"right",margin:0,marginTop:4}}>{offerMessage.length} / 200</p>
                 </div>
                 <p style={{fontSize:12,color:"#6b6b6b",letterSpacing:0.5,marginBottom:16}}>Your offer expires in 48 hours.</p>
-                <button type="button" onClick={sendOffer} disabled={!offerValid||offerSending} style={{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"15px",fontSize:16,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:9,cursor:(!offerValid||offerSending)?"not-allowed":"pointer",opacity:(!offerValid||offerSending)?0.45:1}}>
+                <button type="button" onClick={sendOffer} disabled={!offerValid||offerSending} style={{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"15px",fontSize:16,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:9,cursor:(!offerValid||offerSending)?"not-allowed":"pointer",opacity:(!offerValid||offerSending)?0.45:1}}>
                   <Tag width={17} height={17}/> {offerSending?"SENDING...":"SEND OFFER"}
                 </button>
                 <div style={{textAlign:"center",marginTop:14}}>

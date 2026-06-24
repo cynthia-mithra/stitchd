@@ -100,7 +100,7 @@ export function ReviewModal({ open, onClose, tailor, busy = false, onSubmit = ()
 
         {/* SUBMIT — disabled until a rating is chosen */}
         <button className="hbtn" disabled={busy || rating === 0}
-          style={{ width: "100%", background: PINK, color: "#fff", border: "2px solid #111", borderRadius: 0, padding: "16px", fontSize: 16, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, letterSpacing: 3, cursor: (busy || rating === 0) ? "not-allowed" : "pointer", opacity: (busy || rating === 0) ? 0.4 : 1 }}
+          style={{ width: "100%", background: PINK, color: "#fff", border: "2px solid #111", borderRadius: 0, padding: "16px", fontSize: 16, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, letterSpacing: 2, cursor: (busy || rating === 0) ? "not-allowed" : "pointer", opacity: (busy || rating === 0) ? 0.4 : 1 }}
           onClick={() => onSubmit({ rating, comment: comment.trim() })}>
           {busy ? "SUBMITTING…" : "SUBMIT REVIEW"}
         </button>

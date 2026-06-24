@@ -221,7 +221,7 @@ export function RequestAlterationModal({
             )}
 
             <button className="hbtn" disabled={busy}
-              style={{width:"100%",background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:16,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,cursor:busy?"wait":"pointer",opacity:busy?0.6:1}}
+              style={{width:"100%",background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:16,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:busy?"wait":"pointer",opacity:busy?0.6:1}}
               onClick={()=>onSend({alterations,notes:notes.trim(),budget,tailor,preferredDate:preferredDate||null})}>
               {busy?"SENDING…":"SEND REQUEST"}
             </button>
@@ -313,7 +313,7 @@ export default function Alterations({
     <main style={{...S.main,maxWidth:820}}>
       <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
       <div style={{marginBottom:28,paddingBottom:20,borderBottom:"3px solid #111"}}>
-        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:PINK,marginBottom:6}}>STITCH'D TAILORS</p>
+        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:2.5,color:PINK,marginBottom:6}}>STITCH'D TAILORS</p>
         <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(36px,6vw,56px)",fontWeight:900,letterSpacing:-1,lineHeight:1,display:"flex",alignItems:"center",gap:12}}>
           <Scissors width={40} height={40}/> ALTERATION REQUESTS
         </h1>

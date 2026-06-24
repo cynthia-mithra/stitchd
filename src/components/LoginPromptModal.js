@@ -42,7 +42,7 @@ export default function LoginPromptModal({ open, context = "default", onAuth = (
         <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 28, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.05, marginBottom: 14 }}>{heading}</h2>
         <p style={{ fontSize: 15, color: "#444", lineHeight: 1.6, marginBottom: 24 }}>{body}</p>
         <button className="hbtn"
-          style={{ width: "100%", background: PINK, color: "#fff", border: "2px solid #111", borderRadius: 0, padding: "15px 24px", fontSize: 16, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, letterSpacing: 3, cursor: "pointer", marginBottom: 18 }}
+          style={{ width: "100%", background: PINK, color: "#fff", border: "2px solid #111", borderRadius: 0, padding: "15px 24px", fontSize: 16, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, letterSpacing: 2, cursor: "pointer", marginBottom: 18 }}
           onClick={() => onAuth("signup")}>
           SIGN UP
         </button>

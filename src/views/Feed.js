@@ -12,7 +12,7 @@ export default function Feed({
     <main style={S.main}>
       <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
       <div style={{marginBottom:36,paddingBottom:24,borderBottom:"3px solid #111"}}>
-        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6}}>YOUR FEED</p>
+        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:2.5,color:"#FF1493",marginBottom:6}}>YOUR FEED</p>
         <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1}}>FOLLOWING ✦</h2>
       </div>
       {feedLoading&&<div style={S.loadingWrap}><div style={S.spinner}/></div>}

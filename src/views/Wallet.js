@@ -61,7 +61,7 @@ export default function Wallet({
       <button style={S.back} onClick={() => setView("shop")}>← BACK</button>
 
       <div style={{ marginBottom: 28, paddingBottom: 22, borderBottom: "3px solid #111" }}>
-        <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 4, color: PINK, marginBottom: 6 }}>YOUR EARNINGS</p>
+        <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 2.5, color: PINK, marginBottom: 6 }}>YOUR EARNINGS</p>
         <h1 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: "clamp(40px,7vw,64px)", fontWeight: 900, letterSpacing: -1, lineHeight: 1, display: "flex", alignItems: "center", gap: 14 }}>
           <WalletIcon width={44} height={44} /> WALLET.
         </h1>
@@ -130,7 +130,7 @@ export default function Wallet({
       )}
 
       {/* TRANSACTION HISTORY */}
-      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 3, color: "#111", borderLeft: `4px solid ${PINK}`, paddingLeft: 12, marginBottom: 18 }}>TRANSACTIONS</div>
+      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#111", borderLeft: `4px solid ${PINK}`, paddingLeft: 12, marginBottom: 18 }}>TRANSACTIONS</div>
       {loading ? (
         <div style={S.loadingWrap}><div style={S.spinner} /><p style={S.loadingText}>LOADING…</p></div>
       ) : transactions.length === 0 ? (

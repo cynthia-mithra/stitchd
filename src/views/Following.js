@@ -18,7 +18,7 @@ export default function Following({
     <main style={{...S.main,maxWidth:760}}>
       <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
       <div style={{marginBottom:28,paddingBottom:20,borderBottom:"3px solid #111"}}>
-        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:"#FF1493",marginBottom:6,display:"flex",alignItems:"center",gap:8}}><Users width={16} height={16}/> YOUR SELLERS</p>
+        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:2.5,color:"#FF1493",marginBottom:6,display:"flex",alignItems:"center",gap:8}}><Users width={16} height={16}/> YOUR SELLERS</p>
         <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:44,fontWeight:900,letterSpacing:-1,lineHeight:1}}>MY FOLLOWING</h2>
       </div>
 

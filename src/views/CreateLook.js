@@ -87,7 +87,7 @@ export default function CreateLook({
               </div>
               <input id="look-cover-input" type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const file = e.target.files[0]; if (file) setLookForm(f => ({ ...f, coverFile: file, coverPreview: URL.createObjectURL(file) })); }} />
             </Sec>
-            <button className="hbtn" style={{ ...S.hBtn, width: "100%", padding: "16px", fontSize: 15, letterSpacing: 3 }} onClick={goStep2}>NEXT: ADD PIECES →</button>
+            <button className="hbtn" style={{ ...S.hBtn, width: "100%", padding: "16px", fontSize: 15, letterSpacing: 2 }} onClick={goStep2}>NEXT: ADD PIECES →</button>
           </>
         )}
 
@@ -151,7 +151,7 @@ export default function CreateLook({
 
             <div style={{ display: "flex", gap: 10 }}>
               <button className="hbtn" style={{ ...S.hBtn, flex: "0 0 auto", background: "#fff", color: "#111", border: "2px solid #111", padding: "16px 22px", fontSize: 14 }} onClick={() => setLookStep(1)}>← BACK</button>
-              <button className="hbtn" style={{ ...S.hBtn, flex: 1, padding: "16px", fontSize: 15, letterSpacing: 3, opacity: items.length < MIN_ITEMS ? 0.45 : 1, cursor: items.length < MIN_ITEMS ? "not-allowed" : "pointer" }} onClick={goStep3} disabled={items.length < MIN_ITEMS}>PREVIEW →</button>
+              <button className="hbtn" style={{ ...S.hBtn, flex: 1, padding: "16px", fontSize: 15, letterSpacing: 2, opacity: items.length < MIN_ITEMS ? 0.45 : 1, cursor: items.length < MIN_ITEMS ? "not-allowed" : "pointer" }} onClick={goStep3} disabled={items.length < MIN_ITEMS}>PREVIEW →</button>
             </div>
           </>
         )}
@@ -168,7 +168,7 @@ export default function CreateLook({
               </div>
             </Sec>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button className="hbtn" style={{ ...S.hBtn, width: "100%", background: "#FF1493", border: "2px solid #111", padding: "16px", fontSize: 16, letterSpacing: 3, opacity: lookSaving ? 0.6 : 1, cursor: lookSaving ? "wait" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }} onClick={() => publishLook(true)} disabled={lookSaving}><Layers width={18} height={18} /> {lookSaving ? "SAVING…" : "PUBLISH LOOK →"}</button>
+              <button className="hbtn" style={{ ...S.hBtn, width: "100%", background: "#FF1493", border: "2px solid #111", padding: "16px", fontSize: 16, letterSpacing: 2, opacity: lookSaving ? 0.6 : 1, cursor: lookSaving ? "wait" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }} onClick={() => publishLook(true)} disabled={lookSaving}><Layers width={18} height={18} /> {lookSaving ? "SAVING…" : "PUBLISH LOOK →"}</button>
               <button className="hbtn" style={{ ...S.hBtn, width: "100%", background: "#fff", color: "#111", border: "2px solid #111", padding: "14px", fontSize: 14, letterSpacing: 2, opacity: lookSaving ? 0.6 : 1, cursor: lookSaving ? "wait" : "pointer" }} onClick={() => publishLook(false)} disabled={lookSaving}>SAVE AS DRAFT</button>
               <button className="hbtn" style={{ ...S.hBtn, width: "100%", background: "#fff", color: "#111", border: "2px solid #111", padding: "12px", fontSize: 13 }} onClick={() => setLookStep(2)}>← BACK TO PIECES</button>
             </div>

@@ -41,7 +41,7 @@ export default function Auth({
                 <input style={{...S.inp,fontSize:28,letterSpacing:12,textAlign:"center",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900}} placeholder="000000" maxLength={6} value={otpCode} onChange={e=>setOtpCode(e.target.value.replace(/\D/g,"").slice(0,6))} autoFocus/>
               </F>
               {aError&&<div style={S.aError}>{aError}</div>}
-              <button type="submit" className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:(aLoading||otpCode.length!==6)?0.5:1}} disabled={aLoading||otpCode.length!==6}>{aLoading?"VERIFYING...":<>VERIFY CODE <span className="btn-arrow">→</span></>}</button>
+              <button type="submit" className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:2,opacity:(aLoading||otpCode.length!==6)?0.5:1}} disabled={aLoading||otpCode.length!==6}>{aLoading?"VERIFYING...":<>VERIFY CODE <span className="btn-arrow">→</span></>}</button>
             </form>
             <p style={{textAlign:"center",marginTop:16,fontSize:13,color:"#888"}}>Didn't get it? <span style={{color:"#FF1493",cursor:"pointer",fontWeight:700}} onClick={()=>{ auth.sendOTP(otpEmail); flash("Code resent!"); }}>Resend code</span></p>
           </>
@@ -54,7 +54,7 @@ export default function Auth({
               <F l="EMAIL"><input style={S.inp} type="email" placeholder="you@email.com" value={aForm.email} onChange={e=>setAForm(f=>({...f,email:e.target.value}))} required/></F>
               {authMode==="login"&&<F l="PASSWORD"><input style={S.inp} type="password" placeholder="••••••••" value={aForm.password} onChange={e=>setAForm(f=>({...f,password:e.target.value}))} required/></F>}
               {aError&&<div style={S.aError}>{aError}</div>}
-              <button type="submit" className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:aLoading?0.5:1}}>{aLoading?"...":authMode==="login"?<>SIGN IN <span className="btn-arrow">→</span></>:<>GET VERIFICATION CODE <span className="btn-arrow">→</span></>}</button>
+              <button type="submit" className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:2,opacity:aLoading?0.5:1}}>{aLoading?"...":authMode==="login"?<>SIGN IN <span className="btn-arrow">→</span></>:<>GET VERIFICATION CODE <span className="btn-arrow">→</span></>}</button>
             </form>
             <p style={S.authSwitch}>{authMode==="login"?"No account? ":"Already have one? "}<span style={S.authSwitchLink} onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setAError("");setAForm({email:"",password:""});}}>{authMode==="login"?"Sign up":"Log in"}</span></p>
           </>

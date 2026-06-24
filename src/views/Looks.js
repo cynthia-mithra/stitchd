@@ -69,7 +69,7 @@ export default function Looks({
       <main style={S.main}>
         <button style={S.back} onClick={() => setView("shop")}>← BACK TO SHOP</button>
         <div style={{ marginBottom: 28, paddingBottom: 24, borderBottom: "3px solid #111" }}>
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 4, color: "#FF1493", marginBottom: 6 }}>CURATED OUTFITS</p>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 2.5, color: "#FF1493", marginBottom: 6 }}>CURATED OUTFITS</p>
           <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 48, fontWeight: 900, letterSpacing: -1, lineHeight: 1, marginBottom: 8 }}>SHOP THE LOOK</h2>
           <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 15, color: "#888" }}>Complete outfits. All pre-loved. All on Stitch'd.</p>
         </div>
@@ -121,7 +121,7 @@ export default function Looks({
         <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: 2, color: "#FF1493", textTransform: "uppercase", marginBottom: selLook.description ? 14 : 20 }}>Curated by {curator}</p>
         {selLook.description && <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 16, color: "#555", lineHeight: 1.7, marginBottom: 24, maxWidth: 720 }}>{selLook.description}</p>}
 
-        <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 3, color: "#111", borderLeft: "4px solid #FF1493", paddingLeft: 12, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#111", borderLeft: "4px solid #FF1493", paddingLeft: 12, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
           <Layers width={16} height={16} /> THE PIECES ({listings.length})
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 3 }} className="shop-grid">
@@ -139,7 +139,7 @@ export default function Looks({
           <button
             className={allSold ? "" : "hbtn"}
             disabled={allSold}
-            style={{ width: "100%", background: allSold ? "#e5e5e5" : "#FF1493", color: allSold ? "#999" : "#fff", border: `2px solid ${allSold ? "#ccc" : "#111"}`, borderRadius: 0, padding: "16px", fontSize: 17, cursor: allSold ? "not-allowed" : "pointer", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
+            style={{ width: "100%", background: allSold ? "#e5e5e5" : "#FF1493", color: allSold ? "#999" : "#fff", border: `2px solid ${allSold ? "#ccc" : "#111"}`, borderRadius: 0, padding: "16px", fontSize: 17, cursor: allSold ? "not-allowed" : "pointer", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
             onClick={() => { if (!allSold) addLookToBag(selLook); }}>
             {allSold ? "SOLD OUT" : <><ShoppingBag width={18} height={18} /> ADD ALL TO BAG ({available.length})</>}
           </button>

@@ -106,7 +106,7 @@ export default function TailorProfiles({
           <div style={{background:"#E0FAF7",borderBottom:"3px solid #111",padding:"48px 24px 40px"}}>
             <div style={{maxWidth:1200,margin:"0 auto"}}>
               <button style={{...S.back,color:TEAL,marginBottom:16}} onClick={()=>setView("shop")}>← BACK TO SHOP</button>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:TEAL,marginBottom:8}}>VETTED FOR ALTERATIONS &amp; STITCHING</p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:2.5,color:TEAL,marginBottom:8}}>VETTED FOR ALTERATIONS &amp; STITCHING</p>
               <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(48px,8vw,100px)",fontWeight:900,color:"#111",lineHeight:.9,letterSpacing:-2,marginBottom:16}}>FIND A<br/><span style={{color:TEAL}}>TAILOR.</span></h1>
               <p style={{fontFamily:"'Barlow',sans-serif",fontSize:15,color:"#444",maxWidth:560,lineHeight:1.5,marginBottom:20}}>Browse approved South Asian tailors. Open a profile to see their portfolio, availability and reviews, then send an alteration request on any piece.</p>
               <button className="hbtn" style={{...S.hBtn,background:"#111",color:"#fff",border:"2px solid #111",padding:"14px 28px",fontSize:13,letterSpacing:2,display:"inline-flex",alignItems:"center",gap:8}} onClick={onBecomeTailor}><Scissors width={15} height={15}/> {becomeCtaLabel}</button>
@@ -187,7 +187,7 @@ export default function TailorProfiles({
         <main style={{...S.main,maxWidth:720}}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
           <div style={{marginBottom:28,paddingBottom:22,borderBottom:"3px solid #111"}}>
-            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:PINK,marginBottom:6}}>BECOME A TAILOR</p>
+            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:2.5,color:PINK,marginBottom:6}}>BECOME A TAILOR</p>
             <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(40px,7vw,68px)",fontWeight:900,letterSpacing:-1,lineHeight:1,display:"flex",alignItems:"center",gap:14}}>
               <Scissors width={44} height={44}/> JOIN AS A<br/>TAILOR.
             </h1>
@@ -318,7 +318,7 @@ export default function TailorProfiles({
                 <ReviewRow label="PORTFOLIO" value={`${(applyForm.portfolio||[]).filter(p=>p.file||p.preview).length} image(s)`}/>
               </div>
               <button className="hbtn"
-                style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"18px",fontSize:16,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,cursor:applyBusy?"wait":"pointer",opacity:applyBusy?0.6:1}}
+                style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"18px",fontSize:16,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:applyBusy?"wait":"pointer",opacity:applyBusy?0.6:1}}
                 disabled={applyBusy} onClick={submitApplication}>
                 {applyBusy?"SUBMITTING…":"SUBMIT APPLICATION"}
               </button>
@@ -334,7 +334,7 @@ export default function TailorProfiles({
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
           <div style={{...S.dashHeader}}>
             <div>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:4,color:PINK,marginBottom:6}}>TAILOR DASHBOARD</p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:2.5,color:PINK,marginBottom:6}}>TAILOR DASHBOARD</p>
               <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(36px,6vw,56px)",fontWeight:900,letterSpacing:-1,lineHeight:1,display:"flex",alignItems:"center",gap:12}}>
                 <Scissors width={40} height={40}/> {myTailor.display_name}
               </h1>
@@ -391,7 +391,7 @@ export default function TailorProfiles({
               <F l="INSTAGRAM HANDLE"><input style={S.inp} placeholder="@yourhandle" value={tailorEdit.instagram_handle} onChange={e=>setTailorEdit(f=>({...f,instagram_handle:e.target.value}))}/></F>
               <F l="WEBSITE URL"><input style={S.inp} placeholder="https://…" value={tailorEdit.website_url} onChange={e=>setTailorEdit(f=>({...f,website_url:e.target.value}))}/></F>
               <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-                <button className="hbtn" style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px 36px",fontSize:15,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,cursor:tailorEditBusy?"wait":"pointer",opacity:tailorEditBusy?0.6:1}}
+                <button className="hbtn" style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px 36px",fontSize:15,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:tailorEditBusy?"wait":"pointer",opacity:tailorEditBusy?0.6:1}}
                   disabled={tailorEditBusy} onClick={saveTailorProfile}>{tailorEditBusy?"SAVING…":"SAVE CHANGES"}</button>
                 <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",padding:"16px 28px",fontSize:13,display:"flex",alignItems:"center",gap:8}} onClick={()=>openTailorPublic(myTailor.id,true)}>
                   <ExternalLink width={15} height={15}/> PREVIEW PROFILE
@@ -517,7 +517,7 @@ function ReviewRow({ label, value }) {
 function Placeholder({ title, text }) {
   return (
     <div style={{textAlign:"center",padding:"70px 20px",border:"3px dashed #e0e0e0"}}>
-      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:3,color:PINK,marginBottom:10}}>{title}</p>
+      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:PINK,marginBottom:10}}>{title}</p>
       <p style={{fontSize:15,color:"#6b6b6b",maxWidth:380,margin:"0 auto"}}>{text}</p>
     </div>
   );
@@ -1315,7 +1315,7 @@ function PublicProfile({ tailor, setView, onOpenImage, user, onGateAuth = () => 
 function Section({ heading, children }) {
   return (
     <div style={{marginBottom:40,paddingBottom:32,borderBottom:"1px solid #f0f0f0"}}>
-      <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:900,letterSpacing:3,borderLeft:`4px solid ${PINK}`,paddingLeft:12,marginBottom:18}}>{heading}</h2>
+      <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:900,letterSpacing:2,borderLeft:`4px solid ${PINK}`,paddingLeft:12,marginBottom:18}}>{heading}</h2>
       {children}
     </div>
   );

@@ -169,7 +169,7 @@ function CreatePostModal({ open, onClose, onShare, creating, searchActiveListing
 
         {/* TAG LISTINGS */}
         <div style={{ marginBottom: 20 }}>
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 3, color: "#6b6b6b", marginBottom: 10 }}>TAG LISTINGS ({tags.length}/{MAX_TAGS})</p>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#6b6b6b", marginBottom: 10 }}>TAG LISTINGS ({tags.length}/{MAX_TAGS})</p>
           <div style={{ ...S.searchBox, height: 44, marginBottom: 10 }}>
             <span style={S.searchIcon}><Search width={16} height={16} /></span>
             <input style={S.searchInput} placeholder="Tag listings from Stitch'd" value={query} onChange={e => runSearch(e.target.value)} />
@@ -214,7 +214,7 @@ function CreatePostModal({ open, onClose, onShare, creating, searchActiveListing
         </div>
 
         {/* SHARE */}
-        <button onClick={share} disabled={!file || creating} style={{ width: "100%", background: "#FF1493", color: "#fff", border: "2px solid #111", borderRadius: 0, padding: "16px", fontSize: 16, cursor: (!file || creating) ? "not-allowed" : "pointer", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", opacity: (!file || creating) ? 0.45 : 1 }}>
+        <button onClick={share} disabled={!file || creating} style={{ width: "100%", background: "#FF1493", color: "#fff", border: "2px solid #111", borderRadius: 0, padding: "16px", fontSize: 16, cursor: (!file || creating) ? "not-allowed" : "pointer", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", opacity: (!file || creating) ? 0.45 : 1 }}>
           {creating ? "SHARING…" : "SHARE TO FEED"}
         </button>
       </div>
@@ -250,7 +250,7 @@ export default function StyleFeed({
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 24, paddingBottom: 24, borderBottom: "3px solid #111" }}>
         <div>
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 4, color: "#FF1493", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}><Sparkles width={16} height={16} /> THE COMMUNITY</p>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 2.5, color: "#FF1493", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}><Sparkles width={16} height={16} /> THE COMMUNITY</p>
           <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 48, fontWeight: 900, letterSpacing: -1, lineHeight: 1, marginBottom: 8 }}>STYLE FEED</h2>
           <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 15, color: "#888" }}>Real outfits. Real people. All pre-loved.</p>
         </div>
