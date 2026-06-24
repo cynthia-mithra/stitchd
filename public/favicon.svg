@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Stitch'd">
+  <rect x="1.5" y="1.5" width="61" height="61" fill="#FF1493" stroke="#111111" stroke-width="3"/>
+  <text x="32" y="34" text-anchor="middle" dominant-baseline="central"
+        font-family="'Arial Narrow', Arial, sans-serif" font-weight="900" font-size="44" fill="#ffffff">S</text>
+</svg>
