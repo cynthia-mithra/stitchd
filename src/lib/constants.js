@@ -228,7 +228,15 @@ export function filterSummary(filters) {
   return parts.length ? parts.join(" · ") : "All listings";
 }
 
-export const catEmoji = c=>({"Saree":"🥻","Salwar Kameez":"👘","Lehenga":"👗","Sherwani":"🧥","Kurta":"👕","Co-ord Set":"✨","Dupatta":"🧣","Accessories":"💍","Necklace":"📿","Earrings":"✨","Maang Tikka":"👑","Jhumka":"🔮","Bangles":"💛","Bracelet":"📿","Ring":"💍","Nose Ring":"✦","Anklet":"🦶","Haar":"📿","Choker":"📿","Full Set":"👑","Other Jewellery":"💎","Heels":"👠","Flats":"🥿","Sandals":"👡","Juttis":"✨","Khussa":"✨","Boots":"👢","Trainers":"👟","Wedges":"👠","Platforms":"👠","Other Shoes":"👠","Other":"🛍️"}[c]||"💎");
+// Image-less listings fall back to a clean typographic monogram (e.g. "SK" for
+// Salwar Kameez) rendered in the brand's bold condensed face — no emojis. Multi-
+// word categories use their initials; single words use the first two letters.
+export const catEmoji = c=>{
+  const s=String(c||"").trim();
+  if(!s) return "✦";
+  const w=s.split(/[\s-]+/).filter(Boolean);
+  return (w.length>1 ? (w[0][0]+w[1][0]) : s.slice(0,2)).toUpperCase();
+};
 export const waLink   = (n,name,price)=>`https://wa.me/${n.replace(/\D/g,"")}?text=${encodeURIComponent(`Hi! I saw "${name}" (£${price}) on Stitch'd — still available?`)}`;
 // Stitch'd is UK-only: all prices are displayed in GBP (£), regardless of any
 // legacy currency code stored on a listing/profile. Payment-processing currency

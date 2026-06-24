@@ -170,7 +170,7 @@ export const CSS=`
   @media(max-width:768px){
     .nav-category-strip{display:none !important;}
     /* With the category strip (flex:1 spacer) hidden, nothing pushes the
-       right-side nav buttons (3 LIVE, ❤, LOG IN, SIGN UP) over, so they
+       right-side nav buttons (3 LIVE, WISHLIST, LOG IN, SIGN UP) over, so they
        collapse next to the logo. margin-left:auto sends them back to the
        right edge. Logo stays on the left; marquee/hero/strip untouched.
        LEFTOVER DIVIDER LINES — with the category strip gone, the two vertical

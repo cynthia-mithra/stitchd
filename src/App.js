@@ -502,12 +502,12 @@ export default function App() {
         user:{email:claims.email||p.get("email")||"user",id:claims.sub||p.get("user_id")||null},
       };
       auth.saveSession(s); setSession(s); window.location.hash="";
-      flash("🩷 Signed in!"); setView("shop");
+      flash("Signed in!"); setView("shop");
     }
     const urlParams=new URLSearchParams(window.location.search);
     if(urlParams.get("payment")==="success"){
       const listingId=urlParams.get("listing");
-      flash("🎉 Payment successful! The seller has been notified.");
+      flash("Payment successful! The seller has been notified.");
       if(listingId) db.update(listingId,{payment_status:"paid",sold:true},null).catch(()=>{});
       window.history.replaceState({},document.title,window.location.pathname);
       setPaymentStep("success");
@@ -553,7 +553,7 @@ export default function App() {
       const lid=_sp.get("listing_id");
       window.history.replaceState({},document.title,"/");
       if(lid){ const until=new Date(Date.now()+7*86400000).toISOString(); setItems(p=>p.map(i=>i.id===lid?{...i,promoted:true,promoted_until:until,sold:i.sold}:i)); }
-      flash("⚡ Your listing is now promoted for 7 days!");
+      flash("Your listing is now promoted for 7 days!");
       setView("dashboard");
     } else if(window.location.pathname.replace(/\/+$/,"").endsWith("/dashboard")||_sp.get("verified")==="true"){
       window.history.replaceState({},document.title,"/");
@@ -956,7 +956,7 @@ export default function App() {
           sold:!!item.sold,
         };
         next=[...prev,snapshot];
-        flash("🛍️ Added to bag!");
+        flash("Added to bag!");
       }
       localStorage.setItem("stitchd_bag",JSON.stringify(next));
       return next;
@@ -1070,9 +1070,9 @@ export default function App() {
   }
 
   function shareItem(item){
-    const text=`Check out "${item.name}" for £${item.price} on Stitch'd 🩷`;
+    const text=`Check out "${item.name}" for £${item.price} on Stitch'd`;
     if(navigator.share){ navigator.share({title:item.name,text,url:window.location.href}).catch(()=>{}); }
-    else{ navigator.clipboard.writeText(`${text}\n${window.location.href}`).then(()=>flash("🔗 Link copied!")); }
+    else{ navigator.clipboard.writeText(`${text}\n${window.location.href}`).then(()=>flash("Link copied!")); }
   }
 
   // Reviews only store reviewer_id, so resolve those ids to profiles in one batch
@@ -1113,7 +1113,7 @@ export default function App() {
       setShowReview(false); setReviewOrder(null); setReviewForm({rating:5,comment:""});
       // Refresh the grid-wide rating lookup so the new review updates card stars too.
       loadSellerRatings();
-      flash("⭐ Review submitted — thanks!");
+      flash("Review submitted — thanks!");
     }catch(e){ flash("Failed to submit review."); }
   }
 
@@ -1145,7 +1145,7 @@ export default function App() {
       // In-app notification to the seller (never to yourself — notify() guards).
       const who=(profile?.username||profile?.full_name||"Someone").trim();
       notify(sel.user_id,"comment","New question",`${who} asked a question on your listing ${sel.name}`,sel.id);
-      flash("💬 Question posted!");
+      flash("Question posted!");
     }catch(e){ flash("Failed to post your question."); }
   }
 
@@ -1167,7 +1167,7 @@ export default function App() {
       await db.insertComment({listing_id:sel.id,user_id:user.id,content:text,parent_comment_id:parent.id},token);
       setComments(await loadComments(sel.id));
       notify(parent.user_id,"comment","Seller replied",`The seller replied to your question on ${sel.name}`,sel.id);
-      flash("💬 Reply posted!");
+      flash("Reply posted!");
     }catch(e){ flash("Failed to post your reply."); }
   }
 
@@ -1184,7 +1184,7 @@ export default function App() {
       const who=(profile?.username||profile?.full_name||"Someone").trim();
       const amt=`${currencySymbol(sel.currency)}${(amountPence/100).toFixed(2).replace(/\.00$/,"")}`;
       // type "new_offer" routes the notification to the listing (not messages).
-      notify(sel.user_id,"new_offer",`💸 New offer on "${sel.name}"`,`${who} made an offer of ${amt} on ${sel.name}`,sel.id);
+      notify(sel.user_id,"new_offer",`New offer on "${sel.name}"`,`${who} made an offer of ${amt} on ${sel.name}`,sel.id);
       flash("Offer sent! The seller has 48 hours to respond.",6000);
       return true;
     }catch(e){ console.error("Offer insert failed:",e); flash("Couldn't send your offer. Please try again."); return false; }
@@ -1347,7 +1347,7 @@ export default function App() {
         try{ await db.updateAlterationRequest(o.id,{status:"disputed"},token); }catch(e){}
         setBuyerAlterations(prev=>prev.map(r=>r.id===o.id?{...r,status:"disputed"}:r));
         const name=o.listings?.name||o.garment_type||"an alteration";
-        await Promise.all((admins||[]).map(a=>notify(a.id,"dispute","⚠️ New tailoring dispute",`A buyer reported a problem with the alteration of "${name}": ${disputeForm.problem_type}`,o.listing_id||null)));
+        await Promise.all((admins||[]).map(a=>notify(a.id,"dispute","New tailoring dispute",`A buyer reported a problem with the alteration of "${name}": ${disputeForm.problem_type}`,o.listing_id||null)));
       }else{
         await db.insertDispute({order_id:o.id,buyer_id:user.id,seller_id:o.seller_id||null,problem_type:disputeForm.problem_type,details:disputeForm.details.trim(),photo_url,status:"open"},token);
         // Dispute hold — keep the seller's earnings held (won't auto-release) until
@@ -1355,7 +1355,7 @@ export default function App() {
         if(o.listing_id) await db.holdDisputedEarnings(o.listing_id,token);
         // Notify the Stitch'd admin(s) — type='dispute', routed to each is_admin user.
         const title=items.find(i=>i.id===o.listing_id)?.name||"an order";
-        await Promise.all((admins||[]).map(a=>notify(a.id,"dispute","⚠️ New dispute raised",`A buyer reported a problem with "${title}": ${disputeForm.problem_type}`,o.listing_id)));
+        await Promise.all((admins||[]).map(a=>notify(a.id,"dispute","New dispute raised",`A buyer reported a problem with "${title}": ${disputeForm.problem_type}`,o.listing_id)));
       }
       setDisputeDone(true);
       setTimeout(()=>{ closeDispute(); },2000);
@@ -1417,7 +1417,7 @@ export default function App() {
       // The refund function notifies the buyer itself when it succeeds; otherwise
       // send the generic dispute-update notification.
       if(d&&d.buyer_id&&!(newStatus==="refunded"&&!refundFailed)){
-        await notify(d.buyer_id,"dispute","⚖️ Dispute update",`Your dispute has been updated to: ${label}`,d.order_id||d.alteration_request_id||null);
+        await notify(d.buyer_id,"dispute","Dispute update",`Your dispute has been updated to: ${label}`,d.order_id||d.alteration_request_id||null);
       }
       if(newStatus==="refunded"){
         flash(refundFailed
@@ -1440,7 +1440,7 @@ export default function App() {
       setAdminApplications(p=>p.map(a=>a.id===app.id?{...a,status:"approved",reviewed_at:now}:a));
       setVerifiedSellers(prev=>{ const s=new Set(prev); s.add(app.user_id); return s; });
       if(app.user_id===user?.id){ setProfile(p=>p?{...p,verified:true,verification_status:"verified",verified_at:now}:p); }
-      await notify(app.user_id,"verification","✅ You're verified!","Congratulations! Your verified seller application has been approved.");
+      await notify(app.user_id,"verification","You're verified!","Congratulations! Your verified seller application has been approved.");
       flash("Application approved.");
     }catch(e){ flash("Failed to approve application."); }
   }
@@ -1476,7 +1476,7 @@ export default function App() {
     try{
       const bundle=await db.createBundle({seller_id:user.id,name:bundleForm.name,description:bundleForm.description,discount_percent:parseInt(bundleForm.discount_percent)||0},token);
       await Promise.all(bundleForm.selectedListings.map(lid=>db.addBundleItem({bundle_id:bundle.id,listing_id:lid},token)));
-      flash("🎁 Bundle created!"); setBundleForm({name:"",description:"",discount_percent:0,selectedListings:[]});
+      flash("Bundle created!"); setBundleForm({name:"",description:"",discount_percent:0,selectedListings:[]});
       await loadBundles();
     }catch(e){ flash("Failed to create bundle."); }
   }
@@ -1493,8 +1493,8 @@ export default function App() {
   const getSellerTier = (p) => {
     if(!p) return null;
     if(p.verified) return {label:"✓ VERIFIED",color:"#34C759"};
-    if(p.seller_tier==="top") return {label:"⭐ TOP SELLER",color:"#FF9500"};
-    if(p.seller_tier==="trusted") return {label:"👍 TRUSTED",color:"#007AFF"};
+    if(p.seller_tier==="top") return {label:"TOP SELLER",color:"#FF9500"};
+    if(p.seller_tier==="trusted") return {label:"TRUSTED",color:"#007AFF"};
     return null;
   };
 
@@ -1551,7 +1551,7 @@ export default function App() {
       await db.saveSearch({user_id:user.id,name:saveSearchName.trim()||null,query:search||"",filters:currentFilters(),email_alerts:saveSearchAlerts},token);
       await loadSavedSearches();
       setShowSaveSearch(false);
-      flash(saveSearchAlerts?"🔖 Search saved! We'll email you when new listings match.":"🔖 Search saved!");
+      flash(saveSearchAlerts?"Search saved! We'll email you when new listings match.":"Search saved!");
     }catch(e){ flash("Failed to save search."); }
     finally{ setSavingSearch(false); }
   }
@@ -1621,8 +1621,8 @@ export default function App() {
       setMyOrders(p=>p.map(o=>o.id===orderId?{...o,status:newStatus}:o));
       if(order){
         const title=items.find(i=>i.id===order.listing_id)?.name||"your order";
-        if(newStatus==="dispatched") await notify(order.buyer_id,"order","📦 Order dispatched",`Your order ${title} has been dispatched by the seller`,order.listing_id);
-        if(newStatus==="delivered")  await notify(order.buyer_id,"order","✅ Order delivered",`Your order ${title} has been marked as delivered. Confirm receipt and leave the seller a review!`,order.listing_id);
+        if(newStatus==="dispatched") await notify(order.buyer_id,"order","Order dispatched",`Your order ${title} has been dispatched by the seller`,order.listing_id);
+        if(newStatus==="delivered")  await notify(order.buyer_id,"order","Order delivered",`Your order ${title} has been marked as delivered. Confirm receipt and leave the seller a review!`,order.listing_id);
       }
       flash(`Order marked ${newStatus.toUpperCase()}.`);
     }catch(e){ flash("Failed to update order status."); }
@@ -1638,7 +1638,7 @@ export default function App() {
       setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:num,tracking_carrier:order.postage_carrier||order.tracking_carrier||null}:o));
       if(num&&order.buyer_id){
         const title=items.find(i=>i.id===order.listing_id)?.name||"your order";
-        await notify(order.buyer_id,"order","📦 Tracking added",`${title} is on its way — track it from your orders. Tracking: ${num}`,order.listing_id);
+        await notify(order.buyer_id,"order","Tracking added",`${title} is on its way — track it from your orders. Tracking: ${num}`,order.listing_id);
       }
       flash(num?"Tracking saved — the buyer's been notified.":"Tracking cleared.");
     }catch(e){ flash("Couldn't save tracking — the orders table may need the tracking columns."); }
@@ -1654,7 +1654,7 @@ export default function App() {
       setMyOrders(p=>p.map(o=>o.id===order.id?{...o,status:"completed"}:o));
       if(order.listing_id) await db.releaseSaleEarnings(order.listing_id,token);
       const title=items.find(i=>i.id===order.listing_id)?.name||"your order";
-      if(order.seller_id) await notify(order.seller_id,"sale","💸 Payment released",`The buyer confirmed receipt of "${title}" — your earnings are now available to withdraw.`,order.listing_id);
+      if(order.seller_id) await notify(order.seller_id,"sale","Payment released",`The buyer confirmed receipt of "${title}" — your earnings are now available to withdraw.`,order.listing_id);
       flash("Thanks for confirming! The seller's payment has been released.",6000);
     }catch(e){ flash("Couldn't confirm receipt. Please try again."); }
   }
@@ -1874,7 +1874,7 @@ export default function App() {
   // each track their own flag).
   function copyShareLink(slug,setFlag){
     const url=shareSlugUrl(slug);
-    const done=()=>{ if(setFlag){ setFlag(true); setTimeout(()=>setFlag(false),2000); } flash("🔗 Link copied!"); };
+    const done=()=>{ if(setFlag){ setFlag(true); setTimeout(()=>setFlag(false),2000); } flash("Link copied!"); };
     try{ navigator.clipboard.writeText(url).then(done).catch(()=>done()); }
     catch{ done(); }
   }
@@ -1910,7 +1910,7 @@ export default function App() {
   }
 
   // Fetch once the set of seller ids flagged fast_seller=true on their profile, so
-  // cards/Detail can show a "⚡ FAST SELLER" badge without a per-card profile fetch.
+  // cards/Detail can show a "FAST SELLER" badge without a per-card profile fetch.
   // Mirrors the seller-ratings lookup: one request feeds the whole grid.
   async function loadFastSellers(){
     const rows=await db.getFastSellers(token);
@@ -2604,7 +2604,7 @@ export default function App() {
       const updated=await db.updateTailor(t.id,{status:"approved",approved_at:now},token);
       setAdminTailors(p=>p.map(x=>x.id===t.id?{...x,status:"approved",approved_at:now}:x));
       if(t.user_id===user?.id) setMyTailor(m=>m?{...m,status:"approved",approved_at:now}:m);
-      await notify(t.user_id,"tailor","🎉 You're approved as a tailor!","Your tailor application has been approved! Your profile is now live on Stitch'd.",t.id);
+      await notify(t.user_id,"tailor","You're approved as a tailor!","Your tailor application has been approved! Your profile is now live on Stitch'd.",t.id);
       db.fireTailorApprovedEmail(t.id);
       flash("Tailor approved.");
       return updated;
@@ -2658,7 +2658,7 @@ export default function App() {
       setTwoFAStep(null); setTwoFACode(""); setTwoFAData(null);
       const factors=await auth.listFactors(token);
       setTwoFAFactors(factors);
-      flash("✅ 2FA enabled! Your account is now more secure.");
+      flash("2FA enabled! Your account is now more secure.");
     }catch(e){ flash("Invalid code. Try again."); }
     finally{ setTwoFALoading(false); }
   }
@@ -2985,7 +2985,7 @@ export default function App() {
       setMsgInput("");
       const otherId=activeConv.buyer_id===user.id?activeConv.seller_id:activeConv.buyer_id;
       const listing=items.find(i=>i.id===activeConv.listing_id);
-      await notify(otherId,"message","💬 New message",`${profile?.username||user.email?.split("@")[0]||"Someone"} sent you a message${listing?` about "${listing.name}"`:""}`,activeConv.id);
+      await notify(otherId,"message","New message",`${profile?.username||user.email?.split("@")[0]||"Someone"} sent you a message${listing?` about "${listing.name}"`:""}`,activeConv.id);
     }catch(e){ flash("Failed to send."); }
     finally{ setMsgSending(false); }
   }
@@ -2995,14 +2995,14 @@ export default function App() {
     const listing=items.find(i=>i.id===activeConv.listing_id);
     if(!listing)return;
     const offerAmount=parseFloat((listing.price*(1-percent/100)).toFixed(2));
-    const content=`🏷️ OFFER: ${percent}% off — ${currencySymbol(listing.currency)}${offerAmount} (original: ${currencySymbol(listing.currency)}${listing.price})`;
+    const content=`OFFER: ${percent}% off — ${currencySymbol(listing.currency)}${offerAmount} (original: ${currencySymbol(listing.currency)}${listing.price})`;
     setMsgSending(true);
     try{
       const [msg]=await db.sendMessage({conversation_id:activeConv.id,sender_id:user.id,content,message_type:"offer",offer_percent:percent,offer_amount:offerAmount,offer_status:"pending"},token);
       setMessages(p=>[...p,msg]);
       await db.updateConversation(activeConv.id,{last_message:`Offer: ${currencySymbol(listing.currency)}${offerAmount}`,last_message_at:new Date().toISOString()},token);
       setConversations(p=>p.map(c=>c.id===activeConv.id?{...c,last_message:`Offer: ${currencySymbol(listing.currency)}${offerAmount}`,last_message_at:new Date().toISOString()}:c));
-      await notify(activeConv.seller_id,"offer",`🏷️ New offer on "${listing.name}"`,`${profile?.username||"Someone"} offered ${currencySymbol(listing.currency)}${offerAmount} (${percent}% off)`,activeConv.id);
+      await notify(activeConv.seller_id,"offer",`New offer on "${listing.name}"`,`${profile?.username||"Someone"} offered ${currencySymbol(listing.currency)}${offerAmount} (${percent}% off)`,activeConv.id);
     }catch(e){ flash("Failed to send offer."); }
     finally{ setMsgSending(false); }
   }
@@ -3015,13 +3015,13 @@ export default function App() {
       setMessages(p=>p.map(m=>m.id===msgId?{...m,...patch}:m));
       const listing=items.find(i=>i.id===activeConv?.listing_id);
       const responseText = status==="accepted"
-        ? `✅ Offer accepted! ${listing?`Please arrange payment of ${currencySymbol(listing.currency)}${updated.offer_amount}`:""}`
-        : status==="declined" ? `❌ Offer declined.`
-        : `↩️ Counter offer: ${currencySymbol(listing?.currency||"$")}${counterAmt}`;
+        ? `Offer accepted! ${listing?`Please arrange payment of ${currencySymbol(listing.currency)}${updated.offer_amount}`:""}`
+        : status==="declined" ? `Offer declined.`
+        : `Counter offer: ${currencySymbol(listing?.currency||"$")}${counterAmt}`;
       const [responseMsg]=await db.sendMessage({conversation_id:activeConv.id,sender_id:user.id,content:responseText,message_type:"text"},token);
       setMessages(p=>[...p,responseMsg]);
       setShowCounterOffer(null); setCounterInput("");
-      flash(status==="accepted"?"✅ Offer accepted!":status==="declined"?"❌ Offer declined.":"↩️ Counter offer sent!");
+      flash(status==="accepted"?"Offer accepted!":status==="declined"?"Offer declined.":"Counter offer sent!");
     }catch(e){ flash("Failed to respond to offer."); }
   }
 
@@ -3061,10 +3061,10 @@ export default function App() {
       if(authMode==="signup"){
         await auth.sendOTP(aForm.email);
         setOtpEmail(aForm.email); setOtpStep("otp");
-        flash("📧 Check your email for your 6-digit code!");
+        flash("Check your email for your 6-digit code!");
       } else {
         const s=await auth.signIn(aForm.email,aForm.password);
-        auth.saveSession(s); setSession(s); flash("🩷 Welcome back!"); postAuthNavigate();
+        auth.saveSession(s); setSession(s); flash("Welcome back!"); postAuthNavigate();
       }
     }catch(e){ setAError(e.message); }
     finally{ setALoading(false); }
@@ -3076,7 +3076,7 @@ export default function App() {
       const s=await auth.verifyOTP(otpEmail,otpCode);
       auth.saveSession(s); setSession(s);
       setOtpStep("form"); setOtpCode(""); setOtpEmail("");
-      flash("🩷 Welcome to Stitch'd!"); postAuthNavigate();
+      flash("Welcome to Stitch'd!"); postAuthNavigate();
     }catch(e){ setAError("Invalid or expired code. Try again."); }
     finally{ setALoading(false); }
   }
@@ -3179,8 +3179,8 @@ export default function App() {
       // self-healing insert (see lib/db.js) silently drops columns the table is
       // missing, so an absent image_url column means the photo is lost. Surface
       // it instead of a misleading plain "Listed!".
-      if(urls.length&&!created.image_url){ flash("⚠️ Listed — but the photo couldn't be saved: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase so photos persist.",11000); }
-      else{ flash("🩷 Listed!"); }
+      if(urls.length&&!created.image_url){ flash("Listed — but the photo couldn't be saved: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase so photos persist.",11000); }
+      else{ flash("Listed!"); }
       setView("shop");
       // Phase 12 PART 5 — kick the saved-search alert sweep so buyers whose saved
       // filters match this fresh listing are emailed within minutes rather than
@@ -3193,7 +3193,7 @@ export default function App() {
       try{
         const ntok=await getValidToken();
         const myFollowers=await db.getFollowers(user.id,ntok);
-        await Promise.all(myFollowers.map(f=>notify(f.follower_id,"new_listing",`✨ New drop from ${profile?.username||"a seller you follow"}`,`"${payload.name}" listed for ${currencySymbol(payload.currency||"USD")}${payload.price}`,created.id)));
+        await Promise.all(myFollowers.map(f=>notify(f.follower_id,"new_listing",`New drop from ${profile?.username||"a seller you follow"}`,`"${payload.name}" listed for ${currencySymbol(payload.currency||"USD")}${payload.price}`,created.id)));
       }catch(e){ console.warn("Post-listing follower notifications failed (listing was saved):",e); }
     }catch(e){ console.error("Listing insert failed:",e); flash(`Couldn't save listing: ${errMsg(e)}`,9000); }
     finally{ setSaving(false); }
@@ -3227,7 +3227,7 @@ export default function App() {
       const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
       const [updated]=await withFreshToken(tok=>db.update(sel.id,patch,tok));
       setItems(p=>p.map(i=>i.id===sel.id?updated:i)); setSel(updated);
-      if(allUrls.length&&!updated.image_url){ flash("⚠️ Saved — but the photo couldn't be stored: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase.",11000); }
+      if(allUrls.length&&!updated.image_url){ flash("Saved — but the photo couldn't be stored: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase.",11000); }
       else{ flash("✓ Updated!"); }
       setView("detail");
       // The update is already saved. Price-drop notifications are best-effort and
@@ -3237,7 +3237,7 @@ export default function App() {
         if(parseFloat(form.price)<sel.price){
           const ntok=await getValidToken();
           const myFollowers=await db.getFollowers(user.id,ntok);
-          await Promise.all(myFollowers.map(f=>notify(f.follower_id,"price_drop",`📉 Price drop on "${sel.name}"`,`Now ${currencySymbol(updated.currency)}${form.price} (was ${currencySymbol(sel.currency)}${sel.price})`,sel.id)));
+          await Promise.all(myFollowers.map(f=>notify(f.follower_id,"price_drop",`Price drop on "${sel.name}"`,`Now ${currencySymbol(updated.currency)}${form.price} (was ${currencySymbol(sel.currency)}${sel.price})`,sel.id)));
         }
       }catch(e){ console.warn("Price-drop notifications failed (listing was updated):",e); }
     }catch(e){ console.error("Listing update failed:",e); flash(`Couldn't update listing: ${errMsg(e)}`,9000); }
@@ -3259,8 +3259,8 @@ export default function App() {
   }
 
   async function markSold(id,cur){ try{ await db.update(id,{sold:!cur},token); setItems(p=>p.map(i=>i.id===id?{...i,sold:!i.sold}:i)); if(sel?.id===id)setSel(s=>({...s,sold:!s.sold})); }catch(e){flash("Update failed.");} }
-  async function markReserved(id,cur){ try{ await db.update(id,{reserved:!cur},token); setItems(p=>p.map(i=>i.id===id?{...i,reserved:!i.reserved}:i)); if(sel?.id===id)setSel(s=>({...s,reserved:!s.reserved})); flash(cur?"Reservation removed.":"🔖 Marked as reserved!"); }catch(e){flash("Update failed.");} }
-  async function relist(id){ try{ await db.update(id,{sold:false,reserved:false},token); setItems(p=>p.map(i=>i.id===id?{...i,sold:false,reserved:false}:i)); if(sel?.id===id)setSel(s=>({...s,sold:false,reserved:false})); flash("🔄 Relisted!"); }catch(e){flash("Relist failed.");} }
+  async function markReserved(id,cur){ try{ await db.update(id,{reserved:!cur},token); setItems(p=>p.map(i=>i.id===id?{...i,reserved:!i.reserved}:i)); if(sel?.id===id)setSel(s=>({...s,reserved:!s.reserved})); flash(cur?"Reservation removed.":"Marked as reserved!"); }catch(e){flash("Update failed.");} }
+  async function relist(id){ try{ await db.update(id,{sold:false,reserved:false},token); setItems(p=>p.map(i=>i.id===id?{...i,sold:false,reserved:false}:i)); if(sel?.id===id)setSel(s=>({...s,sold:false,reserved:false})); flash("Relisted!"); }catch(e){flash("Relist failed.");} }
   async function del(id){ try{ await db.remove(id,token); setItems(p=>p.filter(i=>i.id!==id)); setView("shop"); flash("Listing deleted."); }catch(e){flash("Delete failed.");} }
 
   // ── Phase 10d — seller tools ────────────────────────────────────────────────
@@ -3330,7 +3330,7 @@ export default function App() {
     try{
       await db.insertFeatureInterest({user_id:user.id,feature:"promote"},token);
       setPromoteNotified(true);
-      flash("🔔 We'll let you know when Promote launches!");
+      flash("We'll let you know when Promote launches!");
     }catch(e){ flash("Couldn't save your interest — try again."); }
   }
 
@@ -3436,7 +3436,7 @@ export default function App() {
       return next;
     });
     setShowBag(true);
-    flash(addedCount?`🛍️ Added ${addedCount} piece${addedCount!==1?"s":""} to bag!`:"Those pieces are already in your bag.");
+    flash(addedCount?`Added ${addedCount} piece${addedCount!==1?"s":""} to bag!`:"Those pieces are already in your bag.");
   }
 
   // Create-a-look listing picker — searches listings by title across ALL sellers.
@@ -3487,7 +3487,7 @@ export default function App() {
         lookId=created.id;
       }
       await Promise.all(lookForm.items.map((l,i)=>withFreshToken(tok=>db.addLookItem({look_id:lookId,listing_id:l.id,position:i},tok))));
-      flash(active?"🩷 Look published!":"Saved as draft.");
+      flash(active?"Look published!":"Saved as draft.");
       await loadLooks(); await loadMyLooks();
       setView("dashboard");
     }catch(e){ console.error("Look save failed:",e); flash(`Couldn't save look: ${errMsg(e)}`,9000); }
@@ -4033,7 +4033,7 @@ export default function App() {
                     <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",width:"100%",padding:"14px",fontSize:14,letterSpacing:2}}
                       onClick={async()=>{
                         if(!window.Stripe){ const s=document.createElement("script"); s.src="https://js.stripe.com/v3/"; await new Promise(r=>{s.onload=r;document.head.appendChild(s);}); }
-                        flash("💳 Setting up payment...");
+                        flash("Setting up payment...");
                         try{
                           const res=await fetch(`${SUPABASE_URL}/functions/v1/clever-action`,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({amount:paymentListing.price,currency:paymentListing.currency||"USD",listing_id:paymentListing.id,buyer_email:user?.email||""})});
                           const {client_secret,error}=await res.json();
@@ -4041,12 +4041,12 @@ export default function App() {
                           const stripe=window.Stripe(STRIPE_PK);
                           const {error:stripeErr}=await stripe.confirmCardPayment(client_secret,{payment_method:{card:{token:"tok_visa"}}});
                           if(stripeErr) throw new Error(stripeErr.message);
-                          flash("🎉 Payment successful!");
+                          flash("Payment successful!");
                           setPaymentStep("success");
                           setItems(p=>p.map(i=>i.id===paymentListing.id?{...i,payment_status:"paid",sold:true}:i));
                           db.update(paymentListing.id,{payment_status:"paid",sold:true},token).catch(()=>{});
                           try{ await db.createOrder({listing_id:paymentListing.id,buyer_id:user.id,seller_id:paymentListing.user_id,amount:paymentListing.price,postage_amount:selectedPostage?.selectedPrice?.price||0,postage_carrier:selectedPostage?.name||null,status:"paid",delivery_address:deliveryAddress.line1?deliveryAddress:null},token); }catch(e){}
-                          await notify(paymentListing.user_id,"sale","💰 You made a sale!",`${profile?.username||"Someone"} bought "${paymentListing.name}" for ${currencySymbol(paymentListing.currency)}${paymentListing.price}`,paymentListing.id);
+                          await notify(paymentListing.user_id,"sale","You made a sale!",`${profile?.username||"Someone"} bought "${paymentListing.name}" for ${currencySymbol(paymentListing.currency)}${paymentListing.price}`,paymentListing.id);
                         }catch(e){ flash(`Payment failed: ${e.message}`); }
                       }}>
                       PAY {currencySymbol(paymentListing.currency)}{paymentListing.price} →
@@ -4273,7 +4273,7 @@ export default function App() {
             const purchased=(orderResult.listingIds||[]).map(id=>items.find(i=>i.id===id)).filter(Boolean);
             const lines=purchased.length
               ? purchased.map(l=>({name:l.name,image:l.image_url||(l.images&&l.images[0])||"",emoji:l.emoji||catEmoji(l.category),seller:l.seller,userId:l.user_id,price:Number(l.price)||0}))
-              : (orderResult.items||[]).map(it=>({name:it.name,image:"",emoji:"💎",seller:"",userId:null,price:(it.amount||0)/100}));
+              : (orderResult.items||[]).map(it=>({name:it.name,image:"",emoji:"",seller:"",userId:null,price:(it.amount||0)/100}));
             return (
             <div style={{background:"#fff",border:"2px solid #111",padding:"40px 32px"}}>
               <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:64,fontWeight:900,letterSpacing:-1.5,lineHeight:0.95,marginBottom:6,color:"#111"}}>IT'S YOURS.</h1>
@@ -4554,7 +4554,7 @@ export default function App() {
                         <div style={{textAlign:"center",padding:"32px 16px",color:"#bbb"}}>
                           <p style={{display:"flex",justifyContent:"center",marginBottom:8}}><MessageCircle width={30} height={30} color="#ddd"/></p>
                           <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,letterSpacing:0.5,color:"#bbb"}}>This is the start of your conversation with {otherProfile?.full_name||otherProfile?.username||"this seller"}.</p>
-                          <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#ccc",marginTop:4}}>Say hello 👋</p>
+                          <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#ccc",marginTop:4}}>Say hello</p>
                         </div>
                       )}
                       {messages.map((msg,mi)=>{

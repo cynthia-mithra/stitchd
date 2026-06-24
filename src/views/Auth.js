@@ -43,7 +43,7 @@ export default function Auth({
               {aError&&<div style={S.aError}>{aError}</div>}
               <button type="submit" className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:3,opacity:(aLoading||otpCode.length!==6)?0.5:1}} disabled={aLoading||otpCode.length!==6}>{aLoading?"VERIFYING...":<>VERIFY CODE <span className="btn-arrow">→</span></>}</button>
             </form>
-            <p style={{textAlign:"center",marginTop:16,fontSize:13,color:"#888"}}>Didn't get it? <span style={{color:"#FF1493",cursor:"pointer",fontWeight:700}} onClick={()=>{ auth.sendOTP(otpEmail); flash("📧 Code resent!"); }}>Resend code</span></p>
+            <p style={{textAlign:"center",marginTop:16,fontSize:13,color:"#888"}}>Didn't get it? <span style={{color:"#FF1493",cursor:"pointer",fontWeight:700}} onClick={()=>{ auth.sendOTP(otpEmail); flash("Code resent!"); }}>Resend code</span></p>
           </>
         ):(
           <>

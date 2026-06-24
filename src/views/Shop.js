@@ -131,7 +131,7 @@ export default function Shop({
       )}
     </div>
   );
-  // Small "⚡ FAST SELLER" badge for sellers flagged fast_seller=true on their profile.
+  // Small "FAST SELLER" badge for sellers flagged fast_seller=true on their profile.
   // Reuses the same overlay badge style as RESERVED / NEW / FITS YOU. On the main grid
   // it stacks above the FITS YOU badge (which also sits bottom-left) so the two never
   // overlap; in the home rails there's no fits badge so it sits at the standard offset.
