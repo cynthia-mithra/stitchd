@@ -113,12 +113,19 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
   });
   const qText = await qRes.text().catch(() => "");
   if (!qRes.ok) throw new Error(`Parcel2Go quote failed (${qRes.status}): ${qText.slice(0, 200)}`);
-  const quotes = (JSON.parse(qText)?.Quotes || JSON.parse(qText)?.quotes || []) as Array<Record<string, unknown>>;
+  const quotes = (JSON.parse(qText)?.Quotes || JSON.parse(qText)?.quotes || []) as Array<Record<string, any>>;
   if (!quotes.length) throw new Error("Parcel2Go returned no services for this route.");
+  // Each quote's service details are NESTED under q.Service ({ Slug, Name,
+  // CourierName }); the price is q.TotalPrice. (Reading q.Service directly as a
+  // string put the whole object into the order's Service field → Parcel2Go's
+  // "Badly formatted json".) Prefer the cheapest service matching the buyer's
+  // chosen carrier, else the cheapest overall.
   const wantCarrier = (p.service || "").split("·")[0].trim().toLowerCase();
-  const chosen = quotes.find((q) => String(q.CourierName || q.Service || "").toLowerCase().includes(wantCarrier)) || quotes[0];
-  const serviceSlug = chosen.Slug || chosen.Service || chosen.ServiceSlug;
-  if (!serviceSlug) throw new Error("Parcel2Go quote returned no service slug.");
+  const carrierName = (q: any) => String(q?.Service?.CourierName || q?.Service?.Name || "").toLowerCase();
+  const sorted = [...quotes].sort((a, b) => Number(a?.TotalPrice ?? 1e9) - Number(b?.TotalPrice ?? 1e9));
+  const chosen = (wantCarrier && sorted.find((q) => carrierName(q).includes(wantCarrier))) || sorted[0];
+  const serviceSlug = chosen?.Service?.Slug || chosen?.Slug;
+  if (!serviceSlug || typeof serviceSlug !== "string") throw new Error("Parcel2Go quote returned no service slug.");
 
   // 2) Create the order — Parcel2Go's exact shape (matches their production API):
   //    a UUID Id, CollectionDate, the service slug, CollectionAddress, and Parcels
