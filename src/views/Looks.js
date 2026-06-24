@@ -24,7 +24,7 @@ export function LookCard({ look, onOpen }) {
       <div style={{ padding: "12px 14px" }}>
         <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 800, color: "#111", lineHeight: 1.1, marginBottom: 6, letterSpacing: 0.3 }}>{look.title}</p>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-          <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: 1.5, color: "#999" }}>{count} {count === 1 ? "PIECE" : "PIECES"}</span>
+          <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: 1.5, color: "#6b6b6b" }}>{count} {count === 1 ? "PIECE" : "PIECES"}</span>
           <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 900, letterSpacing: -0.5, color: "#FF1493" }}>FROM {currencySymbol()}{total}</span>
         </div>
       </div>
@@ -144,7 +144,7 @@ export default function Looks({
             {allSold ? "SOLD OUT" : <><ShoppingBag width={18} height={18} /> ADD ALL TO BAG ({available.length})</>}
           </button>
           {!allSold && listings.length !== available.length && (
-            <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, color: "#999", letterSpacing: 0.5, marginTop: 8, textAlign: "center" }}>{listings.length - available.length} sold piece{listings.length - available.length !== 1 ? "s" : ""} won't be added.</p>
+            <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, color: "#6b6b6b", letterSpacing: 0.5, marginTop: 8, textAlign: "center" }}>{listings.length - available.length} sold piece{listings.length - available.length !== 1 ? "s" : ""} won't be added.</p>
           )}
         </div>
       </main>

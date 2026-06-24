@@ -98,7 +98,7 @@ export default function ShareWishlistModal({
           /* ── FORM STATE ────────────────────────────────────────────────── */
           <div>
             {/* Name */}
-            <label style={{ fontSize: 10, fontWeight: 800, color: "#999", letterSpacing: 1.5, textTransform: "uppercase", display: "block", marginBottom: 6 }}>List name</label>
+            <label style={{ fontSize: 10, fontWeight: 800, color: "#6b6b6b", letterSpacing: 1.5, textTransform: "uppercase", display: "block", marginBottom: 6 }}>List name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value.slice(0, 50))}
@@ -106,11 +106,11 @@ export default function ShareWishlistModal({
               placeholder='e.g. "My wedding wishlist"'
               style={{ ...S.inp, marginBottom: 4 }}
             />
-            <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 11, color: "#bbb", textAlign: "right", marginBottom: 18 }}>{(name || "").length}/50</p>
+            <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 11, color: "#6f6f6f", textAlign: "right", marginBottom: 18 }}>{(name || "").length}/50</p>
 
             {/* Item selector */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontSize: 10, fontWeight: 800, color: "#999", letterSpacing: 1.5, textTransform: "uppercase" }}>Pieces to include</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: "#6b6b6b", letterSpacing: 1.5, textTransform: "uppercase" }}>Pieces to include</span>
               <button
                 type="button"
                 onClick={toggleAll}
@@ -122,7 +122,7 @@ export default function ShareWishlistModal({
 
             <div style={{ border: "2px solid #111", borderRadius: 0, maxHeight: 260, overflowY: "auto", marginBottom: 20 }}>
               {items.length === 0 ? (
-                <p style={{ padding: "20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 700, color: "#bbb", letterSpacing: 1 }}>NO SAVED PIECES</p>
+                <p style={{ padding: "20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 700, color: "#6f6f6f", letterSpacing: 1 }}>NO SAVED PIECES</p>
               ) : (
                 items.map((item, idx) => {
                   const on = selected?.has(item.id);
@@ -163,7 +163,7 @@ export default function ShareWishlistModal({
               </span>
               <div>
                 <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15, fontWeight: 800, letterSpacing: 0.5, color: "#111" }}>Make this list public</div>
-                <div style={{ fontFamily: "'Barlow',sans-serif", fontSize: 12, color: "#aaa", marginTop: 3 }}>Anyone with the link can view this list</div>
+                <div style={{ fontFamily: "'Barlow',sans-serif", fontSize: 12, color: "#6e6e6e", marginTop: 3 }}>Anyone with the link can view this list</div>
               </div>
             </div>
 

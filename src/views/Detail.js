@@ -86,8 +86,8 @@ export default function Detail({
           <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
             <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.5}}>{c.username}</span>
             {isSeller&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#fff",background:"#FF1493",padding:"2px 7px"}}>SELLER</span>}
-            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#bbb",letterSpacing:1}}>{timeAgo(c.created_at)}</span>
-            {mine&&<button type="button" onClick={()=>deleteComment(c.id)} title="Delete" style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",color:"#999",display:"inline-flex",padding:2}}><Trash2 width={15} height={15}/></button>}
+            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#6f6f6f",letterSpacing:1}}>{timeAgo(c.created_at)}</span>
+            {mine&&<button type="button" onClick={()=>deleteComment(c.id)} title="Delete" style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",color:"#6b6b6b",display:"inline-flex",padding:2}}><Trash2 width={15} height={15}/></button>}
           </div>
           <p style={{fontSize:13,color:"#444",lineHeight:1.5,margin:0,wordBreak:"break-word"}}>{c.content}</p>
         </div>
@@ -189,7 +189,7 @@ export default function Detail({
             <div style={S.detailInfo} className="detail-info">
               <p style={{...S.cardCatLabel,color:selColor,fontSize:12,marginBottom:8}}>{sel.category?.toUpperCase()} · {(sel.material||sel.fabric)?.toUpperCase()} · {sel.condition?.toUpperCase()}</p>
               <h2 style={S.detailName}>{sel.name}</h2>
-              {sel.prev_price>sel.price&&<div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:700,color:"#999",textDecoration:"line-through",letterSpacing:-0.5,marginBottom:2}}>{currencySymbol(sel.currency)}{sel.prev_price}</div>}
+              {sel.prev_price>sel.price&&<div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:700,color:"#6b6b6b",textDecoration:"line-through",letterSpacing:-0.5,marginBottom:2}}>{currencySymbol(sel.currency)}{sel.prev_price}</div>}
               <div style={{...S.detailPrice,color:selColor,marginBottom:sel.prev_price>sel.price?6:16}}>{currencySymbol(sel.currency)}{sel.price}</div>
               {sel.prev_price>sel.price&&<div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#00E5CC",letterSpacing:0.5,marginBottom:16}}>YOU SAVE {currencySymbol(sel.currency)}{sel.prev_price-sel.price}</div>}
               {reviews.length>0&&(
@@ -201,7 +201,7 @@ export default function Detail({
               )}
               {!isOwner(sel)&&(()=>{
                 const bagged=inBag(sel.id);
-                const soldStyle={background:"#e5e5e5",color:"#999",border:"2px solid #ccc",cursor:"not-allowed"};
+                const soldStyle={background:"#e5e5e5",color:"#6b6b6b",border:"2px solid #ccc",cursor:"not-allowed"};
                 const baggedStyle={background:"#111",color:"#fff"};
                 return (
                   <>
@@ -213,7 +213,7 @@ export default function Detail({
                       onClick={()=>{ if(!sel.sold) requireAuth("default",()=>toggleBag(sel)); }}>
                       <ShoppingBag width={18} height={18}/> {sel.sold?"SOLD":bagged?"ADDED TO BAG":"ADD TO BAG"}
                     </button>
-                    {sel.sold&&<p style={{fontStyle:"italic",fontSize:13,color:"#999",marginTop:8,marginBottom:4}}>This piece has found a new home</p>}
+                    {sel.sold&&<p style={{fontStyle:"italic",fontSize:13,color:"#6b6b6b",marginTop:8,marginBottom:4}}>This piece has found a new home</p>}
                   </>
                 );
               })()}
@@ -264,7 +264,7 @@ export default function Detail({
                 <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>shareItem(sel)}><Share2 width={15} height={15}/> SHARE</button>
                 <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>setShowSizeGuide(true)}><Ruler width={15} height={15}/> SIZE GUIDE</button>
               </div>
-              {sel.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#bbb",letterSpacing:1,display:"flex",alignItems:"center",gap:5,marginBottom:16}}><Eye width={13} height={13}/> {sel.views} VIEWS</span>}
+              {sel.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#6f6f6f",letterSpacing:1,display:"flex",alignItems:"center",gap:5,marginBottom:16}}><Eye width={13} height={13}/> {sel.views} VIEWS</span>}
               {(sel.occasions||[]).length>0&&(
                 <div style={S.dBlock}><p style={{...S.dBlockTitle,borderColor:selColor,color:selColor}}>OCCASIONS</p><div style={S.occRow}>{sel.occasions.map(o=><span key={o} style={{...S.occChip,background:OCC_COLOR[o]||"#999",color:"#fff"}}>{o.toUpperCase()}</span>)}</div></div>
               )}
@@ -294,7 +294,7 @@ export default function Detail({
                       <div key={l} style={{...S.measBox,borderColor:selColor}}><div style={{...S.measVal,color:selColor}}>{convertMeasure(v,storedUnit,dispUnit)}{dispUnit==="inches"?"in":"cm"}</div><div style={S.measLbl}>{String(l).toUpperCase()}</div></div>
                     ))}
                   </div>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#bbb",letterSpacing:1,marginBottom:10,display:"flex",alignItems:"center",gap:5}}><Ruler width={13} height={13}/> LISTED IN {storedUnit==="inches"?"INCHES":"CM"} BY SELLER</p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#6f6f6f",letterSpacing:1,marginBottom:10,display:"flex",alignItems:"center",gap:5}}><Ruler width={13} height={13}/> LISTED IN {storedUnit==="inches"?"INCHES":"CM"} BY SELLER</p>
                   {sel.size&&<p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#888",marginBottom:10}}>SIZE: {sel.size}</p>}
                   {sellerNotes&&(
                     <div style={{marginBottom:12}}>
@@ -315,7 +315,7 @@ export default function Detail({
                   <button className="hbtn" style={{...S.hBtn,background:"#111",border:"none",padding:"16px 32px",fontSize:16,letterSpacing:2,width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:12}} onClick={()=>buyNow(sel)}>
                     <CreditCard width={18} height={18}/> BUY NOW · {currencySymbol(sel.currency)}{sel.price}
                   </button>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1.5,textAlign:"center",marginTop:8,display:"flex",alignItems:"center",justifyContent:"center",gap:5}}><Lock width={12} height={12}/> SECURE CHECKOUT · BUYER PROTECTION INCLUDED</p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#6f6f6f",letterSpacing:1.5,textAlign:"center",marginTop:8,display:"flex",alignItems:"center",justifyContent:"center",gap:5}}><Lock width={12} height={12}/> SECURE CHECKOUT · BUYER PROTECTION INCLUDED</p>
                 </div>
               )}
               {!isOwner(sel)&&user&&(
@@ -334,7 +334,7 @@ export default function Detail({
                             <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.5}}>{r.reviewer_name||"Anonymous"}</span>
                             <Stars value={r.rating} size={13} color="#FF1493"/>
                           </span>
-                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>{new Date(r.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase()}</span>
+                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#6f6f6f",letterSpacing:1}}>{new Date(r.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase()}</span>
                         </div>
                         {r.comment&&<p style={{fontSize:13,color:"#444",lineHeight:1.5,margin:0}}>{r.comment}</p>}
                       </div>
@@ -416,7 +416,7 @@ export default function Detail({
                         {renderCommentCard(c)}
                         {/* REPLY — seller only. Opens an inline reply form below. */}
                         {isSellerViewer&&replyingTo!==c.id&&(
-                          <button type="button" onClick={()=>{setReplyingTo(c.id);setReplyText("");}} style={{marginTop:10,marginLeft:44,background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#999",display:"inline-flex",alignItems:"center",gap:5,padding:0}}><CornerDownRight width={14} height={14}/> REPLY</button>
+                          <button type="button" onClick={()=>{setReplyingTo(c.id);setReplyText("");}} style={{marginTop:10,marginLeft:44,background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#6b6b6b",display:"inline-flex",alignItems:"center",gap:5,padding:0}}><CornerDownRight width={14} height={14}/> REPLY</button>
                         )}
                       </div>
                       {/* INLINE REPLY FORM — directly below the question. */}
@@ -424,9 +424,9 @@ export default function Detail({
                         <div style={{marginLeft:24,marginTop:10,paddingLeft:14,borderLeft:"2px solid #111"}}>
                           <textarea value={replyText} maxLength={300} onChange={e=>setReplyText(e.target.value)} placeholder="Reply to this question..." style={{...S.inp,height:72,resize:"vertical",fontFamily:"'Barlow Condensed',sans-serif",marginBottom:6}}/>
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#bbb",letterSpacing:1}}>{replyText.length} / 300</span>
+                            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#6f6f6f",letterSpacing:1}}>{replyText.length} / 300</span>
                             <div style={{display:"flex",alignItems:"center",gap:14}}>
-                              <button type="button" onClick={closeReply} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#999",padding:0}}>CANCEL</button>
+                              <button type="button" onClick={closeReply} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#6b6b6b",padding:0}}>CANCEL</button>
                               <button type="button" onClick={()=>postReply(c)} disabled={!replyText.trim()} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:1.5,color:"#fff",background:"#111",border:"2px solid #111",borderRadius:0,padding:"8px 18px",cursor:replyText.trim()?"pointer":"not-allowed",opacity:replyText.trim()?1:0.5}}>POST REPLY</button>
                             </div>
                           </div>
@@ -455,7 +455,7 @@ export default function Detail({
             <div>
               <textarea value={commentText} maxLength={300} onChange={e=>setCommentText(e.target.value)} placeholder="Ask a question about this listing..." style={{...S.inp,height:84,resize:"vertical",fontFamily:"'Barlow Condensed',sans-serif",marginBottom:6}}/>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#bbb",letterSpacing:1}}>{commentText.length} / 300</span>
+                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#6f6f6f",letterSpacing:1}}>{commentText.length} / 300</span>
                 <button type="button" onClick={()=>requireAuth("comment",submitComment)} disabled={!commentText.trim()} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:1.5,color:"#fff",background:"#FF1493",border:"2px solid #111",borderRadius:0,padding:"9px 22px",cursor:commentText.trim()?"pointer":"not-allowed",opacity:commentText.trim()?1:0.5}}>POST</button>
               </div>
             </div>
@@ -464,7 +464,7 @@ export default function Detail({
               page. Logged-in users only (issue PART 1). */}
           {user&&(
             <div style={{display:"flex",justifyContent:"center",marginTop:40}}>
-              <button type="button" onClick={()=>setShowReport(true)} style={{display:"inline-flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:0.5,color:"#999",padding:6}}>
+              <button type="button" onClick={()=>setShowReport(true)} style={{display:"inline-flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:0.5,color:"#6b6b6b",padding:6}}>
                 <Flag width={14} height={14}/> Report this listing
               </button>
             </div>
@@ -484,13 +484,13 @@ export default function Detail({
                   </div>
                   <div style={{minWidth:0}}>
                     <p style={{fontSize:17,fontWeight:800,color:"#111",letterSpacing:0.5,margin:0,marginBottom:3,wordBreak:"break-word"}}>{sel.name}</p>
-                    <p style={{fontSize:14,color:"#999",letterSpacing:0.5,margin:0}}>Listed at {cur}{sel.price}</p>
+                    <p style={{fontSize:14,color:"#6b6b6b",letterSpacing:0.5,margin:0}}>Listed at {cur}{sel.price}</p>
                     {minPence!=null&&<p style={{fontSize:12,color:"#888",letterSpacing:0.5,margin:0,marginTop:2}}>Minimum offer: {fmtPence(minPence)}</p>}
                   </div>
                 </div>
                 {/* Offer amount */}
                 <div style={{marginBottom:16}}>
-                  <p style={{fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:8}}>YOUR OFFER</p>
+                  <p style={{fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:8}}>YOUR OFFER</p>
                   <div style={{position:"relative"}}>
                     <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:16,fontWeight:700,color:"#111",fontFamily:"'Barlow',sans-serif",pointerEvents:"none"}}>{cur}</span>
                     <input type="number" min="0" step="0.01" inputMode="decimal" autoFocus value={offerAmount} onChange={e=>setOfferAmount(e.target.value)} placeholder="0.00" style={{...S.inp,paddingLeft:30,fontSize:18,fontWeight:700,borderColor:offerError?"#FF1493":"#111"}}/>
@@ -500,14 +500,14 @@ export default function Detail({
                 {/* Optional message */}
                 <div style={{marginBottom:14}}>
                   <textarea value={offerMessage} maxLength={200} onChange={e=>setOfferMessage(e.target.value)} placeholder="Add a note to the seller (optional)" style={{...S.inp,height:80,resize:"vertical",fontFamily:"'Barlow Condensed',sans-serif"}}/>
-                  <p style={{fontSize:12,color:"#bbb",letterSpacing:1,textAlign:"right",margin:0,marginTop:4}}>{offerMessage.length} / 200</p>
+                  <p style={{fontSize:12,color:"#6f6f6f",letterSpacing:1,textAlign:"right",margin:0,marginTop:4}}>{offerMessage.length} / 200</p>
                 </div>
-                <p style={{fontSize:12,color:"#999",letterSpacing:0.5,marginBottom:16}}>Your offer expires in 48 hours.</p>
+                <p style={{fontSize:12,color:"#6b6b6b",letterSpacing:0.5,marginBottom:16}}>Your offer expires in 48 hours.</p>
                 <button type="button" onClick={sendOffer} disabled={!offerValid||offerSending} style={{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"15px",fontSize:16,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:3,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:9,cursor:(!offerValid||offerSending)?"not-allowed":"pointer",opacity:(!offerValid||offerSending)?0.45:1}}>
                   <Tag width={17} height={17}/> {offerSending?"SENDING...":"SEND OFFER"}
                 </button>
                 <div style={{textAlign:"center",marginTop:14}}>
-                  <button type="button" onClick={closeOffer} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#999",padding:4,textDecoration:"underline"}}>CANCEL</button>
+                  <button type="button" onClick={closeOffer} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#6b6b6b",padding:4,textDecoration:"underline"}}>CANCEL</button>
                 </div>
               </div>
             </div>
@@ -529,7 +529,7 @@ export default function Detail({
             <button
               className={sel.sold?"":"hbtn"}
               disabled={sel.sold}
-              style={{...S.buyBarBtn,...(sel.sold?{background:"#e5e5e5",color:"#999",border:"2px solid #ccc",cursor:"not-allowed"}:bagged?{background:"#111"}:{})}}
+              style={{...S.buyBarBtn,...(sel.sold?{background:"#e5e5e5",color:"#6b6b6b",border:"2px solid #ccc",cursor:"not-allowed"}:bagged?{background:"#111"}:{})}}
               onClick={()=>{ if(!sel.sold) requireAuth("default",()=>toggleBag(sel)); }}>
               <ShoppingBag width={17} height={17}/> {sel.sold?"SOLD":bagged?"ADDED":"ADD TO BAG"}
             </button>

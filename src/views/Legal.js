@@ -166,7 +166,7 @@ const st = {
   back: {
     background: "none",
     border: "none",
-    color: "#999",
+    color: "#6b6b6b",
     fontSize: 12,
     cursor: "pointer",
     marginBottom: 28,
@@ -206,7 +206,7 @@ const st = {
     fontSize: 13,
     fontWeight: 600,
     letterSpacing: 1,
-    color: "#999",
+    color: "#6b6b6b",
     marginTop: 40,
     paddingTop: 20,
     borderTop: "1px solid #eee",

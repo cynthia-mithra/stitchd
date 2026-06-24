@@ -52,7 +52,7 @@ export default function LoginPromptModal({ open, context = "default", onAuth = (
             style={{ background: "none", border: "none", padding: 0, color: "#111", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 900, letterSpacing: 1, textDecoration: "underline", cursor: "pointer" }}>LOG IN</button>
         </p>
         <button onClick={onClose}
-          style={{ background: "none", border: "none", padding: 0, color: "#999", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 800, letterSpacing: 2, cursor: "pointer" }}>CANCEL</button>
+          style={{ background: "none", border: "none", padding: 0, color: "#6b6b6b", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 800, letterSpacing: 2, cursor: "pointer" }}>CANCEL</button>
       </div>
     </div>
   );

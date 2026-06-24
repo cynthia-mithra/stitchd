@@ -3729,13 +3729,13 @@ export default function App() {
             <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,letterSpacing:1}}>NOTIFICATIONS</span>
             <div style={{display:"flex",gap:12,alignItems:"center"}}>
               {unreadNotifs>0&&<button style={{background:"none",border:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:1,color:"#FF1493",cursor:"pointer"}} onClick={markAllRead}>MARK ALL READ</button>}
-              <button style={{background:"none",border:"none",fontSize:16,cursor:"pointer",fontWeight:900,color:"#999"}} onClick={()=>setShowNotifs(false)}>✕</button>
+              <button style={{background:"none",border:"none",fontSize:16,cursor:"pointer",fontWeight:900,color:"#6b6b6b"}} onClick={()=>setShowNotifs(false)}>✕</button>
             </div>
           </div>
           {notifications.length===0?(
             <div style={{padding:"32px",textAlign:"center"}}>
-              <p style={{display:"flex",justifyContent:"center",marginBottom:8}}><Bell width={28} height={28} color="#ccc"/></p>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#bbb"}}>NO NOTIFICATIONS YET</p>
+              <p style={{display:"flex",justifyContent:"center",marginBottom:8}}><Bell width={28} height={28} color="#808080"/></p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#6f6f6f"}}>NO NOTIFICATIONS YET</p>
             </div>
           ):(
             <div style={{maxHeight:400,overflowY:"auto"}}>
@@ -3747,7 +3747,7 @@ export default function App() {
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:n.read?600:900,color:"#111",marginBottom:2}}>{n.title}</p>
                       {n.body&&<p style={{fontSize:12,color:"#888",lineHeight:1.4}}>{n.body}</p>}
                     </div>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:0.5,whiteSpace:"nowrap",flexShrink:0}}>{new Date(n.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}).toUpperCase()}</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#6f6f6f",letterSpacing:0.5,whiteSpace:"nowrap",flexShrink:0}}>{new Date(n.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}).toUpperCase()}</span>
                   </div>
                 </div>
               ))}
@@ -3808,7 +3808,7 @@ export default function App() {
                   <>
                     {/* Original subtotal (struck through) → per-seller discount lines
                         (teal) → discounted total (bold). */}
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:700,letterSpacing:1,color:"#999"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:700,letterSpacing:1,color:"#6b6b6b"}}>
                       <span>SUBTOTAL</span>
                       <span style={{textDecoration:"line-through"}}>{currencySymbol()}{bagTotal.toFixed(2)}</span>
                     </div>
@@ -3844,7 +3844,7 @@ export default function App() {
                   const pick=(key,opt)=>setBagShipping(prev=>({...prev,[key]:opt}));
                   return(
                   <>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,letterSpacing:2,color:"#999",margin:"4px 0 10px"}}>{multi?"CHOOSE DELIVERY FOR EACH SELLER":"HOW WOULD YOU LIKE IT DELIVERED?"}</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,letterSpacing:2,color:"#6b6b6b",margin:"4px 0 10px"}}>{multi?"CHOOSE DELIVERY FOR EACH SELLER":"HOW WOULD YOU LIKE IT DELIVERED?"}</p>
                     {bagSellerGroups.map(group=>{
                       const chosen=bagShipping[group.key];
                       return(
@@ -3945,7 +3945,7 @@ export default function App() {
                     </div>
                   </div>
                   <div style={{marginBottom:24}}>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12,display:"inline-flex",alignItems:"center",gap:6}}><Mail width={16} height={16}/> DELIVERY ADDRESS</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:12,display:"inline-flex",alignItems:"center",gap:6}}><Mail width={16} height={16}/> DELIVERY ADDRESS</p>
                     {!showAddressForm&&deliveryAddress.line1?(
                       <div style={{border:"2px solid #34C759",padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                         <div>
@@ -3968,7 +3968,7 @@ export default function App() {
                     )}
                   </div>
                   <div style={{marginBottom:24}}>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12,display:"inline-flex",alignItems:"center",gap:6}}><Package width={16} height={16}/> CHOOSE YOUR DELIVERY</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:12,display:"inline-flex",alignItems:"center",gap:6}}><Package width={16} height={16}/> CHOOSE YOUR DELIVERY</p>
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
                       {POSTAGE_OPTIONS.map(carrier=>(
                         <div key={carrier.id}>
@@ -4029,7 +4029,7 @@ export default function App() {
                       <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:"#111"}}>{sym}{totalAmount}</span>
                     </div>
                   </div>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:12}}>PAY WITH</p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:12}}>PAY WITH</p>
                   <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
                     <button className="hbtn" style={{...S.hBtn,background:"#111",border:"none",width:"100%",padding:"14px",fontSize:14,letterSpacing:1,display:"flex",alignItems:"center",justifyContent:"center",gap:10}} onClick={()=>setPaymentStep("card")}>
                       <Wallet width={18} height={18}/> APPLE PAY / GOOGLE PAY
@@ -4038,16 +4038,16 @@ export default function App() {
                       <CreditCard width={18} height={18}/> PAY BY CARD
                     </button>
                   </div>
-                  <p style={{fontSize:11,color:"#bbb",textAlign:"center",lineHeight:1.6}}><Lock width={12} height={12} style={{verticalAlign:"middle"}}/> Payments are processed securely via Stripe.<br/>Seller will be notified immediately after payment.</p>
+                  <p style={{fontSize:11,color:"#6f6f6f",textAlign:"center",lineHeight:1.6}}><Lock width={12} height={12} style={{verticalAlign:"middle"}}/> Payments are processed securely via Stripe.<br/>Seller will be notified immediately after payment.</p>
                 </>
               )}
               {paymentStep==="card"&&(
                 <div style={{marginTop:16}}>
                   <button style={{...S.back,marginBottom:16}} onClick={()=>setPaymentStep("summary")}>← back</button>
                   <div style={{padding:24,border:"2px solid #f0f0f0",marginBottom:16}}>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:16}}>CARD DETAILS</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:16}}>CARD DETAILS</p>
                     <div id="stripe-card-element" style={{padding:"14px",border:"2px solid #e0e0e0",marginBottom:16,minHeight:44}}/>
-                    <p style={{fontSize:12,color:"#bbb",marginBottom:16}}><Lightbulb width={14} height={14} style={{verticalAlign:"middle"}}/> In test mode, use card number <strong>4242 4242 4242 4242</strong>, any future date, any CVC.</p>
+                    <p style={{fontSize:12,color:"#6f6f6f",marginBottom:16}}><Lightbulb width={14} height={14} style={{verticalAlign:"middle"}}/> In test mode, use card number <strong>4242 4242 4242 4242</strong>, any future date, any CVC.</p>
                     <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",width:"100%",padding:"14px",fontSize:14,letterSpacing:2}}
                       onClick={async()=>{
                         if(!window.Stripe){ const s=document.createElement("script"); s.src="https://js.stripe.com/v3/"; await new Promise(r=>{s.onload=r;document.head.appendChild(s);}); }
@@ -4086,7 +4086,7 @@ export default function App() {
               <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={closeReviewModal}>✕</button>
             </div>
             <div style={{marginBottom:20}}>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:10}}>RATING</p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:10}}>RATING</p>
               <div style={{display:"flex",gap:8}}>
                 {[1,2,3,4,5].map(n=>(
                   <button key={n} type="button" style={{background:"none",border:"none",cursor:"pointer",padding:0,lineHeight:0,color:"#FF9500",opacity:n<=reviewForm.rating?1:0.25}} onClick={()=>setReviewForm(f=>({...f,rating:n}))}><Star width={28} height={28} fill="currentColor"/></button>
@@ -4094,7 +4094,7 @@ export default function App() {
               </div>
             </div>
             <div style={{marginBottom:20}}>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:10}}>COMMENT (OPTIONAL)</p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:10}}>COMMENT (OPTIONAL)</p>
               <textarea style={{...S.inp,height:90,resize:"vertical",width:"100%"}} placeholder="Tell others about this seller..." value={reviewForm.comment} onChange={e=>setReviewForm(f=>({...f,comment:e.target.value}))}/>
             </div>
             <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"14px",fontSize:14,borderRadius:0,letterSpacing:3}} onClick={submitReview}>SUBMIT REVIEW →</button>
@@ -4227,7 +4227,7 @@ export default function App() {
 
             {/* Filter summary being saved */}
             <div style={{border:"2px solid #111",borderRadius:0,background:"#fafafa",padding:"12px 14px",marginBottom:18}}>
-              <div style={{fontSize:10,fontWeight:900,letterSpacing:2,color:"#bbb",marginBottom:4}}>SAVING</div>
+              <div style={{fontSize:10,fontWeight:900,letterSpacing:2,color:"#6f6f6f",marginBottom:4}}>SAVING</div>
               <div style={{fontSize:16,fontWeight:800,color:"#111",letterSpacing:0.3,lineHeight:1.3}}>{summary}</div>
             </div>
 
@@ -4240,7 +4240,7 @@ export default function App() {
             </button>
 
             <button type="button" onClick={confirmSaveSearch} disabled={savingSearch} style={{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px",fontSize:15,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",cursor:savingSearch?"not-allowed":"pointer",opacity:savingSearch?0.5:1,textTransform:"uppercase"}}>{savingSearch?"SAVING…":"SAVE"}</button>
-            <button type="button" onClick={()=>setShowSaveSearch(false)} style={{display:"block",margin:"14px auto 0",background:"none",border:"none",color:"#999",fontSize:13,fontWeight:800,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase"}}>Cancel</button>
+            <button type="button" onClick={()=>setShowSaveSearch(false)} style={{display:"block",margin:"14px auto 0",background:"none",border:"none",color:"#6b6b6b",fontSize:13,fontWeight:800,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase"}}>Cancel</button>
           </div>
         </div>
         );
@@ -4386,7 +4386,7 @@ export default function App() {
                     </button>
                   )}
                 </div>
-                <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#999",marginTop:4}}>Items are not reserved — buy before they're gone</p>
+                <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#6b6b6b",marginTop:4}}>Items are not reserved — buy before they're gone</p>
               </div>
 
               {wishlistItems.length===0?(
@@ -4394,7 +4394,7 @@ export default function App() {
                 <div style={{textAlign:"center",padding:"60px 20px"}}>
                   <p style={{display:"flex",justifyContent:"center",marginBottom:16}}><Heart width={64} height={64} color="#ddd"/></p>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,letterSpacing:-0.5,marginBottom:8}}>YOUR WISHLIST IS EMPTY</p>
-                  <p style={{fontFamily:"'Barlow',sans-serif",fontSize:14,color:"#999",marginBottom:24}}>Save items you love and come back to them later</p>
+                  <p style={{fontFamily:"'Barlow',sans-serif",fontSize:14,color:"#6b6b6b",marginBottom:24}}>Save items you love and come back to them later</p>
                   <button className="hbtn" style={{...S.hBtn,fontSize:14,padding:"14px 28px"}} onClick={()=>setView("shop")}>BROWSE LISTINGS →</button>
                 </div>
               ):(
@@ -4422,14 +4422,14 @@ export default function App() {
                     </div>
                   )}
                   {liveWishlist.length===0&&soldWishlist.length>0&&(
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#bbb",letterSpacing:1,padding:"8px 0 4px"}}>Every saved piece has sold — see below.</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#6f6f6f",letterSpacing:1,padding:"8px 0 4px"}}>Every saved piece has sold — see below.</p>
                   )}
 
                   {/* ALREADY SOLD */}
                   {soldWishlist.length>0&&(
                     <div style={{marginTop:56,paddingTop:28,borderTop:"3px solid #111"}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap",marginBottom:24}}>
-                        <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,letterSpacing:-0.5,color:"#999"}}>ALREADY SOLD</h3>
+                        <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,letterSpacing:-0.5,color:"#6b6b6b"}}>ALREADY SOLD</h3>
                         <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={clearSoldWishlist}>CLEAR ALL SOLD ITEMS</button>
                       </div>
                       <div style={S.grid} className="shop-grid">
@@ -4443,9 +4443,9 @@ export default function App() {
                                 <button aria-label="Remove from wishlist" title="Remove from wishlist" style={{position:"absolute",top:12,right:12,background:"#fff",border:"2px solid #111",borderRadius:0,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:6,padding:0}} onClick={e=>{e.stopPropagation();toggleFavourite(item);}}><X width={16} height={16} color="#111"/></button>
                               </Thumb>
                               <div style={S.cardBody}>
-                                <p style={{...S.cardCatLabel,color:"#999"}}>{item.category?.toUpperCase()}</p>
+                                <p style={{...S.cardCatLabel,color:"#6b6b6b"}}>{item.category?.toUpperCase()}</p>
                                 <p style={S.cardName}>{item.name}</p>
-                                <p style={{fontFamily:"'Barlow',sans-serif",fontSize:12,color:"#999",margin:"4px 0 12px"}}>This item has been sold</p>
+                                <p style={{fontFamily:"'Barlow',sans-serif",fontSize:12,color:"#6b6b6b",margin:"4px 0 12px"}}>This item has been sold</p>
                                 <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:"auto"}}>
                                   <button className="hbtn" style={{...S.hBtn,flex:1,minWidth:120,background:"#fff",color:"#111",border:"2px solid #111",justifyContent:"center",textAlign:"center"}} onClick={()=>findSimilar(item)}>FIND SIMILAR</button>
                                   <button className="hbtn" style={{...S.hBtn,flex:1,minWidth:90,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",justifyContent:"center",textAlign:"center"}} onClick={()=>toggleFavourite(item)}>REMOVE</button>
@@ -4515,7 +4515,7 @@ export default function App() {
                 <div style={{padding:"40px 24px",textAlign:"center"}}>
                   <p style={{display:"flex",justifyContent:"center",marginBottom:12}}><span style={{width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,#fff0f8,#e6fffb)",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center"}}><MessageCircle width={26} height={26} color="#FF1493"/></span></p>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#111",letterSpacing:1}}>NO MESSAGES YET</p>
-                  <p style={{fontFamily:"'Barlow',sans-serif",fontSize:12,color:"#aaa",marginTop:4}}>Buyers & sellers you chat with show up here.</p>
+                  <p style={{fontFamily:"'Barlow',sans-serif",fontSize:12,color:"#6e6e6e",marginTop:4}}>Buyers & sellers you chat with show up here.</p>
                 </div>
               ):(
                 conversations.map(conv=>{
@@ -4550,7 +4550,7 @@ export default function App() {
                 <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:14,background:"#fcfcfc",backgroundImage:"radial-gradient(rgba(17,17,17,0.05) 1px, transparent 1px)",backgroundSize:"18px 18px"}}>
                   <span style={{width:72,height:72,borderRadius:"50%",background:"linear-gradient(135deg,#FF1493,#00E5CC)",border:"3px solid #111",display:"flex",alignItems:"center",justifyContent:"center"}}><Mail width={32} height={32} color="#fff"/></span>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:19,fontWeight:900,letterSpacing:1.5,color:"#111"}}>SELECT A CONVERSATION</p>
-                  <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#aaa",marginTop:-6}}>Pick a chat on the left to start talking.</p>
+                  <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#6e6e6e",marginTop:-6}}>Pick a chat on the left to start talking.</p>
                 </div>
               ):(()=>{
                 const otherId=activeConv.buyer_id===user.id?activeConv.seller_id:activeConv.buyer_id;
@@ -4569,10 +4569,10 @@ export default function App() {
                     </div>
                     <div id="chat-messages" style={S.chatMessages}>
                       {messages.length===0&&(
-                        <div style={{textAlign:"center",padding:"32px 16px",color:"#bbb"}}>
+                        <div style={{textAlign:"center",padding:"32px 16px",color:"#6f6f6f"}}>
                           <p style={{display:"flex",justifyContent:"center",marginBottom:8}}><MessageCircle width={30} height={30} color="#ddd"/></p>
-                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,letterSpacing:0.5,color:"#bbb"}}>This is the start of your conversation with {otherProfile?.full_name||otherProfile?.username||"this seller"}.</p>
-                          <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#ccc",marginTop:4}}>Say hello</p>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,letterSpacing:0.5,color:"#6f6f6f"}}>This is the start of your conversation with {otherProfile?.full_name||otherProfile?.username||"this seller"}.</p>
+                          <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#808080",marginTop:4}}>Say hello</p>
                         </div>
                       )}
                       {messages.map((msg,mi)=>{
@@ -4586,7 +4586,7 @@ export default function App() {
                         const showDay=mi===0||msgDayLabel(messages[mi-1].created_at)!==dl;
                         return(
                           <React.Fragment key={msg.id}>
-                          {showDay&&<div style={{textAlign:"center",margin:"6px 0 14px"}}><span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:2,color:"#bbb",background:"#f0f0f0",padding:"3px 12px",borderRadius:10}}>{dl}</span></div>}
+                          {showDay&&<div style={{textAlign:"center",margin:"6px 0 14px"}}><span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:2,color:"#6f6f6f",background:"#f0f0f0",padding:"3px 12px",borderRadius:10}}>{dl}</span></div>}
                           <div style={{display:"flex",justifyContent:isMine?"flex-end":"flex-start",marginBottom:12}}>
                             {isOffer?(
                               <div style={{...S.offerCard,border:`2px solid ${msg.offer_status==="accepted"?"#34C759":msg.offer_status==="declined"?"#FF3B30":"#FF1493"}`,maxWidth:"80%"}}>
@@ -4625,7 +4625,7 @@ export default function App() {
                     </div>
                     {activeConv&&user.id===activeConv.buyer_id&&listing&&!listing.sold&&(
                       <div style={S.offerBar}>
-                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:2,color:"#999"}}>SEND OFFER:</span>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:2,color:"#6b6b6b"}}>SEND OFFER:</span>
                         {[10,20,30].map(pct=>{
                           const amt=parseFloat((listing.price*(1-pct/100)).toFixed(2));
                           return(<button key={pct} className="hbtn" style={{...S.hBtn,background:"#fff0f8",color:"#FF1493",border:"1.5px solid #FF149366",padding:"6px 14px",fontSize:11}} onClick={()=>sendOffer(pct)}>{pct}% OFF · {currencySymbol(listing.currency)}{amt}</button>);
@@ -4956,7 +4956,7 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#999",marginTop:8,letterSpacing:0.5}}>{form.imagePreviews.length} / {MAX_LISTING_IMAGES} photos added</p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#6b6b6b",marginTop:8,letterSpacing:0.5}}>{form.imagePreviews.length} / {MAX_LISTING_IMAGES} photos added</p>
               <input id="img-input" type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>addImageFiles(e.target.files)}/>
             </Sec>
             <Sec label="THE BASICS">
@@ -5005,7 +5005,7 @@ export default function App() {
               <Sec label="MEASUREMENTS">
                 <div style={{display:"flex",gap:20,marginBottom:18,flexWrap:"wrap"}}>
                   <div>
-                    <div style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,marginBottom:6}}>FOR</div>
+                    <div style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,marginBottom:6}}>FOR</div>
                     <div style={{display:"flex",gap:0}}>
                       {[["women","WOMEN"],["men","MEN"]].map(([g,l])=>(
                         <button key={g} type="button" className="hbtn" style={pillBtn(form.gender===g)} onClick={()=>setForm(f=>({...f,gender:g,garment_type:defaultGarmentFor(g,f.category),meas:{}}))}>{l}</button>
@@ -5013,7 +5013,7 @@ export default function App() {
                     </div>
                   </div>
                   <div>
-                    <div style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,marginBottom:6}}>UNITS</div>
+                    <div style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,marginBottom:6}}>UNITS</div>
                     <div style={{display:"flex",gap:0}}>
                       {[["cm","CM"],["inches","INCHES"]].map(([u,l])=>(
                         <button key={u} type="button" className="hbtn" style={pillBtn(form.meas_unit===u)} onClick={()=>setForm(f=>({...f,meas_unit:u}))}>{l}</button>
@@ -5064,7 +5064,7 @@ export default function App() {
                       <input style={{...S.inp,paddingLeft:26}} type="number" min="0" placeholder="e.g. 30" value={form.minimum_offer} onChange={e=>setForm(f=>({...f,minimum_offer:e.target.value}))}/>
                     </div>
                   </F>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#999",marginTop:6,letterSpacing:0.5}}>Buyers cannot offer below this amount.</p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#6b6b6b",marginTop:6,letterSpacing:0.5}}>Buyers cannot offer below this amount.</p>
                 </div>
               )}
             </Sec>

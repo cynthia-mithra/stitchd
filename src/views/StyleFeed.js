@@ -48,7 +48,7 @@ function PostCard({ post, profile, listingsMap, liked, likeCount, isOwn, openPro
         <Avatar profile={profile} onClick={() => post.user_id && openProfile(post.user_id)} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <p onClick={() => post.user_id && openProfile(post.user_id)} style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, color: "#111", letterSpacing: 0.5, lineHeight: 1.1, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{displayName(profile)}</p>
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#bbb" }}>{timeAgo(post.created_at)}</p>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#6f6f6f" }}>{timeAgo(post.created_at)}</p>
         </div>
       </div>
 
@@ -152,9 +152,9 @@ function CreatePostModal({ open, onClose, onShare, creating, searchActiveListing
             <img src={preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
             <div style={{ textAlign: "center", pointerEvents: "none", padding: "40px 20px" }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><Camera width={40} height={40} color="#bbb" /></div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><Camera width={40} height={40} color="#6f6f6f" /></div>
               <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 900, letterSpacing: 1, color: "#111", marginBottom: 4 }}>SHARE YOUR OUTFIT</p>
-              <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "#bbb" }}>JPG, PNG or WEBP · max {MAX_IMG_MB}MB</p>
+              <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "#6f6f6f" }}>JPG, PNG or WEBP · max {MAX_IMG_MB}MB</p>
             </div>
           )}
         </div>
@@ -164,12 +164,12 @@ function CreatePostModal({ open, onClose, onShare, creating, searchActiveListing
         {/* STEP 2 — caption */}
         <div style={{ marginBottom: 20 }}>
           <textarea value={caption} maxLength={MAX_CAPTION} onChange={e => setCaption(e.target.value)} placeholder="Tell us about your outfit..." style={{ ...S.inp, height: 90, resize: "vertical", width: "100%" }} />
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#bbb", textAlign: "right", marginTop: 4 }}>{caption.length} / {MAX_CAPTION}</p>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#6f6f6f", textAlign: "right", marginTop: 4 }}>{caption.length} / {MAX_CAPTION}</p>
         </div>
 
         {/* TAG LISTINGS */}
         <div style={{ marginBottom: 20 }}>
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 3, color: "#999", marginBottom: 10 }}>TAG LISTINGS ({tags.length}/{MAX_TAGS})</p>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 3, color: "#6b6b6b", marginBottom: 10 }}>TAG LISTINGS ({tags.length}/{MAX_TAGS})</p>
           <div style={{ ...S.searchBox, height: 44, marginBottom: 10 }}>
             <span style={S.searchIcon}><Search width={16} height={16} /></span>
             <input style={S.searchInput} placeholder="Tag listings from Stitch'd" value={query} onChange={e => runSearch(e.target.value)} />
@@ -178,7 +178,7 @@ function CreatePostModal({ open, onClose, onShare, creating, searchActiveListing
           {query.trim() && (
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: tags.length ? 14 : 0 }}>
               {results.length === 0 ? (
-                <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, color: "#bbb", letterSpacing: 1 }}>No matching listings.</p>
+                <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, color: "#6f6f6f", letterSpacing: 1 }}>No matching listings.</p>
               ) : results.map(l => {
                 const added = tags.some(t => t.id === l.id);
                 const full = tags.length >= MAX_TAGS;

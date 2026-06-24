@@ -51,7 +51,7 @@ export default function Wallet({
     return (
       <main style={{ ...S.main, maxWidth: 720 }}>
         <button style={S.back} onClick={() => setView("shop")}>← BACK</button>
-        <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 22, fontWeight: 800, color: "#bbb", padding: "40px 0" }}>Sign in to view your wallet.</p>
+        <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 22, fontWeight: 800, color: "#6f6f6f", padding: "40px 0" }}>Sign in to view your wallet.</p>
       </main>
     );
   }
@@ -123,7 +123,7 @@ export default function Wallet({
             </div>
           </div>
           {amtError && <p style={{ fontSize: 13, color: PINK, fontWeight: 700, marginTop: 8 }}>{amtError}</p>}
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, color: "#bbb", letterSpacing: 0.5, marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, color: "#6f6f6f", letterSpacing: 0.5, marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
             <Check width={13} height={13} /> Bank connected · funds arrive in 2–7 business days
           </p>
         </div>
@@ -153,7 +153,7 @@ export default function Wallet({
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, color: "#111", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.description || (credit ? "Sale earnings" : "Withdrawal")}</p>
-                  <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, color: "#999", letterSpacing: 0.5, margin: "2px 0 0", display: "flex", alignItems: "center", gap: 6 }}>
+                  <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, color: "#6b6b6b", letterSpacing: 0.5, margin: "2px 0 0", display: "flex", alignItems: "center", gap: 6 }}>
                     {new Date(t.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                     {pending && <span style={{ color: "#FF9500", display: "inline-flex", alignItems: "center", gap: 3 }}><Clock width={11} height={11} /> {t.type === "sale" ? "AWAITING BUYER" : "PENDING"}</span>}
                     {disputed && <span style={{ color: "#FF9500", display: "inline-flex", alignItems: "center", gap: 3 }}><AlertTriangle width={11} height={11} /> ON HOLD (DISPUTE)</span>}

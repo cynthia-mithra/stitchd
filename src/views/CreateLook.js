@@ -78,8 +78,8 @@ export default function CreateLook({
                     <img src={lookForm.coverPreview || lookForm.cover_image_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <div style={{ textAlign: "center", pointerEvents: "none" }}>
-                      <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><Camera width={24} height={24} color="#bbb" /></div>
-                      <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: "#bbb" }}>ADD COVER</p>
+                      <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><Camera width={24} height={24} color="#6f6f6f" /></div>
+                      <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: "#6f6f6f" }}>ADD COVER</p>
                     </div>
                   )}
                 </div>
@@ -103,7 +103,7 @@ export default function CreateLook({
               {lookSearch.trim().length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
                   {lookSearchResults.length === 0 ? (
-                    <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, color: "#bbb", letterSpacing: 1 }}>No matching listings.</p>
+                    <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, color: "#6f6f6f", letterSpacing: 1 }}>No matching listings.</p>
                   ) : lookSearchResults.map(item => {
                     const added = inLook(item.id);
                     const full = items.length >= MAX_ITEMS;
@@ -126,7 +126,7 @@ export default function CreateLook({
 
             <Sec label={`IN THIS LOOK (${items.length})`}>
               {items.length === 0 ? (
-                <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, color: "#bbb", letterSpacing: 1 }}>Search above and add at least {MIN_ITEMS} pieces.</p>
+                <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, color: "#6f6f6f", letterSpacing: 1 }}>Search above and add at least {MIN_ITEMS} pieces.</p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {items.map(item => (

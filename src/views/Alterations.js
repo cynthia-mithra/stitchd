@@ -29,9 +29,9 @@ const STATUS_STYLE = {
   pending:   {background:INK,  color:"#fff"},
   quoted:    {background:TEAL, color:INK},
   accepted:  {background:PINK, color:"#fff"},
-  declined:  {background:"#e6e6e6", color:"#999"},
+  declined:  {background:"#e6e6e6", color:"#6b6b6b"},
   completed: {background:INK,  color:"#fff"},
-  cancelled: {background:"#e6e6e6", color:"#999"},
+  cancelled: {background:"#e6e6e6", color:"#6b6b6b"},
   disputed:  {background:"#FF9500", color:"#fff"},
 };
 export function StatusBadge({ status }) {
@@ -118,23 +118,23 @@ export function RequestAlterationModal({
               })}
             </div>
             <div>
-              <label style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>ADDITIONAL NOTES * ({notes.length}/500)</label>
+              <label style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>ADDITIONAL NOTES * ({notes.length}/500)</label>
               <textarea style={{...S.inp,height:110,resize:"vertical"}} maxLength={500} placeholder="Describe what you need in detail..." value={notes} onChange={e=>setNotes(e.target.value.slice(0,500))}/>
             </div>
             <div>
-              <label style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>YOUR BUDGET (OPTIONAL)</label>
+              <label style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>YOUR BUDGET (OPTIONAL)</label>
               <div style={{display:"flex",alignItems:"center",border:"2px solid #e0e0e0"}}>
                 <span style={{padding:"0 12px",fontSize:16,fontWeight:800,color:"#111"}}>£</span>
                 <input style={{...S.inp,border:"none",borderLeft:"2px solid #e0e0e0"}} type="number" min="0" placeholder="50" value={budget} onChange={e=>setBudget(e.target.value)}/>
               </div>
             </div>
             <div>
-              <label style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>PREFERRED START DATE (OPTIONAL)</label>
+              <label style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>PREFERRED START DATE (OPTIONAL)</label>
               <input style={S.inp} type="date" min={todayISO} value={preferredDate} onChange={e=>setPreferredDate(e.target.value)}/>
-              <p style={{fontSize:11,color:"#aaa",marginTop:5}}>If your tailor publishes a calendar, you can fine-tune this to an available date next.</p>
+              <p style={{fontSize:11,color:"#6e6e6e",marginTop:5}}>If your tailor publishes a calendar, you can fine-tune this to an available date next.</p>
             </div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
-              <button onClick={onClose} style={{background:"none",border:"none",padding:0,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,cursor:"pointer"}}>CANCEL</button>
+              <button onClick={onClose} style={{background:"none",border:"none",padding:0,color:"#6b6b6b",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,cursor:"pointer"}}>CANCEL</button>
               <button className="hbtn" disabled={!step1Valid}
                 style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px 32px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:step1Valid?"pointer":"not-allowed",opacity:step1Valid?1:0.4}}
                 onClick={()=>setStep(2)}>NEXT →</button>
@@ -151,8 +151,8 @@ export function RequestAlterationModal({
             </div>
             {shownTailors.length===0?(
               <div style={{textAlign:"center",padding:"40px 20px",border:"3px dashed #e0e0e0"}}>
-                <div style={{display:"flex",justifyContent:"center",marginBottom:10}}><Scissors width={40} height={40} color="#ccc"/></div>
-                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#bbb"}}>NO TAILORS AVAILABLE YET</p>
+                <div style={{display:"flex",justifyContent:"center",marginBottom:10}}><Scissors width={40} height={40} color="#808080"/></div>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#6f6f6f"}}>NO TAILORS AVAILABLE YET</p>
               </div>
             ):(
               <div style={{display:"flex",flexDirection:"column",gap:10,maxHeight:"42vh",overflowY:"auto"}}>
@@ -169,7 +169,7 @@ export function RequestAlterationModal({
                         <div style={{display:"flex",alignItems:"center",gap:8,marginTop:3,flexWrap:"wrap"}}>
                           <RatingChip average={t.average_rating} count={t.review_count} size={12}/>
                           {t.price_from_pence!=null&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:PINK}}>From £{poundsFromPence(t.price_from_pence)}</span>}
-                          {t.turnaround_days&&<span style={{fontSize:11,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700}}>{t.turnaround_days} days</span>}
+                          {t.turnaround_days&&<span style={{fontSize:11,color:"#6b6b6b",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700}}>{t.turnaround_days} days</span>}
                         </div>
                         <button onClick={()=>openTailorProfile(t.id)} style={{background:"none",border:"none",padding:0,marginTop:4,color:"#111",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:1,textDecoration:"underline",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}><ExternalLink width={11} height={11}/> VIEW PROFILE</button>
                       </div>
@@ -215,7 +215,7 @@ export function RequestAlterationModal({
                 calendar. Tapping an available day sets the preferred start date. */}
             {tailor.availability_enabled&&(
               <div>
-                <label style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"flex",alignItems:"center",gap:6,marginBottom:8}}><Calendar width={13} height={13}/> PICK AN AVAILABLE START DATE (OPTIONAL)</label>
+                <label style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",display:"flex",alignItems:"center",gap:6,marginBottom:8}}><Calendar width={13} height={13}/> PICK AN AVAILABLE START DATE (OPTIONAL)</label>
                 <MiniAvailabilityPicker tailor={tailor} rows={tailorAvail} selected={preferredDate} onSelect={setPreferredDate}/>
               </div>
             )}
@@ -227,7 +227,7 @@ export function RequestAlterationModal({
             </button>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <button className="hbtn" onClick={()=>setStep(2)} style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"12px 24px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><ArrowLeft width={14} height={14}/> BACK</button>
-              <button onClick={onClose} style={{background:"none",border:"none",padding:0,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,cursor:"pointer"}}>CANCEL</button>
+              <button onClick={onClose} style={{background:"none",border:"none",padding:0,color:"#6b6b6b",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,cursor:"pointer"}}>CANCEL</button>
             </div>
           </div>
         )}
@@ -239,7 +239,7 @@ export function RequestAlterationModal({
 function Summary({ label, children }) {
   return (
     <div>
-      <p style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5}}>{label}</p>
+      <p style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5}}>{label}</p>
       {children}
     </div>
   );
@@ -257,7 +257,7 @@ function MiniAvailabilityPicker({ tailor, rows = [], selected, onSelect = () => 
   return (
     <div style={{border:"2px solid #111"}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",borderBottom:"2px solid #111"}}>
-        {WEEKDAYS.map(w=><div key={w} style={{textAlign:"center",padding:"5px 0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:10,letterSpacing:1,color:"#999"}}>{w}</div>)}
+        {WEEKDAYS.map(w=><div key={w} style={{textAlign:"center",padding:"5px 0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:10,letterSpacing:1,color:"#6b6b6b"}}>{w}</div>)}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)"}}>
         {days.map((d,i)=>{
@@ -276,7 +276,7 @@ function MiniAvailabilityPicker({ tailor, rows = [], selected, onSelect = () => 
               <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:13,color:isSel?"#fff":(past?"#ccc":"#111")}}>{d.getDate()}</span>
               {!past&&(avail
                 ?<span style={{width:6,height:6,borderRadius:"50%",background:isSel?"#fff":"#16a34a"}}/>
-                :<span style={{fontSize:8,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,color:"#999"}}>OFF</span>)}
+                :<span style={{fontSize:8,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,color:"#6b6b6b"}}>OFF</span>)}
             </button>
           );
         })}
@@ -323,8 +323,8 @@ export default function Alterations({
         <div style={S.loadingWrap}><div style={S.spinner}/><p style={S.loadingText}>LOADING REQUESTS…</p></div>
       ):requests.length===0?(
         <div style={{textAlign:"center",padding:"70px 20px",border:"3px dashed #e0e0e0"}}>
-          <div style={{display:"flex",justifyContent:"center",marginBottom:14}}><Scissors width={48} height={48} color="#ccc"/></div>
-          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:"#bbb",marginBottom:18}}>NO ALTERATION REQUESTS YET</p>
+          <div style={{display:"flex",justifyContent:"center",marginBottom:14}}><Scissors width={48} height={48} color="#808080"/></div>
+          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:"#6f6f6f",marginBottom:18}}>NO ALTERATION REQUESTS YET</p>
           <button className="hbtn" onClick={onFindTailor}
             style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}><Scissors width={16} height={16}/> FIND A TAILOR</button>
         </div>
@@ -345,7 +345,7 @@ export default function Alterations({
                     <Thumb src={listingThumb(listing)} emoji={catEmoji(listing&&listing.category)} accent="#f5f5f5" style={{width:60,height:60,border:"2px solid #111",flexShrink:0}} emojiStyle={{fontSize:28}}/>
                     <div style={{minWidth:0}}>
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,lineHeight:1.1}}>{listing?listing.name:"Listing"}</p>
-                      <p style={{fontSize:12,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5,marginTop:2}}>SENT {fmtDate(req.created_at).toUpperCase()}</p>
+                      <p style={{fontSize:12,color:"#6b6b6b",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5,marginTop:2}}>SENT {fmtDate(req.created_at).toUpperCase()}</p>
                     </div>
                   </div>
                   <StatusBadge status={req.status}/>
@@ -381,7 +381,7 @@ export default function Alterations({
                       </div>
                     )}
                     {/* Commission note */}
-                    <p style={{fontSize:11,color:"#999"}}>Includes Stitch'd booking fee</p>
+                    <p style={{fontSize:11,color:"#6b6b6b"}}>Includes Stitch'd booking fee</p>
                     {/* ACCEPT AND PAY — black, full width */}
                     <button className="hbtn" disabled={checkingOut} onClick={()=>onAcceptQuote(req)}
                       style={{width:"100%",background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:15,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2.5,cursor:checkingOut?"wait":"pointer",opacity:checkingOut?0.6:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:10}}>

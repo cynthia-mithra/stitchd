@@ -90,7 +90,7 @@ export default function Shop({
   // full width on mobile (.shop-tab via media query) and auto width on desktop.
   const ShopTabs = () => (!user||newArrivals) ? null : (
     <div style={{maxWidth:1300,margin:"0 auto",padding:"28px 24px 0"}}>
-      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:3,color:"#999",textTransform:"uppercase",margin:"0 0 10px"}}>BROWSE</p>
+      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:3,color:"#6b6b6b",textTransform:"uppercase",margin:"0 0 10px"}}>BROWSE</p>
       {/* Self-contained segmented toggle — a bordered box split into two segments,
           active one filled pink. No full-width underline (which left a dangling
           line across the page). */}
@@ -254,7 +254,7 @@ export default function Shop({
             <span style={{display:"flex",alignItems:"center",gap:8}}>
               <WishCount item={item}/>
               <SellerRating sellerId={item.user_id}/>
-              {item.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,display:"inline-flex",alignItems:"center",gap:4}}><Eye width={12} height={12}/> {item.views}</span>}
+              {item.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#6f6f6f",letterSpacing:1,display:"inline-flex",alignItems:"center",gap:4}}><Eye width={12} height={12}/> {item.views}</span>}
             </span>
           </div>
         </div>
@@ -369,19 +369,19 @@ export default function Shop({
           <div style={{position:"absolute",top:"100%",left:10,width:"calc(100% - 20px)",maxWidth:560,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
             {showSavedSearches&&savedSearches.length>0&&!search&&(
               <>
-                <div style={{padding:"8px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:900,letterSpacing:2,color:"#bbb",borderBottom:"1px solid #f0f0f0"}}>SAVED SEARCHES</div>
+                <div style={{padding:"8px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:900,letterSpacing:2,color:"#6f6f6f",borderBottom:"1px solid #f0f0f0"}}>SAVED SEARCHES</div>
                 {savedSearches.map(s=>(
                   <div key={s.id} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderBottom:"1px solid #f5f5f5",cursor:"pointer",gap:10}}>
                     <span style={{display:"flex",alignItems:"center",color:"#FF1493"}}><Bookmark width={15} height={15} fill={s.email_alerts!==false?"#FF1493":"none"}/></span>
                     <span style={{flex:1,minWidth:0,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} onMouseDown={()=>applySavedSearch(s)}>{(s.name&&s.name.trim())||filterSummary(s.filters)||s.query}</span>
-                    <button style={{background:"none",border:"none",color:"#bbb",cursor:"pointer",fontSize:12,fontWeight:900,padding:"2px 6px"}} onClick={()=>deleteSavedSearch(s.id)}>✕</button>
+                    <button style={{background:"none",border:"none",color:"#6f6f6f",cursor:"pointer",fontSize:12,fontWeight:900,padding:"2px 6px"}} onClick={()=>deleteSavedSearch(s.id)}>✕</button>
                   </div>
                 ))}
               </>
             )}
             {showSuggestions&&searchSuggestions.map((s,i)=>(
               <div key={i} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderBottom:"1px solid #f5f5f5",cursor:"pointer",gap:10}} onMouseDown={()=>applySearch(s)}>
-                <span style={{display:"flex",alignItems:"center",color:"#bbb"}}><Search width={15} height={15}/></span>
+                <span style={{display:"flex",alignItems:"center",color:"#6f6f6f"}}><Search width={15} height={15}/></span>
                 <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#111"}}>{s}</span>
               </div>
             ))}
@@ -414,7 +414,7 @@ export default function Shop({
               <div style={S.filterLabel}>PRICE RANGE</div>
               <div style={{display:"flex",gap:10,alignItems:"center"}}>
                 <input style={{...S.inp,width:100}} type="number" placeholder="MIN" value={minPrice} onChange={e=>setMinPrice(e.target.value)}/>
-                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:"#bbb"}}>—</span>
+                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:"#6f6f6f"}}>—</span>
                 <input style={{...S.inp,width:100}} type="number" placeholder="MAX" value={maxPrice} onChange={e=>setMaxPrice(e.target.value)}/>
                 {hasFilters&&<button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"8px 14px"}} onClick={clearFilters}>CLEAR ALL</button>}
               </div>
@@ -430,7 +430,7 @@ export default function Shop({
           ALL LISTINGS tab (and logged-out / new-arrivals) shows the main grid. */}
       {followingActive ? <FollowingFeed/> : (
       <>
-      {hasFilters&&<div style={{padding:"12px 24px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:2,color:"#bbb",borderBottom:"1px solid #f0f0f0"}}>{visible.length} RESULT{visible.length!==1?"S":""}{search?` FOR "${search.toUpperCase()}"`:""}  <span style={{color:"#FF1493",cursor:"pointer",marginLeft:12}} onClick={clearFilters}>CLEAR</span></div>}
+      {hasFilters&&<div style={{padding:"12px 24px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:2,color:"#6f6f6f",borderBottom:"1px solid #f0f0f0"}}>{visible.length} RESULT{visible.length!==1?"S":""}{search?` FOR "${search.toUpperCase()}"`:""}  <span style={{color:"#FF1493",cursor:"pointer",marginLeft:12}} onClick={clearFilters}>CLEAR</span></div>}
 
       <div style={S.gridWrap}>
         {loading&&<SkeletonGrid/>}
@@ -520,7 +520,7 @@ export default function Shop({
                     <div style={S.cardFoot}>
                       <span style={{display:"flex",alignItems:"baseline"}}>
                         <span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span>
-                        {item.prev_price&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#bbb",textDecoration:"line-through",marginLeft:6}}>{currencySymbol(item.currency)}{item.prev_price}</span>}
+                        {item.prev_price&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#6f6f6f",textDecoration:"line-through",marginLeft:6}}>{currencySymbol(item.currency)}{item.prev_price}</span>}
                       </span>
                       <span style={{display:"flex",alignItems:"center",gap:8}}><WishCount item={item}/><SellerRating sellerId={item.user_id}/></span>
                     </div>

@@ -89,7 +89,7 @@ export function ReviewModal({ open, onClose, tailor, busy = false, onSubmit = ()
 
         {/* Comment (optional) */}
         <div style={{ marginBottom: 18 }}>
-          <label style={{ fontSize: 10, fontWeight: 800, color: "#999", letterSpacing: 1.5, textTransform: "uppercase", display: "block", marginBottom: 5 }}>
+          <label style={{ fontSize: 10, fontWeight: 800, color: "#6b6b6b", letterSpacing: 1.5, textTransform: "uppercase", display: "block", marginBottom: 5 }}>
             YOUR REVIEW (OPTIONAL) ({comment.length}/500)
           </label>
           <textarea
@@ -105,7 +105,7 @@ export function ReviewModal({ open, onClose, tailor, busy = false, onSubmit = ()
           {busy ? "SUBMITTING…" : "SUBMIT REVIEW"}
         </button>
         <button onClick={onClose} disabled={busy}
-          style={{ display: "block", margin: "14px auto 0", background: "none", border: "none", padding: 0, color: "#999", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 800, letterSpacing: 2, cursor: "pointer" }}>
+          style={{ display: "block", margin: "14px auto 0", background: "none", border: "none", padding: 0, color: "#6b6b6b", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 800, letterSpacing: 2, cursor: "pointer" }}>
           SKIP FOR NOW
         </button>
       </div>
@@ -132,7 +132,7 @@ export function RatingSummary({ reviews = [], average = null }) {
       <div style={{ textAlign: "center", flexShrink: 0 }}>
         <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 64, fontWeight: 900, lineHeight: 0.9, color: INK }}>{avg.toFixed(1)}</div>
         <div style={{ marginTop: 6 }}><Stars value={avg} size={18} /></div>
-        <div style={{ fontSize: 13, color: "#999", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, letterSpacing: 0.5, marginTop: 4 }}>
+        <div style={{ fontSize: 13, color: "#6b6b6b", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, letterSpacing: 0.5, marginTop: 4 }}>
           ({count} review{count === 1 ? "" : "s"})
         </div>
       </div>
@@ -179,13 +179,13 @@ export function ReviewList({ reviews = [], buyers = {} }) {
                 <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 900, lineHeight: 1.1 }}>{firstName(buyer)}</p>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 1 }}>
                   <Stars value={Number(rv.rating) || 0} size={13} />
-                  <span style={{ fontSize: 11, color: "#999", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700 }}>{timeAgo(rv.created_at)}</span>
+                  <span style={{ fontSize: 11, color: "#6b6b6b", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700 }}>{timeAgo(rv.created_at)}</span>
                 </div>
               </div>
             </div>
             {rv.comment && <p style={{ fontSize: 14, color: "#444", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{rv.comment}</p>}
             {garment && (
-              <p style={{ fontSize: 11, color: "#999", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>{garment} alteration</p>
+              <p style={{ fontSize: 11, color: "#6b6b6b", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>{garment} alteration</p>
             )}
           </div>
         );
@@ -204,7 +204,7 @@ export function ReviewList({ reviews = [], buyers = {} }) {
 // "No reviews yet" in grey when the tailor has none.
 export function RatingChip({ average = 0, count = 0, size = 12 }) {
   if (!count) {
-    return <span style={{ fontSize: 12, color: "#999", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700 }}>No reviews yet</span>;
+    return <span style={{ fontSize: 12, color: "#6b6b6b", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700 }}>No reviews yet</span>;
   }
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>

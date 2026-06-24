@@ -63,7 +63,7 @@ const ST = {
   },
   cardSub: {
     fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: 0.5,
-    color: "#999",
+    color: "#6b6b6b",
   },
   th: (active) => ({
     fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 1.5,
@@ -134,7 +134,7 @@ function EarningsChart({ buckets }) {
   const hasData = buckets.some(b => b.total > 0);
   if (!buckets.length || !hasData) {
     return (
-      <div style={{ border: "2px solid #111", padding: "48px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 1, color: "#bbb" }}>
+      <div style={{ border: "2px solid #111", padding: "48px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 1, color: "#6f6f6f" }}>
         NO SALES IN THIS PERIOD
       </div>
     );
@@ -266,7 +266,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
     <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
       {/* TIME PERIOD FILTER */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 3, color: "#bbb", marginRight: 4 }}>PERIOD</span>
+        <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 900, letterSpacing: 3, color: "#6f6f6f", marginRight: 4 }}>PERIOD</span>
         {PERIODS.map(([v, l]) => (
           <button key={v} className="hbtn" style={ST.filterBtn(period === v)} onClick={() => setPeriod(v)}>{l}</button>
         ))}
@@ -294,7 +294,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
       <div>
         <div style={ST.sectionLabel}>SALES BY CATEGORY</div>
         {catRows.length === 0 ? (
-          <div style={{ border: "2px solid #111", padding: "40px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 1, color: "#bbb" }}>
+          <div style={{ border: "2px solid #111", padding: "40px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 1, color: "#6f6f6f" }}>
             NO SALES IN THIS PERIOD
           </div>
         ) : (
@@ -316,7 +316,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
       <div>
         <div style={ST.sectionLabel}>LISTING PERFORMANCE</div>
         {rows.length === 0 ? (
-          <div style={{ border: "2px solid #111", padding: "40px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, color: "#bbb", letterSpacing: 1 }}>NO LISTINGS YET.</div>
+          <div style={{ border: "2px solid #111", padding: "40px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, color: "#6f6f6f", letterSpacing: 1 }}>NO LISTINGS YET.</div>
         ) : (
           <div style={{ border: "2px solid #111", overflowX: "auto" }}>
             <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 560 }}>
@@ -402,7 +402,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
                   <Stars value={rating.average} size={16} />
                 </span>
               ) : (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#bbb" }}>—<Star width={16} height={16} /></span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6f6f6f" }}>—<Star width={16} height={16} /></span>
               )
             }
             sub={rating && rating.count > 0 ? `from ${rating.count} review${rating.count === 1 ? "" : "s"}` : "no reviews yet"}
@@ -414,7 +414,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
       <div>
         <div style={ST.sectionLabel}>RECENT SALES</div>
         {recentSales.length === 0 ? (
-          <div style={{ border: "2px solid #111", padding: "40px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 1, color: "#bbb" }}>
+          <div style={{ border: "2px solid #111", padding: "40px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 1, color: "#6f6f6f" }}>
             NO SALES YET — YOUR SALES WILL APPEAR HERE
           </div>
         ) : (
@@ -431,7 +431,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
                   <div style={{ flex: 1, minWidth: 160 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
                       <span style={{ background: badge.background, color: badge.color, padding: "3px 9px", fontSize: 10, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Barlow Condensed',sans-serif" }}>{badge.label}</span>
-                      {dateStr && <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 700, color: "#bbb", letterSpacing: 1 }}>{dateStr}</span>}
+                      {dateStr && <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 700, color: "#6f6f6f", letterSpacing: 1 }}>{dateStr}</span>}
                     </div>
                     <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 900, color: "#111", lineHeight: 1.1 }}>{listing?.name || "Item"}</p>
                     <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 17, fontWeight: 900, color: "#FF1493" }}>{gbp(orderAmount(order))}</p>
@@ -452,7 +452,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
       <div>
         <div style={ST.sectionLabel}><Zap width={15} height={15} /> PROMOTIONS</div>
         {promotions.length === 0 ? (
-          <div style={{ border: "2px solid #111", padding: "40px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 1, color: "#bbb" }}>
+          <div style={{ border: "2px solid #111", padding: "40px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 1, color: "#6f6f6f" }}>
             NO PROMOTIONS YET — BOOST A LISTING FROM THE ACTIVE TAB
           </div>
         ) : (
@@ -477,7 +477,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
                       <span style={{ background: badge.background, color: badge.color, padding: "3px 9px", fontSize: 10, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Barlow Condensed',sans-serif", display: "inline-flex", alignItems: "center", gap: 4 }}><Zap width={11} height={11} fill="currentColor" /> {badge.label}</span>
                       {daysLeft != null && <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 800, color: "#FF1493", letterSpacing: 1 }}>{daysLeft} DAY{daysLeft === 1 ? "" : "S"} LEFT</span>}
-                      {dateStr && <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 700, color: "#bbb", letterSpacing: 1 }}>{dateStr}</span>}
+                      {dateStr && <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 700, color: "#6f6f6f", letterSpacing: 1 }}>{dateStr}</span>}
                     </div>
                     <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 900, color: "#111", lineHeight: 1.1 }}>{title}</p>
                     <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 800, color: "#FF1493" }}>{amount} · 7 days</p>

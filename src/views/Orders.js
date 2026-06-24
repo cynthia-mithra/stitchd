@@ -111,12 +111,12 @@ export default function Orders({
                 <div style={{ width: 72, height: 72, flexShrink: 0, border: "2px solid #111", background: "#f6f6f6", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {listing?.image_url || (listing?.images && listing.images[0])
                     ? <img src={listing.image_url || listing.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    : <Package width={26} height={26} color="#bbb" />}
+                    : <Package width={26} height={26} color="#6f6f6f" />}
                 </div>
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                     <span style={{ background: badge.background, color: badge.color, padding: "3px 10px", fontSize: 10, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Barlow Condensed',sans-serif" }}>{badge.label}</span>
-                    <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, color: "#bbb", letterSpacing: 1 }}>{isBuyer ? "BUYING" : "SELLING"}{dateStr ? ` · ${dateStr}` : ""}</span>
+                    <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, color: "#6f6f6f", letterSpacing: 1 }}>{isBuyer ? "BUYING" : "SELLING"}{dateStr ? ` · ${dateStr}` : ""}</span>
                   </div>
                   <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 900, marginBottom: 4 }}>{listing?.name || "Item"}</p>
                   <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, color: "#888", letterSpacing: 0.5, marginBottom: 2, display: "inline-flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -243,7 +243,7 @@ export default function Orders({
                       );
                     }
                     return (
-                      <p style={{ ...lblFont, marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0", fontSize: 11, color: "#bbb", letterSpacing: 0.5, display: "inline-flex", alignItems: "center", gap: 6 }}><Truck width={14} height={14} /> Tracking will appear here once the seller adds it.</p>
+                      <p style={{ ...lblFont, marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0", fontSize: 11, color: "#6f6f6f", letterSpacing: 0.5, display: "inline-flex", alignItems: "center", gap: 6 }}><Truck width={14} height={14} /> Tracking will appear here once the seller adds it.</p>
                     );
                   })()}
                 </div>

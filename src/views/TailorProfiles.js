@@ -46,7 +46,7 @@ function UploadTile({ preview, onPick, onClear, label="ADD PHOTO", height="100%"
         <button type="button" onClick={()=>ref.current&&ref.current.click()}
           style={{...S.uploadZone,width:"100%",height:"100%",minHeight:120}}>
           <div style={S.uploadPlaceholder}>
-            <div style={{display:"flex",justifyContent:"center",marginBottom:6}}><Plus width={22} height={22} color="#bbb"/></div>
+            <div style={{display:"flex",justifyContent:"center",marginBottom:6}}><Plus width={22} height={22} color="#6f6f6f"/></div>
             <span style={S.uploadText}>{label}</span>
           </div>
         </button>
@@ -115,7 +115,7 @@ export default function TailorProfiles({
           <div style={{maxWidth:1200,margin:"0 auto",padding:"32px 16px"}}>
             <div style={{display:"flex",gap:10,marginBottom:24,flexWrap:"wrap",alignItems:"stretch"}}>
               <div style={{flex:1,minWidth:200,display:"flex",alignItems:"center",border:"2px solid #111",background:"#fff"}}>
-                <span style={{padding:"0 12px",color:"#bbb",display:"flex",alignItems:"center"}}><Search width={16} height={16}/></span>
+                <span style={{padding:"0 12px",color:"#6f6f6f",display:"flex",alignItems:"center"}}><Search width={16} height={16}/></span>
                 <input style={{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,padding:"12px 0",background:"transparent"}} placeholder="SEARCH BY NAME OR LOCATION..." value={dirSearch} onChange={e=>setDirSearch(e.target.value)}/>
               </div>
             </div>
@@ -135,9 +135,9 @@ export default function TailorProfiles({
               });
               if(list.length===0) return (
                 <div style={{textAlign:"center",padding:"80px 20px",border:"3px dashed #e0e0e0"}}>
-                  <p style={{display:"flex",justifyContent:"center",marginBottom:16}}><Scissors width={64} height={64} color="#ccc"/></p>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:900,marginBottom:8,color:"#bbb"}}>NO TAILORS FOUND.</p>
-                  <p style={{fontSize:15,color:"#999",marginBottom:20}}>{(directoryTailors||[]).length?"Try a different search or specialism.":"Approved tailors will appear here soon."}</p>
+                  <p style={{display:"flex",justifyContent:"center",marginBottom:16}}><Scissors width={64} height={64} color="#808080"/></p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:900,marginBottom:8,color:"#6f6f6f"}}>NO TAILORS FOUND.</p>
+                  <p style={{fontSize:15,color:"#6b6b6b",marginBottom:20}}>{(directoryTailors||[]).length?"Try a different search or specialism.":"Approved tailors will appear here soon."}</p>
                   <button className="hbtn" style={{...S.hBtn,background:TEAL,border:"none",padding:"14px 28px",fontSize:14}} onClick={onBecomeTailor}>{becomeCtaLabel} →</button>
                 </div>
               );
@@ -156,7 +156,7 @@ export default function TailorProfiles({
                         {t.location&&<p style={{fontSize:13,color:"#888",display:"flex",alignItems:"center",gap:5,marginTop:4}}><MapPin width={13} height={13}/> {t.location}</p>}
                         {Number(t.review_count)>0&&(
                           <span style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:8,fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:"#111"}}>
-                            <Stars value={Number(t.average_rating)||0} size={13} color={PINK}/> <span style={{fontWeight:800}}>{(Number(t.average_rating)||0).toFixed(1)}</span> <span style={{color:"#999"}}>({t.review_count})</span>
+                            <Stars value={Number(t.average_rating)||0} size={13} color={PINK}/> <span style={{fontWeight:800}}>{(Number(t.average_rating)||0).toFixed(1)}</span> <span style={{color:"#6b6b6b"}}>({t.review_count})</span>
                           </span>
                         )}
                         {(t.specialisms||[]).length>0&&(
@@ -164,7 +164,7 @@ export default function TailorProfiles({
                             {t.specialisms.slice(0,3).map(s=>(
                               <span key={s} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:1,color:"#111",border:"1.5px solid #111",padding:"3px 8px"}}>{s.toUpperCase()}</span>
                             ))}
-                            {t.specialisms.length>3&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,color:"#999",padding:"3px 4px"}}>+{t.specialisms.length-3}</span>}
+                            {t.specialisms.length>3&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,color:"#6b6b6b",padding:"3px 4px"}}>+{t.specialisms.length-3}</span>}
                           </div>
                         )}
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"2px solid #f5f5f5",paddingTop:12,marginTop:"auto"}}>
@@ -246,7 +246,7 @@ export default function TailorProfiles({
                   <F l="FROM (£)"><input style={S.inp} type="number" min="0" placeholder="15" value={applyForm.price_from} onChange={e=>setApplyForm(f=>({...f,price_from:e.target.value}))}/></F>
                   <F l="TO (£)"><input style={S.inp} type="number" min="0" placeholder="80" value={applyForm.price_to} onChange={e=>setApplyForm(f=>({...f,price_to:e.target.value}))}/></F>
                 </div>
-                <p style={{fontSize:12,color:"#aaa",marginTop:6}}>Your typical price range for alterations</p>
+                <p style={{fontSize:12,color:"#6e6e6e",marginTop:6}}>Your typical price range for alterations</p>
               </div>
               <F l="TURNAROUND TIME">
                 <select style={S.inp} value={applyForm.turnaround_days||""} onChange={e=>setApplyForm(f=>({...f,turnaround_days:e.target.value?Number(e.target.value):null}))}>
@@ -284,7 +284,7 @@ export default function TailorProfiles({
                   <button type="button" onClick={()=>setApplyForm(fm=>({...fm,portfolio:[...(fm.portfolio||[]),{file:null,preview:"",caption:"",garment_type:""}]}))}
                     style={{...S.uploadZone,minHeight:150}}>
                     <div style={S.uploadPlaceholder}>
-                      <div style={{display:"flex",justifyContent:"center",marginBottom:6}}><Plus width={24} height={24} color="#bbb"/></div>
+                      <div style={{display:"flex",justifyContent:"center",marginBottom:6}}><Plus width={24} height={24} color="#6f6f6f"/></div>
                       <span style={S.uploadText}>ADD PORTFOLIO IMAGE</span>
                     </div>
                   </button>
@@ -409,8 +409,8 @@ export default function TailorProfiles({
               </div>
               {(tailorPortfolio||[]).length===0?(
                 <div style={{textAlign:"center",padding:"60px 20px",border:"3px dashed #e0e0e0"}}>
-                  <div style={{display:"flex",justifyContent:"center",marginBottom:12}}><Scissors width={48} height={48} color="#ccc"/></div>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#bbb"}}>NO PORTFOLIO IMAGES YET</p>
+                  <div style={{display:"flex",justifyContent:"center",marginBottom:12}}><Scissors width={48} height={48} color="#808080"/></div>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#6f6f6f"}}>NO PORTFOLIO IMAGES YET</p>
                 </div>
               ):(
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:14}}>
@@ -508,7 +508,7 @@ export default function TailorProfiles({
 function ReviewRow({ label, value }) {
   return (
     <div>
-      <p style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",marginBottom:3}}>{label}</p>
+      <p style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",marginBottom:3}}>{label}</p>
       <p style={{fontSize:14,color:"#111",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{value||"—"}</p>
     </div>
   );
@@ -518,7 +518,7 @@ function Placeholder({ title, text }) {
   return (
     <div style={{textAlign:"center",padding:"70px 20px",border:"3px dashed #e0e0e0"}}>
       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:3,color:PINK,marginBottom:10}}>{title}</p>
-      <p style={{fontSize:15,color:"#999",maxWidth:380,margin:"0 auto"}}>{text}</p>
+      <p style={{fontSize:15,color:"#6b6b6b",maxWidth:380,margin:"0 auto"}}>{text}</p>
     </div>
   );
 }
@@ -629,7 +629,7 @@ function AvailabilityTab({ tailor, rows = [], loading = false, busy = false, onT
         <button className="hbtn" disabled={busy} onClick={()=>onMarkRangeUnavailable(rangeDates(today,14))}
           style={{background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"12px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:busy?"wait":"pointer",display:"inline-flex",alignItems:"center",gap:8}}><Plane width={15} height={15}/> MARK NEXT 2 WEEKS UNAVAILABLE</button>
       </div>
-      <p style={{fontSize:12,color:"#999"}}>Tap a day to switch it between available and unavailable. Double-tap (or long-press) a day to set how many jobs you can take that day. Tap a week's <strong>W</strong> button to mark the whole week unavailable.</p>
+      <p style={{fontSize:12,color:"#6b6b6b"}}>Tap a day to switch it between available and unavailable. Double-tap (or long-press) a day to set how many jobs you can take that day. Tap a week's <strong>W</strong> button to mark the whole week unavailable.</p>
     </div>
   );
 }
@@ -664,7 +664,7 @@ function MonthCalendar({ monthDate, map, tailor, today, interactive = false, onT
       {/* Weekday header */}
       <div style={{display:"grid",gridTemplateColumns:`${interactive?"28px ":""}repeat(7,1fr)`,borderBottom:"2px solid #111"}}>
         {interactive&&<div style={{borderRight:"1px solid #eee"}}/>}
-        {WEEKDAYS.map(w=><div key={w} style={{textAlign:"center",padding:"6px 0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:11,letterSpacing:1,color:"#999"}}>{w}</div>)}
+        {WEEKDAYS.map(w=><div key={w} style={{textAlign:"center",padding:"6px 0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:11,letterSpacing:1,color:"#6b6b6b"}}>{w}</div>)}
       </div>
       {weeks.map((week,wi)=>{
         // Days in this week that are inside this month + today-or-future (week toggle targets).
@@ -701,7 +701,7 @@ function DayCell({ cell, map, tailor, today, interactive, publicMode, onToggle, 
 
   // Colours per the design system.
   let bg="#fff",color="#111",border="#111",label="";
-  if(st.state==="past"){ bg="#f0f0f0"; color="#bbb"; border="#e8e8e8"; }
+  if(st.state==="past"){ bg="#f0f0f0"; color="#6f6f6f"; border="#e8e8e8"; }
   else if(st.state==="unavailable"){ bg="#111"; color="#fff"; label="Unavailable"; }
   else if(st.state==="partial"){ bg=TEAL; color="#111"; label=st.slots===1?"1 slot left":`${st.slots} left`; }
   else { bg="#fff"; color="#111"; label=st.slots===1?"1 slot":`${st.slots} slots`; } // available
@@ -717,7 +717,7 @@ function DayCell({ cell, map, tailor, today, interactive, publicMode, onToggle, 
         <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:14,color:st.state==="past"?"#ccc":"#111"}}>{dayNum}</span>
         {st.state!=="past"&&(avail
           ?<span style={{width:7,height:7,borderRadius:"50%",background:"#16a34a"}}/>
-          :<span style={{fontSize:8,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:0.5,color:"#999"}}>OFF</span>)}
+          :<span style={{fontSize:8,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:0.5,color:"#6b6b6b"}}>OFF</span>)}
       </div>
     );
   }
@@ -882,7 +882,7 @@ function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuo
                     <div style={{minWidth:0}}>
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,lineHeight:1.1}}>{listing?listing.name:"Listing"}</p>
                       <p style={{fontSize:13,color:"#666",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,marginTop:2}}>From {firstName(buyer)}</p>
-                      <p style={{fontSize:11,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5,marginTop:1}}>RECEIVED {bkDate(req.created_at).toUpperCase()}</p>
+                      <p style={{fontSize:11,color:"#6b6b6b",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5,marginTop:1}}>RECEIVED {bkDate(req.created_at).toUpperCase()}</p>
                     </div>
                   </div>
                   <StatusBadge status={req.status}/>
@@ -895,7 +895,7 @@ function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuo
                 )}
                 {(req.additional_notes||req.description)&&(
                   <div>
-                    <p style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>NOTES</p>
+                    <p style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>NOTES</p>
                     <p style={{fontSize:14,color:"#444",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{req.additional_notes||req.description}</p>
                   </div>
                 )}
@@ -918,14 +918,14 @@ function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuo
                 {quoteFor===req.id?(
                   <div style={{border:"2px solid #00E5CC",background:"#effdfa",padding:14,display:"flex",flexDirection:"column",gap:12}}>
                     <div>
-                      <label style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>QUOTE AMOUNT *</label>
+                      <label style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>QUOTE AMOUNT *</label>
                       <div style={{display:"flex",alignItems:"center",border:"2px solid #e0e0e0",background:"#fff"}}>
                         <span style={{padding:"0 12px",fontSize:16,fontWeight:800,color:"#111"}}>£</span>
                         <input style={{...S.inp,border:"none",borderLeft:"2px solid #e0e0e0"}} type="number" min="0" placeholder="40" value={amount} onChange={e=>setAmount(e.target.value)}/>
                       </div>
                     </div>
                     <div>
-                      <label style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>MESSAGE TO BUYER (OPTIONAL)</label>
+                      <label style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:5}}>MESSAGE TO BUYER (OPTIONAL)</label>
                       <textarea style={{...S.inp,height:80,resize:"vertical"}} placeholder="Add a note about your quote…" value={message} onChange={e=>setMessage(e.target.value)}/>
                     </div>
                     <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
@@ -1050,7 +1050,7 @@ function TailorEarnings({ payouts = [] }) {
         <StatTile icon={<CheckCircle width={18} height={18}/>} label="TRANSFERRED" value={gbp(transferred)} accent={TEAL}/>
         <StatTile icon={<Scissors width={18} height={18}/>} label="COMMISSION PAID" value={gbp(totalCommission)} muted/>
       </div>
-      <p style={{fontSize:12,color:"#999"}}>Earnings are shown after Stitch'd's 15% commission. Pending payouts are transferred to your bank account once the buyer confirms completion.</p>
+      <p style={{fontSize:12,color:"#6b6b6b"}}>Earnings are shown after Stitch'd's 15% commission. Pending payouts are transferred to your bank account once the buyer confirms completion.</p>
 
       {/* Per-booking breakdown */}
       <div>
@@ -1073,7 +1073,7 @@ function TailorEarnings({ payouts = [] }) {
                     <Thumb src={bkListingThumb(listing)} emoji={catEmoji(listing&&listing.category)} accent="#f5f5f5" style={{width:46,height:46,border:"2px solid #111",flexShrink:0}} emojiStyle={{fontSize:22}}/>
                     <div style={{minWidth:0}}>
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,lineHeight:1.1}}>{name}</p>
-                      <p style={{fontSize:11,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5}}>{bkDate(when).toUpperCase()}</p>
+                      <p style={{fontSize:11,color:"#6b6b6b",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5}}>{bkDate(when).toUpperCase()}</p>
                       <p style={{fontSize:11.5,color:"#777",fontFamily:"'Barlow',sans-serif",marginTop:2}}>Gross {gbp(gross)} · Commission −{gbp(commission)}</p>
                     </div>
                   </div>
@@ -1093,7 +1093,7 @@ function TailorEarnings({ payouts = [] }) {
 function StatTile({ icon, label, value, accent="#111", muted=false }) {
   return (
     <div style={{border:"2px solid #111",padding:16,display:"flex",flexDirection:"column",gap:8}}>
-      <span style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase"}}>{icon} {label}</span>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase"}}>{icon} {label}</span>
       <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:muted?"#888":accent,lineHeight:1}}>{value}</span>
     </div>
   );
@@ -1127,7 +1127,7 @@ function PublicAvailability({ tailor, rows = [], selected, onSelect = () => {} }
   return (
     <div style={{border:"2px solid #111"}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",borderBottom:"2px solid #111"}}>
-        {WEEKDAYS.map(w=><div key={w} style={{textAlign:"center",padding:"6px 0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:11,letterSpacing:1,color:"#999"}}>{w}</div>)}
+        {WEEKDAYS.map(w=><div key={w} style={{textAlign:"center",padding:"6px 0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:11,letterSpacing:1,color:"#6b6b6b"}}>{w}</div>)}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)"}}>
         {days.map((d,i)=>{
@@ -1146,7 +1146,7 @@ function PublicAvailability({ tailor, rows = [], selected, onSelect = () => {} }
               <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:14,color:past?"#ccc":"#111"}}>{d.getDate()}</span>
               {!past&&(avail
                 ?<span style={{width:7,height:7,borderRadius:"50%",background:isSel?PINK:"#16a34a"}}/>
-                :<span style={{fontSize:8,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:0.3,color:"#999"}}>OFF</span>)}
+                :<span style={{fontSize:8,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:0.3,color:"#6b6b6b"}}>OFF</span>)}
             </button>
           );
         })}
@@ -1197,12 +1197,12 @@ function PublicProfile({ tailor, setView, onOpenImage, user, onGateAuth = () => 
             <>
               <Stars value={avgRating} size={16}/>
               <span style={{fontSize:14,color:"#111",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,letterSpacing:0.5}}>{avgRating.toFixed(1)}</span>
-              <span style={{fontSize:13,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5}}>({reviewCount} review{reviewCount===1?"":"s"})</span>
+              <span style={{fontSize:13,color:"#6b6b6b",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5}}>({reviewCount} review{reviewCount===1?"":"s"})</span>
             </>
           ):(
             <>
               <Stars value={0} size={16}/>
-              <span style={{fontSize:13,color:"#999",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1}}>No reviews yet</span>
+              <span style={{fontSize:13,color:"#6b6b6b",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:1}}>No reviews yet</span>
             </>
           )}
         </div>
@@ -1296,8 +1296,8 @@ function PublicProfile({ tailor, setView, onOpenImage, user, onGateAuth = () => 
             </div>
           ):(
             <div style={{textAlign:"center",padding:"40px 20px",border:"3px dashed #e0e0e0"}}>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#bbb",marginBottom:8}}>NO REVIEWS YET</p>
-              <p style={{fontSize:14,color:"#999",marginBottom:18}}>Be the first to work with this tailor</p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#6f6f6f",marginBottom:8}}>NO REVIEWS YET</p>
+              <p style={{fontSize:14,color:"#6b6b6b",marginBottom:18}}>Be the first to work with this tailor</p>
               <button className="hbtn"
                 style={{background:PINK,color:"#fff",border:"2px solid #111",borderRadius:0,padding:"14px 28px",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}
                 onClick={sendRequest}><Scissors width={16} height={16}/> REQUEST AN ALTERATION</button>
@@ -1325,7 +1325,7 @@ function Section({ heading, children }) {
 function InfoTile({ label, value, accent="#111" }) {
   return (
     <div style={{border:"2px solid #111",borderRadius:0,padding:"11px 18px",minWidth:118}}>
-      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:2,color:"#999",marginBottom:5}}>{label}</div>
+      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:5}}>{label}</div>
       <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:accent,lineHeight:1}}>{value}</div>
     </div>
   );

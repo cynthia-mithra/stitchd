@@ -39,13 +39,13 @@ export default function SavedSearches({
 
       {!user ? (
         <div style={{ ...S.empty, padding: "60px 20px" }}>
-          <p style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Bookmark width={48} height={48} color="#ccc" /></p>
+          <p style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Bookmark width={48} height={48} color="#808080" /></p>
           <p style={{ fontSize: 24, fontWeight: 900, margin: "0 0 18px", fontFamily: "'Barlow Condensed',sans-serif" }}>LOG IN TO VIEW SAVED SEARCHES</p>
           <button className="hbtn" style={S.hBtn} onClick={() => { setAuthMode("login"); setView("auth"); }}>LOG IN →</button>
         </div>
       ) : savedSearches.length === 0 ? (
         <div style={{ ...S.empty, padding: "60px 20px" }}>
-          <p style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Search width={48} height={48} color="#ccc" /></p>
+          <p style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Search width={48} height={48} color="#808080" /></p>
           <p style={{ fontSize: 26, fontWeight: 900, margin: "0 0 8px", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 0.5 }}>NO SAVED SEARCHES YET</p>
           <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 15, color: "#888", margin: "0 0 22px" }}>
             Save a search from the shop to get notified about new listings.
@@ -66,12 +66,12 @@ export default function SavedSearches({
                     {s.name && s.name.trim() && summary !== title && (
                       <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 700, color: "#888", margin: "4px 0 0", letterSpacing: 0.5 }}>{summary}</p>
                     )}
-                    <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 12, color: "#bbb", margin: "8px 0 0" }}>Saved {fmtDate(s.created_at)}</p>
+                    <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 12, color: "#6f6f6f", margin: "8px 0 0" }}>Saved {fmtDate(s.created_at)}</p>
                   </div>
                   <button
                     aria-label="Delete saved search"
                     onClick={() => deleteSavedSearch(s.id)}
-                    style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#bbb", flexShrink: 0, display: "flex" }}
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#6f6f6f", flexShrink: 0, display: "flex" }}
                     className="ss-del"
                   >
                     <Trash2 width={20} height={20} />

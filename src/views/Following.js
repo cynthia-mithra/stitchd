@@ -26,7 +26,7 @@ export default function Following({
 
       {!followingLoading&&followingProfiles.length===0&&(
         <div style={{textAlign:"center",padding:"56px 20px"}}>
-          <p style={{display:"flex",justifyContent:"center",marginBottom:12,color:"#ccc"}}><Users width={48} height={48}/></p>
+          <p style={{display:"flex",justifyContent:"center",marginBottom:12,color:"#808080"}}><Users width={48} height={48}/></p>
           <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,marginBottom:18}}>You're not following any sellers yet</p>
           <button className="hbtn" style={{...S.hBtn,fontSize:13,padding:"12px 22px",border:"2px solid #111"}} onClick={()=>setView("shop")}>DISCOVER SELLERS →</button>
         </div>
@@ -44,7 +44,7 @@ export default function Following({
                   <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.full_name||p.username||"Seller"}</span>
                   {p.verified&&<VerifiedBadge size="sm"/>}
                 </p>
-                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:"#999",letterSpacing:1,marginTop:2}}>{p.activeCount||0} active listing{(p.activeCount||0)!==1?"s":""}</p>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:"#6b6b6b",letterSpacing:1,marginTop:2}}>{p.activeCount||0} active listing{(p.activeCount||0)!==1?"s":""}</p>
               </div>
               <button className="hbtn" style={{...S.hBtn,fontSize:11,padding:"9px 14px",border:"2px solid #111",background:"#fff",color:"#111",borderRadius:0,flexShrink:0}} onClick={()=>toggleFollow(p.id)}>
                 <span style={{display:"inline-flex",alignItems:"center",gap:6}}><UserMinus width={14} height={14}/> UNFOLLOW</span>

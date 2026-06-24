@@ -96,7 +96,7 @@ const S = {
   top: { display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 36, paddingBottom: 32, borderBottom: "1px solid #333" },
   brand: { maxWidth: 360, minWidth: 240, flex: "1 1 280px" },
   wordmark: { fontFamily: BC, fontSize: 40, fontWeight: 900, letterSpacing: 1, color: "#fff", lineHeight: 1, display: "block" },
-  tagline: { fontFamily: "'Barlow',sans-serif", fontSize: 14, color: "#999", lineHeight: 1.6, margin: "14px 0 18px" },
+  tagline: { fontFamily: "'Barlow',sans-serif", fontSize: 14, color: "#6b6b6b", lineHeight: 1.6, margin: "14px 0 18px" },
   socials: { display: "flex", alignItems: "center", gap: 14 },
   social: { width: 38, height: 38, border: "2px solid #444", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", borderRadius: 0 },
   socialText: { fontFamily: BC, fontSize: 13, fontWeight: 800, letterSpacing: 2, color: "#fff", textDecoration: "none", border: "2px solid #444", padding: "0 14px", height: 38, display: "inline-flex", alignItems: "center" },

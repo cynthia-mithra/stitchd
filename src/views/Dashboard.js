@@ -296,7 +296,7 @@ export default function Dashboard({
 
                   {/* Banner upload */}
                   <div style={{marginBottom:18}}>
-                    <label style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:8}}>BANNER IMAGE</label>
+                    <label style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:8}}>BANNER IMAGE</label>
                     <div onClick={()=>document.getElementById("storefront-banner-input").click()} style={{width:"100%",height:140,border:"2px solid #111",borderRadius:0,cursor:"pointer",background:storeForm.bannerPreview?`#FF1493 url(${storeForm.bannerPreview}) center/cover no-repeat`:"#FF1493",display:"flex",alignItems:"center",justifyContent:"center"}}>
                       {!storeForm.bannerPreview&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:1,color:"#fff",display:"inline-flex",alignItems:"center",gap:8}}><ImageIcon width={18} height={18}/> UPLOAD BANNER</span>}
                     </div>
@@ -312,10 +312,10 @@ export default function Dashboard({
                       <textarea style={{...S.inp,height:90,resize:"vertical"}} maxLength={300} placeholder="Tell buyers about yourself and your style..." value={storeForm.storefront_bio||""} onChange={e=>setStoreForm(s=>({...s,storefront_bio:e.target.value.slice(0,300)}))}/>
                     </F>
                     <F l="LOCATION">
-                      <div style={{position:"relative"}}><span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#999",pointerEvents:"none"}}><MapPin width={15} height={15}/></span><input style={{...S.inp,paddingLeft:34}} placeholder="London, UK" value={storeForm.storefront_location||""} onChange={e=>setStoreForm(s=>({...s,storefront_location:e.target.value}))}/></div>
+                      <div style={{position:"relative"}}><span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#6b6b6b",pointerEvents:"none"}}><MapPin width={15} height={15}/></span><input style={{...S.inp,paddingLeft:34}} placeholder="London, UK" value={storeForm.storefront_location||""} onChange={e=>setStoreForm(s=>({...s,storefront_location:e.target.value}))}/></div>
                     </F>
                     <F l="INSTAGRAM HANDLE">
-                      <div style={{position:"relative"}}><span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#999",pointerEvents:"none"}}><Instagram width={15} height={15}/></span><input style={{...S.inp,paddingLeft:34}} placeholder="@yourhandle" value={storeForm.storefront_instagram||""} onChange={e=>setStoreForm(s=>({...s,storefront_instagram:e.target.value}))}/></div>
+                      <div style={{position:"relative"}}><span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#6b6b6b",pointerEvents:"none"}}><Instagram width={15} height={15}/></span><input style={{...S.inp,paddingLeft:34}} placeholder="@yourhandle" value={storeForm.storefront_instagram||""} onChange={e=>setStoreForm(s=>({...s,storefront_instagram:e.target.value}))}/></div>
                     </F>
                   </div>
 
@@ -456,7 +456,7 @@ export default function Dashboard({
                             </div>
                             <div style={{flex:1,minWidth:120}}>
                               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,color:"#111",lineHeight:1.1,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>{look.title} {!look.active&&<span style={{background:"#FF9500",color:"#fff",fontSize:10,fontWeight:800,letterSpacing:1,padding:"2px 6px"}}>DRAFT</span>}</p>
-                              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:"#999",letterSpacing:1}}>{listings.length} {listings.length===1?"PIECE":"PIECES"} · {currencySymbol()}{lookTotal(listings)}</p>
+                              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:"#6b6b6b",letterSpacing:1}}>{listings.length} {listings.length===1?"PIECE":"PIECES"} · {currencySymbol()}{lookTotal(listings)}</p>
                             </div>
                             <div style={{display:"flex",gap:6}}>
                               <button className="hbtn" style={{...S.dashBtn,background:"#111",color:"#fff"}} onClick={()=>editLook(look)}>EDIT</button>
@@ -509,7 +509,7 @@ export default function Dashboard({
                   {/* Percentage selector — only visible when ON. Pills: selected #FF1493. */}
                   {bundleOn&&(
                     <div style={{marginTop:20}}>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}}>DISCOUNT PERCENTAGE</p>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}}>DISCOUNT PERCENTAGE</p>
                       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                         {[5,10,15,20].map(p=>(
                           <button key={p} type="button" onClick={()=>setBundlePct(p)} style={{background:bundlePct===p?"#FF1493":"#fff",color:bundlePct===p?"#fff":"#111",border:"2px solid #111",borderRadius:0,padding:"10px 20px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:bundlePct===p?900:700,fontSize:15,letterSpacing:1,cursor:"pointer"}}>{p}%</button>
@@ -533,7 +533,7 @@ export default function Dashboard({
                   </div>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>Boost your listings to the top of search results and get more eyes on your pieces. Coming soon.</p>
                   <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                    <button disabled style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,fontSize:13,padding:"12px 22px",background:"#e8e8e8",color:"#aaa",border:"2px solid #ddd",borderRadius:0,cursor:"not-allowed"}}>PROMOTE</button>
+                    <button disabled style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,fontSize:13,padding:"12px 22px",background:"#e8e8e8",color:"#6e6e6e",border:"2px solid #ddd",borderRadius:0,cursor:"not-allowed"}}>PROMOTE</button>
                     <button className="hbtn" disabled={promoteNotified} style={{...S.hBtn,background:promoteNotified?"#fff":"#111",color:promoteNotified?"#34C759":"#fff",border:`2px solid ${promoteNotified?"#34C759":"#111"}`,fontSize:13,padding:"12px 22px",display:"inline-flex",alignItems:"center",gap:7,opacity:promoteNotified?1:1}} onClick={notifyPromote}>{promoteNotified?<><Check width={15} height={15}/> WE'LL NOTIFY YOU</>:<><Bell width={15} height={15}/> NOTIFY ME</>}</button>
                   </div>
                 </div>
@@ -546,10 +546,10 @@ export default function Dashboard({
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:10,borderBottom:"2px solid #111"}}>
                     <Flag width={18} height={18} color="#FF1493"/>
                     <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>REPORTS</h3>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#bbb",letterSpacing:1}}>({adminReports.length})</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#6f6f6f",letterSpacing:1}}>({adminReports.length})</span>
                   </div>
                   {adminReports.length===0?(
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",letterSpacing:1}}>No reports.</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#6f6f6f",letterSpacing:1}}>No reports.</p>
                   ):(
                     <div style={{display:"flex",flexDirection:"column",gap:10}}>
                       {adminReports.map(r=>{
@@ -560,7 +560,7 @@ export default function Dashboard({
                           <div key={r.id} style={{border:"2px solid #111",padding:"14px 16px",fontFamily:"'Barlow Condensed',sans-serif"}}>
                             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
                               <span style={{background:resolved?"#34C759":"#FF9500",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5}}>{(r.status||"pending").toUpperCase()}</span>
-                              <span style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{date}</span>
+                              <span style={{fontSize:10,color:"#6f6f6f",letterSpacing:1}}>{date}</span>
                             </div>
                             <p style={{fontSize:17,fontWeight:900,color:"#111",marginBottom:2}}>{title}</p>
                             <p style={{fontSize:14,fontWeight:700,color:"#FF1493",marginBottom:2}}>{r.reason}</p>
@@ -581,10 +581,10 @@ export default function Dashboard({
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:10,borderBottom:"2px solid #111"}}>
                     <AlertCircle width={18} height={18} color="#FF1493"/>
                     <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>DISPUTES</h3>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#bbb",letterSpacing:1}}>({adminDisputes.length})</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#6f6f6f",letterSpacing:1}}>({adminDisputes.length})</span>
                   </div>
                   {adminDisputes.length===0?(
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",letterSpacing:1}}>No disputes.</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#6f6f6f",letterSpacing:1}}>No disputes.</p>
                   ):(
                     <div style={{display:"flex",flexDirection:"column",gap:10}}>
                       {adminDisputes.map(d=>{
@@ -600,7 +600,7 @@ export default function Dashboard({
                               <span style={{background:"#111",color:"#fff",padding:"3px 10px",fontSize:11,fontWeight:800,letterSpacing:1}}>{ref}</span>
                               <span style={{background:isAlteration?"#FF9500":"#00E5CC",color:isAlteration?"#fff":"#111",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5}}>{isAlteration?"TAILORING":"PURCHASE"}</span>
                               {isAlteration&&altName&&<span style={{fontSize:11,color:"#888",letterSpacing:0.5}}>{altName}</span>}
-                              <span style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{date}</span>
+                              <span style={{fontSize:10,color:"#6f6f6f",letterSpacing:1}}>{date}</span>
                             </div>
                             <p style={{fontSize:16,fontWeight:900,color:"#FF1493",marginBottom:2}}>{d.problem_type}</p>
                             <p style={{fontSize:12,color:"#888",letterSpacing:0.5,marginBottom:6}}>Raised by {adminNames[d.buyer_id]||"a buyer"}</p>
@@ -627,7 +627,7 @@ export default function Dashboard({
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:10,borderBottom:"2px solid #111"}}>
                     <BadgeCheck width={18} height={18} color="#00E5CC"/>
                     <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>VERIFICATION APPLICATIONS</h3>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#bbb",letterSpacing:1}}>({adminApplications.length})</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#6f6f6f",letterSpacing:1}}>({adminApplications.length})</span>
                   </div>
                   {/* PENDING / APPROVED / REJECTED sub-tabs */}
                   <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
@@ -638,7 +638,7 @@ export default function Dashboard({
                   </div>
                   {(()=>{
                     const apps=adminApplications.filter(a=>(a.status||"pending")===adminAppTab);
-                    if(apps.length===0) return <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",letterSpacing:1}}>No {adminAppTab} applications.</p>;
+                    if(apps.length===0) return <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#6f6f6f",letterSpacing:1}}>No {adminAppTab} applications.</p>;
                     return (
                       <div style={{display:"flex",flexDirection:"column",gap:10}}>
                         {apps.map(a=>{
@@ -652,7 +652,7 @@ export default function Dashboard({
                             <div key={a.id} style={{border:"2px solid #111",padding:"14px 16px",fontFamily:"'Barlow Condensed',sans-serif"}}>
                               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
                                 <span style={{background:a.status==="approved"?"#34C759":a.status==="rejected"?"#FF1493":"#FF9500",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5}}>{(a.status||"pending").toUpperCase()}</span>
-                                <span style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{date}</span>
+                                <span style={{fontSize:10,color:"#6f6f6f",letterSpacing:1}}>{date}</span>
                               </div>
                               <p style={{fontSize:17,fontWeight:900,color:"#111",marginBottom:2,display:"inline-flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>{a.full_name||"Applicant"}{uname&&<span style={{fontSize:13,fontWeight:700,color:"#888"}}>{uname}</span>}</p>
                               {email&&<p style={{fontSize:13,color:"#888",letterSpacing:0.3,marginBottom:6}}>{email}</p>}
@@ -678,11 +678,11 @@ export default function Dashboard({
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:10,borderBottom:"2px solid #111"}}>
                     <Scissors width={18} height={18} color="#FF1493"/>
                     <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>TAILOR APPLICATIONS</h3>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#bbb",letterSpacing:1}}>({adminTailors.filter(t=>(t.status||"pending")==="pending").length})</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#6f6f6f",letterSpacing:1}}>({adminTailors.filter(t=>(t.status||"pending")==="pending").length})</span>
                   </div>
                   {(()=>{
                     const pending=adminTailors.filter(t=>(t.status||"pending")==="pending");
-                    if(pending.length===0) return <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",letterSpacing:1}}>No pending tailor applications.</p>;
+                    if(pending.length===0) return <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#6f6f6f",letterSpacing:1}}>No pending tailor applications.</p>;
                     const sym=currencySymbol();
                     const fmt=(p)=>p==null?null:`${sym}${(p/100).toString()}`;
                     return (
@@ -695,7 +695,7 @@ export default function Dashboard({
                             <div key={t.id} style={{border:"2px solid #111",padding:"14px 16px",fontFamily:"'Barlow Condensed',sans-serif"}}>
                               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,flexWrap:"wrap"}}>
                                 <span style={{background:"#FF9500",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5}}>PENDING</span>
-                                <span style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{date}</span>
+                                <span style={{fontSize:10,color:"#6f6f6f",letterSpacing:1}}>{date}</span>
                               </div>
                               <div style={{display:"flex",gap:14,alignItems:"flex-start",flexWrap:"wrap"}}>
                                 {t.profile_image_url&&<img src={t.profile_image_url} alt="" style={{width:56,height:56,borderRadius:"50%",border:"2px solid #111",objectFit:"cover",flexShrink:0}}/>}
@@ -736,7 +736,7 @@ export default function Dashboard({
                   }
                   const STAT=(label,value,accent)=>(
                     <div style={{border:"2px solid #111",padding:14,display:"flex",flexDirection:"column",gap:6,minWidth:150,flex:1}}>
-                      <span style={{fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5}}>{label}</span>
+                      <span style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5}}>{label}</span>
                       <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:accent||"#111",lineHeight:1}}>{value}</span>
                     </div>
                   );
@@ -746,7 +746,7 @@ export default function Dashboard({
                       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:10,borderBottom:"2px solid #111"}}>
                         <Wallet width={18} height={18} color="#FF1493"/>
                         <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>TAILOR PAYOUTS</h3>
-                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#bbb",letterSpacing:1}}>({adminPayouts.length})</span>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,color:"#6f6f6f",letterSpacing:1}}>({adminPayouts.length})</span>
                       </div>
                       <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:16}}>
                         {STAT("GMV (BOOKINGS)",gbp(gmv))}
@@ -754,7 +754,7 @@ export default function Dashboard({
                         {STAT("PAID OUT TO TAILORS",gbp(paidOut),"#00E5CC")}
                       </div>
                       {adminPayouts.length===0?(
-                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#bbb",letterSpacing:1}}>No payouts yet.</p>
+                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#6f6f6f",letterSpacing:1}}>No payouts yet.</p>
                       ):(
                         <div style={{display:"flex",flexDirection:"column",gap:10}}>
                           {adminPayouts.map(po=>{
@@ -767,7 +767,7 @@ export default function Dashboard({
                               <div key={po.id} style={{border:`2px solid ${failed?"#FF1493":"#111"}`,padding:"14px 16px",fontFamily:"'Barlow Condensed',sans-serif",background:failed?"#fff0f8":"#fff"}}>
                                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
                                   {badge(po.status)}
-                                  <span style={{fontSize:10,color:"#bbb",letterSpacing:1}}>{fmtDate(po.paid_at||po.created_at)}</span>
+                                  <span style={{fontSize:10,color:"#6f6f6f",letterSpacing:1}}>{fmtDate(po.paid_at||po.created_at)}</span>
                                 </div>
                                 <p style={{fontSize:17,fontWeight:900,color:"#111",marginBottom:2}}>{job}</p>
                                 <p style={{fontSize:13,color:"#888",letterSpacing:0.3,marginBottom:6,display:"inline-flex",alignItems:"center",gap:5}}><Scissors width={13} height={13}/> {tailorName}</p>
@@ -820,7 +820,7 @@ export default function Dashboard({
                   {filtered.length===0?(
                     <div style={{textAlign:"center",padding:"48px 20px"}}>
                       <p style={{display:"flex",justifyContent:"center",marginBottom:12,color:"#ddd"}}><Tag width={40} height={40}/></p>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#bbb",letterSpacing:1}}>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#6f6f6f",letterSpacing:1}}>
                         {visibleOffers.length===0
                           ?"NO OFFERS YET — BUYERS CAN MAKE OFFERS ON YOUR ACTIVE LISTINGS"
                           :offerTab==="pending"?"NO PENDING OFFERS":`NO ${offerTab.toUpperCase()} OFFERS`}
@@ -850,18 +850,18 @@ export default function Dashboard({
                             {/* Offer amount — large, bold, #111 */}
                             <p style={{fontSize:30,fontWeight:900,color:"#111",letterSpacing:-0.5,lineHeight:1,marginBottom:2}}>{fmtMoney(offerAmount)}</p>
                             {/* Listed price + difference */}
-                            <p style={{fontSize:14,fontWeight:700,color:"#999",marginBottom:2}}>Listed at {fmtMoney(listed)}</p>
+                            <p style={{fontSize:14,fontWeight:700,color:"#6b6b6b",marginBottom:2}}>Listed at {fmtMoney(listed)}</p>
                             {diff>0
-                              ? <p style={{fontSize:12,fontWeight:700,color:"#aaa",marginBottom:8}}>{fmtMoney(diff)} below asking</p>
+                              ? <p style={{fontSize:12,fontWeight:700,color:"#6e6e6e",marginBottom:8}}>{fmtMoney(diff)} below asking</p>
                               : diff<0
-                                ? <p style={{fontSize:12,fontWeight:700,color:"#aaa",marginBottom:8}}>{fmtMoney(-diff)} above asking</p>
-                                : <p style={{fontSize:12,fontWeight:700,color:"#aaa",marginBottom:8}}>Full asking price</p>}
+                                ? <p style={{fontSize:12,fontWeight:700,color:"#6e6e6e",marginBottom:8}}>{fmtMoney(-diff)} above asking</p>
+                                : <p style={{fontSize:12,fontWeight:700,color:"#6e6e6e",marginBottom:8}}>Full asking price</p>}
                             {/* Buyer first name */}
                             <p style={{fontSize:14,fontWeight:800,color:"#111",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>From {buyerFirstName(o)}</p>
                             {/* Buyer message in a light grey box */}
                             {msg&&(
                               <div style={{background:"#f5f5f5",border:"1px solid #e5e5e5",padding:"10px 12px",marginBottom:10,display:"flex",gap:8,alignItems:"flex-start"}}>
-                                <MessageSquare width={14} height={14} color="#999" style={{flexShrink:0,marginTop:2}}/>
+                                <MessageSquare width={14} height={14} color="#6b6b6b" style={{flexShrink:0,marginTop:2}}/>
                                 <span style={{fontSize:14,color:"#555",lineHeight:1.4}}>{msg}</span>
                               </div>
                             )}
@@ -886,7 +886,7 @@ export default function Dashboard({
                 );
               })()
             ):tabItems.length===0?(
-              <div style={{textAlign:"center",padding:"48px 20px"}}><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#bbb",letterSpacing:1}}>{dashTab==="sold"?"NO SALES YET.":"NO ACTIVE LISTINGS."}</p></div>
+              <div style={{textAlign:"center",padding:"48px 20px"}}><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#6f6f6f",letterSpacing:1}}>{dashTab==="sold"?"NO SALES YET.":"NO ACTIVE LISTINGS."}</p></div>
             ):(
             <div style={S.dashGrid} className="dash-grid">
               {tabItems.map((item,idx)=>{
@@ -906,7 +906,7 @@ export default function Dashboard({
                   <div style={S.dashCardBody}>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,color:item.sold?"#aaa":"#111",marginBottom:4}}>{item.name}</p>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:item.sold?"#aaa":accent,marginBottom:4}}>{currencySymbol(item.currency)}{item.price}</p>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1,marginBottom:10,display:"flex",alignItems:"center",gap:5}}><Eye width={12} height={12}/> {item.views||0} VIEWS</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#6f6f6f",letterSpacing:1,marginBottom:10,display:"flex",alignItems:"center",gap:5}}><Eye width={12} height={12}/> {item.views||0} VIEWS</p>
                     <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                       <button className="hbtn" style={{...S.dashBtn,background:accent,color:"#fff"}} onClick={()=>{setSel(item);openEdit(item);}}>EDIT</button>
                       {!item.sold&&<button className="hbtn" style={{...S.dashBtn,background:"#111",color:"#fff"}} onClick={()=>markSold(item.id,item.sold)}>MARK SOLD</button>}
@@ -939,7 +939,7 @@ export default function Dashboard({
               <button className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",fontSize:11}} onClick={()=>{loadBundles();setView("createbundle");}}>+ CREATE BUNDLE</button>
             </div>
             {bundles.length===0?(
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#bbb",letterSpacing:1}}>No bundles yet. Bundle separate listings to offer a deal! <Gift width={14} height={14} style={{display:"inline",verticalAlign:"middle"}}/></p>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#6f6f6f",letterSpacing:1}}>No bundles yet. Bundle separate listings to offer a deal! <Gift width={14} height={14} style={{display:"inline",verticalAlign:"middle"}}/></p>
             ):(
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 {bundles.map(b=>{
@@ -1037,7 +1037,7 @@ export default function Dashboard({
                     <button className="hbtn" onClick={()=>copyLink(shareItem)} style={{...S.hBtn,flex:1,padding:"11px",fontSize:12,background:"#111",border:"none",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6}}><Instagram width={15} height={15}/> INSTAGRAM</button>
                     <a className="hbtn" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(listingUrl(shareItem.id))}&text=${encodeURIComponent("Check out this listing on Stitch'd")}`} target="_blank" rel="noreferrer" style={{...S.hBtn,flex:1,padding:"11px",fontSize:12,background:"#000",border:"none",textDecoration:"none",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6}}><Twitter width={15} height={15}/> X</a>
                   </div>
-                  <p style={{fontSize:11,color:"#aaa",marginTop:10,textAlign:"center"}}>Instagram has no direct share API — the link is copied to your clipboard to paste in your story or bio.</p>
+                  <p style={{fontSize:11,color:"#6e6e6e",marginTop:10,textAlign:"center"}}>Instagram has no direct share API — the link is copied to your clipboard to paste in your story or bio.</p>
                 </div>
               </div>
             </div>
@@ -1069,7 +1069,7 @@ export default function Dashboard({
                   </div>
                 </div>
                 {/* What you get */}
-                <p style={{fontSize:11,fontWeight:900,letterSpacing:2,color:"#999",textTransform:"uppercase",marginBottom:10}}>What you get</p>
+                <p style={{fontSize:11,fontWeight:900,letterSpacing:2,color:"#6b6b6b",textTransform:"uppercase",marginBottom:10}}>What you get</p>
                 <div style={{display:"flex",flexDirection:"column",gap:11,marginBottom:20}}>
                   {perks.map(({Icon,text})=>(
                     <span key={text} style={{display:"flex",alignItems:"center",gap:10,fontSize:15,fontWeight:700,letterSpacing:0.3,color:"#111",lineHeight:1.2}}><Icon width={18} height={18} color="#FF1493" style={{flexShrink:0}}/> {text}</span>
@@ -1152,7 +1152,7 @@ export default function Dashboard({
               <div style={{background:"#fff",border:"2px solid #111",borderRadius:0,padding:28,maxWidth:420,width:"100%",fontFamily:"'Barlow Condensed',sans-serif"}} onClick={e=>e.stopPropagation()}>
                 <h3 style={{fontSize:22,fontWeight:900,marginBottom:10}}>Decline this offer?</h3>
                 <p style={{fontSize:14,color:"#666",marginBottom:16,lineHeight:1.45}}>The buyer will be notified. You can optionally suggest a different price to invite a new offer.</p>
-                <label style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,color:"#999",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:8}}>Suggest a different price (optional)</label>
+                <label style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",display:"block",marginBottom:8}}>Suggest a different price (optional)</label>
                 <div style={{position:"relative",marginBottom:20}}>
                   <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"#111",pointerEvents:"none"}}>{currencySymbol()}</span>
                   <input type="number" min="0" step="0.01" value={counterPrice} onChange={e=>setCounterPrice(e.target.value)} placeholder="0.00" style={{...S.inp,paddingLeft:28,fontSize:18,fontWeight:800}}/>

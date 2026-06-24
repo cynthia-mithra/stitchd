@@ -36,7 +36,7 @@ const S = {
   d2: { color: "#FF1493" },
   d3: { color: "#fff", WebkitTextStroke: "3px #111" },
   head: { fontFamily: BC, fontSize: "clamp(26px,5vw,44px)", fontWeight: 900, letterSpacing: -1, color: "#111", margin: "24px 0 8px" },
-  sub: { fontFamily: "'Barlow',sans-serif", fontSize: 16, color: "#999", lineHeight: 1.6, maxWidth: 420, margin: "0 0 28px" },
+  sub: { fontFamily: "'Barlow',sans-serif", fontSize: 16, color: "#6b6b6b", lineHeight: 1.6, maxWidth: 420, margin: "0 0 28px" },
   ctas: { display: "flex", gap: 14, flexWrap: "wrap", justifyContent: "center" },
   primary: { background: "#FF1493", color: "#fff", border: "2px solid #FF1493", borderRadius: 0, padding: "14px 30px", fontFamily: BC, fontWeight: 800, letterSpacing: 3, fontSize: 14, cursor: "pointer" },
   secondary: { background: "#fff", color: "#111", border: "2px solid #111", borderRadius: 0, padding: "14px 30px", fontFamily: BC, fontWeight: 800, letterSpacing: 3, fontSize: 14, cursor: "pointer" },

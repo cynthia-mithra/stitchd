@@ -162,7 +162,7 @@ export default function Profile({
           <div style={{flex:"1 1 120px",minWidth:110,border:"2px solid #111",borderRadius:0,padding:"14px 12px",textAlign:"center"}}>
             <div style={{display:"flex",justifyContent:"center",marginBottom:6,color:"#FF1493"}}>{icon}</div>
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,lineHeight:1,color:"#111"}}>{value}</div>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#999",marginTop:4}}>{label}</div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#6b6b6b",marginTop:4}}>{label}</div>
           </div>
         );
         return (
@@ -195,7 +195,7 @@ export default function Profile({
             {sf.storefront_tagline&&<p style={{fontFamily:"'Barlow',sans-serif",fontSize:14,color:"#888",margin:"6px 0 0",lineHeight:1.4}}>{sf.storefront_tagline}</p>}
             <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:"6px 16px",marginTop:12}}>
               {(sf.storefront_location||sf.location)&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",display:"inline-flex",alignItems:"center",gap:5}}><MapPin width={14} height={14}/> {sf.storefront_location||sf.location}</span>}
-              {reviews.length>0&&<span style={{display:"inline-flex",alignItems:"center",gap:6,fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:"#111"}}><Stars value={avgRating} size={14} color="#FF1493"/> <span style={{fontWeight:800}}>{avgRating.toFixed(1)}</span> <span style={{color:"#999"}}>({reviews.length} review{reviews.length!==1?"s":""})</span></span>}
+              {reviews.length>0&&<span style={{display:"inline-flex",alignItems:"center",gap:6,fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:"#111"}}><Stars value={avgRating} size={14} color="#FF1493"/> <span style={{fontWeight:800}}>{avgRating.toFixed(1)}</span> <span style={{color:"#6b6b6b"}}>({reviews.length} review{reviews.length!==1?"s":""})</span></span>}
               {memberSince&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",display:"inline-flex",alignItems:"center",gap:5}}><Calendar width={14} height={14}/> Member since {memberSince}</span>}
               {ig&&<a href={`https://instagram.com/${ig}`} target="_blank" rel="noreferrer" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#FF1493",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:5}}><Instagram width={14} height={14}/> @{ig}</a>}
               <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:1,color:"#111",display:"inline-flex",alignItems:"center",gap:5}}><Users width={14} height={14}/> {followerCount} follower{followerCount!==1?"s":""}</span>
@@ -259,7 +259,7 @@ export default function Profile({
                   </article>
                 );
               })}
-              {gridItems.length===0&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"40px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#bbb"}}>No active listings right now</div>}
+              {gridItems.length===0&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"40px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#6f6f6f"}}>No active listings right now</div>}
             </div>
           </div>
           {reviews.length>0&&(
@@ -273,7 +273,7 @@ export default function Profile({
                         <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.5}}>{r.reviewer_name||"Anonymous"}</span>
                         <Stars value={r.rating} size={13} color="#FF1493"/>
                       </span>
-                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#bbb",letterSpacing:1}}>{new Date(r.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase()}</span>
+                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#6f6f6f",letterSpacing:1}}>{new Date(r.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase()}</span>
                     </div>
                     {r.comment&&<p style={{fontSize:13,color:"#444",lineHeight:1.5,margin:0}}>{r.comment}</p>}
                   </div>

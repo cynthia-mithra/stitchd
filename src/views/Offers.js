@@ -41,7 +41,7 @@ function Thumb({ listing, faded }) {
   const src = thumbOf(listing);
   return (
     <div style={{ width: 84, height: 84, flexShrink: 0, border: "2px solid #111", background: "#f6f6f6", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", opacity: faded ? 0.5 : 1 }}>
-      {src ? <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Tag width={28} height={28} color="#bbb" />}
+      {src ? <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Tag width={28} height={28} color="#6f6f6f" />}
     </div>
   );
 }
@@ -69,7 +69,7 @@ export default function Offers({
 
   const Heading = ({ label, count, color }) => (
     <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 24, fontWeight: 900, letterSpacing: 0.5, color: color || INK, margin: "30px 0 14px", display: "flex", alignItems: "center", gap: 10 }}>
-      {label} <span style={{ fontSize: 14, fontWeight: 800, color: "#bbb" }}>({count})</span>
+      {label} <span style={{ fontSize: 14, fontWeight: 800, color: "#6f6f6f" }}>({count})</span>
     </h2>
   );
 
@@ -85,7 +85,7 @@ export default function Offers({
 
       {!user ? (
         <div style={{ ...S.empty, padding: "60px 20px" }}>
-          <p style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Tag width={48} height={48} color="#ccc" /></p>
+          <p style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Tag width={48} height={48} color="#808080" /></p>
           <p style={{ fontSize: 24, fontWeight: 900, margin: "0 0 18px", fontFamily: "'Barlow Condensed',sans-serif" }}>LOG IN TO VIEW YOUR OFFERS</p>
           <button className="hbtn" style={S.hBtn} onClick={() => { setAuthMode("login"); setView("auth"); }}>LOG IN →</button>
         </div>
@@ -95,7 +95,7 @@ export default function Offers({
         </div>
       ) : !hasAny ? (
         <div style={{ ...S.empty, padding: "60px 20px" }}>
-          <p style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Tag width={48} height={48} color="#ccc" /></p>
+          <p style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Tag width={48} height={48} color="#808080" /></p>
           <p style={{ fontSize: 26, fontWeight: 900, margin: "0 0 8px", fontFamily: "'Barlow Condensed',sans-serif", letterSpacing: 0.5 }}>NO OFFERS YET</p>
           <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 15, color: "#888", margin: "0 0 22px" }}>
             Make an offer on any active listing.
@@ -124,7 +124,7 @@ export default function Offers({
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 900, color: INK, margin: 0, lineHeight: 1.1 }}>{l.name || "Listing"}</p>
                           {listedPence > 0 && (
-                            <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15, color: "#999", textDecoration: "line-through", margin: "6px 0 0" }}>{gbp(listedPence)}</p>
+                            <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15, color: "#6b6b6b", textDecoration: "line-through", margin: "6px 0 0" }}>{gbp(listedPence)}</p>
                           )}
                           <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 36, fontWeight: 900, color: PINK, letterSpacing: -0.5, lineHeight: 1, margin: "2px 0 0" }}>{gbp(o.amount_pence)}</p>
                           {savedPence > 0 && (
@@ -194,7 +194,7 @@ export default function Offers({
                         <Thumb listing={l} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 900, color: INK, margin: 0, lineHeight: 1.1 }}>{l.name || "Listing"}</p>
-                          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 22, fontWeight: 900, color: "#999", letterSpacing: -0.5, margin: "6px 0 0" }}>{gbp(o.amount_pence)}</p>
+                          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 22, fontWeight: 900, color: "#6b6b6b", letterSpacing: -0.5, margin: "6px 0 0" }}>{gbp(o.amount_pence)}</p>
                           {o.counter_offer_pence != null && (
                             <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 800, color: PINK, margin: "6px 0 0" }}>Seller suggested {gbp(o.counter_offer_pence)}</p>
                           )}
@@ -216,7 +216,7 @@ export default function Offers({
           {/* ── EXPIRED — greyed out, no actions ──────────────────────────────── */}
           {groups.expired.length > 0 && (
             <>
-              <Heading label="EXPIRED" count={groups.expired.length} color="#999" />
+              <Heading label="EXPIRED" count={groups.expired.length} color="#6b6b6b" />
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {groups.expired.map((o) => {
                   const l = listingOf(o);
@@ -225,8 +225,8 @@ export default function Offers({
                       <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
                         <Thumb listing={l} faded />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 900, color: "#999", margin: 0, lineHeight: 1.1 }}>{l.name || "Listing"}</p>
-                          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 22, fontWeight: 900, color: "#bbb", letterSpacing: -0.5, margin: "6px 0 0" }}>{gbp(o.amount_pence)}</p>
+                          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 900, color: "#6b6b6b", margin: 0, lineHeight: 1.1 }}>{l.name || "Listing"}</p>
+                          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 22, fontWeight: 900, color: "#6f6f6f", letterSpacing: -0.5, margin: "6px 0 0" }}>{gbp(o.amount_pence)}</p>
                           <span style={{ display: "inline-block", marginTop: 8, fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: "#fff", background: "#999", padding: "3px 10px" }}>EXPIRED</span>
                         </div>
                       </div>
