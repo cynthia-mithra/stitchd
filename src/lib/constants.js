@@ -167,7 +167,7 @@ const TRACK_URL = {
 // is set on the buy-label Edge Function (provider chosen via SHIPPING_PROVIDER).
 // Until then the GENERATE LABEL action stays hidden and sellers enter tracking
 // numbers by hand.
-export const SHIPPING_LABELS_ENABLED = false;
+export const SHIPPING_LABELS_ENABLED = true;
 
 // Rough parcel weight (grams) inferred from a postage option label's "up to Nkg"
 // band, so a label call can be sized without asking the seller to weigh it. Falls
