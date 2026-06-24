@@ -115,10 +115,13 @@ const WALLET_COMMISSION_RATE = 0.08;
 async function creditSellerWallet(
   sellerId: string | null | undefined,
   grossPence: number,
-  ctx: { listingId?: string; sessionId?: string; orderId?: string; description?: string },
+  ctx: { listingId?: string; sessionId?: string; orderId?: string; description?: string; postagePence?: number },
 ) {
   if (!sellerId || !Number.isFinite(grossPence) || grossPence <= 0) return;
-  const netPence = Math.round(grossPence * (1 - WALLET_COMMISSION_RATE));
+  // 8% commission on the item only; buyer-paid postage is passed through in full
+  // so the seller isn't out of pocket posting the item from home.
+  const postage = Number(ctx.postagePence) || 0;
+  const netPence = Math.round(grossPence * (1 - WALLET_COMMISSION_RATE)) + (postage > 0 ? postage : 0);
   if (netPence <= 0) return;
   await insertHealing("wallet_transactions", {
     user_id: sellerId,
@@ -789,6 +792,11 @@ Deno.serve(async (req) => {
       //    this listing's share of the discount (linePence × %); insertHealing
       //    drops the columns on a deployment where the migration hasn't run.
       const bundle = bundleBySeller[l.user_id];
+      // Postage the buyer paid for this seller — credited to the seller ONCE (on
+      // their first item) so they can cover posting it themselves, and recorded as
+      // the order's postage_amount once. No commission is taken on postage.
+      const sellerKey = String(l.user_id);
+      const postageForThis = ship && !postageDone.has(sellerKey) ? ship.pence : 0;
       await insertHealing("orders", {
         listing_id: l.id,
         buyer_id: buyerId,
@@ -804,17 +812,19 @@ Deno.serve(async (req) => {
             }
           : {}),
         ...(ship
-          ? { postage_carrier: ship.label, postage_amount: postageDone.has(String(l.user_id)) ? 0 : ship.pence / 100 }
+          ? { postage_carrier: ship.label, postage_amount: postageForThis / 100 }
           : {}),
         ...(shipAddr ? { delivery_address: shipAddr } : {}),
       });
-      if (ship) postageDone.add(String(l.user_id));
+      if (ship) postageDone.add(sellerKey);
 
-      // 2b. Credit the seller's wallet (sale price − 8% commission).
+      // 2b. Credit the seller's wallet: sale price − 8% commission, PLUS the
+      //     buyer-paid postage (no fee on postage) so the seller can post it.
       await creditSellerWallet(l.user_id, pence, {
         listingId: l.id,
         sessionId: stripeSessionId,
-        description: `Sale: ${l.name}`,
+        description: postageForThis > 0 ? `Sale: ${l.name} (incl. postage)` : `Sale: ${l.name}`,
+        postagePence: postageForThis,
       });
 
       // 3. Notify the seller (in-app).
