@@ -400,7 +400,7 @@ export const S={
   avatarEditOverlay:{position:"absolute",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,opacity:0,transition:"opacity .15s"},
   dashHeader:{display:"flex",flexWrap:"wrap",alignItems:"flex-start",justifyContent:"space-between",gap:24,marginBottom:40,paddingBottom:32,borderBottom:"3px solid #111"},
   dashStats:{display:"flex",gap:10,flexWrap:"wrap"},
-  dashStat:{background:"#fff",border:"2px solid #111",padding:"16px 18px",textAlign:"center",minWidth:84},
+  dashStat:{background:"#fff",border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"18px",textAlign:"center",minWidth:84},
   dashStatNum:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:900,lineHeight:1},
   dashStatLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginTop:5},
   dashGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:3},
