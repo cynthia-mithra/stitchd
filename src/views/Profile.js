@@ -159,7 +159,7 @@ export default function Profile({
         const ig=(sf.storefront_instagram||"").replace(/^@/,"").trim();
         // Stat tile — small box with a 2px #111 border (design system).
         const StatTile=({icon,value,label})=>(
-          <div style={{flex:"1 1 120px",minWidth:110,border:"2px solid #111",borderRadius:0,padding:"14px 12px",textAlign:"center"}}>
+          <div style={{flex:"1 1 120px",minWidth:110,border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",borderRadius:0,padding:"16px 12px",textAlign:"center"}}>
             <div style={{display:"flex",justifyContent:"center",marginBottom:6,color:"#FF1493"}}>{icon}</div>
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,lineHeight:1,color:"#111"}}>{value}</div>
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#6b6b6b",marginTop:4}}>{label}</div>
@@ -267,7 +267,7 @@ export default function Profile({
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12,marginBottom:20}}>REVIEWS ({reviews.length})</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
                 {reviews.map(r=>(
-                  <div key={r.id} style={{border:"2px solid #111",borderRadius:0,padding:"14px 16px"}}>
+                  <div key={r.id} style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",borderRadius:0,padding:"16px 18px"}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:6,flexWrap:"wrap"}}>
                       <span style={{display:"inline-flex",alignItems:"center",gap:8}}>
                         <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.5}}>{r.reviewer_name||"Anonymous"}</span>

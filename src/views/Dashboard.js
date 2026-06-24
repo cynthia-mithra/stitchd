@@ -287,7 +287,7 @@ export default function Dashboard({
                 {/* Phase 13 — EDIT STOREFRONT. Banner upload + tagline/bio/location/
                     Instagram, a PREVIEW STOREFRONT link (opens the public page in a
                     new tab) and a pink SAVE CHANGES button. */}
-                <div style={{border:"2px solid #111",padding:"24px"}}>
+                <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                     <Store width={20} height={20} color="#FF1493"/>
                     <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>EDIT STOREFRONT</h3>
@@ -338,7 +338,7 @@ export default function Dashboard({
                   const H=({children})=> <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>{children}</h3>;
                   const Desc=({children})=> <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>{children}</p>;
                   return (
-                    <div style={{border:"2px solid #111",padding:"24px"}}>
+                    <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
                       {status==="verified"?(
                         <>
                           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,flexWrap:"wrap"}}>
@@ -396,7 +396,7 @@ export default function Dashboard({
                   const Desc=({children})=> <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>{children}</p>;
                   const idBtn={background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,padding:"12px 22px",display:"inline-flex",alignItems:"center",gap:7,cursor:identityBusy?"not-allowed":"pointer",opacity:identityBusy?0.5:1,textTransform:"uppercase"};
                   return (
-                    <div style={{border:"2px solid #111",padding:"24px"}}>
+                    <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
                       {istatus==="verified"?(
                         <>
                           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,flexWrap:"wrap"}}>
@@ -437,7 +437,7 @@ export default function Dashboard({
                 })()}
 
                 {/* Shop the Look — create & manage curated outfits (Phase 10e) */}
-                <div style={{border:"2px solid #111",padding:"24px"}}>
+                <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                     <Layers width={20} height={20} color="#FF1493"/>
                     <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>SHOP THE LOOK</h3>
@@ -470,7 +470,7 @@ export default function Dashboard({
                 </div>
 
                 {/* Tool 2 — Vacation mode */}
-                <div style={{border:"2px solid #111",padding:"24px"}}>
+                <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                     <Plane width={20} height={20} color="#FF1493"/>
                     <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>VACATION MODE</h3>
@@ -493,7 +493,7 @@ export default function Dashboard({
                 {/* Phase 14 — BUNDLE DISCOUNT. Toggle on, pick a % (5/10/15/20),
                     live preview, SAVE. Persists to the profile; the deal then shows
                     on cards/storefront and applies automatically in the bag. */}
-                <div style={{border:"2px solid #111",padding:"24px"}}>
+                <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                     <Tag width={20} height={20} color="#FF1493"/>
                     <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>BUNDLE DISCOUNT</h3>
@@ -525,7 +525,7 @@ export default function Dashboard({
                 </div>
 
                 {/* Tool 5 — Promote (coming soon) */}
-                <div style={{border:"2px solid #111",padding:"24px"}}>
+                <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                     <Rocket width={20} height={20} color="#00E5CC"/>
                     <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>PROMOTE YOUR LISTINGS</h3>
@@ -735,7 +735,7 @@ export default function Dashboard({
                     if(po.status==="paid") paidOut+=(amount-comm);
                   }
                   const STAT=(label,value,accent)=>(
-                    <div style={{border:"2px solid #111",padding:14,display:"flex",flexDirection:"column",gap:6,minWidth:150,flex:1}}>
+                    <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:16,display:"flex",flexDirection:"column",gap:6,minWidth:150,flex:1}}>
                       <span style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5}}>{label}</span>
                       <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,color:accent||"#111",lineHeight:1}}>{value}</span>
                     </div>
