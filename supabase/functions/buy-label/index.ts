@@ -134,8 +134,11 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
         Id: crypto.randomUUID(),
         Height: 5, Length: 30, Width: 25, Weight: weightKg,
         EstimatedValue: 20,
+        // Parcel2Go's `Contents` is a string|null, NOT an array — sending an
+        // array is what produced the "Badly formatted json" 400. The
+        // human-readable summary is the field that matters.
         ContentsSummary: "Pre-loved clothing",
-        Contents: [{ Description: "Pre-loved clothing", Quantity: "1", EstimatedValue: "20" }],
+        Contents: null,
         DeliveryAddress: deliveryAddress,
       }],
     }],
