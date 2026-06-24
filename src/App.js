@@ -194,6 +194,9 @@ export default function App() {
   const [savingSearch,      setSavingSearch]      = useState(false);
   const [catFilter, setCatFilter] = useState("All");
   const [sizeFilter,setSizeFilter]= useState("All");
+  const [shopSort,  setShopSort]  = useState("newest"); // browse-grid sort
+
+
   // Phase 12 — multi-select occasion + colour filters. Each is an array of the
   // selected tag names; a listing matches when it carries ANY of them (OR within
   // a group). Untagged listings (null/empty array) are never hidden by either
@@ -844,10 +847,15 @@ export default function App() {
     const matchColour=colourFilter.length===0||col.length===0||colourFilter.some(c=>col.includes(c));
     return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchVacation&&matchActive&&matchNotSold&&matchVerified&&matchOcc&&matchColour;
    })
-   // Promoted (in-window) listings float to the top; the source array is already
-   // created_at.desc so a stable sort keeps newest-first order within each group.
-   .sort((a,b)=>(_live(a)?0:1)-(_live(b)?0:1));
-  },[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers,occFilter,colourFilter]);
+   // Sort: price sorts apply across the whole result; "newest" (default) floats
+   // promoted (in-window) listings to the top, then keeps the source's
+   // created_at.desc order (stable sort) within each group.
+   .sort((a,b)=>{
+     if(shopSort==="price_low")  return (parseFloat(a.price)||0)-(parseFloat(b.price)||0);
+     if(shopSort==="price_high") return (parseFloat(b.price)||0)-(parseFloat(a.price)||0);
+     return (_live(a)?0:1)-(_live(b)?0:1);
+   });
+  },[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers,occFilter,colourFilter,shopSort]);
 
   // Toasts carry a type (success / error / info) that picks a leading icon +
   // accent. The type is inferred from the message so the ~40 existing flash()
@@ -4830,6 +4838,7 @@ export default function App() {
         showFilters={showFilters} setShowFilters={setShowFilters} hasFilters={hasFilters} clearFilters={clearFilters}
         typeFilter={typeFilter} setTypeFilter={setTypeFilter} condFilter={condFilter} setCondFilter={setCondFilter}
         catFilter={catFilter} setCatFilter={setCatFilter} sizeFilter={sizeFilter} setSizeFilter={setSizeFilter}
+        shopSort={shopSort} setShopSort={setShopSort}
         minPrice={minPrice} setMinPrice={setMinPrice} maxPrice={maxPrice} setMaxPrice={setMaxPrice}
         showSizeMatch={showSizeMatch} setShowSizeMatch={setShowSizeMatch}
         showVerifiedOnly={showVerifiedOnly} setShowVerifiedOnly={setShowVerifiedOnly}

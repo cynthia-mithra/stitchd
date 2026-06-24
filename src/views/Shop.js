@@ -40,6 +40,7 @@ export default function Shop({
   showFilters, setShowFilters, hasFilters, clearFilters,
   typeFilter, setTypeFilter, condFilter, setCondFilter,
   catFilter, setCatFilter, sizeFilter, setSizeFilter,
+  shopSort = "newest", setShopSort = () => {},
   minPrice, setMinPrice, maxPrice, setMaxPrice,
   showSizeMatch, setShowSizeMatch,
   showVerifiedOnly = false, setShowVerifiedOnly = () => {},
@@ -391,6 +392,11 @@ export default function Shop({
             {search&&<button style={S.searchClear} onClick={()=>{setSearch("");setShowSuggestions(false);}}>✕</button>}
           </div>
           <button className="hbtn search-action-btn" style={{...S.filterBtn,background:showFilters?"#FF1493":"#fff",color:showFilters?"#fff":"#111"}} onClick={()=>setShowFilters(f=>!f)}>FILTERS {hasFilters?"●":""}</button>
+          <select value={shopSort} onChange={e=>setShopSort(e.target.value)} aria-label="Sort listings" className="search-action-btn" style={{...S.filterBtn,display:"inline-block",height:30,textAlignLast:"center",cursor:"pointer"}}>
+            <option value="newest">SORT: NEWEST</option>
+            <option value="price_low">PRICE: LOW → HIGH</option>
+            <option value="price_high">PRICE: HIGH → LOW</option>
+          </select>
           {user&&profile?.bust&&<button className="hbtn search-action-btn" style={{...S.filterBtn,background:showSizeMatch?"#34C759":"#fff",color:showSizeMatch?"#fff":"#111"}} onClick={()=>setShowSizeMatch(f=>!f)}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Ruler width={16} height={16}/> FIT</span></button>}
           {/* Phase 12 — SAVE THIS SEARCH. Appears once any filter or query is
               active. Logged-out buyers are prompted to log in on tap (handled in
