@@ -4490,13 +4490,14 @@ export default function App() {
           <div style={S.msgLayout} className="msg-layout">
             <div style={S.msgSidebar} className="msg-sidebar">
               <div style={S.msgSidebarHead}>
-                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,letterSpacing:1}}>MESSAGES</span>
+                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,letterSpacing:1,color:"#fff"}}>MESSAGES</span>
                 {unreadCount>0&&<span style={{...S.wishBadge,position:"static",width:"auto",borderRadius:4,padding:"2px 8px"}}>{unreadCount} NEW</span>}
               </div>
               {conversations.length===0?(
-                <div style={{padding:32,textAlign:"center"}}>
-                  <p style={{display:"flex",justifyContent:"center",marginBottom:8}}><MessageCircle width={32} height={32} color="#ccc"/></p>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#bbb",letterSpacing:1}}>NO MESSAGES YET</p>
+                <div style={{padding:"40px 24px",textAlign:"center"}}>
+                  <p style={{display:"flex",justifyContent:"center",marginBottom:12}}><span style={{width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,#fff0f8,#e6fffb)",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center"}}><MessageCircle width={26} height={26} color="#FF1493"/></span></p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#111",letterSpacing:1}}>NO MESSAGES YET</p>
+                  <p style={{fontFamily:"'Barlow',sans-serif",fontSize:12,color:"#aaa",marginTop:4}}>Buyers & sellers you chat with show up here.</p>
                 </div>
               ):(
                 conversations.map(conv=>{
@@ -4506,7 +4507,7 @@ export default function App() {
                   const listing=items.find(i=>i.id===conv.listing_id);
                   const unread=conv.unread_count||0;
                   return(
-                    <div key={conv.id} style={{...S.convItem,background:isActive?"#fff0f8":unread>0?"#fffafd":"#fff",borderLeft:isActive?"4px solid #FF1493":"4px solid transparent"}} onClick={()=>openConversation(conv)}>
+                    <div key={conv.id} className="conv-item" style={{...S.convItem,background:isActive?"#fff0f8":unread>0?"#fffafd":"#fff",borderLeft:isActive?"4px solid #FF1493":"4px solid transparent"}} onClick={()=>openConversation(conv)}>
                       <div style={{position:"relative"}}>
                         <div style={S.convAvatar}>
                           {otherProfile?.avatar_url?<img src={otherProfile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#fff"}}>{(otherProfile?.full_name||otherProfile?.username||"?")[0].toUpperCase()}</span>}
@@ -4528,9 +4529,10 @@ export default function App() {
             </div>
             <div style={S.msgMain}>
               {!activeConv?(
-                <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:12}}>
-                  <Mail width={48} height={48} color="#ccc"/>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,letterSpacing:1,color:"#bbb"}}>SELECT A CONVERSATION</p>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:14,background:"#fcfcfc",backgroundImage:"radial-gradient(rgba(17,17,17,0.05) 1px, transparent 1px)",backgroundSize:"18px 18px"}}>
+                  <span style={{width:72,height:72,borderRadius:"50%",background:"linear-gradient(135deg,#FF1493,#00E5CC)",border:"3px solid #111",display:"flex",alignItems:"center",justifyContent:"center"}}><Mail width={32} height={32} color="#fff"/></span>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:19,fontWeight:900,letterSpacing:1.5,color:"#111"}}>SELECT A CONVERSATION</p>
+                  <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#aaa",marginTop:-6}}>Pick a chat on the left to start talking.</p>
                 </div>
               ):(()=>{
                 const otherId=activeConv.buyer_id===user.id?activeConv.seller_id:activeConv.buyer_id;
@@ -4593,7 +4595,7 @@ export default function App() {
                                 )}
                               </div>
                             ):(
-                              <div style={{...S.msgBubble,background:isMine?"#FF1493":"#f5f5f5",color:isMine?"#fff":"#111",borderRadius:isMine?"16px 16px 4px 16px":"16px 16px 16px 4px"}}>
+                              <div style={{...S.msgBubble,background:isMine?"linear-gradient(135deg,#FF1493,#FF5BAE)":"#fff",color:isMine?"#fff":"#111",border:isMine?"none":"1.5px solid #ededed",borderRadius:isMine?"16px 16px 4px 16px":"16px 16px 16px 4px"}}>
                                 <p style={{fontSize:14,lineHeight:1.5}}>{msg.content}</p>
                                 <p style={{fontSize:10,opacity:0.6,marginTop:4,textAlign:"right"}}>{new Date(msg.created_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</p>
                               </div>
@@ -4614,7 +4616,7 @@ export default function App() {
                     )}
                     <div style={S.chatInput}>
                       <input style={{...S.inp,flex:1,borderRight:"none",borderTop:"none",borderLeft:"none",borderBottom:"none"}} placeholder="Type a message..." value={msgInput} onChange={e=>setMsgInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage()}/>
-                      <button className="hbtn" style={{...S.hBtn,background:"#FF1493",borderRadius:0,padding:"12px 20px",fontSize:16,flexShrink:0,opacity:msgSending?0.5:1}} onClick={sendMessage} disabled={msgSending||!msgInput.trim()}>→</button>
+                      <button className="hbtn" style={{...S.hBtn,background:"#FF1493",borderRadius:0,padding:"12px 22px",fontSize:18,flexShrink:0,opacity:msgSending?0.5:1}} onClick={sendMessage} disabled={msgSending||!msgInput.trim()}><span className="btn-arrow">→</span></button>
                     </div>
                   </>
                 );

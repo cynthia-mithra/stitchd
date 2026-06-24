@@ -55,6 +55,8 @@ export const CSS=`
      right as the button lifts. Opt-in per CTA so only intentional arrows move. */
   .btn-arrow{display:inline-block;transition:transform .2s cubic-bezier(.22,1,.36,1);}
   .hbtn:hover .btn-arrow{transform:translateX(5px);}
+  /* Conversation rows in Messages: gentle tint + pink edge on hover. */
+  .conv-item:hover{background:#fff7fc !important;border-left-color:#FF149355 !important;}
   /* Desktop nav dropdown items turn pink on hover; the LOG OUT item keeps its red. */
   .nav-drop-item:hover{color:#FF1493 !important;}
   .nav-drop-item-danger:hover{color:#FF0000 !important;}
@@ -421,19 +423,19 @@ export const S={
   fitsBadge:{position:"absolute",bottom:12,left:12,background:"#34C759",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3},
   fastBadge:{position:"absolute",bottom:12,left:12,background:"#007AFF",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3},
   reviewCard:{background:"#fafafa",border:"1.5px solid #f0f0f0",padding:"14px 16px"},
-  msgLayout:{display:"flex",border:"3px solid #111",height:"70vh",overflow:"hidden"},
-  msgSidebar:{width:300,flexShrink:0,borderRight:"3px solid #111",display:"flex",flexDirection:"column",overflow:"hidden"},
-  msgSidebarHead:{padding:"16px 20px",borderBottom:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fafafa"},
-  convItem:{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderBottom:"1px solid #f5f5f5",cursor:"pointer",transition:"background .15s"},
-  convAvatar:{width:40,height:40,borderRadius:"50%",background:"#FF1493",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden",border:"2px solid #111"},
+  msgLayout:{display:"flex",border:"3px solid #111",height:"70vh",overflow:"hidden",background:"#fff",boxShadow:"0 14px 44px rgba(17,17,17,0.1)"},
+  msgSidebar:{width:300,flexShrink:0,borderRight:"3px solid #111",display:"flex",flexDirection:"column",overflow:"hidden",background:"#fff"},
+  msgSidebarHead:{padding:"16px 20px",borderBottom:"3px solid #111",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#111"},
+  convItem:{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderBottom:"1px solid #f3f3f3",cursor:"pointer",transition:"background .15s,border-color .15s"},
+  convAvatar:{width:42,height:42,borderRadius:"50%",background:"linear-gradient(135deg,#FF1493,#00E5CC)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden",border:"2px solid #111"},
   msgMain:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"},
-  chatHeader:{padding:"14px 20px",borderBottom:"2px solid #111",display:"flex",alignItems:"center",gap:12,background:"#fafafa"},
-  chatMessages:{flex:1,overflowY:"auto",padding:"20px",display:"flex",flexDirection:"column"},
+  chatHeader:{padding:"14px 20px",borderBottom:"3px solid #111",display:"flex",alignItems:"center",gap:12,background:"#fafafa"},
+  chatMessages:{flex:1,overflowY:"auto",padding:"20px",display:"flex",flexDirection:"column",background:"#fcfcfc",backgroundImage:"radial-gradient(rgba(17,17,17,0.05) 1px, transparent 1px)",backgroundSize:"18px 18px"},
   chatListingPreview:{display:"inline-flex",alignItems:"center",gap:12,border:"2px solid #f0f0f0",padding:"10px 14px",cursor:"pointer",marginTop:12,background:"#fafafa"},
-  msgBubble:{padding:"10px 14px",maxWidth:"70%"},
-  chatInput:{display:"flex",borderTop:"2px solid #111"},
+  msgBubble:{padding:"11px 15px",maxWidth:"72%",boxShadow:"0 2px 8px rgba(17,17,17,0.07)"},
+  chatInput:{display:"flex",borderTop:"3px solid #111",background:"#fff"},
   offerBar:{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",borderTop:"1px solid #f5f5f5",flexWrap:"wrap",background:"#fafafa"},
-  offerCard:{background:"#fff",padding:"14px 16px",borderRadius:0},
+  offerCard:{background:"#fff",padding:"14px 16px",borderRadius:0,boxShadow:"0 3px 12px rgba(17,17,17,0.08)"},
   offerStatusBadge:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:1.5,color:"#fff",padding:"2px 8px",borderRadius:0},
   // SHOPPING BAG — small count badge on the navbar bag icon. Pink circle, white
   // number, 2px #111 border so it reads clearly against the white icon button.
