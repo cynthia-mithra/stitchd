@@ -50,7 +50,7 @@ const ST = {
     display: "flex", alignItems: "center", gap: 8, textTransform: "uppercase",
   },
   card: {
-    border: "2px solid #111", borderRadius: 0, background: "#fff", padding: "18px 20px",
+    border: "none", boxShadow: "0 6px 22px rgba(17,17,17,0.09)", borderRadius: 0, background: "#fff", padding: "18px 20px",
     display: "flex", flexDirection: "column", gap: 6,
   },
   cardLabel: {

@@ -68,7 +68,7 @@ export default function Wallet({
       </div>
 
       {/* BALANCE CARD */}
-      <div style={{ position: "relative", overflow: "hidden", borderRadius: 0, border: "3px solid #111", borderTop: `6px solid ${PINK}`, padding: "28px 26px", marginBottom: 22, background: "linear-gradient(135deg,#1d1d1d 0%,#111 55%)", color: "#fff" }}>
+      <div style={{ position: "relative", overflow: "hidden", borderRadius: 0, border: "none", borderTop: `6px solid ${PINK}`, boxShadow: "0 12px 32px rgba(17,17,17,0.22)", padding: "28px 26px", marginBottom: 22, background: "linear-gradient(135deg,#1d1d1d 0%,#111 55%)", color: "#fff" }}>
         <WalletIcon style={{ position: "absolute", right: -14, bottom: -20, width: 130, height: 130, color: "rgba(255,255,255,0.05)" }} />
         <div style={{ position: "relative", zIndex: 1 }}>
           <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 2.5, color: "rgba(255,255,255,0.55)", marginBottom: 8 }}>AVAILABLE BALANCE</p>
@@ -92,7 +92,7 @@ export default function Wallet({
 
       {/* WITHDRAW / SETUP */}
       {!onboarded ? (
-        <div style={{ border: "2px solid #111", padding: "20px 22px", marginBottom: 28 }}>
+        <div style={{ border: "none", boxShadow: "0 6px 22px rgba(17,17,17,0.09)", padding: "20px 22px", marginBottom: 28 }}>
           <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18, fontWeight: 900, letterSpacing: 0.5, marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}><Landmark width={20} height={20} /> SET UP PAYOUTS</p>
           <p style={{ fontSize: 14, color: "#666", lineHeight: 1.5, marginBottom: 16 }}>Connect a bank account with Stripe to withdraw your earnings. It only takes a minute and is fully secure.</p>
           <button className="hbtn" disabled={payoutBusy} onClick={onSetupPayouts}
@@ -101,7 +101,7 @@ export default function Wallet({
           </button>
         </div>
       ) : (
-        <div style={{ border: "2px solid #111", padding: "20px 22px", marginBottom: 28 }}>
+        <div style={{ border: "none", boxShadow: "0 6px 22px rgba(17,17,17,0.09)", padding: "20px 22px", marginBottom: 28 }}>
           <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18, fontWeight: 900, letterSpacing: 0.5, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}><ArrowUpRight width={20} height={20} /> WITHDRAW TO BANK</p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
             <div style={{ flex: "1 1 200px" }}>
