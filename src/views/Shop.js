@@ -223,7 +223,7 @@ export default function Shop({
           {/* BOTTOM-LEFT — fit + seller chips */}
           <div className="card-ov card-ov-bl">
             {fitsMe(item)===true&&<span style={{...ovChip,background:"#34C759",color:"#fff"}}><Ruler width={11} height={11}/> FITS YOU</span>}
-            {fastSellers.has(item.user_id)&&<span style={{...ovChip,background:"#007AFF",color:"#fff"}}><Zap width={11} height={11} fill="currentColor"/> FAST SELLER</span>}
+            {fastSellers.has(item.user_id)&&<span style={{...ovChip,background:"#00E5CC",color:"#111"}}><Zap width={11} height={11} fill="currentColor"/> FAST SELLER</span>}
           </div>
           {!item.sold&&<BundleSaveBanner sellerId={item.user_id}/>}
           {/* HOVER PRICE — frosted bar slides up on hover (desktop pointer only) */}

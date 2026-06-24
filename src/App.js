@@ -1503,7 +1503,7 @@ export default function App() {
     if(!p) return null;
     if(p.verified) return {label:"✓ VERIFIED",color:"#34C759"};
     if(p.seller_tier==="top") return {label:"TOP SELLER",color:"#FF9500"};
-    if(p.seller_tier==="trusted") return {label:"TRUSTED",color:"#007AFF"};
+    if(p.seller_tier==="trusted") return {label:"TRUSTED",color:"#00B3A3"};
     return null;
   };
 

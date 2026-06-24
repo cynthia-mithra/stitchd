@@ -224,7 +224,7 @@ export default function Dashboard({
               <div style={{...S.dashStat,borderTop:"4px solid #FF1493"}}><div style={{...S.dashStatNum,color:"#FF1493"}}>{myItems.length}</div><div style={S.dashStatLabel}>TOTAL</div></div>
               <div style={{...S.dashStat,borderTop:"4px solid #34C759"}}><div style={{...S.dashStatNum,color:"#34C759"}}>{myItems.filter(i=>!i.sold).length}</div><div style={S.dashStatLabel}>LIVE</div></div>
               <div style={{...S.dashStat,borderTop:"4px solid #FF9500"}}><div style={{...S.dashStatNum,color:"#FF9500"}}>{myItems.filter(i=>i.sold).length}</div><div style={S.dashStatLabel}>SOLD</div></div>
-              <div style={{...S.dashStat,borderTop:"4px solid #007AFF"}}><div style={{...S.dashStatNum,color:"#007AFF"}}>£{myItems.filter(i=>i.sold).reduce((a,i)=>a+i.price,0)}</div><div style={S.dashStatLabel}>EARNED</div></div>
+              <div style={{...S.dashStat,borderTop:"4px solid #00B3A3"}}><div style={{...S.dashStatNum,color:"#00B3A3"}}>£{myItems.filter(i=>i.sold).reduce((a,i)=>a+i.price,0)}</div><div style={S.dashStatLabel}>EARNED</div></div>
               <div style={{...S.dashStat,borderTop:"4px solid #BF5AF2"}}><div style={{...S.dashStatNum,color:"#BF5AF2"}}>{myItems.reduce((a,i)=>a+(i.views||0),0)}</div><div style={S.dashStatLabel}>VIEWS</div></div>
               {myRating&&myRating.count>0&&(
                 <div style={{...S.dashStat,borderTop:"4px solid #FF1493"}}>
