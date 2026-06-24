@@ -20,6 +20,7 @@ export default function Profile({
   // Phase 13 — storefront listings filter (ALL / WOMEN / MEN). Local to the view;
   // resets whenever a different seller's storefront is opened.
   const [storeFilter,setStoreFilter]=React.useState("ALL");
+  const [storeSort,setStoreSort]=React.useState("newest");
   React.useEffect(()=>{ setStoreFilter("ALL"); },[viewedProfile?.id]);
   // Login gate — following a seller needs an account; logged-out visitors get
   // the shared sign-up prompt (context: follow) rather than a bounce to /auth.
@@ -155,7 +156,14 @@ export default function Profile({
         const avgRating=reviews.length?reviews.reduce((a,r)=>a+r.rating,0)/reviews.length:0;
         const memberSince=sf.created_at?new Date(sf.created_at).toLocaleDateString("en-GB",{month:"short",year:"numeric"}):null;
         // Honour the WOMEN/MEN tab; ALL shows everything. Only active listings show.
-        const gridItems=activeListings.filter(i=>storeFilter==="ALL"||listingGender(i)===storeFilter.toLowerCase());
+        const gridItems=activeListings
+          .filter(i=>storeFilter==="ALL"||listingGender(i)===storeFilter.toLowerCase())
+          .slice()
+          .sort((a,b)=>{
+            if(storeSort==="price_low")  return (parseFloat(a.price)||0)-(parseFloat(b.price)||0);
+            if(storeSort==="price_high") return (parseFloat(b.price)||0)-(parseFloat(a.price)||0);
+            return new Date(b.created_at||0)-new Date(a.created_at||0); // newest first
+          });
         const ig=(sf.storefront_instagram||"").replace(/^@/,"").trim();
         // Stat tile — small box with a 2px #111 border (design system).
         const StatTile=({icon,value,label})=>(
@@ -235,10 +243,17 @@ export default function Profile({
             {/* LISTINGS */}
             <div style={{marginTop:36,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap",marginBottom:18}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #FF1493",paddingLeft:12}}>LISTINGS</div>
-              <div style={{display:"flex",gap:0}}>
-                {["ALL","WOMEN","MEN"].map(g=>(
-                  <button key={g} className="hbtn" onClick={()=>setStoreFilter(g)} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1.5,padding:"7px 16px",border:"2px solid #111",borderLeft:g==="ALL"?"2px solid #111":"none",background:storeFilter===g?"#FF1493":"#fff",color:storeFilter===g?"#fff":"#111",cursor:"pointer",borderRadius:0}}>{g}</button>
-                ))}
+              <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
+                <div style={{display:"flex",gap:0}}>
+                  {["ALL","WOMEN","MEN"].map(g=>(
+                    <button key={g} className="hbtn" onClick={()=>setStoreFilter(g)} style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1.5,padding:"7px 16px",border:"2px solid #111",borderLeft:g==="ALL"?"2px solid #111":"none",background:storeFilter===g?"#FF1493":"#fff",color:storeFilter===g?"#fff":"#111",cursor:"pointer",borderRadius:0}}>{g}</button>
+                  ))}
+                </div>
+                <select value={storeSort} onChange={e=>setStoreSort(e.target.value)} aria-label="Sort listings" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1,padding:"8px 12px",border:"2px solid #111",borderRadius:0,background:"#fff",color:"#111",cursor:"pointer"}}>
+                  <option value="newest">NEWEST</option>
+                  <option value="price_low">PRICE: LOW → HIGH</option>
+                  <option value="price_high">PRICE: HIGH → LOW</option>
+                </select>
               </div>
             </div>
             <div style={S.grid}>
