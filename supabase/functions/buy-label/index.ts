@@ -75,7 +75,7 @@ async function p2gToken(): Promise<string> {
       grant_type: "client_credentials",
       client_id: P2G_CLIENT_ID,
       client_secret: P2G_CLIENT_SECRET,
-      scope: "public_api payment",
+      scope: "public-api payment",
     }),
   });
   const text = await res.text().catch(() => "");
