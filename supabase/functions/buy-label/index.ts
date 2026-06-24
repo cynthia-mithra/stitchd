@@ -92,14 +92,14 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
 
   // Parcel2Go addresses: ContactName/Property/Street/Town/Postcode/CountryIsoCode.
   const collectionAddress = {
-    ContactName: p.from.ship_from_name || "Seller", Property: p.from.ship_from_line1 || "",
-    Street: p.from.ship_from_line2 || "", Town: p.from.ship_from_city || "",
-    Postcode: p.from.ship_from_postcode || "", CountryIsoCode: "GBR",
+    ContactName: p.from.ship_from_name || "Seller", Email: "orders@stitchd.fit", Phone: "07000000000",
+    Property: p.from.ship_from_line1 || "", Street: p.from.ship_from_line2 || "",
+    Town: p.from.ship_from_city || "", Postcode: p.from.ship_from_postcode || "", CountryIsoCode: "GBR",
   };
   const deliveryAddress = {
-    ContactName: p.to.name || "Customer", Property: p.to.line1 || "",
-    Street: p.to.line2 || "", Town: p.to.city || "",
-    Postcode: p.to.postcode || "", CountryIsoCode: "GBR",
+    ContactName: p.to.name || "Customer", Email: "orders@stitchd.fit", Phone: "07000000000",
+    Property: p.to.line1 || "", Street: p.to.line2 || "",
+    Town: p.to.city || "", Postcode: p.to.postcode || "", CountryIsoCode: "GBR",
   };
 
   // 1) Quote → pick a service (matching the buyer's chosen carrier, else cheapest).
@@ -120,9 +120,10 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
   const serviceSlug = chosen.Slug || chosen.Service || chosen.ServiceSlug;
   if (!serviceSlug) throw new Error("Parcel2Go quote returned no service slug.");
 
-  // 2) Create the order. Note: Id is a real UUID, CollectionDate is required, and
-  //    DeliveryAddress sits INSIDE each Parcel (not on the item).
-  const nameParts = (collectionAddress.ContactName || "Stitchd Seller").split(" ");
+  // 2) Create the order — Parcel2Go's exact shape (matches their production API):
+  //    a UUID Id, CollectionDate, the service slug, CollectionAddress, and Parcels
+  //    each with their own Id, EstimatedValue, Contents and a nested DeliveryAddress.
+  const nameParts = String(collectionAddress.ContactName || "Stitchd Seller").trim().split(" ");
   const orderBody = {
     Items: [{
       Id: crypto.randomUUID(),
@@ -130,8 +131,11 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
       Service: serviceSlug,
       CollectionAddress: collectionAddress,
       Parcels: [{
-        Height: 5, Length: 30, Width: 25, Weight: weightKg, Value: 20,
+        Id: crypto.randomUUID(),
+        Height: 5, Length: 30, Width: 25, Weight: weightKg,
+        EstimatedValue: 20,
         ContentsSummary: "Pre-loved clothing",
+        Contents: [{ Description: "Pre-loved clothing", Quantity: "1", EstimatedValue: "20" }],
         DeliveryAddress: deliveryAddress,
       }],
     }],
@@ -145,35 +149,23 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
   const oText = await oRes.text().catch(() => "");
   if (!oRes.ok) throw new Error(`Parcel2Go order failed (${oRes.status}): ${oText.slice(0, 300)}`);
   const order = JSON.parse(oText) || {};
-  const hash = order.Hash || order.hash || order.OrderId || order.orderId;
-  if (!hash) throw new Error(`Parcel2Go order created but no hash returned: ${oText.slice(0, 200)}`);
+  const orderId = order.OrderId || order.orderId;
+  // Hash: a top-level field, or parsed from the `payment` link's ?hash= param.
+  let hash = order.Hash || order.hash || "";
+  if (!hash && order.Links?.payment) { try { hash = new URL(order.Links.payment).searchParams.get("hash") || ""; } catch { /* ignore */ } }
+  const orderLineId = order.OrderlineIdMap?.[0]?.OrderLineId || order.OrderLineIdMap?.[0]?.OrderLineId;
+  if (!orderId || !hash) throw new Error(`Parcel2Go order made but missing OrderId/Hash: ${oText.slice(0, 250)}`);
 
-  // 3) Pay from the account's PrePay balance.
-  const payRes = await fetch(`https://www.parcel2go.com/api/orders/${hash}/payment`, {
-    method: "POST", headers: auth, body: JSON.stringify({ PaymentMethod: "PrePay" }),
-  });
+  // 3) Pay from the account's PrePay balance (empty POST, hash-authenticated).
+  const payRes = await fetch(`https://www.parcel2go.com/api/orders/${orderId}/paywithprepay?hash=${encodeURIComponent(hash)}`, { method: "POST", headers: auth });
   const payText = await payRes.text().catch(() => "");
   if (!payRes.ok) throw new Error(`Parcel2Go payment failed (${payRes.status}): ${payText.slice(0, 300)}`);
 
-  // 4) Fetch the label(s) + tracking for the paid order.
-  let labelUrl: string | undefined;
-  let tracking: string | undefined;
-  const lblRes = await fetch(`https://www.parcel2go.com/api/orders/${hash}/labels`, { headers: auth });
-  const lblText = await lblRes.text().catch(() => "");
-  try {
-    const lbl = JSON.parse(lblText);
-    const links = lbl?.Links || lbl?.links || [];
-    labelUrl = Array.isArray(links) ? (links[0]?.Link || links[0]?.link) : (lbl?.LabelUrl || lbl?.Url);
-    tracking = lbl?.TrackingNumber || lbl?.[0]?.TrackingNumber;
-  } catch { /* fall through to order lookup */ }
-  if (!tracking) {
-    const ordRes = await fetch(`https://www.parcel2go.com/api/orders/${hash}`, { headers: auth });
-    const ord = await ordRes.json().catch(() => ({}));
-    tracking = ord?.Items?.[0]?.TrackingNumber || ord?.TrackingNumber || ord?.Items?.[0]?.Parcels?.[0]?.TrackingNumber;
-    labelUrl = labelUrl || ord?.Links?.Label || ord?.LabelUrl;
-  }
-  if (!tracking) throw new Error(`Parcel2Go: order ${hash} paid, but no tracking number found yet. Labels response: ${lblText.slice(0, 200)}`);
-  return { tracking_number: String(tracking), label_url: labelUrl ? String(labelUrl) : undefined };
+  // 4) Label PDF (hash-authenticated → openable directly) + the Parcel2Go shipment
+  //    reference (OrderLineId) as the tracking number.
+  const labelUrl = `https://www.parcel2go.com/api/labels/${orderId}?hash=${encodeURIComponent(hash)}&referenceType=OrderId&detailLevel=All&labelFormat=PDF`;
+  const tracking = orderLineId || orderId;
+  return { tracking_number: String(tracking), label_url: labelUrl };
 }
 
 // ── Veeqo (Amazon, UK) — https://developers.veeqo.com ───────────────────────────
