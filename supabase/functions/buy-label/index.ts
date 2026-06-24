@@ -89,43 +89,90 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
   const token = await p2gToken();
   const auth = { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" };
   const weightKg = Math.max(0.1, (p.weight_grams || 1000) / 1000);
-  const collection = {
-    ContactName: p.from.ship_from_name || "", Property: p.from.ship_from_line1 || "",
+
+  // Parcel2Go addresses: ContactName/Property/Street/Town/Postcode/CountryIsoCode.
+  const collectionAddress = {
+    ContactName: p.from.ship_from_name || "Seller", Property: p.from.ship_from_line1 || "",
     Street: p.from.ship_from_line2 || "", Town: p.from.ship_from_city || "",
     Postcode: p.from.ship_from_postcode || "", CountryIsoCode: "GBR",
   };
-  const delivery = {
-    ContactName: p.to.name || "", Property: p.to.line1 || "",
+  const deliveryAddress = {
+    ContactName: p.to.name || "Customer", Property: p.to.line1 || "",
     Street: p.to.line2 || "", Town: p.to.city || "",
     Postcode: p.to.postcode || "", CountryIsoCode: "GBR",
   };
-  const parcels = [{ Weight: weightKg, Length: 30, Width: 25, Height: 5, Value: 20 }];
 
-  // 1) Quote → pick a service (cheapest, or one matching the buyer's chosen carrier).
+  // 1) Quote → pick a service (matching the buyer's chosen carrier, else cheapest).
   const qRes = await fetch("https://www.parcel2go.com/api/quotes", {
     method: "POST", headers: auth,
-    body: JSON.stringify({ CollectionAddress: { Postcode: collection.Postcode, Country: "GBR" }, DeliveryAddress: { Postcode: delivery.Postcode, Country: "GBR" }, Parcels: parcels }),
+    body: JSON.stringify({
+      CollectionAddress: { Postcode: collectionAddress.Postcode, Country: "GBR" },
+      DeliveryAddress: { Postcode: deliveryAddress.Postcode, Country: "GBR" },
+      Parcels: [{ Weight: weightKg, Length: 30, Width: 25, Height: 5, Value: 20 }],
+    }),
   });
   const qText = await qRes.text().catch(() => "");
   if (!qRes.ok) throw new Error(`Parcel2Go quote failed (${qRes.status}): ${qText.slice(0, 200)}`);
   const quotes = (JSON.parse(qText)?.Quotes || JSON.parse(qText)?.quotes || []) as Array<Record<string, unknown>>;
   if (!quotes.length) throw new Error("Parcel2Go returned no services for this route.");
   const wantCarrier = (p.service || "").split("·")[0].trim().toLowerCase();
-  const chosen = quotes.find((q) => String(q.Service || q.CourierName || "").toLowerCase().includes(wantCarrier)) || quotes[0];
-  const serviceSlug = chosen.Service || chosen.ServiceSlug || chosen.slug;
+  const chosen = quotes.find((q) => String(q.CourierName || q.Service || "").toLowerCase().includes(wantCarrier)) || quotes[0];
+  const serviceSlug = chosen.Slug || chosen.Service || chosen.ServiceSlug;
+  if (!serviceSlug) throw new Error("Parcel2Go quote returned no service slug.");
 
-  // 2) Create + pay the order for that service. (Parcel2Go supports prepay/account/
-  //    card — confirm your account's payment method + the exact order/label fields.)
-  const oRes = await fetch("https://www.parcel2go.com/api/orders", {
-    method: "POST", headers: auth,
-    body: JSON.stringify({ Items: [{ Id: "1", CollectionAddress: collection, DeliveryAddress: delivery, Parcels: parcels, Service: serviceSlug }] }),
-  });
+  // 2) Create the order. Note: Id is a real UUID, CollectionDate is required, and
+  //    DeliveryAddress sits INSIDE each Parcel (not on the item).
+  const nameParts = (collectionAddress.ContactName || "Stitchd Seller").split(" ");
+  const orderBody = {
+    Items: [{
+      Id: crypto.randomUUID(),
+      CollectionDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      Service: serviceSlug,
+      CollectionAddress: collectionAddress,
+      Parcels: [{
+        Height: 5, Length: 30, Width: 25, Weight: weightKg, Value: 20,
+        ContentsSummary: "Pre-loved clothing",
+        DeliveryAddress: deliveryAddress,
+      }],
+    }],
+    CustomerDetails: {
+      Email: "orders@stitchd.fit",
+      Forename: nameParts[0] || "Stitchd",
+      Surname: nameParts.slice(1).join(" ") || "Seller",
+    },
+  };
+  const oRes = await fetch("https://www.parcel2go.com/api/orders", { method: "POST", headers: auth, body: JSON.stringify(orderBody) });
   const oText = await oRes.text().catch(() => "");
-  if (!oRes.ok) throw new Error(`Parcel2Go order failed (${oRes.status}): ${oText.slice(0, 200)}`);
+  if (!oRes.ok) throw new Error(`Parcel2Go order failed (${oRes.status}): ${oText.slice(0, 300)}`);
   const order = JSON.parse(oText) || {};
-  const tracking = order.TrackingNumber || order.tracking_number || (order.Items?.[0]?.TrackingNumber);
-  const labelUrl = order.LabelUrl || order.label_url || (order.Links?.Label);
-  if (!tracking) throw new Error("Parcel2Go order created but returned no tracking number — verify the order/label flow.");
+  const hash = order.Hash || order.hash || order.OrderId || order.orderId;
+  if (!hash) throw new Error(`Parcel2Go order created but no hash returned: ${oText.slice(0, 200)}`);
+
+  // 3) Pay from the account's PrePay balance.
+  const payRes = await fetch(`https://www.parcel2go.com/api/orders/${hash}/payment`, {
+    method: "POST", headers: auth, body: JSON.stringify({ PaymentMethod: "PrePay" }),
+  });
+  const payText = await payRes.text().catch(() => "");
+  if (!payRes.ok) throw new Error(`Parcel2Go payment failed (${payRes.status}): ${payText.slice(0, 300)}`);
+
+  // 4) Fetch the label(s) + tracking for the paid order.
+  let labelUrl: string | undefined;
+  let tracking: string | undefined;
+  const lblRes = await fetch(`https://www.parcel2go.com/api/orders/${hash}/labels`, { headers: auth });
+  const lblText = await lblRes.text().catch(() => "");
+  try {
+    const lbl = JSON.parse(lblText);
+    const links = lbl?.Links || lbl?.links || [];
+    labelUrl = Array.isArray(links) ? (links[0]?.Link || links[0]?.link) : (lbl?.LabelUrl || lbl?.Url);
+    tracking = lbl?.TrackingNumber || lbl?.[0]?.TrackingNumber;
+  } catch { /* fall through to order lookup */ }
+  if (!tracking) {
+    const ordRes = await fetch(`https://www.parcel2go.com/api/orders/${hash}`, { headers: auth });
+    const ord = await ordRes.json().catch(() => ({}));
+    tracking = ord?.Items?.[0]?.TrackingNumber || ord?.TrackingNumber || ord?.Items?.[0]?.Parcels?.[0]?.TrackingNumber;
+    labelUrl = labelUrl || ord?.Links?.Label || ord?.LabelUrl;
+  }
+  if (!tracking) throw new Error(`Parcel2Go: order ${hash} paid, but no tracking number found yet. Labels response: ${lblText.slice(0, 200)}`);
   return { tracking_number: String(tracking), label_url: labelUrl ? String(labelUrl) : undefined };
 }
 
