@@ -42,6 +42,20 @@ export default function Detail({
   // prompt instead of erroring. `gate` holds the context string while open.
   const [gate, setGate] = React.useState(null);
   const requireAuth = (context, action) => { if (user) action(); else setGate(context); };
+  // Fullscreen image zoom (lightbox) + swipe tracking for the gallery.
+  const [zoom, setZoom] = React.useState(false);
+  const touchX = React.useRef(null);
+  const nextImg = React.useCallback(() => setSelImgIdx(i => (i + 1) % selImages.length), [setSelImgIdx, selImages.length]);
+  const prevImg = React.useCallback(() => setSelImgIdx(i => (i - 1 + selImages.length) % selImages.length), [setSelImgIdx, selImages.length]);
+  const onTouchStart = (e) => { touchX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => { if (touchX.current == null || selImages.length < 2) return; const dx = e.changedTouches[0].clientX - touchX.current; if (Math.abs(dx) > 40) (dx < 0 ? nextImg() : prevImg()); touchX.current = null; };
+  // Keyboard control while the lightbox is open: Esc closes, arrows navigate.
+  React.useEffect(() => {
+    if (!zoom) return;
+    const onKey = (e) => { if (e.key === "Escape") setZoom(false); else if (e.key === "ArrowRight") nextImg(); else if (e.key === "ArrowLeft") prevImg(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zoom, nextImg, prevImg]);
   // Buyer-side unit toggle — converts on the fly, never writes back (PART 2a).
   const [dispUnit, setDispUnit] = React.useState("cm");
   // Phase 14 — split top-level questions from their replies. Replies point at
@@ -165,14 +179,16 @@ export default function Detail({
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
           <div style={S.detailWrap} className="detail-wrap">
             <div style={S.detailImgWrap} className="detail-img">
-              <div style={{...S.detailPanel,background:selImages.length>0?"#000":selColor,overflow:"hidden"}}>
+              <div style={{...S.detailPanel,background:selImages.length>0?"#000":selColor,overflow:"hidden",cursor:selImages.length>0?"zoom-in":"default"}}
+                   onClick={()=>{ if(selImages.length>0) setZoom(true); }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
                 {selImages.length>0?<img src={selImages[selImgIdx]} alt={sel.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:120}}>{sel.emoji||catEmoji(sel.category)}</span>}
                 {sel.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                 {sel.reserved&&!sel.sold&&<div style={S.reservedBadge}>RESERVED</div>}
+                {selImages.length>0&&<div style={{position:"absolute",bottom:10,right:10,background:"rgba(0,0,0,0.55)",color:"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,padding:"4px 9px",pointerEvents:"none",display:"flex",alignItems:"center",gap:5}}><Eye width={12} height={12}/> TAP TO ZOOM</div>}
                 {selImages.length>1&&(
                   <>
-                    <button style={{...S.imgNav,left:12}} onClick={()=>setSelImgIdx(i=>(i-1+selImages.length)%selImages.length)}>‹</button>
-                    <button style={{...S.imgNav,right:12}} onClick={()=>setSelImgIdx(i=>(i+1)%selImages.length)}>›</button>
+                    <button aria-label="Previous image" style={{...S.imgNav,left:12}} onClick={(e)=>{e.stopPropagation();prevImg();}}>‹</button>
+                    <button aria-label="Next image" style={{...S.imgNav,right:12}} onClick={(e)=>{e.stopPropagation();nextImg();}}>›</button>
                   </>
                 )}
               </div>
@@ -186,6 +202,22 @@ export default function Detail({
                 </div>
               )}
             </div>
+            {/* FULLSCREEN ZOOM (lightbox) — tap the main photo to inspect it large.
+                Tap outside / Esc closes; arrows or swipe navigate the gallery. */}
+            {zoom&&selImages.length>0&&(
+              <div onClick={()=>setZoom(false)} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
+                   style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.93)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+                <button aria-label="Close" onClick={(e)=>{e.stopPropagation();setZoom(false);}} style={{position:"absolute",top:18,right:18,background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,width:42,height:42,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}><X width={22} height={22}/></button>
+                <img src={selImages[selImgIdx]} alt={sel.name} onClick={(e)=>e.stopPropagation()} style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain"}}/>
+                {selImages.length>1&&(
+                  <>
+                    <button aria-label="Previous image" onClick={(e)=>{e.stopPropagation();prevImg();}} style={{position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.92)",color:"#111",border:"2px solid #111",borderRadius:0,width:46,height:46,fontSize:24,fontWeight:700,cursor:"pointer",lineHeight:1}}>‹</button>
+                    <button aria-label="Next image" onClick={(e)=>{e.stopPropagation();nextImg();}} style={{position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.92)",color:"#111",border:"2px solid #111",borderRadius:0,width:46,height:46,fontSize:24,fontWeight:700,cursor:"pointer",lineHeight:1}}>›</button>
+                    <div style={{position:"absolute",bottom:22,left:0,right:0,textAlign:"center",color:"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,fontSize:14}}>{selImgIdx+1} / {selImages.length}</div>
+                  </>
+                )}
+              </div>
+            )}
             <div style={S.detailInfo} className="detail-info">
               <p style={{...S.cardCatLabel,color:selColor,fontSize:12,marginBottom:8}}>{sel.category?.toUpperCase()} · {(sel.material||sel.fabric)?.toUpperCase()} · {sel.condition?.toUpperCase()}</p>
               <h2 style={S.detailName}>{sel.name}</h2>
