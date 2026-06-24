@@ -224,7 +224,7 @@ export default function Orders({
                           {/* Older orders (or any where the in-app PDF wasn't stored) have no
                               label_url — their one-time hash isn't kept — so send the seller to
                               their Parcel2Go account where every purchased label can be reprinted. */}
-                          {!isBuyer && !order.label_url && order.tracking_number && SHIPPING_LABELS_ENABLED && <a href="https://www.parcel2go.com/orders" target="_blank" rel="noreferrer" style={{ ...lblFont, fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: "#111", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5, border: "2px solid #111", padding: "5px 10px" }}><Package width={12} height={12} /> VIEW LABEL <ExternalLink width={11} height={11} /></a>}
+                          {!isBuyer && !order.label_url && order.tracking_number && SHIPPING_LABELS_ENABLED && <a href="https://www.parcel2go.com/myaccount/myorders" target="_blank" rel="noreferrer" style={{ ...lblFont, fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: "#111", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5, border: "2px solid #111", padding: "5px 10px" }}><Package width={12} height={12} /> VIEW LABEL <ExternalLink width={11} height={11} /></a>}
                           {!isBuyer && <button onClick={() => { setTrackEditing(p => ({ ...p, [order.id]: true })); setTrackInputs(p => ({ ...p, [order.id]: order.tracking_number || "" })); }} style={{ ...lblFont, background: "none", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 800, letterSpacing: 1, color: "#888", textDecoration: "underline", padding: 0 }}>EDIT</button>}
                         </div>
                       );
