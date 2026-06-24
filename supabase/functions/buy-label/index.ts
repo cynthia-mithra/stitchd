@@ -226,17 +226,29 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
 // asynchronously after payment, so callers retry over time.
 async function fetchAndStashP2GLabel(token: string, orderId: string, hash: string, attempts = 4): Promise<{ url?: string; diag: string }> {
   const labelApi = `https://www.parcel2go.com/api/labels/${orderId}?hash=${encodeURIComponent(hash)}&referenceType=OrderId&detailLevel=All&labelMedia=A4&labelFormat=PDF`;
+  const isPdf = (b: Uint8Array) => b.length > 4 && b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46; // "%PDF"
+  const b64ToBytes = (b64: string) => { const bin = atob(b64); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; };
   let diag = "no response";
   for (let attempt = 0; attempt < attempts; attempt++) {
     const lr = await fetch(labelApi, { headers: { Authorization: `Bearer ${token}`, Accept: "application/pdf" } }).catch((e) => { diag = `fetch threw: ${e}`; return null; });
     if (lr) {
       const ct = lr.headers.get("content-type") || "";
       const buf = new Uint8Array(await lr.arrayBuffer().catch(() => new ArrayBuffer(0)));
-      // Detect a real PDF by its "%PDF" signature rather than trusting the
-      // content-type header (Parcel2Go sometimes returns octet-stream; a
-      // not-ready label comes back as JSON, which we skip and retry).
-      if (lr.ok && buf.length > 4 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) {
-        const stash = await stashLabelPdf(orderId, buf);
+      let pdf: Uint8Array | null = null;
+      if (isPdf(buf)) {
+        // Some calls return the raw PDF binary directly.
+        pdf = buf;
+      } else if (lr.ok) {
+        // Parcel2Go's documented shape: a JSON wrapper with the PDF base64-encoded
+        // in Base64EncodedLabels[]. SuccessfulLabels=0 means it isn't ready → retry.
+        try {
+          const j = JSON.parse(new TextDecoder().decode(buf));
+          const b64 = j?.Base64EncodedLabels?.[0] || j?.base64EncodedLabels?.[0];
+          if (b64) { const dec = b64ToBytes(String(b64)); if (isPdf(dec)) pdf = dec; }
+        } catch { /* not JSON */ }
+      }
+      if (pdf) {
+        const stash = await stashLabelPdf(orderId, pdf);
         if (stash.url) return { url: stash.url, diag: "ok" };
         diag = `stash: ${stash.diag}`;
       } else {
