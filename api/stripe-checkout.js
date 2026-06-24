@@ -86,6 +86,21 @@ module.exports = async (req, res) => {
       };
     });
 
+    // Buyer Protection fee (Vinted-style): a fixed part + % of the item subtotal,
+    // charged to the buyer. This is the platform's revenue (sellers sell free).
+    const itemsSubtotalPence = listings.reduce((s, l) => s + Math.round(parseFloat(String(l.price)) * 100), 0);
+    const BUYER_PROTECTION_FIXED_PENCE = 80;
+    const BUYER_PROTECTION_PCT = 0.06;
+    const protectionPence = itemsSubtotalPence > 0
+      ? BUYER_PROTECTION_FIXED_PENCE + Math.round(itemsSubtotalPence * BUYER_PROTECTION_PCT)
+      : 0;
+    if (protectionPence > 0) {
+      line_items.push({
+        price_data: { currency: "gbp", product_data: { name: "Buyer Protection fee" }, unit_amount: protectionPence },
+        quantity: 1,
+      });
+    }
+
     // Delivery as its own line item per seller, so the buyer pays item(s) + each
     // seller's shipping and every courier choice is itemised on Stripe's hosted
     // page (free in-person collection adds no line). Multi-seller bags get one

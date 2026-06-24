@@ -103,14 +103,24 @@ module.exports = async (req, res) => {
     const origin =
       req.headers.origin || (req.headers.host ? `https://${req.headers.host}` : "https://stitchd.fit");
 
+    // Buyer Protection fee (Vinted-style): fixed + % of the offer amount, charged
+    // to the buyer (sellers sell free). Kept in lockstep with api/stripe-checkout.js.
+    const protectionPence = pence > 0 ? 80 + Math.round(pence * 0.06) : 0;
+    const offerLineItems = [
+      { price_data: { currency: "gbp", product_data: { name: listing.name }, unit_amount: pence }, quantity: 1 },
+    ];
+    if (protectionPence > 0) {
+      offerLineItems.push({
+        price_data: { currency: "gbp", product_data: { name: "Buyer Protection fee" }, unit_amount: protectionPence },
+        quantity: 1,
+      });
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      line_items: [
-        {
-          price_data: { currency: "gbp", product_data: { name: listing.name }, unit_amount: pence },
-          quantity: 1,
-        },
-      ],
+      line_items: offerLineItems,
+      // Collect the buyer's UK delivery address so the seller can post the item.
+      shipping_address_collection: { allowed_countries: ["GB"] },
       // type='offer' routes the webhook to the offer handler; listing_ids (plural)
       // lets verify-session + the order-success bag-clear reuse the sale path.
       metadata: {

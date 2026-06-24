@@ -3,12 +3,23 @@ import { Package, Mailbox, Box, Truck } from "lucide-react";
 export const SUPABASE_URL = "https://zhstooqgkyuzxseylsbk.supabase.co";
 export const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoc3Rvb3Fna3l1enhzZXlsc2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NzM3MzQsImV4cCI6MjA5NjE0OTczNH0.mW5GB1VzSfRBMWZRlU7OfQ0RqoT1wEBVBoai6dJ6eQs";
 export const STRIPE_PK   = "pk_test_51TelKZPVRS43N0XeftXWJNSr9wLp2Q5REYAkq1ABO0ztePMTP4zw6QHR4gN0o6nqWkZH66zYKRicGrgJvuQLywwo00oKnn5ydj";
-export const PLATFORM_FEE = 0.08;
+// Vinted-style fees: sellers sell FREE (no commission), and the BUYER pays a
+// Buyer Protection fee at checkout (this is the platform's revenue). Fee is a
+// fixed part + a % of the item subtotal.
+export const PLATFORM_FEE = 0;            // seller commission (0 = sellers sell free)
+export const BUYER_PROTECTION_FIXED = 0.80; // £ fixed part
+export const BUYER_PROTECTION_PCT = 0.06;   // % of item subtotal
+// Buyer Protection fee in pounds for a given item subtotal (in pounds).
+export function buyerProtectionFee(subtotal) {
+  const s = Number(subtotal) || 0;
+  if (s <= 0) return 0;
+  return parseFloat((BUYER_PROTECTION_FIXED + s * BUYER_PROTECTION_PCT).toFixed(2));
+}
 export const hdrs = (t) => ({ apikey: SUPABASE_KEY, Authorization: `Bearer ${t||SUPABASE_KEY}`, "Content-Type": "application/json" });
 
 export function buildPaymentSummary(listing) {
   const amount = parseFloat(listing.price);
-  const fee    = parseFloat((amount * PLATFORM_FEE).toFixed(2));
+  const fee    = parseFloat((amount * PLATFORM_FEE).toFixed(2)); // 0 — sellers sell free
   const sellerGets = parseFloat((amount - fee).toFixed(2));
   return { amount, fee, sellerGets };
 }

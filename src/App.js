@@ -4,7 +4,7 @@ import {
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, SHOE_SIZES, ALL_CATEGORIES,
   LISTING_TYPES, JEWELLERY_MATERIALS, ORIGINS, FABRICS, CONDITIONS,
   OCCASIONS, SIZES, OCC_COLOR, CARD_COLORS, EMPTY_FORM, POSTAGE_OPTIONS,
-  catEmoji, currencySymbol, buildPaymentSummary,
+  catEmoji, currencySymbol, buildPaymentSummary, buyerProtectionFee,
   garmentTypesFor, garmentFieldsFor, defaultGarmentFor, parseMeasurements, buildMeasPayload,
   ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary,
 } from "./lib/constants";
@@ -3809,7 +3809,8 @@ export default function App() {
                 ):(()=>{
                   const shipTotal=bagSellerGroups.reduce((s,g)=>s+((bagShipping[g.key]?.selectedPrice?.price)||0),0);
                   const allChosen=bagSellerGroups.every(g=>bagShipping[g.key]);
-                  const finalTotal=(bagTotal-bundleDiscountTotal)+shipTotal;
+                  const protection=buyerProtectionFee(bagTotal-bundleDiscountTotal);
+                  const finalTotal=(bagTotal-bundleDiscountTotal)+shipTotal+protection;
                   const multi=bagSellerGroups.length>1;
                   const pick=(key,opt)=>setBagShipping(prev=>({...prev,[key]:opt}));
                   return(
@@ -3861,6 +3862,12 @@ export default function App() {
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:6,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:0.5,color:"#555"}}>
                         <span style={{display:"inline-flex",alignItems:"center",gap:6}}><Package width={14} height={14}/> Delivery{multi?" (all sellers)":""}</span>
                         <span>{currencySymbol()}{shipTotal.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {protection>0&&(
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:0.5,color:"#555"}}>
+                        <span style={{display:"inline-flex",alignItems:"center",gap:6}}><ShieldCheck width={14} height={14}/> Buyer Protection</span>
+                        <span>{currencySymbol()}{protection.toFixed(2)}</span>
                       </div>
                     )}
                     <div style={S.bagTotalRow}><span style={S.bagTotalLabel}>TOTAL</span><span style={S.bagTotalVal}>{currencySymbol()}{finalTotal.toFixed(2)}</span></div>

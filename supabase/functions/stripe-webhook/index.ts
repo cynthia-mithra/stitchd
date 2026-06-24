@@ -105,13 +105,13 @@ async function fetchListingsHealing(filter: string): Promise<ListingRow[] | null
   return null;
 }
 // ── Wallet — credit the seller's earnings on a completed sale ─────────────────
-// Stitch'd keeps an 8% commission; the rest is credited to the seller's wallet.
-// The credit is held as 'pending' (Vinted-style escrow) and only released to the
-// withdrawable balance when the buyer confirms they've received the item.
+// Vinted-style fees: sellers sell FREE (no commission) — the platform's revenue is
+// the Buyer Protection fee charged to the buyer at checkout. The seller credit is
+// held as 'pending' (escrow) and released when the buyer confirms receipt.
 // Idempotent on (listing_id, session) via the wallet_tx_sale_unique index, so a
 // retried webhook can't double-credit (the duplicate insert fails the unique
 // constraint and is ignored).
-const WALLET_COMMISSION_RATE = 0.08;
+const WALLET_COMMISSION_RATE = 0; // sellers sell free
 async function creditSellerWallet(
   sellerId: string | null | undefined,
   grossPence: number,
@@ -131,7 +131,7 @@ async function creditSellerWallet(
     listing_id: ctx.listingId ?? null,
     stripe_session_id: ctx.sessionId ?? null,
     order_id: ctx.orderId ?? null,
-    description: ctx.description ?? "Sale earnings (after 8% fee)",
+    description: ctx.description ?? "Sale earnings",
   });
 }
 
@@ -323,6 +323,14 @@ async function handleOffer(session: Stripe.Checkout.Session) {
     body: JSON.stringify({ status: "completed" }),
   }).catch(() => {});
 
+  // Buyer delivery address collected by Stripe (so the seller can post it).
+  const offerShipAddr = (() => {
+    const sd = (session as { shipping_details?: { name?: string; address?: Record<string, string> }; customer_details?: { name?: string; address?: Record<string, string> } });
+    const d = sd.shipping_details || sd.customer_details || null;
+    const a = d?.address; if (!a) return null;
+    return { name: d?.name || "", line1: a.line1 || "", line2: a.line2 || "", city: a.city || "", postcode: a.postal_code || "", country: a.country || "GB" };
+  })();
+
   // 3. Order row — offer amount (NOT the list price), flagged offer_accepted.
   await insertHealing("orders", {
     listing_id: listingId,
@@ -333,9 +341,10 @@ async function handleOffer(session: Stripe.Checkout.Session) {
     stripe_session_id: session.id,
     status: "paid",
     offer_accepted: true,
+    ...(offerShipAddr ? { delivery_address: offerShipAddr } : {}),
   });
 
-  // 3b. Credit the seller's wallet (offer amount − 8% commission).
+  // 3b. Credit the seller's wallet (offer amount — sellers sell free).
   await creditSellerWallet(sellerId, offerPence, {
     listingId,
     sessionId: session.id,
