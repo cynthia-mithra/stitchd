@@ -112,12 +112,17 @@ export function F({l,children,style}){return<div style={{display:"flex",flexDire
 // (SOLD veil, badges, heart button…) layered on top.
 export function Thumb({src,emoji,accent,gradient=false,imgOpacity=1,imgStyle,emojiStyle,style,className,children}){
   const [ok,setOk]=React.useState(true);
+  const [loaded,setLoaded]=React.useState(false);
+  // Reset load/error state whenever the source changes so reused cards re-shimmer.
+  React.useEffect(()=>{ setOk(true); setLoaded(false); },[src]);
   const showImg=!!src&&ok;
   return (
     <div className={className} style={{position:"relative",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",...style,background:showImg?"#000":accent}}>
       {showImg
-        ?<img src={src} alt="" onError={()=>setOk(false)} style={{width:"100%",height:"100%",objectFit:"cover",opacity:imgOpacity,...imgStyle}}/>
+        ?<img src={src} alt="" onError={()=>setOk(false)} onLoad={()=>setLoaded(true)} style={{width:"100%",height:"100%",objectFit:"cover",opacity:loaded?imgOpacity:0,transition:"opacity .4s ease",...imgStyle}}/>
         :<span style={emojiStyle}>{emoji}</span>}
+      {/* Shimmer placeholder while the photo loads — fades out as the image fades in. */}
+      {showImg&&!loaded&&<div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,#ededed 25%,#e0e0e0 50%,#ededed 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s ease-in-out infinite"}}/>}
       {showImg&&gradient&&<div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.45))"}}/>}
       {children}
     </div>
