@@ -3121,7 +3121,7 @@ export default function App() {
       // Bought but Parcel2Go hasn't finished generating the PDF yet.
       if(res&&res.tracking_number){
         setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null}:o));
-        flash(res.pending?"Label bought — Parcel2Go is still generating the PDF. Tap VIEW LABEL again in a minute.":(res.error||"Tracking added."),res.pending?9000:5000);
+        flash(res.error||(res.pending?"Label bought — Parcel2Go is still generating the PDF. Tap GET LABEL again in a minute.":"Tracking added."),12000);
         return;
       }
       if(res&&res.error){ flash(res.error); return; }

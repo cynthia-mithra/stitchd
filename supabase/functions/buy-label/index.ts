@@ -45,23 +45,23 @@ function weightGrams(label: string): number {
   return m ? Math.round(parseFloat(m[1]) * 1000) : 1000;
 }
 
-// Upload a label PDF to a public Storage bucket and return its public URL. The
-// bucket is created idempotently (ignore "already exists"). Returns undefined on
-// any failure so the caller can still hand back the tracking number.
-async function stashLabelPdf(orderId: string, bytes: Uint8Array): Promise<string | undefined> {
-  await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
+// Upload a label PDF to a public Storage bucket and return its public URL plus a
+// diagnostic string. The bucket is created idempotently (ignore "already exists").
+async function stashLabelPdf(orderId: string, bytes: Uint8Array): Promise<{ url?: string; diag: string }> {
+  const bkt = await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
     method: "POST",
     headers: { ...sb, "Content-Type": "application/json" },
     body: JSON.stringify({ id: "labels", name: "labels", public: true }),
-  }).catch(() => {});
+  }).catch(() => null);
   const path = `${orderId}.pdf`;
   const up = await fetch(`${SUPABASE_URL}/storage/v1/object/labels/${path}`, {
     method: "POST",
     headers: { ...sb, "Content-Type": "application/pdf", "x-upsert": "true" },
     body: bytes,
   }).catch(() => null);
-  if (!up || !up.ok) return undefined;
-  return `${SUPABASE_URL}/storage/v1/object/public/labels/${path}`;
+  if (!up) return { diag: "upload threw" };
+  if (!up.ok) return { diag: `upload http=${up.status} bkt=${bkt?.status ?? "x"}: ${(await up.text().catch(() => "")).slice(0, 120)}` };
+  return { url: `${SUPABASE_URL}/storage/v1/object/public/labels/${path}`, diag: "ok" };
 }
 
 type LabelPayload = {
@@ -214,30 +214,39 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
   //    We still persist the Parcel2Go OrderId + hash (returned below) so VIEW LABEL
   //    can re-fetch the PDF on demand later, by which point it's ready.
   const tracking = orderLineId || orderId;
-  const labelPublicUrl = await fetchAndStashP2GLabel(token, String(orderId), String(hash), 4);
-  return { tracking_number: String(tracking), label_url: labelPublicUrl, provider_order_id: String(orderId), provider_hash: String(hash) };
+  const stash = await fetchAndStashP2GLabel(token, String(orderId), String(hash), 4);
+  return { tracking_number: String(tracking), label_url: stash.url, provider_order_id: String(orderId), provider_hash: String(hash) };
 }
 
 // Fetch a Parcel2Go label PDF (Bearer-authenticated) and stash it in public
-// Storage, returning the public URL — or undefined if it isn't ready yet. The
-// labels endpoint needs the token (a plain browser open 404s), and the PDF is
-// generated asynchronously after payment, so callers retry over time.
-async function fetchAndStashP2GLabel(token: string, orderId: string, hash: string, attempts = 4): Promise<string | undefined> {
+// Storage. Returns { url, diag } — url present on success, diag always explains
+// the outcome (HTTP status + body snippet of a non-PDF response, or the stash
+// error) so callers can surface exactly where it failed. The labels endpoint
+// needs the token (a plain browser open 404s) and the PDF is generated
+// asynchronously after payment, so callers retry over time.
+async function fetchAndStashP2GLabel(token: string, orderId: string, hash: string, attempts = 4): Promise<{ url?: string; diag: string }> {
   const labelApi = `https://www.parcel2go.com/api/labels/${orderId}?hash=${encodeURIComponent(hash)}&referenceType=OrderId&detailLevel=All&labelMedia=A4&labelFormat=PDF`;
+  let diag = "no response";
   for (let attempt = 0; attempt < attempts; attempt++) {
-    const lr = await fetch(labelApi, { headers: { Authorization: `Bearer ${token}`, Accept: "application/pdf" } }).catch(() => null);
-    if (lr?.ok) {
+    const lr = await fetch(labelApi, { headers: { Authorization: `Bearer ${token}`, Accept: "application/pdf" } }).catch((e) => { diag = `fetch threw: ${e}`; return null; });
+    if (lr) {
+      const ct = lr.headers.get("content-type") || "";
       const buf = new Uint8Array(await lr.arrayBuffer().catch(() => new ArrayBuffer(0)));
       // Detect a real PDF by its "%PDF" signature rather than trusting the
       // content-type header (Parcel2Go sometimes returns octet-stream; a
       // not-ready label comes back as JSON, which we skip and retry).
-      if (buf.length > 4 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) {
-        return await stashLabelPdf(orderId, buf);
+      if (lr.ok && buf.length > 4 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) {
+        const stash = await stashLabelPdf(orderId, buf);
+        if (stash.url) return { url: stash.url, diag: "ok" };
+        diag = `stash: ${stash.diag}`;
+      } else {
+        const snippet = new TextDecoder().decode(buf.slice(0, 160)).replace(/\s+/g, " ").trim();
+        diag = `label http=${lr.status} ct=${ct} body="${snippet}"`;
       }
     }
     if (attempt < attempts - 1) await new Promise((r) => setTimeout(r, 2000));
   }
-  return undefined;
+  return { diag };
 }
 
 // ── Veeqo (Amazon, UK) — https://developers.veeqo.com ───────────────────────────
@@ -335,9 +344,9 @@ Deno.serve(async (req) => {
     if (order.tracking_number) {
       if (SHIPPING_PROVIDER === "parcel2go" && order.p2g_order_id && order.p2g_hash) {
         const token = await p2gToken();
-        const url = await fetchAndStashP2GLabel(token, String(order.p2g_order_id), String(order.p2g_hash), 6);
-        if (url) { await patchOrder({ label_url: url }); return json({ configured: true, tracking_number: order.tracking_number, label_url: url }); }
-        return json({ configured: true, tracking_number: order.tracking_number, label_url: null, pending: true, error: "Parcel2Go is still generating this label — try VIEW LABEL again in a minute." });
+        const r = await fetchAndStashP2GLabel(token, String(order.p2g_order_id), String(order.p2g_hash), 6);
+        if (r.url) { await patchOrder({ label_url: r.url }); return json({ configured: true, tracking_number: order.tracking_number, label_url: r.url }); }
+        return json({ configured: true, tracking_number: order.tracking_number, label_url: null, pending: true, error: `Label not ready: ${r.diag}` });
       }
       return json({ configured: true, already: true, legacy: true, tracking_number: order.tracking_number, label_url: null });
     }
