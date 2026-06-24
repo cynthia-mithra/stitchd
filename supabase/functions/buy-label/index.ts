@@ -72,9 +72,11 @@ type LabelPayload = {
   to: Record<string, string>;
 };
 
-// The one place to implement per courier. Returns { tracking_number, label_url }
-// or throws. Add a branch per provider as accounts are connected.
-async function callProvider(p: LabelPayload): Promise<{ tracking_number: string; label_url?: string }> {
+// The one place to implement per courier. Returns { tracking_number, label_url,
+// provider_order_id?, provider_hash? } or throws. Add a branch per provider as
+// accounts are connected.
+type ProviderResult = { tracking_number: string; label_url?: string; provider_order_id?: string; provider_hash?: string };
+async function callProvider(p: LabelPayload): Promise<ProviderResult> {
   if (SHIPPING_PROVIDER === "parcel2go") return buyParcel2GoLabel(p);
   if (SHIPPING_PROVIDER === "veeqo") return buyVeeqoLabel(p);
   throw new Error(`Shipping provider "${SHIPPING_PROVIDER}" is not implemented yet.`);
@@ -207,30 +209,35 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
   const payText = await payRes.text().catch(() => "");
   if (!payRes.ok) throw new Error(`Parcel2Go payment failed (${payRes.status}): ${payText.slice(0, 300)}`);
 
-  // 4) Fetch the label PDF SERVER-SIDE — the labels endpoint needs the Bearer
-  //    token, so a plain browser open returns 404 ("No HTTP resource…"). Stash the
-  //    PDF in a public Storage bucket so the seller can open/print it from a normal
-  //    link. Label generation can lag payment by a few seconds, so retry briefly;
-  //    if it never lands we still return the tracking number (the seller can print
-  //    from their Parcel2Go account in the meantime).
+  // 4) Try to fetch the label PDF now, but Parcel2Go generates it ASYNCHRONOUSLY
+  //    after payment — it's often not ready for 30s+ — so this frequently misses.
+  //    We still persist the Parcel2Go OrderId + hash (returned below) so VIEW LABEL
+  //    can re-fetch the PDF on demand later, by which point it's ready.
   const tracking = orderLineId || orderId;
+  const labelPublicUrl = await fetchAndStashP2GLabel(token, String(orderId), String(hash), 4);
+  return { tracking_number: String(tracking), label_url: labelPublicUrl, provider_order_id: String(orderId), provider_hash: String(hash) };
+}
+
+// Fetch a Parcel2Go label PDF (Bearer-authenticated) and stash it in public
+// Storage, returning the public URL — or undefined if it isn't ready yet. The
+// labels endpoint needs the token (a plain browser open 404s), and the PDF is
+// generated asynchronously after payment, so callers retry over time.
+async function fetchAndStashP2GLabel(token: string, orderId: string, hash: string, attempts = 4): Promise<string | undefined> {
   const labelApi = `https://www.parcel2go.com/api/labels/${orderId}?hash=${encodeURIComponent(hash)}&referenceType=OrderId&detailLevel=All&labelMedia=A4&labelFormat=PDF`;
-  let labelPublicUrl: string | undefined;
-  for (let attempt = 0; attempt < 8; attempt++) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
     const lr = await fetch(labelApi, { headers: { Authorization: `Bearer ${token}`, Accept: "application/pdf" } }).catch(() => null);
     if (lr?.ok) {
       const buf = new Uint8Array(await lr.arrayBuffer().catch(() => new ArrayBuffer(0)));
       // Detect a real PDF by its "%PDF" signature rather than trusting the
-      // content-type header (Parcel2Go sometimes returns octet-stream, and a
+      // content-type header (Parcel2Go sometimes returns octet-stream; a
       // not-ready label comes back as JSON, which we skip and retry).
       if (buf.length > 4 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) {
-        labelPublicUrl = await stashLabelPdf(String(orderId), buf);
-        break;
+        return await stashLabelPdf(orderId, buf);
       }
     }
-    await new Promise((r) => setTimeout(r, 2000));
+    if (attempt < attempts - 1) await new Promise((r) => setTimeout(r, 2000));
   }
-  return { tracking_number: String(tracking), label_url: labelPublicUrl };
+  return undefined;
 }
 
 // ── Veeqo (Amazon, UK) — https://developers.veeqo.com ───────────────────────────
@@ -296,9 +303,11 @@ Deno.serve(async (req) => {
     const { order_id, user_id } = await req.json();
     if (!order_id) return json({ error: "Missing order_id." }, 400);
 
-    // Authoritative order.
+    // Authoritative order. select=* so the optional label_url / p2g_order_id /
+    // p2g_hash columns come through when they exist without erroring when they
+    // don't (an explicit select of a missing column 400s in PostgREST).
     const or = await fetch(
-      `${SUPABASE_URL}/rest/v1/orders?id=eq.${order_id}&select=id,buyer_id,seller_id,listing_id,delivery_address,postage_carrier,tracking_number&limit=1`,
+      `${SUPABASE_URL}/rest/v1/orders?id=eq.${order_id}&select=*&limit=1`,
       { headers: sb },
     ).catch(() => null);
     const order = or && or.ok ? (await or.json().catch(() => []))[0] : null;
@@ -309,7 +318,29 @@ Deno.serve(async (req) => {
       const me = pr && pr.ok ? (await pr.json().catch(() => []))[0] : null;
       if (!me?.is_admin) return json({ error: "Not authorised." }, 403);
     }
-    if (order.tracking_number) return json({ already: true, tracking_number: order.tracking_number });
+
+    // Best-effort PATCH that won't blow up if a column doesn't exist yet.
+    const patchOrder = (body: Record<string, unknown>) =>
+      fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${order_id}`, {
+        method: "PATCH", headers: { ...sb, "Content-Type": "application/json" }, body: JSON.stringify(body),
+      }).catch(() => {});
+
+    // Already have the stored PDF → just hand it back.
+    if (order.label_url) return json({ configured: true, already: true, tracking_number: order.tracking_number, label_url: order.label_url });
+
+    // Label already bought (tracking set) but no stored PDF. If we kept Parcel2Go's
+    // OrderId + hash, re-fetch the PDF now (by now Parcel2Go has generated it) and
+    // stash it — no new order, no extra charge. Legacy orders without the stored
+    // ids can't be re-fetched (the one-time hash is gone) → tell the caller.
+    if (order.tracking_number) {
+      if (SHIPPING_PROVIDER === "parcel2go" && order.p2g_order_id && order.p2g_hash) {
+        const token = await p2gToken();
+        const url = await fetchAndStashP2GLabel(token, String(order.p2g_order_id), String(order.p2g_hash), 6);
+        if (url) { await patchOrder({ label_url: url }); return json({ configured: true, tracking_number: order.tracking_number, label_url: url }); }
+        return json({ configured: true, tracking_number: order.tracking_number, label_url: null, pending: true, error: "Parcel2Go is still generating this label — try VIEW LABEL again in a minute." });
+      }
+      return json({ configured: true, already: true, legacy: true, tracking_number: order.tracking_number, label_url: null });
+    }
 
     // Seller return address (from) off their profile.
     const sr = await fetch(
@@ -334,25 +365,22 @@ Deno.serve(async (req) => {
       from, to,
     });
 
-    await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${order_id}`, {
-      method: "PATCH",
-      headers: { ...sb, "Content-Type": "application/json" },
-      body: JSON.stringify({ tracking_number: result.tracking_number, tracking_carrier: order.postage_carrier || null }),
-    }).catch(() => {});
+    // Always-safe columns first (tracking).
+    await patchOrder({ tracking_number: result.tracking_number, tracking_carrier: order.postage_carrier || null });
 
-    // Persist the label URL separately and best-effort: if the orders table has
-    // no label_url column yet, PostgREST rejects the whole PATCH — keeping it out
-    // of the tracking PATCH above means a missing column can't lose the tracking
-    // number. Once the column exists, the label shows on the order permanently.
-    if (result.label_url) {
-      await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${order_id}`, {
-        method: "PATCH",
-        headers: { ...sb, "Content-Type": "application/json" },
-        body: JSON.stringify({ label_url: result.label_url }),
-      }).catch(() => {});
+    // Persist the provider's OrderId + hash so VIEW LABEL can re-fetch the PDF
+    // later, plus the label URL if we already managed to stash it. Best-effort and
+    // separate so a missing column can't lose the tracking number above. Add these
+    // columns once with:
+    //   alter table orders add column if not exists label_url     text;
+    //   alter table orders add column if not exists p2g_order_id  text;
+    //   alter table orders add column if not exists p2g_hash      text;
+    if (result.provider_order_id || result.provider_hash) {
+      await patchOrder({ p2g_order_id: result.provider_order_id || null, p2g_hash: result.provider_hash || null });
     }
+    if (result.label_url) await patchOrder({ label_url: result.label_url });
 
-    return json({ configured: true, tracking_number: result.tracking_number, label_url: result.label_url ?? null });
+    return json({ configured: true, tracking_number: result.tracking_number, label_url: result.label_url ?? null, pending: !result.label_url });
   } catch (e) {
     return json({ error: (e as Error).message || "Could not buy a label." }, 500);
   }

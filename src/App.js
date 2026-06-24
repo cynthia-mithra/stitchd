@@ -3109,12 +3109,23 @@ export default function App() {
     try{
       const res=await buyShippingLabel(order.id,user?.id);
       if(res&&res.configured===false){ flash(res.error||"Shipping labels aren't set up yet."); return; }
-      if(res&&res.error){ flash(res.error); return; }
+      // PDF is ready (just bought, or re-fetched): store it on the order + open it.
+      if(res&&res.label_url){
+        setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number||o.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null,label_url:res.label_url}:o));
+        try{ window.open(res.label_url,"_blank"); }catch(e){}
+        flash("Label ready — opening the PDF. It stays on the order as VIEW LABEL.");
+        return;
+      }
+      // Legacy order (bought before in-app PDFs were stored) → print from Parcel2Go.
+      if(res&&res.legacy){ try{ window.open("https://www.parcel2go.com/myaccount/myorders","_blank"); }catch(e){} flash("This label was bought earlier — opening your Parcel2Go account to print it."); return; }
+      // Bought but Parcel2Go hasn't finished generating the PDF yet.
       if(res&&res.tracking_number){
-        setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null,label_url:res.label_url||o.label_url||null}:o));
-        if(res.label_url){ try{ window.open(res.label_url,"_blank"); }catch(e){} flash("Label created — tracking added. Tap VIEW LABEL to print."); }
-        else flash("Tracking added. Parcel2Go emailed your label — it'll also appear here shortly.");
-      } else flash("Couldn't create a label.");
+        setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null}:o));
+        flash(res.pending?"Label bought — Parcel2Go is still generating the PDF. Tap VIEW LABEL again in a minute.":(res.error||"Tracking added."),res.pending?9000:5000);
+        return;
+      }
+      if(res&&res.error){ flash(res.error); return; }
+      flash("Couldn't create a label.");
     }catch(e){ flash(errMsg(e)); }
   }
 
