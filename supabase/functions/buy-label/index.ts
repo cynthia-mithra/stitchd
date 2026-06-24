@@ -45,6 +45,25 @@ function weightGrams(label: string): number {
   return m ? Math.round(parseFloat(m[1]) * 1000) : 1000;
 }
 
+// Upload a label PDF to a public Storage bucket and return its public URL. The
+// bucket is created idempotently (ignore "already exists"). Returns undefined on
+// any failure so the caller can still hand back the tracking number.
+async function stashLabelPdf(orderId: string, bytes: Uint8Array): Promise<string | undefined> {
+  await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
+    method: "POST",
+    headers: { ...sb, "Content-Type": "application/json" },
+    body: JSON.stringify({ id: "labels", name: "labels", public: true }),
+  }).catch(() => {});
+  const path = `${orderId}.pdf`;
+  const up = await fetch(`${SUPABASE_URL}/storage/v1/object/labels/${path}`, {
+    method: "POST",
+    headers: { ...sb, "Content-Type": "application/pdf", "x-upsert": "true" },
+    body: bytes,
+  }).catch(() => null);
+  if (!up || !up.ok) return undefined;
+  return `${SUPABASE_URL}/storage/v1/object/public/labels/${path}`;
+}
+
 type LabelPayload = {
   provider: string;
   service: string;
@@ -188,11 +207,25 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
   const payText = await payRes.text().catch(() => "");
   if (!payRes.ok) throw new Error(`Parcel2Go payment failed (${payRes.status}): ${payText.slice(0, 300)}`);
 
-  // 4) Label PDF (hash-authenticated → openable directly) + the Parcel2Go shipment
-  //    reference (OrderLineId) as the tracking number.
-  const labelUrl = `https://www.parcel2go.com/api/labels/${orderId}?hash=${encodeURIComponent(hash)}&referenceType=OrderId&detailLevel=All&labelFormat=PDF`;
+  // 4) Fetch the label PDF SERVER-SIDE — the labels endpoint needs the Bearer
+  //    token, so a plain browser open returns 404 ("No HTTP resource…"). Stash the
+  //    PDF in a public Storage bucket so the seller can open/print it from a normal
+  //    link. Label generation can lag payment by a few seconds, so retry briefly;
+  //    if it never lands we still return the tracking number (the seller can print
+  //    from their Parcel2Go account in the meantime).
   const tracking = orderLineId || orderId;
-  return { tracking_number: String(tracking), label_url: labelUrl };
+  const labelApi = `https://www.parcel2go.com/api/labels/${orderId}?hash=${encodeURIComponent(hash)}&referenceType=OrderId&detailLevel=All&labelMedia=A4&labelFormat=PDF`;
+  let labelPublicUrl: string | undefined;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const lr = await fetch(labelApi, { headers: { Authorization: `Bearer ${token}`, Accept: "application/pdf" } }).catch(() => null);
+    const ct = lr?.headers.get("content-type") || "";
+    if (lr?.ok && ct.includes("pdf")) {
+      labelPublicUrl = await stashLabelPdf(String(orderId), new Uint8Array(await lr.arrayBuffer()));
+      break;
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  return { tracking_number: String(tracking), label_url: labelPublicUrl };
 }
 
 // ── Veeqo (Amazon, UK) — https://developers.veeqo.com ───────────────────────────
