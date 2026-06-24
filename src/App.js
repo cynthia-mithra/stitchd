@@ -16,7 +16,7 @@ import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } fro
 import { startSellerConnect, verifySellerConnect, withdrawFromWallet, refundOrder, refundAlteration, buyShippingLabel } from "./lib/wallet";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CheckCircle, Info, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CheckCircle, Info, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock, Home, Plus, User } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import { ReviewModal } from "./components/Reviews";
 import PricingGuide from "./components/PricingGuide";
@@ -3641,7 +3641,7 @@ export default function App() {
   const runNavItem = (item)=>{ setNavMenuOpen(false); setMobileNavOpen(false); item.run(); };
 
   return (
-    <div style={S.root}>
+    <div className="app-root" style={S.root}>
       <style>{CSS}</style>
 
       {/* HEADER */}
@@ -5103,6 +5103,35 @@ export default function App() {
       {/* GLOBAL FOOTER — appears on every page (modals/overlays render on top and
           are unaffected; the Stripe checkout is an external hosted page). */}
       <Footer onNav={footerNav} />
+
+      {/* MOBILE BOTTOM NAV — app-style tab bar (phones only; CSS-gated). Hidden on
+          the detail page (its own sticky buy bar lives there) and the auth screen. */}
+      {view!=="detail"&&view!=="auth"&&(
+        <nav className="bottom-nav" style={S.bottomNav} aria-label="Primary">
+          {[
+            {key:"home", label:"Home", Icon:Home, on:view==="shop"||view==="newarrivals", run:()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("shop"); window.scrollTo(0,0); }},
+            {key:"saved", label:"Saved", Icon:Heart, fillOn:true, on:view==="wishlist", run:()=>{ if(user) loadMyWishlist(); setView("wishlist"); window.scrollTo(0,0); }},
+            {key:"sell", label:"Sell", Icon:Plus, sell:true, on:view==="add", run:()=>{ if(user){ setView("add"); window.scrollTo(0,0); } else gateAuth("signup"); }},
+            {key:"inbox", label:"Inbox", Icon:MessageCircle, badge:unreadCount, on:view==="messages", run:()=>{ if(user) openMessages(); else gateAuth("login"); }},
+            {key:"account", label:"Account", Icon:User, on:false, run:()=>{ if(user) setMobileNavOpen(true); else gateAuth("login"); }},
+          ].map(t=>(
+            t.sell ? (
+              <button key={t.key} className="bottom-nav-item" style={S.bottomNavItem} onClick={t.run} aria-label="Sell an item">
+                <span style={S.bottomNavSell}><t.Icon width={24} height={24}/></span>
+                <span style={{...S.bottomNavLabel,color:t.on?"#FF1493":"#111"}}>{t.label}</span>
+              </button>
+            ) : (
+              <button key={t.key} className="bottom-nav-item" style={S.bottomNavItem} onClick={t.run} aria-label={t.label}>
+                <span style={{position:"relative",display:"flex"}}>
+                  <t.Icon width={22} height={22} color={t.on?"#FF1493":"#111"} fill={t.on&&t.fillOn?"#FF1493":"none"}/>
+                  {t.badge>0&&<span style={S.bottomNavBadge}>{t.badge>9?"9+":t.badge}</span>}
+                </span>
+                <span style={{...S.bottomNavLabel,color:t.on?"#FF1493":"#777"}}>{t.label}</span>
+              </button>
+            )
+          ))}
+        </nav>
+      )}
     </div>
   );
 }
