@@ -127,7 +127,7 @@ export default function Shop({
           return (
             <button key={t.label} className="cat-tile" onClick={()=>{t.apply();setTimeout(()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"}),60);}} aria-label={`Shop ${t.label}`}>
               <div className="cat-tile-img" style={{background:img?"#000":accent}}>
-                {img?<img src={img} alt=""/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:"#fff"}}>{mono}</span>}
+                {img?<img src={img} alt="" loading="lazy" decoding="async"/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:"#fff"}}>{mono}</span>}
                 <span className="cat-tile-label">{t.label.toUpperCase()}</span>
               </div>
             </button>

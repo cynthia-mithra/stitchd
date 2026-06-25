@@ -30,7 +30,7 @@ export default function Feed({
             return(
               <article key={item.id} className="scard" style={{...S.card,borderColor:accent}} onClick={()=>openDetail(item)}>
                 <div style={{...S.cardTop,background:item.image_url?"#000":accent,overflow:"hidden"}}>
-                  {item.image_url?<img src={item.image_url} alt={item.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
+                  {item.image_url?<img src={item.image_url} alt={item.name} loading="lazy" decoding="async" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={S.cardEmoji}>{item.emoji||catEmoji(item.category)}</span>}
                   {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                 </div>
                 <div style={S.cardBody}>

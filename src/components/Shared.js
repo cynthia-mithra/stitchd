@@ -119,7 +119,7 @@ export function Thumb({src,emoji,accent,gradient=false,imgOpacity=1,imgStyle,emo
   return (
     <div className={className} style={{position:"relative",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",...style,background:showImg?"#000":accent}}>
       {showImg
-        ?<img src={src} alt="" onError={()=>setOk(false)} onLoad={()=>setLoaded(true)} style={{width:"100%",height:"100%",objectFit:"cover",opacity:loaded?imgOpacity:0,transition:"opacity .4s ease",...imgStyle}}/>
+        ?<img src={src} alt="" loading="lazy" decoding="async" onError={()=>setOk(false)} onLoad={()=>setLoaded(true)} style={{width:"100%",height:"100%",objectFit:"cover",opacity:loaded?imgOpacity:0,transition:"opacity .4s ease",...imgStyle}}/>
         :<span style={emojiStyle}>{emoji}</span>}
       {/* Shimmer placeholder while the photo loads — fades out as the image fades in. */}
       {showImg&&!loaded&&<div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,#ededed 25%,#e0e0e0 50%,#ededed 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s ease-in-out infinite"}}/>}

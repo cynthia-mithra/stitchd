@@ -54,7 +54,7 @@ function PostCard({ post, profile, listingsMap, liked, likeCount, isOwn, openPro
 
       {/* Post image — full width, square crop, 2px #111 top+bottom borders */}
       <div style={{ width: "100%", aspectRatio: "1", borderTop: "2px solid #111", borderBottom: "2px solid #111", overflow: "hidden", background: "#fafafa" }}>
-        <img src={post.image_url} alt={post.caption || "Outfit"} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        <img src={post.image_url} alt={post.caption || "Outfit"} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
       </div>
 
       <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
@@ -345,7 +345,7 @@ export function StyleInspiration({ posts = [], profilesMap = {}, onOpen }) {
           return (
             <article key={post.id} className="scard" onClick={onOpen} style={{ background: "#fff", border: "2px solid #111", borderRadius: 0, cursor: "pointer", overflow: "hidden", display: "flex", flexDirection: "column" }}>
               <div style={{ width: "100%", aspectRatio: "1", borderBottom: "2px solid #111", overflow: "hidden", background: "#fafafa" }}>
-                <img src={post.image_url} alt={post.caption || "Outfit"} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                <img src={post.image_url} alt={post.caption || "Outfit"} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
               </div>
               <div style={{ padding: "10px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 800, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{displayName(p)}</span>
