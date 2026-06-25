@@ -79,7 +79,7 @@ export const CSS=`
     /* Reserve space for the fixed bar ONLY when it's actually shown (logged in,
        not detail/auth) — plus the phone's home-indicator safe area — so the last
        button/footer never hides behind it. */
-    .app-root.has-bottom-nav{padding-bottom:calc(64px + env(safe-area-inset-bottom));}
+    .app-root.has-bottom-nav{padding-bottom:calc(76px + env(safe-area-inset-bottom));}
   }
   /* Desktop nav dropdown items turn pink on hover; the LOG OUT item keeps its red. */
   .nav-drop-item:hover{color:#FF1493 !important;}
@@ -274,10 +274,13 @@ export const S={
   // MOBILE BOTTOM NAV — fixed app-style tab bar (shown ≤768px via .bottom-nav).
   // Solid white (not frosted) so scrolling content never bleeds through and the
   // icons stay crisp; a soft upward shadow lifts it off the page.
-  bottomNav:{position:"fixed",left:0,right:0,bottom:0,height:58,background:"#fff",borderTop:"2px solid #111",boxShadow:"0 -6px 20px rgba(0,0,0,0.07)",zIndex:300,display:"flex",alignItems:"stretch",justifyContent:"space-around",paddingBottom:"env(safe-area-inset-bottom)"},
-  bottomNavItem:{flex:1,background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,padding:"6px 0",fontFamily:"'Barlow Condensed',sans-serif"},
-  bottomNavLabel:{fontSize:9.5,fontWeight:800,letterSpacing:1,textTransform:"uppercase"},
-  bottomNavSell:{width:42,height:42,marginTop:-20,borderRadius:"50%",background:"#FF1493",color:"#fff",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 5px 16px rgba(255,20,147,0.45)"},
+  // content-box so the fixed 52px icon row is the *content* and the padding (incl.
+  // the home-indicator safe area, min 10px) is added below it — guarantees the
+  // labels always have breathing room and never sit on the screen edge.
+  bottomNav:{position:"fixed",left:0,right:0,bottom:0,height:52,boxSizing:"content-box",background:"#fff",borderTop:"2px solid #111",boxShadow:"0 -6px 20px rgba(0,0,0,0.07)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"space-around",paddingTop:6,paddingBottom:"max(10px, env(safe-area-inset-bottom))"},
+  bottomNavItem:{flex:1,background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,padding:0,fontFamily:"'Barlow Condensed',sans-serif"},
+  bottomNavLabel:{fontSize:9.5,fontWeight:800,letterSpacing:1,textTransform:"uppercase",lineHeight:1},
+  bottomNavSell:{width:42,height:42,marginTop:-16,borderRadius:"50%",background:"#FF1493",color:"#fff",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 5px 16px rgba(255,20,147,0.45)"},
   bottomNavBadge:{position:"absolute",top:-5,right:-9,minWidth:16,height:16,padding:"0 4px",borderRadius:8,background:"#FF1493",color:"#fff",border:"2px solid #fff",fontSize:9,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Barlow Condensed',sans-serif"},
   // Type-led editorial hero: a single, centred column (no imagery). Bold stacked
   // headline + brand statement + CTAs + a value-prop strip.
