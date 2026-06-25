@@ -279,17 +279,17 @@ export const S={
   bottomNavBadge:{position:"absolute",top:-5,right:-9,minWidth:16,height:16,padding:"0 4px",borderRadius:8,background:"#FF1493",color:"#fff",border:"2px solid #fff",fontSize:9,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Barlow Condensed',sans-serif"},
   // Type-led editorial hero: a single, centred column (no imagery). Bold stacked
   // headline + brand statement + CTAs + a value-prop strip.
-  hero:{borderBottom:"3px solid #111",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",minHeight:"68vh",padding:"64px 24px",overflow:"hidden"},
+  hero:{borderBottom:"3px solid #111",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",minHeight:"56vh",padding:"40px 24px 36px",overflow:"hidden"},
   heroLeft:{maxWidth:780,display:"flex",flexDirection:"column",alignItems:"center"},
-  heroTag:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:3.5,color:"#FF1493",marginBottom:20},
-  heroH:{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:24},
+  heroTag:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:3.5,color:"#FF1493",marginBottom:14},
+  heroH:{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:18},
   heroLine1:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#111"},
   heroLine2:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#FF1493"},
   heroLine3:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(52px,10vw,140px)",fontWeight:900,lineHeight:.9,letterSpacing:-2,color:"#fff",WebkitTextStroke:"2px #111"},
-  heroSub:{fontSize:17,color:"#555",lineHeight:1.6,maxWidth:460,margin:"0 auto 32px",fontFamily:"'Barlow',sans-serif"},
+  heroSub:{fontSize:17,color:"#555",lineHeight:1.55,maxWidth:460,margin:"0 auto 22px",fontFamily:"'Barlow',sans-serif"},
   heroCtas:{display:"flex",gap:14,flexWrap:"wrap",justifyContent:"center"},
   // Editorial value-prop strip beneath the CTAs (replaces the old hero imagery).
-  heroProps:{display:"flex",flexWrap:"wrap",justifyContent:"center",alignItems:"center",gap:"10px 22px",marginTop:40,paddingTop:26,borderTop:"2px solid #111",maxWidth:680},
+  heroProps:{display:"flex",flexWrap:"wrap",justifyContent:"center",alignItems:"center",gap:"10px 22px",marginTop:26,paddingTop:20,borderTop:"2px solid #111",maxWidth:680},
   heroProp:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#111",textTransform:"uppercase",display:"inline-flex",alignItems:"center",gap:8},
   heroPropDot:{width:7,height:7,borderRadius:"50%",flexShrink:0},
   heroBtnPrimary:{background:"#FF1493",color:"#fff",border:"2px solid #FF1493",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,borderRadius:0},
