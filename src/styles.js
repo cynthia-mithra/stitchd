@@ -175,7 +175,7 @@ export const CSS=`
     .detail-img{position:static !important;max-width:none !important;}
     .detail-info{padding:4px 2px 0 !important;}
     .msg-layout{flex-direction:column !important;height:auto !important;min-height:80vh;}
-    .msg-sidebar{width:100% !important;border-right:none !important;border-bottom:3px solid #111 !important;max-height:200px;}
+    .msg-sidebar{width:100% !important;border-right:none !important;border-bottom:2px solid #f3e6ee !important;max-height:240px;}
     .dash-grid{grid-template-columns:1fr !important;}
     .meas-grid{grid-template-columns:1fr 1fr !important;}
     .form-card{padding:24px 16px !important;}
@@ -453,17 +453,22 @@ export const S={
   fitsBadge:{position:"absolute",bottom:12,left:12,background:"#34C759",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3},
   fastBadge:{position:"absolute",bottom:12,left:12,background:"#00E5CC",color:"#111",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3,border:"1.5px solid #111"},
   reviewCard:{background:"#fafafa",border:"1.5px solid #f0f0f0",padding:"14px 16px"},
-  msgLayout:{display:"flex",border:"3px solid #111",height:"70vh",overflow:"hidden",background:"#fff",boxShadow:"0 14px 44px rgba(17,17,17,0.1)"},
-  msgSidebar:{width:300,flexShrink:0,borderRight:"3px solid #111",display:"flex",flexDirection:"column",overflow:"hidden",background:"#fff"},
-  msgSidebarHead:{padding:"16px 20px",borderBottom:"3px solid #111",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#111"},
-  convItem:{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderBottom:"1px solid #f3f3f3",cursor:"pointer",transition:"background .15s,border-color .15s"},
-  convAvatar:{width:42,height:42,borderRadius:"50%",background:"linear-gradient(135deg,#FF1493,#00E5CC)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden",border:"2px solid #111"},
+  // Floating white card on a pale-pink ground (set on the page wrapper). No hard
+  // black frame — a soft pink-tinted shadow gives it lift.
+  msgLayout:{display:"flex",border:"none",height:"70vh",overflow:"hidden",background:"#fff",boxShadow:"0 16px 46px rgba(122,18,71,0.13)"},
+  msgSidebar:{width:320,flexShrink:0,borderRight:"1px solid #f3e6ee",display:"flex",flexDirection:"column",overflow:"hidden",background:"#fff"},
+  msgSidebarHead:{padding:"18px 22px",borderBottom:"1px solid #f6eef3",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fff"},
+  convItem:{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderBottom:"1px solid #f7eef3",cursor:"pointer",transition:"background .15s,border-color .15s"},
+  // Pale-pink fallback avatar (pink initial set inline); photos override the bg.
+  convAvatar:{width:44,height:44,borderRadius:"50%",background:"#FBE3EF",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden",border:"2px solid #111"},
   msgMain:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"},
-  chatHeader:{padding:"14px 20px",borderBottom:"3px solid #111",display:"flex",alignItems:"center",gap:12,background:"#fafafa"},
-  chatMessages:{flex:1,overflowY:"auto",padding:"20px",display:"flex",flexDirection:"column",background:"#fcfcfc",backgroundImage:"radial-gradient(rgba(17,17,17,0.05) 1px, transparent 1px)",backgroundSize:"18px 18px"},
+  chatHeader:{padding:"14px 22px",borderBottom:"2px solid #111",display:"flex",alignItems:"center",gap:12,background:"#fff"},
+  chatMessages:{flex:1,overflowY:"auto",padding:"22px",display:"flex",flexDirection:"column",background:"#fffafd"},
   chatListingPreview:{display:"inline-flex",alignItems:"center",gap:12,border:"2px solid #f0f0f0",padding:"10px 14px",cursor:"pointer",marginTop:12,background:"#fafafa"},
   msgBubble:{padding:"11px 15px",maxWidth:"72%",boxShadow:"0 2px 8px rgba(17,17,17,0.07)"},
-  chatInput:{display:"flex",borderTop:"3px solid #111",background:"#fff"},
+  chatInput:{display:"flex",alignItems:"center",gap:10,borderTop:"1px solid #f0e6ee",background:"#fff",padding:"14px 18px"},
+  chatInputField:{flex:1,minWidth:0,border:"2px solid #111",borderRadius:24,padding:"11px 18px",fontFamily:"'Barlow',sans-serif",fontSize:14,outline:"none",background:"#fff"},
+  chatSendBtn:{flexShrink:0,width:44,height:44,borderRadius:"50%",background:"#FF1493",color:"#fff",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:18,fontWeight:900,lineHeight:1},
   offerBar:{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",borderTop:"1px solid #f5f5f5",flexWrap:"wrap",background:"#fafafa"},
   offerCard:{background:"#fff",padding:"14px 16px",borderRadius:0,boxShadow:"0 3px 12px rgba(17,17,17,0.08)"},
   offerStatusBadge:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:1.5,color:"#fff",padding:"2px 8px",borderRadius:0},

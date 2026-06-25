@@ -4531,17 +4531,18 @@ export default function App() {
 
       {/* MESSAGES */}
       {view==="messages"&&user&&(
-        <main style={{...S.main,maxWidth:1000}}>
+        <main style={{...S.main,maxWidth:1040,background:"#FCEEF5"}}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
+          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:3,color:"#cf97b4",margin:"0 0 12px"}}>YOUR CONVERSATIONS</p>
           <div style={S.msgLayout} className="msg-layout">
             <div style={S.msgSidebar} className="msg-sidebar">
               <div style={S.msgSidebarHead}>
-                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,letterSpacing:1,color:"#fff"}}>MESSAGES</span>
-                {unreadCount>0&&<span style={{...S.wishBadge,position:"static",width:"auto",borderRadius:4,padding:"2px 8px"}}>{unreadCount} NEW</span>}
+                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,letterSpacing:1,color:"#111"}}>MESSAGES</span>
+                {unreadCount>0&&<span style={{...S.wishBadge,position:"static",width:"auto",borderRadius:0,padding:"3px 9px"}}>{unreadCount} NEW</span>}
               </div>
               {conversations.length===0?(
                 <div style={{padding:"40px 24px",textAlign:"center"}}>
-                  <p style={{display:"flex",justifyContent:"center",marginBottom:12}}><span style={{width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,#fff0f8,#e6fffb)",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center"}}><MessageCircle width={26} height={26} color="#FF1493"/></span></p>
+                  <p style={{display:"flex",justifyContent:"center",marginBottom:12}}><span style={{width:56,height:56,borderRadius:"50%",background:"#FBE3EF",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center"}}><MessageCircle width={26} height={26} color="#FF1493"/></span></p>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#111",letterSpacing:1}}>NO MESSAGES YET</p>
                   <p style={{fontFamily:"'Barlow',sans-serif",fontSize:12,color:"#6e6e6e",marginTop:4}}>Buyers & sellers you chat with show up here.</p>
                 </div>
@@ -4556,7 +4557,7 @@ export default function App() {
                     <div key={conv.id} className="conv-item" style={{...S.convItem,background:isActive?"#fff0f8":unread>0?"#fffafd":"#fff",borderLeft:isActive?"4px solid #FF1493":"4px solid transparent"}} onClick={()=>openConversation(conv)}>
                       <div style={{position:"relative"}}>
                         <div style={S.convAvatar}>
-                          {otherProfile?.avatar_url?<img src={otherProfile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#fff"}}>{(otherProfile?.full_name||otherProfile?.username||"?")[0].toUpperCase()}</span>}
+                          {otherProfile?.avatar_url?<img src={otherProfile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:19,fontWeight:900,color:"#FF1493"}}>{(otherProfile?.full_name||otherProfile?.username||"?")[0].toUpperCase()}</span>}
                         </div>
                         {unread>0&&<span style={{position:"absolute",top:-3,right:-3,minWidth:18,height:18,padding:"0 5px",borderRadius:9,background:"#FF1493",color:"#fff",border:"2px solid #fff",fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center"}}>{unread>9?"9+":unread}</span>}
                       </div>
@@ -4575,8 +4576,8 @@ export default function App() {
             </div>
             <div style={S.msgMain}>
               {!activeConv?(
-                <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:14,background:"#fcfcfc",backgroundImage:"radial-gradient(rgba(17,17,17,0.05) 1px, transparent 1px)",backgroundSize:"18px 18px"}}>
-                  <span style={{width:72,height:72,borderRadius:"50%",background:"linear-gradient(135deg,#FF1493,#00E5CC)",border:"3px solid #111",display:"flex",alignItems:"center",justifyContent:"center"}}><Mail width={32} height={32} color="#fff"/></span>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:14,background:"#fffafd"}}>
+                  <span style={{width:72,height:72,borderRadius:"50%",background:"#FBE3EF",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center"}}><Mail width={32} height={32} color="#FF1493"/></span>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:19,fontWeight:900,letterSpacing:1.5,color:"#111"}}>SELECT A CONVERSATION</p>
                   <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#6e6e6e",marginTop:-6}}>Pick a chat on the left to start talking.</p>
                 </div>
@@ -4588,7 +4589,7 @@ export default function App() {
                   <>
                     <div style={S.chatHeader}>
                       <div style={{...S.convAvatar,flexShrink:0}}>
-                        {otherProfile?.avatar_url?<img src={otherProfile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#fff"}}>{(otherProfile?.full_name||otherProfile?.username||"?")[0].toUpperCase()}</span>}
+                        {otherProfile?.avatar_url?<img src={otherProfile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:19,fontWeight:900,color:"#FF1493"}}>{(otherProfile?.full_name||otherProfile?.username||"?")[0].toUpperCase()}</span>}
                       </div>
                       <div>
                         <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900}}>{otherProfile?.full_name||otherProfile?.username||"Seller"}</p>
@@ -4641,7 +4642,7 @@ export default function App() {
                                 )}
                               </div>
                             ):(
-                              <div style={{...S.msgBubble,background:isMine?"linear-gradient(135deg,#FF1493,#FF5BAE)":"#fff",color:isMine?"#fff":"#111",border:isMine?"none":"1.5px solid #ededed",borderRadius:isMine?"16px 16px 4px 16px":"16px 16px 16px 4px"}}>
+                              <div style={{...S.msgBubble,background:isMine?"#FF1493":"#fff",color:isMine?"#fff":"#111",border:isMine?"none":"1.5px solid #efe2ea",borderRadius:isMine?"16px 16px 4px 16px":"16px 16px 16px 4px"}}>
                                 <p style={{fontSize:14,lineHeight:1.5}}>{msg.content}</p>
                                 <p style={{fontSize:10,opacity:0.6,marginTop:4,textAlign:"right"}}>{new Date(msg.created_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</p>
                               </div>
@@ -4661,8 +4662,8 @@ export default function App() {
                       </div>
                     )}
                     <div style={S.chatInput}>
-                      <input style={{...S.inp,flex:1,borderRight:"none",borderTop:"none",borderLeft:"none",borderBottom:"none"}} placeholder="Type a message..." value={msgInput} onChange={e=>setMsgInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage()}/>
-                      <button className="hbtn" style={{...S.hBtn,background:"#FF1493",borderRadius:0,padding:"12px 22px",fontSize:18,flexShrink:0,opacity:msgSending?0.5:1}} onClick={sendMessage} disabled={msgSending||!msgInput.trim()}><span className="btn-arrow">→</span></button>
+                      <input style={S.chatInputField} placeholder={`Message ${(otherProfile?.full_name||otherProfile?.username||"seller").split(" ")[0]}…`} value={msgInput} onChange={e=>setMsgInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMessage()}/>
+                      <button className="hbtn" aria-label="Send message" style={{...S.chatSendBtn,opacity:(msgSending||!msgInput.trim())?0.5:1,cursor:(msgSending||!msgInput.trim())?"not-allowed":"pointer"}} onClick={sendMessage} disabled={msgSending||!msgInput.trim()}><span className="btn-arrow">→</span></button>
                     </div>
                   </>
                 );
