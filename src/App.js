@@ -179,7 +179,7 @@ export default function App() {
   const [error,     setError]     = useState("");
   const [aError,    setAError]    = useState("");
   const [profile,   setProfile]   = useState(null);
-  const [profForm,  setProfForm]  = useState({username:"",full_name:"",location:"",region:"UK",currency:"USD",bio:"",specialises_in:[],avatar_url:"",avatarFile:null,avatarPreview:"",bust:"",waist:"",hips:"",height:"",preferred_size:"",ship_from_name:"",ship_from_line1:"",ship_from_line2:"",ship_from_city:"",ship_from_postcode:"",ship_from_country:"UK"});
+  const [profForm,  setProfForm]  = useState({username:"",full_name:"",location:"",region:"UK",currency:"USD",bio:"",specialises_in:[],avatar_url:"",avatarFile:null,avatarPreview:"",bust:"",waist:"",hips:"",height:"",preferred_size:"",gender:"",ship_from_name:"",ship_from_line1:"",ship_from_line2:"",ship_from_city:"",ship_from_postcode:"",ship_from_country:"UK"});
   const [profSaving,setProfSaving]= useState(false);
   const [viewedProfile,setViewedProfile]=useState(null);
   const [profileListings,setProfileListings]=useState([]);
@@ -781,7 +781,7 @@ export default function App() {
 
   useEffect(()=>{
     if(user&&token){
-      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"UK",currency:p.currency||"USD",bio:p.bio||"",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||"",ship_from_name:p.ship_from_name||"",ship_from_line1:p.ship_from_line1||"",ship_from_line2:p.ship_from_line2||"",ship_from_city:p.ship_from_city||"",ship_from_postcode:p.ship_from_postcode||"",ship_from_country:p.ship_from_country||"UK"});setStoreForm({storefront_tagline:p.storefront_tagline||"",storefront_bio:p.storefront_bio||"",storefront_location:p.storefront_location||"",storefront_instagram:p.storefront_instagram||"",storefront_banner_url:p.storefront_banner_url||"",bannerFile:null,bannerPreview:p.storefront_banner_url||""});} });
+      db.getProfile(user.id,token).then(p=>{ if(p){setProfile(p);setProfForm({username:p.username||"",full_name:p.full_name||"",location:p.location||"",region:p.region||"UK",currency:p.currency||"USD",bio:p.bio||"",specialises_in:p.specialises_in||[],avatar_url:p.avatar_url||"",avatarFile:null,avatarPreview:p.avatar_url||"",bust:p.bust||"",waist:p.waist||"",hips:p.hips||"",height:p.height||"",preferred_size:p.preferred_size||"",gender:p.gender||"",ship_from_name:p.ship_from_name||"",ship_from_line1:p.ship_from_line1||"",ship_from_line2:p.ship_from_line2||"",ship_from_city:p.ship_from_city||"",ship_from_postcode:p.ship_from_postcode||"",ship_from_country:p.ship_from_country||"UK"});setStoreForm({storefront_tagline:p.storefront_tagline||"",storefront_bio:p.storefront_bio||"",storefront_location:p.storefront_location||"",storefront_instagram:p.storefront_instagram||"",storefront_banner_url:p.storefront_banner_url||"",bannerFile:null,bannerPreview:p.storefront_banner_url||""});} });
       loadConversations();
       db.getFollowing(user.id,token).then(setFollowing);
       db.getNotifications(user.id,token).then(setNotifications);
@@ -3117,7 +3117,7 @@ export default function App() {
     try{
       let avatar_url=profForm.avatar_url||"";
       if(profForm.avatarFile) avatar_url=await uploadImage(profForm.avatarFile,token);
-      const p={id:user.id,username:profForm.username,full_name:profForm.full_name,location:profForm.location,region:profForm.region,currency:profForm.currency,bio:profForm.bio||null,specialises_in:profForm.specialises_in,avatar_url,bust:profForm.bust||null,waist:profForm.waist||null,hips:profForm.hips||null,height:profForm.height||null,preferred_size:profForm.preferred_size||null,ship_from_name:profForm.ship_from_name||null,ship_from_line1:profForm.ship_from_line1||null,ship_from_line2:profForm.ship_from_line2||null,ship_from_city:profForm.ship_from_city||null,ship_from_postcode:profForm.ship_from_postcode||null,ship_from_country:profForm.ship_from_country||null};
+      const p={id:user.id,username:profForm.username,full_name:profForm.full_name,location:profForm.location,region:profForm.region,currency:profForm.currency,bio:profForm.bio||null,specialises_in:profForm.specialises_in,avatar_url,bust:profForm.bust||null,waist:profForm.waist||null,hips:profForm.hips||null,height:profForm.height||null,preferred_size:profForm.preferred_size||null,gender:profForm.gender||null,ship_from_name:profForm.ship_from_name||null,ship_from_line1:profForm.ship_from_line1||null,ship_from_line2:profForm.ship_from_line2||null,ship_from_city:profForm.ship_from_city||null,ship_from_postcode:profForm.ship_from_postcode||null,ship_from_country:profForm.ship_from_country||null};
       const [saved]=await db.upsertProfile(p,token);
       setProfile(saved); setProfForm(f=>({...f,avatar_url,avatarFile:null,avatarPreview:avatar_url}));
       flash("✓ Profile saved!");
