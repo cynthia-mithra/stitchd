@@ -272,7 +272,9 @@ export const S={
   tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:3.5,color:"rgba(255,255,255,0.92)",animation:"ticker 36s linear infinite",paddingLeft:"100%"},
   toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"13px 22px",borderLeft:"4px solid #FF1493",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.2,zIndex:999,borderRadius:0,display:"inline-flex",alignItems:"center",gap:11,maxWidth:"min(92vw,560px)",lineHeight:1.35,textAlign:"left",boxShadow:"0 10px 34px rgba(0,0,0,0.28)"},
   // MOBILE BOTTOM NAV — fixed app-style tab bar (shown ≤768px via .bottom-nav).
-  bottomNav:{position:"fixed",left:0,right:0,bottom:0,height:58,background:"rgba(255,255,255,0.94)",backdropFilter:"saturate(180%) blur(12px)",WebkitBackdropFilter:"saturate(180%) blur(12px)",borderTop:"2px solid #111",zIndex:300,display:"flex",alignItems:"stretch",justifyContent:"space-around",paddingBottom:"env(safe-area-inset-bottom)"},
+  // Solid white (not frosted) so scrolling content never bleeds through and the
+  // icons stay crisp; a soft upward shadow lifts it off the page.
+  bottomNav:{position:"fixed",left:0,right:0,bottom:0,height:58,background:"#fff",borderTop:"2px solid #111",boxShadow:"0 -6px 20px rgba(0,0,0,0.07)",zIndex:300,display:"flex",alignItems:"stretch",justifyContent:"space-around",paddingBottom:"env(safe-area-inset-bottom)"},
   bottomNavItem:{flex:1,background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,padding:"6px 0",fontFamily:"'Barlow Condensed',sans-serif"},
   bottomNavLabel:{fontSize:9.5,fontWeight:800,letterSpacing:1,textTransform:"uppercase"},
   bottomNavSell:{width:42,height:42,marginTop:-20,borderRadius:"50%",background:"#FF1493",color:"#fff",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 5px 16px rgba(255,20,147,0.45)"},
