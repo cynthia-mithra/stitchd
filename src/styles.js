@@ -73,7 +73,8 @@ export const CSS=`
      gets bottom padding on mobile so the footer clears the fixed bar. */
   .bottom-nav{display:none;}
   .bottom-nav-item:active{opacity:.55;}
-  @media(max-width:768px){
+  /* Phones only (≤640px). iPad/desktop keep the header nav — no bottom bar there. */
+  @media(max-width:640px){
     .bottom-nav{display:flex !important;}
     /* Reserve space for the fixed bar ONLY when it's actually shown (logged in,
        not detail/auth) — plus the phone's home-indicator safe area — so the last
