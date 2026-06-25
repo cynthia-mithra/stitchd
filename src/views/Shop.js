@@ -107,13 +107,20 @@ export default function Shop({
   // tile borrows a representative photo from the current listings (falls back to
   // a brand monogram), and tapping applies the matching filter + scrolls to the
   // grid. Only shown on the main, unfiltered shop view.
+  // A clothing-category chip: reset filters, scope to Clothing, set the category.
+  const clo=(cat)=>()=>{clearFilters();setTypeFilter("Clothing");setCatFilter(cat);};
   const CATEGORY_TILES = [
-    {label:"Sarees",        apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Saree");},        active:catFilter==="Saree"},
-    {label:"Lehengas",      apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Lehenga");},      active:catFilter==="Lehenga"},
-    {label:"Salwar Kameez", apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Salwar Kameez");},active:catFilter==="Salwar Kameez"},
-    {label:"Sherwani",      apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Sherwani");},     active:catFilter==="Sherwani"},
-    {label:"Jewellery",     apply:()=>{clearFilters();setTypeFilter("Jewellery");},                            active:typeFilter==="Jewellery"},
-    {label:"Shoes",         apply:()=>{clearFilters();setTypeFilter("Shoes");},                                active:typeFilter==="Shoes"},
+    {label:"All",           apply:()=>{clearFilters();},                  active:typeFilter==="All"&&catFilter==="All"},
+    {label:"Sarees",        apply:clo("Saree"),         active:catFilter==="Saree"},
+    {label:"Lehengas",      apply:clo("Lehenga"),       active:catFilter==="Lehenga"},
+    {label:"Salwar Kameez", apply:clo("Salwar Kameez"), active:catFilter==="Salwar Kameez"},
+    {label:"Sherwanis",     apply:clo("Sherwani"),      active:catFilter==="Sherwani"},
+    {label:"Kurtas",        apply:clo("Kurta"),         active:catFilter==="Kurta"},
+    {label:"Co-ords",       apply:clo("Co-ord Set"),    active:catFilter==="Co-ord Set"},
+    {label:"Dupattas",      apply:clo("Dupatta"),       active:catFilter==="Dupatta"},
+    {label:"Jewellery",     apply:()=>{clearFilters();setTypeFilter("Jewellery");}, active:typeFilter==="Jewellery"},
+    {label:"Shoes",         apply:()=>{clearFilters();setTypeFilter("Shoes");},     active:typeFilter==="Shoes"},
+    {label:"Accessories",   apply:clo("Accessories"),   active:catFilter==="Accessories"},
   ];
   // SHOP BY CATEGORY — sleek rounded pill chips (matches the search capsule).
   // Active chip is solid pink; the rest are pink-tint outline. Horizontal
