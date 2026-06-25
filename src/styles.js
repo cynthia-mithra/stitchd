@@ -75,7 +75,10 @@ export const CSS=`
   .bottom-nav-item:active{opacity:.55;}
   @media(max-width:768px){
     .bottom-nav{display:flex !important;}
-    .app-root{padding-bottom:60px;}
+    /* Reserve space for the fixed bar ONLY when it's actually shown (logged in,
+       not detail/auth) — plus the phone's home-indicator safe area — so the last
+       button/footer never hides behind it. */
+    .app-root.has-bottom-nav{padding-bottom:calc(64px + env(safe-area-inset-bottom));}
   }
   /* Desktop nav dropdown items turn pink on hover; the LOG OUT item keeps its red. */
   .nav-drop-item:hover{color:#FF1493 !important;}

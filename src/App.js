@@ -3658,7 +3658,7 @@ export default function App() {
   const runNavItem = (item)=>{ setNavMenuOpen(false); setMobileNavOpen(false); item.run(); };
 
   return (
-    <div className="app-root" style={S.root}>
+    <div className={"app-root"+(user&&view!=="detail"&&view!=="auth"?" has-bottom-nav":"")} style={S.root}>
       <style>{CSS}</style>
 
       {/* HEADER */}
