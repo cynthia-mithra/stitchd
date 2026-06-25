@@ -56,6 +56,14 @@ export default function Profile({
                 <F l="USERNAME"><input style={S.inp} placeholder="e.g. @nasreen.closet" value={profForm.username} onChange={e=>setProfForm(f=>({...f,username:e.target.value}))}/></F>
                 <F l="BIO"><textarea style={{...S.inp,height:80,resize:"vertical",width:"100%"}} value={profForm.bio} onChange={e=>setProfForm(f=>({...f,bio:e.target.value}))}/></F>
                 <F l="LOCATION"><input style={S.inp} placeholder="e.g. London, UK" value={profForm.location} onChange={e=>setProfForm(f=>({...f,location:e.target.value}))}/></F>
+                <F l="I AM">
+                  <div style={{display:"flex",gap:8}}>
+                    {["Woman","Man"].map(g=>{
+                      const on=profForm.gender===g;
+                      return <button key={g} type="button" className="hbtn" style={{...S.hBtn,flex:1,background:on?"#FF1493":"#fff",color:on?"#fff":"#111",border:`2px solid ${on?"#FF1493":"#111"}`,padding:"10px 16px",fontSize:12,letterSpacing:1.5}} onClick={()=>setProfForm(f=>({...f,gender:g}))}>{g.toUpperCase()}</button>;
+                    })}
+                  </div>
+                </F>
               </div>
             </Sec>
             <Sec label="I SPECIALISE IN">
@@ -83,7 +91,10 @@ export default function Profile({
             <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
               <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #00E5CC",paddingLeft:12,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><Ruler width={16} height={16}/> MY MEASUREMENTS</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-                {[["bust","BUST (inches)"],["waist","WAIST (inches)"],["hips","HIPS (inches)"],["height","HEIGHT (cm)"]].map(([k,l])=>(
+                {(profForm.gender==="Man"
+                  ? [["bust","CHEST (inches)"],["waist","WAIST (inches)"],["height","HEIGHT (cm)"]]
+                  : [["bust","BUST (inches)"],["waist","WAIST (inches)"],["hips","HIPS (inches)"],["height","HEIGHT (cm)"]]
+                ).map(([k,l])=>(
                   <F key={k} l={l}><input style={S.inp} type="number" placeholder="e.g. 34" value={profForm[k]} onChange={e=>setProfForm(f=>({...f,[k]:e.target.value}))}/></F>
                 ))}
               </div>
