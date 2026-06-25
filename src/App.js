@@ -5142,9 +5142,10 @@ export default function App() {
         onSell={()=>{ dismissOnboard(); if(user){ setView("add"); } else { setAuthMode("signup"); setView("auth"); } window.scrollTo(0,0); }}
       />
 
-      {/* MOBILE BOTTOM NAV — app-style tab bar (phones only; CSS-gated). Hidden on
-          the detail page (its own sticky buy bar lives there) and the auth screen. */}
-      {view!=="detail"&&view!=="auth"&&(
+      {/* MOBILE BOTTOM NAV — app-style tab bar (phones only; CSS-gated). Signed-in
+          only — logged-out visitors get the header LOG IN / SIGN UP instead. Hidden
+          on the detail page (its own sticky buy bar lives there) and the auth screen. */}
+      {user&&view!=="detail"&&view!=="auth"&&(
         <nav className="bottom-nav" style={S.bottomNav} aria-label="Primary">
           {[
             {key:"home", label:"Home", Icon:Home, on:view==="shop"||view==="newarrivals", run:()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("shop"); window.scrollTo(0,0); }},
