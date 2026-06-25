@@ -277,10 +277,12 @@ export const S={
   // content-box so the fixed 52px icon row is the *content* and the padding (incl.
   // the home-indicator safe area, min 10px) is added below it — guarantees the
   // labels always have breathing room and never sit on the screen edge.
-  bottomNav:{position:"fixed",left:0,right:0,bottom:0,height:52,boxSizing:"content-box",background:"#fff",borderTop:"2px solid #111",boxShadow:"0 -6px 20px rgba(0,0,0,0.07)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"space-around",paddingTop:6,paddingBottom:"max(10px, env(safe-area-inset-bottom))"},
-  bottomNavItem:{flex:1,background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,padding:0,fontFamily:"'Barlow Condensed',sans-serif"},
+  bottomNav:{position:"fixed",left:0,right:0,bottom:0,height:56,boxSizing:"content-box",background:"#fff",borderTop:"2px solid #111",boxShadow:"0 -6px 20px rgba(0,0,0,0.07)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"space-around",paddingTop:6,paddingBottom:"max(10px, env(safe-area-inset-bottom))"},
+  bottomNavItem:{flex:1,background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:0,fontFamily:"'Barlow Condensed',sans-serif"},
   bottomNavLabel:{fontSize:9.5,fontWeight:800,letterSpacing:1,textTransform:"uppercase",lineHeight:1},
-  bottomNavSell:{width:42,height:42,marginTop:-16,borderRadius:"50%",background:"#FF1493",color:"#fff",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 5px 16px rgba(255,20,147,0.45)"},
+  // Sell sits INSIDE the bar (no negative-margin poke) — a modest pink circle
+  // aligned with the other tabs, not crossing the top border.
+  bottomNavSell:{width:34,height:34,marginTop:0,borderRadius:"50%",background:"#FF1493",color:"#fff",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 3px 10px rgba(255,20,147,0.4)"},
   bottomNavBadge:{position:"absolute",top:-5,right:-9,minWidth:16,height:16,padding:"0 4px",borderRadius:8,background:"#FF1493",color:"#fff",border:"2px solid #fff",fontSize:9,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Barlow Condensed',sans-serif"},
   // Type-led editorial hero: a single, centred column (no imagery). Bold stacked
   // headline + brand statement + CTAs + a value-prop strip.

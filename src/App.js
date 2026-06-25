@@ -5156,7 +5156,7 @@ export default function App() {
           ].map(t=>(
             t.sell ? (
               <button key={t.key} className="bottom-nav-item" style={S.bottomNavItem} onClick={t.run} aria-label="Sell an item">
-                <span style={S.bottomNavSell}><t.Icon width={24} height={24}/></span>
+                <span style={S.bottomNavSell}><t.Icon width={20} height={20}/></span>
                 <span style={{...S.bottomNavLabel,color:t.on?"#FF1493":"#111"}}>{t.label}</span>
               </button>
             ) : (
