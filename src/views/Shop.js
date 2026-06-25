@@ -268,27 +268,19 @@ export default function Shop({
             </div>
           )}
         </Thumb>
+        {/* Compact body — photo-forward: name on one line, then price + size +
+            likes. Category / occasions / measurements / rating live on the
+            detail page now, keeping the grid clean and image-led. */}
         <div style={S.cardBody} className="card-body">
-          <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}{(item.material||item.fabric)?` · ${(item.material||item.fabric).toUpperCase()}`:""}</p>
           <p style={S.cardName} className="card-name">{item.name}</p>
-          <VerifiedSellerBadge sellerId={item.user_id}/>
-          {(item.occasions||[]).length>0&&<div style={S.occRow}>{item.occasions.slice(0,3).map(o=><span key={o} style={{...S.occChip,background:OCC_COLOR[o]||"#999",color:"#fff"}}>{o.toUpperCase()}</span>)}</div>}
-          <div style={S.measRow}>
-            {item.size&&item.size!=="Free Size"&&<span style={S.mTag}>{item.size}</span>}
-            {item.bust&&<span style={S.mTag}>B {item.bust}in</span>}
-            {item.waist&&<span style={S.mTag}>W {item.waist}in</span>}
-            {item.can_take_in&&<span style={{...S.mTag,...S.mTagG}}>↔ TAKE IN</span>}
-            {item.spare_fabric&&<span style={{...S.mTag,...S.mTagA}}>+ FABRIC</span>}
-          </div>
           <div style={S.cardFoot}>
-            <span style={{display:"flex",alignItems:"baseline",gap:8}}>
+            <span style={{display:"flex",alignItems:"baseline",gap:6,minWidth:0}}>
               <span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span>
               {item.prev_price>item.price&&<span style={S.cardPrevPrice}>{currencySymbol(item.currency)}{item.prev_price}</span>}
             </span>
-            <span style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+              {item.size&&item.size!=="Free Size"&&<span style={S.cardSizePill}>{item.size}</span>}
               <WishCount item={item}/>
-              <SellerRating sellerId={item.user_id}/>
-              {item.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#6f6f6f",letterSpacing:1,display:"inline-flex",alignItems:"center",gap:4}}><Eye width={12} height={12}/> {item.views}</span>}
             </span>
           </div>
         </div>
