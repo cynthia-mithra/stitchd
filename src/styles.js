@@ -57,18 +57,16 @@ export const CSS=`
   .hbtn:hover .btn-arrow{transform:translateX(5px);}
   /* Conversation rows in Messages: gentle tint + pink edge on hover. */
   .conv-item:hover{background:#fff7fc !important;border-left-color:#FF149355 !important;}
-  /* SHOP BY CATEGORY — quick-entry tiles. 6-up grid on desktop, horizontal
-     swipe-scroll on phones (tiles ~42% wide so the next peeks). */
-  .cat-rail{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;}
-  .cat-tile{padding:0;border:none;background:none;cursor:pointer;transition:transform .2s cubic-bezier(.22,1,.36,1);}
-  .cat-tile:hover{transform:translateY(-4px);}
-  .cat-tile-img{position:relative;width:100%;aspect-ratio:1/1;border:2px solid #111;overflow:hidden;display:flex;align-items:center;justify-content:center;}
-  .cat-tile-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-  .cat-tile-img::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6),transparent 55%);}
-  .cat-tile-label{position:absolute;left:9px;bottom:8px;z-index:2;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:13px;letter-spacing:.5px;color:#fff;text-align:left;line-height:1;}
+  /* SHOP BY CATEGORY — sleek rounded pill chips; horizontal swipe-scroll. */
+  .cat-rail{display:flex;flex-wrap:wrap;gap:10px;}
+  .cat-chip{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;letter-spacing:1px;
+    padding:11px 22px;border-radius:24px;cursor:pointer;white-space:nowrap;flex-shrink:0;
+    background:#FDE9F2;color:#FF1493;border:1.5px solid #F6CFE0;transition:transform .15s ease,background .15s ease,color .15s ease;}
+  .cat-chip:hover{transform:translateY(-2px);border-color:#FF1493;}
+  .cat-chip[data-on="1"]{background:#FF1493;color:#fff;border-color:#FF1493;}
   @media(max-width:768px){
-    .cat-rail{display:flex;overflow-x:auto;gap:10px;scroll-snap-type:x mandatory;padding-bottom:6px;}
-    .cat-rail > *{flex:0 0 42%;scroll-snap-align:start;}
+    .cat-rail{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px;-webkit-overflow-scrolling:touch;}
+    .cat-rail > *{scroll-snap-align:start;}
   }
   /* MOBILE BOTTOM NAV — app-style tab bar, phones only. Desktop/iPad keep the
      header nav, so it's hidden by default and only shown ≤768px. The app root
@@ -296,7 +294,7 @@ export const S={
   // Rendered position:relative in Shop.js so the suggestions dropdown anchors to it
   // and the row sits in normal document flow above the grid. No top offset here — a
   // leftover `top:52` would shift a relative element 52px down and overlap the grid.
-  searchBar:{borderBottom:"2px solid #111",background:"#fff",position:"relative",zIndex:100},
+  searchBar:{background:"#fff",position:"relative",zIndex:100},
   // FULL-WIDTH control row: the search field grows to fill the LEFT
   // (`searchBox` flex:1) so it spans most of the row, and the FILTERS / FIT /
   // TAILORS buttons sit together on the FAR RIGHT (each `flexShrink:0`). The row
@@ -305,11 +303,18 @@ export const S={
   // of overflowing. The buttons are sized snugly to their content (`padding:0 12px`)
   // and share the search field's height (34) so they read as tidy, proportionate
   // buttons rather than oversized boxes, all vertically centred (`alignItems:center`).
-  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",gap:8,width:"100%",padding:"4px 10px"},
-  searchBox:{flex:"1 1 240px",minWidth:0,height:30,display:"flex",alignItems:"center",border:"1px solid #111",borderRadius:0,background:"#fff"},
-  searchIcon:{padding:"0 10px",fontSize:13,color:"#6f6f6f",flexShrink:0,display:"flex",alignItems:"center"},
-  searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#111",padding:"0",background:"transparent",minWidth:0},
-  searchClear:{background:"none",border:"none",padding:"0 10px",cursor:"pointer",fontSize:12,color:"#6f6f6f",fontWeight:700,flexShrink:0,display:"flex",alignItems:"center"},
+  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",gap:10,width:"100%",padding:"14px 16px"},
+  // Soft-capsule search: pink-tint rounded bar, magnifier inside left, a circular
+  // pink Filters button tucked into the right end (paddingRight leaves room for it).
+  searchBox:{flex:"1 1 280px",minWidth:0,height:48,display:"flex",alignItems:"center",border:"1.5px solid #F6CFE0",borderRadius:24,background:"#FDE9F2",paddingRight:4,position:"relative"},
+  searchIcon:{padding:"0 8px 0 16px",color:"#cf97b4",flexShrink:0,display:"flex",alignItems:"center"},
+  searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow',sans-serif",fontSize:14,fontWeight:500,letterSpacing:0.2,color:"#111",padding:"0 6px",background:"transparent",minWidth:0},
+  searchClear:{background:"none",border:"none",padding:"0 6px",cursor:"pointer",color:"#bd7fa0",fontWeight:700,flexShrink:0,display:"flex",alignItems:"center"},
+  searchFilterCircle:{flexShrink:0,width:40,height:40,borderRadius:"50%",border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative",marginLeft:4},
+  searchFilterDot:{position:"absolute",top:6,right:6,width:8,height:8,borderRadius:"50%",background:"#fff",border:"1.5px solid #FF1493"},
+  // Rounded pink-outline pill for the secondary controls (FIT / SAVE / TAILORS).
+  pillBtn:{display:"inline-flex",alignItems:"center",gap:6,background:"#FDE9F2",color:"#FF1493",border:"1.5px solid #FF1493",borderRadius:24,padding:"0 18px",height:48,fontSize:12,letterSpacing:1,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",flexShrink:0},
+  pillBtnOn:{background:"#FF1493",color:"#fff",borderColor:"#FF1493"},
   filterPanel:{padding:"16px 16px",borderTop:"1px solid #f0f0f0",display:"flex",flexDirection:"column",gap:16},
   filterBtn:{background:"#fff",border:"1px solid #111",borderRadius:0,padding:"0 12px",height:30,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
   filterGroup:{display:"flex",flexDirection:"column",gap:10},

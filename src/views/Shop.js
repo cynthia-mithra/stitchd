@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Scissors, Zap, Heart, Ruler, Eye, ArrowDown, ArrowRight, Sparkles, TrendingDown, Flame, Shirt, BadgeCheck, Bookmark, Recycle, ShieldCheck } from "lucide-react";
+import { Search, Scissors, Zap, Heart, Ruler, Eye, ArrowDown, ArrowRight, Sparkles, TrendingDown, Flame, Shirt, BadgeCheck, Bookmark, Recycle, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import {
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, ALL_CATEGORIES,
   CONDITIONS, SIZES, OCCASIONS, COLOURS, OCC_COLOR, CARD_COLORS,
@@ -108,31 +108,25 @@ export default function Shop({
   // a brand monogram), and tapping applies the matching filter + scrolls to the
   // grid. Only shown on the main, unfiltered shop view.
   const CATEGORY_TILES = [
-    {label:"Sarees",        apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Saree");},        match:i=>i.category==="Saree"},
-    {label:"Lehengas",      apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Lehenga");},      match:i=>i.category==="Lehenga"},
-    {label:"Salwar Kameez", apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Salwar Kameez");},match:i=>i.category==="Salwar Kameez"},
-    {label:"Sherwani",      apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Sherwani");},     match:i=>i.category==="Sherwani"},
-    {label:"Jewellery",     apply:()=>{clearFilters();setTypeFilter("Jewellery");},                            match:i=>i.listing_type==="Jewellery"},
-    {label:"Shoes",         apply:()=>{clearFilters();setTypeFilter("Shoes");},                                match:i=>i.listing_type==="Shoes"},
+    {label:"Sarees",        apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Saree");},        active:catFilter==="Saree"},
+    {label:"Lehengas",      apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Lehenga");},      active:catFilter==="Lehenga"},
+    {label:"Salwar Kameez", apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Salwar Kameez");},active:catFilter==="Salwar Kameez"},
+    {label:"Sherwani",      apply:()=>{clearFilters();setTypeFilter("Clothing");setCatFilter("Sherwani");},     active:catFilter==="Sherwani"},
+    {label:"Jewellery",     apply:()=>{clearFilters();setTypeFilter("Jewellery");},                            active:typeFilter==="Jewellery"},
+    {label:"Shoes",         apply:()=>{clearFilters();setTypeFilter("Shoes");},                                active:typeFilter==="Shoes"},
   ];
+  // SHOP BY CATEGORY — sleek rounded pill chips (matches the search capsule).
+  // Active chip is solid pink; the rest are pink-tint outline. Horizontal
+  // swipe-scroll on phones.
   const CategoryRail = () => (
-    <div style={{maxWidth:1300,margin:"0 auto",padding:"28px 24px 0"}}>
-      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",textTransform:"uppercase",margin:"0 0 12px"}}>SHOP BY CATEGORY</p>
+    <div style={{maxWidth:1300,margin:"0 auto",padding:"26px 24px 0"}}>
+      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#a98fa0",textTransform:"uppercase",margin:"0 0 12px"}}>SHOP BY CATEGORY</p>
       <div className="cat-rail">
-        {CATEGORY_TILES.map((t,idx)=>{
-          const hit=(visible||[]).find(i=>t.match(i)&&(i.image_url||(i.images&&i.images[0])));
-          const img=hit?(hit.image_url||hit.images[0]):"";
-          const accent=["#FF1493","#00E5CC","#111"][idx%3];
-          const mono=t.label.split(/[\s-]+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
-          return (
-            <button key={t.label} className="cat-tile" onClick={()=>{t.apply();setTimeout(()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"}),60);}} aria-label={`Shop ${t.label}`}>
-              <div className="cat-tile-img" style={{background:img?"#000":accent}}>
-                {img?<img src={img} alt="" loading="lazy" decoding="async"/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:"#fff"}}>{mono}</span>}
-                <span className="cat-tile-label">{t.label.toUpperCase()}</span>
-              </div>
-            </button>
-          );
-        })}
+        {CATEGORY_TILES.map((t)=>(
+          <button key={t.label} className="cat-chip" data-on={t.active?"1":"0"}
+            onClick={()=>{t.apply();setTimeout(()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"}),60);}}
+            aria-label={`Shop ${t.label}`}>{t.label.toUpperCase()}</button>
+        ))}
       </div>
     </div>
   );
@@ -373,28 +367,26 @@ export default function Shop({
       {/* SEARCH BAR */}
       <div style={{...S.searchBar,position:"relative"}} id="grid-anchor">
         <div style={S.searchInner}>
+          {/* Soft-capsule search (Option B): a pink-tint rounded bar with the
+              magnifier inside on the left and a circular pink Filters button tucked
+              into the right end. Sort now lives inside the Filters panel. */}
           <div style={S.searchBox} className="search-box">
-            <span style={S.searchIcon}><Search width={16} height={16}/></span>
-            <input style={S.searchInput} placeholder="SEARCH SAREES, SILK, WEDDING..."
+            <span style={S.searchIcon}><Search width={17} height={17}/></span>
+            <input style={S.searchInput} placeholder="Search sarees, silk, wedding…"
               value={search}
               onChange={e=>handleSearchInput(e.target.value)}
               onFocus={()=>{ if(search.length>=2) setShowSuggestions(true); if(user&&savedSearches.length>0&&!search) setShowSavedSearches(true); }}
               onBlur={()=>setTimeout(()=>{ setShowSuggestions(false); setShowSavedSearches(false); },200)}
             />
-            {search&&<button style={S.searchClear} onClick={()=>{setSearch("");setShowSuggestions(false);}}>✕</button>}
+            {search&&<button style={S.searchClear} aria-label="Clear search" onClick={()=>{setSearch("");setShowSuggestions(false);}}><X width={15} height={15}/></button>}
+            <button className="hbtn" aria-label="Filters" title="Filters" onClick={()=>setShowFilters(f=>!f)} style={{...S.searchFilterCircle,background:(showFilters||hasFilters)?"#FF1493":"#FF1493"}}>
+              <SlidersHorizontal width={17} height={17} color="#fff"/>
+              {hasFilters&&<span style={S.searchFilterDot}/>}
+            </button>
           </div>
-          <button className="hbtn search-action-btn" style={{...S.filterBtn,background:showFilters?"#FF1493":"#fff",color:showFilters?"#fff":"#111"}} onClick={()=>setShowFilters(f=>!f)}>FILTERS {hasFilters?"●":""}</button>
-          <select value={shopSort} onChange={e=>setShopSort(e.target.value)} aria-label="Sort listings" className="search-action-btn" style={{...S.filterBtn,display:"inline-block",height:30,textAlignLast:"center",cursor:"pointer"}}>
-            <option value="newest">SORT: NEWEST</option>
-            <option value="price_low">PRICE: LOW → HIGH</option>
-            <option value="price_high">PRICE: HIGH → LOW</option>
-          </select>
-          {user&&profile?.bust&&<button className="hbtn search-action-btn" style={{...S.filterBtn,background:showSizeMatch?"#34C759":"#fff",color:showSizeMatch?"#fff":"#111"}} onClick={()=>setShowSizeMatch(f=>!f)}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Ruler width={16} height={16}/> FIT</span></button>}
-          {/* Phase 12 — SAVE THIS SEARCH. Appears once any filter or query is
-              active. Logged-out buyers are prompted to log in on tap (handled in
-              openSaveSearch). Outlined, 2px #111, no radius, Barlow Condensed. */}
-          {hasFilters&&<button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111",border:"2px solid #111"}} onClick={()=>requireAuth("default",openSaveSearch)}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Bookmark width={15} height={15}/> SAVE THIS SEARCH</span></button>}
-          <button className="hbtn search-action-btn" style={{...S.filterBtn,background:"#fff",color:"#111"}} onClick={openTailorDirectory}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><Scissors width={16} height={16}/> TAILORS</span></button>
+          {user&&profile?.bust&&<button className="hbtn search-action-btn" style={{...S.pillBtn,...(showSizeMatch?S.pillBtnOn:{})}} onClick={()=>setShowSizeMatch(f=>!f)}><Ruler width={15} height={15}/> FIT</button>}
+          {hasFilters&&<button className="hbtn search-action-btn" style={{...S.pillBtn}} onClick={()=>requireAuth("default",openSaveSearch)}><Bookmark width={14} height={14}/> SAVE</button>}
+          <button className="hbtn search-action-btn" style={{...S.pillBtn}} onClick={openTailorDirectory}><Scissors width={15} height={15}/> TAILORS</button>
         </div>
         {(showSuggestions&&searchSuggestions.length>0)||(showSavedSearches&&savedSearches.length>0)?(
           <div style={{position:"absolute",top:"100%",left:10,width:"calc(100% - 20px)",maxWidth:560,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
@@ -420,6 +412,7 @@ export default function Shop({
         ):null}
         {showFilters&&(
           <div style={S.filterPanel}>
+            <div style={S.filterGroup}><div style={S.filterLabel}>SORT BY</div><div style={S.filterPills}>{[["newest","NEWEST"],["price_low","PRICE: LOW → HIGH"],["price_high","PRICE: HIGH → LOW"]].map(([v,l])=><button key={v} className="fpill" onClick={()=>setShopSort(v)} style={{...S.pill,...(shopSort===v?S.pillOn:{})}}>{l}</button>)}</div></div>
             <div style={S.filterGroup}><div style={S.filterLabel}>SELLER</div><div style={S.filterPills}><button className="fpill" onClick={()=>setShowVerifiedOnly(v=>!v)} style={{...S.pill,...(showVerifiedOnly?{background:"#00E5CC",border:"1.5px solid #111",color:"#111"}:{}),display:"inline-flex",alignItems:"center",gap:6}}><BadgeCheck width={13} height={13}/> VERIFIED SELLERS ONLY</button></div></div>
             <div style={S.filterGroup}><div style={S.filterLabel}>TYPE</div><div style={S.filterPills}>{["All","Clothing","Jewellery","Shoes"].map(t=><button key={t} className="fpill" onClick={()=>setTypeFilter(t)} style={{...S.pill,...(typeFilter===t?S.pillOn:{})}}>{t}</button>)}</div></div>
             <div style={S.filterGroup}><div style={S.filterLabel}>CONDITION</div><div style={S.filterPills}>{["All",...CONDITIONS].map(c=><button key={c} className="fpill" onClick={()=>setCondFilter(c)} style={{...S.pill,...(condFilter===c?S.pillOn:{})}}>{c}</button>)}</div></div>
