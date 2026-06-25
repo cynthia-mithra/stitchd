@@ -3794,8 +3794,9 @@ export default function App() {
             </div>
             {bag.length===0?(
               <div style={S.bagEmpty}>
-                <ShoppingBag width={48} height={48} color="#ddd"/>
+                <span style={{width:72,height:72,borderRadius:"50%",background:"linear-gradient(135deg,#fff0f8,#e6fffb)",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center"}}><ShoppingBag width={30} height={30} color="#FF1493"/></span>
                 <p style={S.bagEmptyText}>YOUR BAG IS EMPTY</p>
+                <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#999",margin:"-6px 0 4px",textAlign:"center"}}>Find a piece you love and it'll appear here.</p>
                 <button className="hbtn" style={S.bagBrowseBtn} onClick={()=>{setShowBag(false);setView("shop");}}>BROWSE LISTINGS</button>
               </div>
             ):(
@@ -3824,7 +3825,7 @@ export default function App() {
                 {bagBundles.length>0?(
                   <>
                     {/* Original subtotal (struck through) → per-seller discount lines
-                        (teal) → discounted total (bold). */}
+                        (teal) → discounted items line. */}
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:700,letterSpacing:1,color:"#6b6b6b"}}>
                       <span>SUBTOTAL</span>
                       <span style={{textDecoration:"line-through"}}>{currencySymbol()}{bagTotal.toFixed(2)}</span>
@@ -3835,19 +3836,29 @@ export default function App() {
                         <span>−{currencySymbol()}{bd.discount.toFixed(2)}</span>
                       </div>
                     ))}
-                    <div style={S.bagTotalRow}>
-                      <span style={S.bagTotalLabel}>TOTAL</span>
-                      <span style={S.bagTotalVal}>{currencySymbol()}{(bagTotal-bundleDiscountTotal).toFixed(2)}</span>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,letterSpacing:0.5,color:"#111"}}>
+                      <span>ITEMS</span>
+                      <span>{currencySymbol()}{(bagTotal-bundleDiscountTotal).toFixed(2)}</span>
                     </div>
                   </>
                 ):(
-                  <div style={S.bagTotalRow}>
-                    <span style={S.bagTotalLabel}>TOTAL</span>
-                    <span style={S.bagTotalVal}>{currencySymbol(bag[0]?.currency)}{bagTotal.toFixed(2)}</span>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,letterSpacing:0.5,color:"#111"}}>
+                    <span>SUBTOTAL</span>
+                    <span>{currencySymbol(bag[0]?.currency)}{bagTotal.toFixed(2)}</span>
                   </div>
                 )}
                 {bagStep==="items"?(
                   <>
+                    {(()=>{ const protection=buyerProtectionFee(bagTotal-bundleDiscountTotal); return(<>
+                      {protection>0&&(
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:0.5,color:"#555"}}>
+                          <span style={{display:"inline-flex",alignItems:"center",gap:6}}><ShieldCheck width={14} height={14}/> Buyer Protection</span>
+                          <span>{currencySymbol()}{protection.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div style={S.bagTotalRow}><span style={S.bagTotalLabel}>TOTAL</span><span style={S.bagTotalVal}>{currencySymbol()}{((bagTotal-bundleDiscountTotal)+protection).toFixed(2)}</span></div>
+                      <p style={{fontFamily:"'Barlow',sans-serif",fontSize:11.5,color:"#999",textAlign:"right",margin:"-2px 0 12px"}}>+ delivery, chosen next step</p>
+                    </>); })()}
                     <button className="hbtn" style={S.bagCheckoutBtn} onClick={()=>setBagStep("delivery")}>CHOOSE DELIVERY →</button>
                     <p style={S.bagGuarantee}><Lock width={13} height={13}/> Secure checkout · Stitch'd Buyer Guarantee</p>
                     <button style={S.bagContinue} onClick={()=>setShowBag(false)}>CONTINUE SHOPPING</button>
