@@ -42,6 +42,7 @@ import ShareWishlistModal from "./components/ShareWishlistModal";
 import Legal, { LEGAL_VIEWS } from "./views/Legal";
 import Footer from "./components/Footer";
 import NotFound from "./views/NotFound";
+import Onboarding from "./components/Onboarding";
 
 // URL path → view for the static legal pages, derived from the views Legal.js
 // owns so the two never drift (e.g. "/terms" → "terms").
@@ -463,6 +464,11 @@ export default function App() {
   const [showNotifs,     setShowNotifs]     = useState(false);
   const [navMenuOpen,    setNavMenuOpen]    = useState(false);
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
+  // First-run welcome — shown once per browser (localStorage), only on the home
+  // view so it never pops over checkout/detail/etc.
+  const [showOnboard,    setShowOnboard]    = useState(false);
+  useEffect(()=>{ try{ if(!localStorage.getItem("stitchd_onboarded_v1")) setShowOnboard(true); }catch(e){} },[]);
+  const dismissOnboard=()=>{ try{ localStorage.setItem("stitchd_onboarded_v1","1"); }catch(e){} setShowOnboard(false); };
   const [showPayment,    setShowPayment]    = useState(false);
   const [paymentListing, setPaymentListing] = useState(null);
   const [paymentStep,    setPaymentStep]    = useState("summary");
@@ -5115,6 +5121,14 @@ export default function App() {
       {/* GLOBAL FOOTER — appears on every page (modals/overlays render on top and
           are unaffected; the Stripe checkout is an external hosted page). */}
       <Footer onNav={footerNav} />
+
+      {/* FIRST-RUN WELCOME — once per browser, only over the home view. */}
+      <Onboarding
+        show={showOnboard&&(view==="shop"||view==="newarrivals")}
+        onClose={dismissOnboard}
+        onBrowse={()=>{ dismissOnboard(); document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"}); }}
+        onSell={()=>{ dismissOnboard(); if(user){ setView("add"); } else { setAuthMode("signup"); setView("auth"); } window.scrollTo(0,0); }}
+      />
 
       {/* MOBILE BOTTOM NAV — app-style tab bar (phones only; CSS-gated). Hidden on
           the detail page (its own sticky buy bar lives there) and the auth screen. */}
