@@ -393,7 +393,7 @@ export default function Shop({
           </div>
           {user&&profile?.bust&&<button className="hbtn search-action-btn" style={{...S.pillBtn,...(showSizeMatch?S.pillBtnOn:{})}} onClick={()=>setShowSizeMatch(f=>!f)}><Ruler width={15} height={15}/> FIT</button>}
           {hasFilters&&<button className="hbtn search-action-btn" style={{...S.pillBtn}} onClick={()=>requireAuth("default",openSaveSearch)}><Bookmark width={14} height={14}/> SAVE</button>}
-          <button className="hbtn search-action-btn" style={{...S.pillBtn,background:"#E8F1FF",color:"#007AFF",borderColor:"#007AFF"}} onClick={openTailorDirectory}><Scissors width={15} height={15}/> TAILORS</button>
+          <button className="hbtn search-action-btn" style={{...S.pillBtn,background:"#E6FFFB",color:"#0AA493",borderColor:"#00E5CC"}} onClick={openTailorDirectory}><Scissors width={15} height={15}/> TAILORS</button>
         </div>
         {(showSuggestions&&searchSuggestions.length>0)||(showSavedSearches&&savedSearches.length>0)?(
           <div style={{position:"absolute",top:"100%",left:10,width:"calc(100% - 20px)",maxWidth:560,background:"#fff",border:"2px solid #111",borderTop:"none",zIndex:200,maxHeight:280,overflowY:"auto"}}>
