@@ -23,51 +23,72 @@ export function esc(s: unknown): string {
 const PINK = "#FF1493";
 const INK = "#111111";
 
-// Web-safe condensed font stack. Barlow Condensed (the website wordmark) isn't a
-// safe email-client font, so fall back to Arial Narrow / Helvetica Neue
-// Condensed — these keep the tall, condensed brand feel wherever the real font
-// can't load. Used for every text element so the whole email reads consistently.
-const FONT = "'Arial Narrow', Arial, 'Helvetica Neue Condensed', 'Helvetica Neue', Helvetica, sans-serif";
+// Two-font system matching the website. HEAD = Barlow Condensed (the wordmark,
+// headings, labels, CTAs, prices); BODY = Barlow (running copy). Both fall back
+// to web-safe stacks so the email still reads well where the real fonts can't
+// load — Arial Narrow / Helvetica Neue Condensed keep the tall condensed feel
+// for HEAD, Helvetica/Arial for BODY. A Google Fonts @import in the head lets
+// supporting clients (Apple Mail, iOS Mail) pull the real Barlow fonts.
+const HEAD = "'Barlow Condensed', 'Arial Narrow', 'Helvetica Neue Condensed', Arial, sans-serif";
+const BODY = "'Barlow', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+// Kept for backward-compatibility with builders that reference FONT (e.g. the
+// big offer/quote amount numbers) — those want the condensed look, so FONT = HEAD.
+const FONT = HEAD;
 
-// A pink CTA button. `kind:"secondary"` renders an outlined/muted variant for the
-// "REPORT A PROBLEM" style secondary actions.
+// Split a heading so its last word is emphasised in pink (the "It's yours."
+// look) while the rest sits in ink. Single-word headings render fully pink.
+function headingHtml(heading: string): string {
+  const words = String(heading).trim().split(/\s+/);
+  if (words.length <= 1) {
+    return `<span style="color:${PINK};">${esc(heading)}</span>`;
+  }
+  const tail = words.pop() as string;
+  return `${esc(words.join(" "))} <span style="color:${PINK};">${esc(tail)}</span>`;
+}
+
+// A pink CTA button — sharp corners, 2px border, condensed uppercase label.
+// `kind:"secondary"` renders an outlined/muted variant for the "REPORT A
+// PROBLEM" style secondary actions.
 function button(label: string, href: string, kind: "primary" | "secondary" = "primary"): string {
   const bg = kind === "primary" ? PINK : "#ffffff";
   const color = kind === "primary" ? "#ffffff" : INK;
-  const border = kind === "primary" ? PINK : "#dddddd";
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0;">
-    <tr><td style="border-radius:2px;background:${bg};">
+  const border = kind === "primary" ? PINK : "#cccccc";
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:10px 0 4px 0;">
+    <tr><td style="background:${bg};">
       <a href="${esc(href)}" target="_blank"
-         style="display:inline-block;padding:14px 30px;font-family:${FONT};
-                font-size:13px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-                color:${color};text-decoration:none;border:2px solid ${border};border-radius:2px;">
+         style="display:inline-block;padding:14px 30px;font-family:${HEAD};
+                font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+                color:${color};text-decoration:none;border:2px solid ${border};">
         ${esc(label)}</a>
     </td></tr></table>`;
 }
 
-// Optional listing card — thumbnail + title (+ price). Thumb falls back to a
-// neutral block if the listing has no image.
+// Optional listing card — pink left-accent bar, thumbnail, title (+ price).
+// Thumb falls back to a neutral block if the listing has no image. Sharp
+// corners, hairline border — matches the website's product cards.
 function listingCard(opts: { image?: string; title?: string; price?: string }): string {
   if (!opts.title && !opts.image) return "";
   const img = opts.image
-    ? `<img src="${esc(opts.image)}" width="80" height="80" alt=""
-            style="display:block;width:80px;height:80px;object-fit:cover;border-radius:2px;background:#f2f2f2;">`
-    : `<div style="width:80px;height:80px;border-radius:2px;background:#f2f2f2;"></div>`;
+    ? `<img src="${esc(opts.image)}" width="78" height="78" alt=""
+            style="display:block;width:78px;height:78px;object-fit:cover;background:#f2f2f2;">`
+    : `<div style="width:78px;height:78px;background:#f2f2f2;"></div>`;
   const price = opts.price
-    ? `<div style="font-family:${FONT};font-size:15px;font-weight:800;color:${INK};margin-top:4px;">${esc(opts.price)}</div>`
+    ? `<div style="font-family:${HEAD};font-size:20px;font-weight:900;color:${PINK};margin-top:3px;">${esc(opts.price)}</div>`
     : "";
   return `<table role="presentation" cellpadding="0" cellspacing="0" width="100%"
-            style="margin:18px 0;background:#fafafa;border-radius:4px;">
+            style="margin:18px 0;border:1.5px solid #ececec;border-collapse:separate;">
     <tr>
-      <td style="padding:14px;width:80px;vertical-align:top;">${img}</td>
-      <td style="padding:14px 14px 14px 0;vertical-align:top;">
-        <div style="font-family:${FONT};font-size:15px;font-weight:700;color:${INK};">${esc(opts.title || "")}</div>
+      <td style="padding:0;width:6px;background:${PINK};"></td>
+      <td style="padding:12px;width:78px;vertical-align:middle;">${img}</td>
+      <td style="padding:12px 14px 12px 4px;vertical-align:middle;">
+        <div style="font-family:${HEAD};font-size:18px;font-weight:700;letter-spacing:.3px;color:${INK};">${esc(opts.title || "")}</div>
         ${price}
       </td>
     </tr></table>`;
 }
 
-// The shell every email shares: header bar + heading + body + footer.
+// The shell every email shares: centered wordmark header + pink ticker strip +
+// heading + body + centered footer.
 export function baseTemplate(opts: {
   heading: string;
   bodyHtml: string;
@@ -78,40 +99,50 @@ export function baseTemplate(opts: {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta name="color-scheme" content="light only">
+<style>@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800;900&family=Barlow:wght@400;500;600&display=swap');</style>
 <title>Stitch'd</title>
 </head>
 <body style="margin:0;padding:0;background:#ffffff;">
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#ffffff;">
   <tr><td align="center" style="padding:0;">
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:560px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:560px;background:#ffffff;">
 
-      <!-- Header bar -->
-      <tr><td style="background:${INK};padding:22px 28px;">
+      <!-- Header: centered wordmark -->
+      <tr><td style="background:${INK};padding:22px 30px;text-align:center;">
         <a href="https://stitchd.fit" target="_blank" style="text-decoration:none;">
-          <span style="font-family:${FONT};
-                       font-size:30px;font-weight:700;letter-spacing:3px;color:#ffffff;
-                       text-transform:uppercase;">STITCH'D</span>
+          <span style="font-family:${HEAD};font-size:32px;font-weight:900;letter-spacing:4px;
+                       color:#ffffff;text-transform:uppercase;line-height:1;">STITCH'D</span>
         </a>
       </td></tr>
 
+      <!-- Pink ticker strip -->
+      <tr><td style="background:${PINK};padding:8px 30px;text-align:center;">
+        <span style="font-family:${HEAD};font-size:11px;font-weight:700;letter-spacing:4px;color:#ffffff;">
+          PRE-LOVED SOUTH ASIAN FASHION &nbsp;&middot;&nbsp; BUY. SELL. STYLE.
+        </span>
+      </td></tr>
+
       <!-- Body -->
-      <tr><td style="padding:34px 28px 10px 28px;">
-        <h1 style="margin:0 0 18px 0;font-family:${FONT};
-                   font-size:34px;line-height:1.1;font-weight:700;letter-spacing:1px;
-                   text-transform:uppercase;color:${PINK};">${esc(opts.heading)}</h1>
-        <div style="font-family:${FONT};font-size:16px;line-height:1.6;color:${INK};">
+      <tr><td style="padding:36px 30px 26px 30px;">
+        <h1 style="margin:0 0 16px 0;font-family:${HEAD};
+                   font-size:44px;line-height:.96;font-weight:900;letter-spacing:1px;
+                   text-transform:uppercase;color:${INK};">${headingHtml(opts.heading)}</h1>
+        <div style="font-family:${BODY};font-size:16px;line-height:1.6;color:#333333;">
           ${opts.bodyHtml}
         </div>
       </td></tr>
 
       <!-- Footer -->
-      <tr><td style="padding:30px 28px 40px 28px;border-top:1px solid #eeeeee;">
-        <p style="margin:0;font-family:${FONT};font-size:12px;line-height:1.6;color:#999999;">
-          2026 Stitch'd &middot;
-          <a href="https://stitchd.fit" target="_blank" style="color:#999999;text-decoration:underline;">stitchd.fit</a>
+      <tr><td style="padding:24px 30px 30px 30px;border-top:2px solid ${INK};text-align:center;">
+        <div style="font-family:${HEAD};font-size:12px;font-weight:800;letter-spacing:2px;color:${INK};margin-bottom:6px;">
+          FOLLOW @STITCHD_FIT
+        </div>
+        <div style="font-family:${BODY};font-size:12px;line-height:1.6;color:#9a9a9a;">
+          &copy; 2026 Stitch'd &middot;
+          <a href="https://stitchd.fit" target="_blank" style="color:#9a9a9a;text-decoration:underline;">stitchd.fit</a>
           &middot;
-          <a href="${esc(opts.unsubscribeUrl)}" target="_blank" style="color:#999999;text-decoration:underline;">Unsubscribe from these emails</a>
-        </p>
+          <a href="${esc(opts.unsubscribeUrl)}" target="_blank" style="color:#9a9a9a;text-decoration:underline;">Unsubscribe from these emails</a>
+        </div>
       </td></tr>
 
     </table>
@@ -229,7 +260,7 @@ export const templates = {
   verification_approved(d: { username?: string }, ctx: BuildCtx) {
     const profileLink = d.username ? `${ctx.site}/seller/${d.username}` : `${ctx.site}/dashboard`;
     return {
-      subject: "You're verified on Stitch'd! 🎉",
+      subject: "You're verified on Stitch'd",
       html: baseTemplate({
         heading: "You're verified.",
         unsubscribeUrl: ctx.unsub,
@@ -412,7 +443,7 @@ export const templates = {
   tailor_approved(d: { displayName?: string; tailorId?: string }, ctx: BuildCtx) {
     const profileLink = d.tailorId ? `${ctx.site}/tailors/${d.tailorId}` : `${ctx.site}/`;
     return {
-      subject: "You're approved as a Stitch'd tailor! 🎉",
+      subject: "You're approved as a Stitch'd tailor",
       html: baseTemplate({
         heading: "You're a Stitch'd tailor.",
         unsubscribeUrl: ctx.unsub,
