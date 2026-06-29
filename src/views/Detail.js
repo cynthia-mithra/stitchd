@@ -172,6 +172,19 @@ export default function Detail({
     io.observe(el);
     return ()=>io.disconnect();
   },[sel, view]);
+  // Listing video — autoplay (muted) once it scrolls into view, pause when it
+  // leaves. Muted is required for browsers to allow programmatic autoplay.
+  const videoRef = React.useRef(null);
+  React.useEffect(()=>{
+    const el = videoRef.current;
+    if(!el || !sel?.video_url || view!=="detail") return;
+    const io = new IntersectionObserver(([e])=>{
+      if(e.isIntersecting){ el.muted = true; el.play().catch(()=>{}); }
+      else { el.pause(); }
+    },{threshold:0.5});
+    io.observe(el);
+    return ()=>io.disconnect();
+  },[sel?.id, sel?.video_url, view]);
   return (
     <>
       {view==="detail"&&sel&&(
@@ -204,7 +217,7 @@ export default function Detail({
               {sel.video_url&&(
                 <div style={{marginTop:14}}>
                   <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",display:"flex",alignItems:"center",gap:6,marginBottom:8}}><Video width={14} height={14}/> VIDEO</div>
-                  <video src={sel.video_url} controls playsInline preload="metadata" style={{width:"100%",border:"2px solid #111",display:"block",background:"#000"}}/>
+                  <video ref={videoRef} src={sel.video_url} muted loop controls playsInline preload="metadata" style={{width:"100%",border:"2px solid #111",display:"block",background:"#000"}}/>
                 </div>
               )}
             </div>

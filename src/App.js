@@ -3081,14 +3081,25 @@ export default function App() {
     setForm(f=>({...f,imageFiles:f.imageFiles.filter((_,i)=>i!==idx),imagePreviews:f.imagePreviews.filter((_,i)=>i!==idx)}));
   }
 
-  // Optional listing video. One short clip; rejected over ~50MB so uploads stay
-  // quick and within storage limits. Preview via an object URL until publish.
+  // Optional listing video. One short clip: 3–30 seconds, under ~50MB so uploads
+  // stay quick and within storage limits. Duration is read from the file's
+  // metadata before it's accepted; preview via an object URL until publish.
   function addVideoFile(files){
     const f=files&&files[0];
     if(!f) return;
     if(!/^video\//.test(f.type)){ flash("Please choose a video file."); return; }
     if(f.size>50*1024*1024){ flash("Video must be under 50MB. Try a shorter clip."); return; }
-    setForm(p=>({...p,videoFile:f,videoPreview:URL.createObjectURL(f)}));
+    const url=URL.createObjectURL(f);
+    const probe=document.createElement("video");
+    probe.preload="metadata";
+    probe.onloadedmetadata=()=>{
+      const d=probe.duration;
+      if(isFinite(d)&&d<3){ URL.revokeObjectURL(url); flash("Video must be at least 3 seconds long."); return; }
+      if(isFinite(d)&&d>30){ URL.revokeObjectURL(url); flash("Video must be 30 seconds or shorter."); return; }
+      setForm(p=>({...p,videoFile:f,videoPreview:url}));
+    };
+    probe.onerror=()=>{ URL.revokeObjectURL(url); flash("Couldn't read that video. Try another file."); };
+    probe.src=url;
   }
   function removeVideo(){ setForm(f=>({...f,videoFile:null,videoPreview:"",video_url:""})); }
 
@@ -5065,7 +5076,7 @@ export default function App() {
                     <div style={S.uploadPlaceholder}><div style={{...S.uploadIcon,display:"flex",justifyContent:"center"}}><Video width={24} height={24}/></div><p style={S.uploadText}>ADD VIDEO</p></div>
                   </div>
                 )}
-                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#888",marginTop:8,letterSpacing:0.5}}>A short clip (max 50MB) — show the fabric, drape or sparkle.</p>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#888",marginTop:8,letterSpacing:0.5}}>3–30 seconds, max 50MB — show the fabric, drape or sparkle. Plays muted on the listing.</p>
                 <input id="vid-input" type="file" accept="video/*" style={{display:"none"}} onChange={e=>addVideoFile(e.target.files)}/>
               </div>
             </Sec>
