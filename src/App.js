@@ -16,7 +16,7 @@ import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } fro
 import { startSellerConnect, verifySellerConnect, withdrawFromWallet, refundOrder, refundAlteration, buyShippingLabel } from "./lib/wallet";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CheckCircle, Info, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock, Home, Plus, User } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CheckCircle, Info, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock, Home, Plus, User, Palette, Video } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import { ReviewModal } from "./components/Reviews";
 import PricingGuide from "./components/PricingGuide";
@@ -3081,6 +3081,17 @@ export default function App() {
     setForm(f=>({...f,imageFiles:f.imageFiles.filter((_,i)=>i!==idx),imagePreviews:f.imagePreviews.filter((_,i)=>i!==idx)}));
   }
 
+  // Optional listing video. One short clip; rejected over ~50MB so uploads stay
+  // quick and within storage limits. Preview via an object URL until publish.
+  function addVideoFile(files){
+    const f=files&&files[0];
+    if(!f) return;
+    if(!/^video\//.test(f.type)){ flash("Please choose a video file."); return; }
+    if(f.size>50*1024*1024){ flash("Video must be under 50MB. Try a shorter clip."); return; }
+    setForm(p=>({...p,videoFile:f,videoPreview:URL.createObjectURL(f)}));
+  }
+  function removeVideo(){ setForm(f=>({...f,videoFile:null,videoPreview:"",video_url:""})); }
+
   // Login gate → /auth. Remembers the current page so we can return here once
   // the buyer is signed in. Used by the reusable LoginPromptModal everywhere.
   // `pending` (optional) is the listing the buyer tapped while logged out — we
@@ -3235,9 +3246,13 @@ export default function App() {
     }
     try{
       const image_url=urls[0]||"";
+      // Optional video — best-effort: a failed video upload must not block the
+      // listing from publishing.
+      let video_url=form.video_url||"";
+      if(form.videoFile){ try{ video_url=await withFreshToken(tok=>uploadImage(form.videoFile,tok)); }catch(err){ console.warn("Video upload failed:",err); } }
       const meas=buildMeasPayload(form);
       const cat=meas.category||form.category;
-      const payload={name:form.name,price:parseFloat(form.price),brand:(form.brand||"").trim()||null,condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
+      const payload={name:form.name,price:parseFloat(form.price),brand:(form.brand||"").trim()||null,video_url:video_url||null,condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
       const [created]=await withFreshToken(tok=>db.insert(payload,tok));
       setItems(p=>[created,...p]); setForm(EMPTY_FORM); setBrandOther(false);
       // The photo uploaded fine but didn't come back on the saved row — the
@@ -3287,9 +3302,13 @@ export default function App() {
       const existingUrls=(sel.images||[]).filter((_,i)=>form.imagePreviews[i]&&!form.imageFiles[i]);
       const allUrls=[...existingUrls,...newUrls];
       const image_url=allUrls[0]||sel.image_url||"";
+      // Optional video — upload a freshly-picked clip, else keep the existing one
+      // (form.video_url is cleared by removeVideo). Best-effort, never blocks save.
+      let video_url=form.video_url||"";
+      if(form.videoFile){ try{ video_url=await withFreshToken(tok=>uploadImage(form.videoFile,tok)); }catch(err){ console.warn("Video upload failed:",err); } }
       const meas=buildMeasPayload(form);
       const cat=meas.category||form.category;
-      const patch={name:form.name,price:parseFloat(form.price),brand:(form.brand||"").trim()||null,condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
+      const patch={name:form.name,price:parseFloat(form.price),brand:(form.brand||"").trim()||null,video_url:video_url||null,condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
       const [updated]=await withFreshToken(tok=>db.update(sel.id,patch,tok));
       setItems(p=>p.map(i=>i.id===sel.id?updated:i)); setSel(updated);
       if(allUrls.length&&!updated.image_url){ flash("Saved — but the photo couldn't be stored: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase.",11000); }
@@ -3320,7 +3339,7 @@ export default function App() {
     let meas=pm?.values?{...pm.values}:{};
     if(!pm){ garmentFieldsFor(gender,garment_type).forEach(l=>{ const col=({"Bust":"bust","Chest":"bust","Blouse bust":"bust","Waist":"waist","Hip":"hips","Hips":"hips","Length":"length","Length (floor to shoulder)":"length","Saree length":"length","Lehenga length":"length","Sherwani length":"length","Kurta length":"length","Sleeve length":"sleeve_length","Blouse sleeve length":"sleeve_length","Shoulder width":"shoulder","Inseam":"inseam"})[l]; if(col&&item[col]) meas[l]=item[col]; }); }
     setBrandOther(false);
-    setForm({name:item.name||"",price:item.price||"",brand:item.brand||"",condition:item.condition||"Like New",listing_type:item.listing_type||"Clothing",category:item.category||"Saree",origin:item.origin||"Indian",fabric:item.fabric||"Silk",material:item.material||"",size:item.size||"Free Size",occasions:item.occasions||[],colours:item.colours||[],gender,meas_unit,garment_type,meas,additional_measurements:item.additional_measurements||item.measurement_notes||"",bust:item.bust||"",waist:item.waist||"",hips:item.hips||"",length:item.length||"",underbust:item.underbust||"",shoulder:item.shoulder||"",high_hip:item.high_hip||"",sleeve_length:item.sleeve_length||"",inseam:item.inseam||"",measurement_notes:item.measurement_notes||"",can_take_in:item.can_take_in||false,spare_fabric:item.spare_fabric||false,description:item.description||"",imageFiles:[],imagePreviews:item.images||[item.image_url].filter(Boolean),postage_options:item.postage_options||[],accepts_collection:item.accepts_collection||false,offers_enabled:item.offers_enabled!==false,minimum_offer:item.minimum_offer_pence?String(item.minimum_offer_pence/100):""});
+    setForm({name:item.name||"",price:item.price||"",brand:item.brand||"",condition:item.condition||"Like New",listing_type:item.listing_type||"Clothing",category:item.category||"Saree",origin:item.origin||"Indian",fabric:item.fabric||"Silk",material:item.material||"",size:item.size||"Free Size",occasions:item.occasions||[],colours:item.colours||[],gender,meas_unit,garment_type,meas,additional_measurements:item.additional_measurements||item.measurement_notes||"",bust:item.bust||"",waist:item.waist||"",hips:item.hips||"",length:item.length||"",underbust:item.underbust||"",shoulder:item.shoulder||"",high_hip:item.high_hip||"",sleeve_length:item.sleeve_length||"",inseam:item.inseam||"",measurement_notes:item.measurement_notes||"",can_take_in:item.can_take_in||false,spare_fabric:item.spare_fabric||false,description:item.description||"",imageFiles:[],imagePreviews:item.images||[item.image_url].filter(Boolean),videoFile:null,videoPreview:item.video_url||"",video_url:item.video_url||"",postage_options:item.postage_options||[],accepts_collection:item.accepts_collection||false,offers_enabled:item.offers_enabled!==false,minimum_offer:item.minimum_offer_pence?String(item.minimum_offer_pence/100):""});
     setView("edit");
   }
 
@@ -5016,7 +5035,7 @@ export default function App() {
           <button style={S.back} onClick={()=>setView(view==="edit"?"detail":"shop")}>← BACK</button>
           <div style={S.formCard} className="form-card">
             <div style={S.formHero}><h2 style={S.formTitle}>{view==="edit"?"EDIT YOUR\nPIECE.":"LIST YOUR\nPIECE."}</h2><p style={S.formSub}>Real measurements. Real fit info. Real buyers.</p></div>
-            <Sec label={`PHOTOS (UP TO ${MAX_LISTING_IMAGES})`}>
+            <Sec icon={Camera} label={`PHOTOS (UP TO ${MAX_LISTING_IMAGES})`}>
               <div style={S.multiUploadGrid}>
                 {form.imagePreviews.map((src,i)=>(
                   <div key={i} style={S.uploadThumb}>
@@ -5033,15 +5052,31 @@ export default function App() {
               </div>
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#6b6b6b",marginTop:8,letterSpacing:0.5}}>{form.imagePreviews.length} / {MAX_LISTING_IMAGES} photos added</p>
               <input id="img-input" type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>addImageFiles(e.target.files)}/>
+              {/* Optional video — one short clip to show fabric/drape/sparkle. */}
+              <div style={{marginTop:18,borderTop:"1px solid #f0f0f0",paddingTop:18}}>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1.5,color:"#555",marginBottom:8,display:"flex",alignItems:"center",gap:7}}><Video width={15} height={15}/> VIDEO (OPTIONAL)</div>
+                {form.videoPreview?(
+                  <div style={{position:"relative",maxWidth:260}}>
+                    <video src={form.videoPreview} controls playsInline style={{width:"100%",border:"2px solid #111",display:"block",background:"#000"}}/>
+                    <button type="button" style={S.removeImg} onClick={removeVideo}>✕</button>
+                  </div>
+                ):(
+                  <div style={{...S.uploadZone,aspectRatio:"auto",padding:"22px",maxWidth:260}} onClick={()=>document.getElementById("vid-input").click()}>
+                    <div style={S.uploadPlaceholder}><div style={{...S.uploadIcon,display:"flex",justifyContent:"center"}}><Video width={24} height={24}/></div><p style={S.uploadText}>ADD VIDEO</p></div>
+                  </div>
+                )}
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#888",marginTop:8,letterSpacing:0.5}}>A short clip (max 50MB) — show the fabric, drape or sparkle.</p>
+                <input id="vid-input" type="file" accept="video/*" style={{display:"none"}} onChange={e=>addVideoFile(e.target.files)}/>
+              </div>
             </Sec>
-            <Sec label="THE BASICS">
+            <Sec icon={Tag} label="THE BASICS">
               <div style={S.fg2} className="fg2">
                 <F l="Item Name *"><input style={S.inp} placeholder="e.g. Kanjivaram Silk Saree" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></F>
                 <F l="Price (£) *"><div style={{position:"relative"}}><span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#111",fontFamily:"'Barlow',sans-serif",pointerEvents:"none"}}>£</span><input style={{...S.inp,paddingLeft:26}} type="number" placeholder="0.00" value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))}/></div></F>
                 <F l="TYPE" style={{gridColumn:"1/-1"}}>
                   <div style={{display:"flex",gap:0}}>
                     {LISTING_TYPES.map(t=>(
-                      <button key={t} type="button" className="hbtn" style={{...S.hBtn,flex:1,background:form.listing_type===t?"#FF1493":"#fff",color:form.listing_type===t?"#fff":"#111",border:"2px solid #111",borderRadius:0,padding:"10px"}} onClick={()=>setForm(f=>({...f,listing_type:t,category:t==="Jewellery"?"Necklace":t==="Shoes"?"Heels":"Saree"}))}>
+                      <button key={t} type="button" className="hbtn" style={{...S.hBtn,flex:1,background:form.listing_type===t?"#FF1493":"#fff",color:form.listing_type===t?"#fff":"#FF1493",border:"2px solid #FF1493",borderRadius:0,padding:"10px"}} onClick={()=>setForm(f=>({...f,listing_type:t,category:t==="Jewellery"?"Necklace":t==="Shoes"?"Heels":"Saree"}))}>
                         {t==="Clothing"?<span style={{display:"inline-flex",alignItems:"center",gap:8}}><Shirt width={16} height={16}/> CLOTHING</span>:t==="Jewellery"?<span style={{display:"inline-flex",alignItems:"center",gap:8}}><Gem width={16} height={16}/> JEWELLERY</span>:<span style={{display:"inline-flex",alignItems:"center",gap:8}}><Footprints width={16} height={16}/> SHOES</span>}
                       </button>
                     ))}
@@ -5081,10 +5116,10 @@ export default function App() {
                 onUsePrice={p=>setForm(f=>({...f,price:String(p)}))}
               />
             </Sec>
-            <Sec label="OCCASIONS">
+            <Sec icon={Sparkles} label="OCCASIONS">
               <div style={S.occGrid}>{OCCASIONS.map(o=>{const on=form.occasions.includes(o),col=OCC_COLOR[o];return<button key={o} type="button" onClick={()=>togOcc(o)} style={{...S.occToggle,background:on?col:"#fff",color:on?"#fff":"#111",border:`2px solid ${on?col:"#111"}`,fontWeight:on?800:600}}>{o.toUpperCase()}</button>;})}</div>
             </Sec>
-            <Sec label="COLOUR">
+            <Sec icon={Palette} label="COLOUR">
               <p style={{fontSize:12,color:"#888",marginBottom:12}}>Optional — tag the main colours so buyers can filter by them.</p>
               <ColourSwatches selected={form.colours||[]} onToggle={togColour}/>
             </Sec>
@@ -5093,7 +5128,7 @@ export default function App() {
               const fields=garmentFieldsFor(form.gender,gt);
               const pillBtn=(active)=>({...S.hBtn,background:active?"#FF1493":"#fff",color:active?"#fff":"#111",border:"2px solid #111",borderRadius:0,padding:"10px 18px"});
               return (
-              <Sec label="MEASUREMENTS">
+              <Sec icon={Ruler} color="#00E5CC" label="MEASUREMENTS">
                 <div style={{display:"flex",gap:20,marginBottom:18,flexWrap:"wrap"}}>
                   <div>
                     <div style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,marginBottom:6}}>FOR</div>
@@ -5140,12 +5175,12 @@ export default function App() {
               </Sec>
               );
             })()}
-            <Sec label={<span style={{display:"inline-flex",alignItems:"center",gap:8}}><Package width={16} height={16}/> POSTAGE</span>}>
+            <Sec icon={Package} color="#FF9500" label="POSTAGE">
               <Tog on={form.accepts_collection} onToggle={()=>setForm(f=>({...f,accepts_collection:!f.accepts_collection}))} color="#34C759" label="ACCEPT COLLECTION IN PERSON" sub="Buyer can collect for free"/>
             </Sec>
             {/* Phase 14 — OFFERS. Sellers can let buyers make an offer below the
                 asking price (default ON), with an optional minimum-offer floor. */}
-            <Sec label={<span style={{display:"inline-flex",alignItems:"center",gap:8}}><Tag width={16} height={16}/> OFFERS</span>}>
+            <Sec icon={Tag} label="OFFERS">
               <Tog on={form.offers_enabled!==false} onToggle={()=>setForm(f=>({...f,offers_enabled:!(f.offers_enabled!==false)}))} color="#FF1493" label="ACCEPT OFFERS ON THIS LISTING" sub="Buyers can propose a price; you have 48 hours to respond"/>
               {form.offers_enabled!==false&&(
                 <div style={{marginTop:16}}>
@@ -5159,7 +5194,7 @@ export default function App() {
                 </div>
               )}
             </Sec>
-            <Sec label="DESCRIBE IT">
+            <Sec icon={Pencil} color="#111" label="DESCRIBE IT">
               <textarea style={{...S.inp,height:110,resize:"vertical",width:"100%"}} placeholder="Fabric feel, embroidery, wear history, any flaws…" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}/>
             </Sec>
             {/* Phase 11 — items over £200 require ID verification. Show a prompt and
