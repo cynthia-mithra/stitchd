@@ -4685,7 +4685,7 @@ export default function App() {
 
       {/* PROFILE (edit + seller) */}
       <Profile
-        view={view} setView={setView} prevView={prevView} user={user}
+        view={view} setView={setView} prevView={prevView} user={user} profile={profile}
         profForm={profForm} setProfForm={setProfForm} saveProfile={saveProfile} profSaving={profSaving}
         twoFAStep={twoFAStep} setTwoFAStep={setTwoFAStep} twoFAData={twoFAData} setTwoFAData={setTwoFAData}
         twoFACode={twoFACode} setTwoFACode={setTwoFACode} twoFAFactors={twoFAFactors} twoFALoading={twoFALoading}
