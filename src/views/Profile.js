@@ -78,8 +78,10 @@ export default function Profile({
                   <F l="LOCATION"><input style={inp} placeholder="e.g. London, UK" value={profForm.location} onChange={e=>setProfForm(f=>({...f,location:e.target.value}))}/></F>
                   <F l="I AM">
                     <div style={{display:"flex",gap:8}}>
-                      {["Woman","Man"].map(g=>{
-                        const on=profForm.gender===g;
+                      {["Female","Male"].map(g=>{
+                        // Normalise any legacy "Woman"/"Man" values to the new labels.
+                        const cur=profForm.gender==="Woman"?"Female":profForm.gender==="Man"?"Male":profForm.gender;
+                        const on=cur===g;
                         return <button key={g} type="button" className="hbtn" style={{...S.hBtn,flex:1,background:on?"#FF1493":"#fff",color:on?"#fff":"#111",border:`2px solid ${on?"#FF1493":"#111"}`,padding:"10px 16px",fontSize:12,letterSpacing:1.5}} onClick={()=>setProfForm(f=>({...f,gender:g}))}>{g.toUpperCase()}</button>;
                       })}
                     </div>
@@ -118,7 +120,7 @@ export default function Profile({
               <div style={cardBox}>
                 {secHead("#00E5CC",Ruler,"MY MEASUREMENTS")}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
-                  {(profForm.gender==="Man"
+                  {((profForm.gender==="Male"||profForm.gender==="Man")
                     ? [["bust","CHEST (inches)"],["waist","WAIST (inches)"],["height","HEIGHT (cm)"]]
                     : [["bust","BUST (inches)"],["waist","WAIST (inches)"],["hips","HIPS (inches)"],["height","HEIGHT (cm)"]]
                   ).map(([k,l])=>(
