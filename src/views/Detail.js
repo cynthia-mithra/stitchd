@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock, Trash2, CornerDownRight, Tag, Scissors } from "lucide-react";
+import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock, Trash2, CornerDownRight, Tag, Scissors, Video } from "lucide-react";
 import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure, colourSwatchBg } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
@@ -199,6 +199,12 @@ export default function Detail({
                       <img src={img} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                     </div>
                   ))}
+                </div>
+              )}
+              {sel.video_url&&(
+                <div style={{marginTop:14}}>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",display:"flex",alignItems:"center",gap:6,marginBottom:8}}><Video width={14} height={14}/> VIDEO</div>
+                  <video src={sel.video_url} controls playsInline preload="metadata" style={{width:"100%",border:"2px solid #111",display:"block",background:"#000"}}/>
                 </div>
               )}
             </div>
