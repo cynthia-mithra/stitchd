@@ -5,6 +5,7 @@
 // returns the URL of the Stripe-hosted flow to redirect to. The pass/fail result
 // arrives later on the stripe-webhook function.
 import { SUPABASE_URL, SUPABASE_KEY } from "./constants";
+import { logError } from "./log";
 
 export async function startIdentityVerification(userId) {
   if (!userId) throw new Error("You need to be signed in to verify your identity.");
@@ -39,7 +40,7 @@ export async function startIdentityVerification(userId) {
   try { data = raw ? JSON.parse(raw) : {}; } catch { /* non-JSON body */ }
 
   if (!res.ok || !data.url) {
-    console.error("[identity] failed", { status: res.status, body: raw });
+    logError("[identity] failed", { status: res.status, body: raw });
     const reason =
       data.error ||
       (raw && !raw.trim().startsWith("<") ? raw : "") ||

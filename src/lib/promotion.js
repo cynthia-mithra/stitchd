@@ -8,6 +8,7 @@
 //
 // Mirrors lib/identity.js (the other direct-to-Edge-Function Stripe flow).
 import { SUPABASE_URL, SUPABASE_KEY } from "./constants";
+import { logError } from "./log";
 
 export async function startPromotion(listingId, sellerId) {
   if (!listingId || !sellerId) throw new Error("You need to be signed in to promote a listing.");
@@ -42,7 +43,7 @@ export async function startPromotion(listingId, sellerId) {
   try { data = raw ? JSON.parse(raw) : {}; } catch { /* non-JSON body */ }
 
   if (!res.ok || !data.url) {
-    console.error("[promotion] failed", { status: res.status, body: raw });
+    logError("[promotion] failed", { status: res.status, body: raw });
     const reason =
       data.error ||
       (raw && !raw.trim().startsWith("<") ? raw : "") ||

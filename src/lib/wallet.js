@@ -3,6 +3,7 @@
 // with lib/connect.js the browser never touches Stripe with a secret key - it
 // posts ids/amounts to a Supabase Edge Function which does the Stripe work.
 import { SUPABASE_URL, SUPABASE_KEY } from "./constants";
+import { logError } from "./log";
 
 const fnHeaders = {
   "Content-Type": "application/json",
@@ -28,7 +29,7 @@ async function callFn(name, body, friendly) {
   let data = {};
   try { data = raw ? JSON.parse(raw) : {}; } catch { /* non-JSON */ }
   if (!res.ok) {
-    console.error(`[wallet:${name}] failed`, { status: res.status, body: raw });
+    logError(`[wallet:${name}] failed`, { status: res.status, body: raw });
     const reason = data.error || (raw && !raw.trim().startsWith("<") ? raw : "") || `${friendly} failed (HTTP ${res.status}).`;
     const err = new Error(reason);
     err.data = data;
