@@ -697,6 +697,24 @@ export const templates = {
     };
   },
 
+  // 26 — Password reset. Sent by the send-reset Edge Function (branded, via
+  // Resend) in place of Supabase's plain default recovery email. `resetUrl` is
+  // the GoTrue recovery action link, which lands the user on the in-app New
+  // Password screen.
+  password_reset(d: { resetUrl?: string }, ctx: BuildCtx) {
+    return {
+      subject: "Reset your password — Stitch'd",
+      html: baseTemplate({
+        heading: "Reset your password.",
+        unsubscribeUrl: ctx.unsub,
+        bodyHtml:
+          p("We received a request to reset the password on your Stitch'd account. Tap the button below to choose a new one.") +
+          button("Reset password", d.resetUrl || ctx.site) +
+          p("This link expires in 1 hour. If you didn't request this, you can safely ignore this email — your password won't change."),
+      }),
+    };
+  },
+
   // 7 — Welcome (new user)
   welcome(_d: Record<string, unknown>, ctx: BuildCtx) {
     return {
