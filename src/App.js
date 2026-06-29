@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   SUPABASE_URL, SUPABASE_KEY, STRIPE_PK, PLATFORM_FEE, hdrs,
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, SHOE_SIZES, ALL_CATEGORIES,
@@ -740,6 +740,70 @@ export default function App() {
     if(!isKnownPath(window.location.pathname)) setView("notfound");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
+
+  // ── Refresh-safe routing ───────────────────────────────────────────────────
+  // Most pages live in React state at the "/" URL (not their own path), so a
+  // browser refresh used to drop the user back on the home grid. We snapshot the
+  // current page (view + the open listing / storefront) to sessionStorage and
+  // restore it on the next load. Capture the saved route during render — before
+  // the persist effect below can overwrite it on mount.
+  const bootRoute = useRef(undefined);
+  if(bootRoute.current===undefined){
+    try{ bootRoute.current=JSON.parse(sessionStorage.getItem("stitchd_route")||"null"); }catch{ bootRoute.current=null; }
+  }
+  const didRestoreRoute = useRef(false);
+  const [restoreDetailId,setRestoreDetailId] = useState(null);
+  useEffect(()=>{
+    if(didRestoreRoute.current) return;
+    didRestoreRoute.current=true;
+    // Only take over the plain "/" load — real paths (/terms, /tailors, deep
+    // links, payment returns) are handled by their own effects above.
+    const path=(window.location.pathname||"/").replace(/\/+$/,"")||"/";
+    if(path!=="/") return;
+    const sp=new URLSearchParams(window.location.search);
+    if(sp.get("payment")||sp.get("seller")||sp.get("sf")) return;
+    const route=bootRoute.current;
+    if(!route||!route.v||route.v==="shop"||route.v==="auth"||route.v==="notfound") return;
+    const v=route.v;
+    // Logged-in-only pages: if there's no session, stay on the shop.
+    const needsUser=new Set(["dashboard","orders","offers","wishlist","saved-searches","editprofile","following-list","wallet","messages","alterations","tailor-dashboard","add","edit"]);
+    if(needsUser.has(v)&&!user) return;
+    // A listing page (or its edit form) needs the listing object → wait for the
+    // catalogue to load, then reopen it (handled by the effect below).
+    if(v==="detail"||v==="edit"){ if(route.s) setRestoreDetailId(route.s); return; }
+    if(v==="profile"){ if(route.p) openProfile(route.p); return; }
+    // Everything else: run the same loader the nav uses, then show the page.
+    switch(v){
+      case "newarrivals":    clearFilters(); setView("newarrivals"); break;
+      case "feed":           loadFeed(); setView("feed"); break;
+      case "orders":         loadOrders(); setView("orders"); break;
+      case "offers":         loadBuyerOffers(); setView("offers"); break;
+      case "wishlist":       loadMyWishlist(); setView("wishlist"); break;
+      case "saved-searches": loadSavedSearches(); setView("saved-searches"); break;
+      case "dashboard":      loadBundles(); loadOrders(); loadMyLooks(); loadMyPromotions(); setView("dashboard"); break;
+      case "editprofile":    load2FAFactors(); setView("editprofile"); break;
+      case "following-list": loadFollowingList(); setView("following-list"); break;
+      case "wallet":         openWallet(); break;
+      case "messages":       openMessages(); break;
+      case "alterations":    openAlterations(); break;
+      case "add":            setView("add"); break;
+      case "measuring":      setView("measuring"); break;
+      default: break; // unknown / unrestorable → stay on shop
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+  // Reopen the saved listing once the catalogue has loaded.
+  useEffect(()=>{
+    if(!restoreDetailId||!items.length) return;
+    const item=items.find(i=>i.id===restoreDetailId);
+    if(item) openDetail(item);
+    setRestoreDetailId(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[items,restoreDetailId]);
+  // Persist the current page on every change so a refresh can return to it.
+  useEffect(()=>{
+    try{ sessionStorage.setItem("stitchd_route",JSON.stringify({v:view,s:sel?.id||null,p:viewedProfile?.id||null})); }catch{ /* storage disabled */ }
+  },[view,sel?.id,viewedProfile?.id]);
 
   // Page transition — a gentle opacity fade on the content wrapper each time the
   // view changes. Opacity-only (no transform) so fixed overlays keep working, and
