@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Lock, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock, Trash2, CornerDownRight, Tag, Scissors } from "lucide-react";
+import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock, Trash2, CornerDownRight, Tag, Scissors } from "lucide-react";
 import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure, colourSwatchBg } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
@@ -219,85 +219,94 @@ export default function Detail({
               </div>
             )}
             <div style={S.detailInfo} className="detail-info">
-              <p style={{...S.cardCatLabel,color:selColor,fontSize:12,marginBottom:8}}>{sel.category?.toUpperCase()} · {(sel.material||sel.fabric)?.toUpperCase()} · {sel.condition?.toUpperCase()}</p>
-              <h2 style={S.detailName}>{sel.name}</h2>
-              {sel.brand&&<div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:1.2,color:"#888",textTransform:"uppercase",marginBottom:8}}>{sel.brand}</div>}
-              {sel.prev_price>sel.price&&<div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:700,color:"#6b6b6b",textDecoration:"line-through",letterSpacing:-0.5,marginBottom:2}}>{currencySymbol(sel.currency)}{sel.prev_price}</div>}
-              <div style={{...S.detailPrice,color:selColor,marginBottom:sel.prev_price>sel.price?6:16}}>{currencySymbol(sel.currency)}{sel.price}</div>
-              {sel.prev_price>sel.price&&<div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#00E5CC",letterSpacing:0.5,marginBottom:16}}>YOU SAVE {currencySymbol(sel.currency)}{sel.prev_price-sel.price}</div>}
+              {/* Header — title block + compact save / share / size-guide icons */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:14}}>
+                <div style={{minWidth:0}}>
+                  <p style={{...S.cardCatLabel,color:selColor,fontSize:12,marginBottom:8}}>{sel.category?.toUpperCase()} · {(sel.material||sel.fabric)?.toUpperCase()} · {sel.condition?.toUpperCase()}</p>
+                  <h2 style={S.detailName}>{sel.name}</h2>
+                  {sel.brand&&<div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:1.2,color:"#888",textTransform:"uppercase",marginTop:6}}>{sel.brand}</div>}
+                </div>
+                <div style={{display:"flex",gap:8,flexShrink:0}}>
+                  <button aria-label="Save" title="Save" className="hbtn" style={{width:42,height:42,border:"2px solid #111",background:myWishlist.has(sel.id)?"#FF1493":"#fff",color:myWishlist.has(sel.id)?"#fff":"#111",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}} onClick={()=>requireAuth("wishlist",()=>toggleFavourite(sel))}><Heart width={18} height={18} fill={myWishlist.has(sel.id)?"currentColor":"none"}/></button>
+                  <button aria-label="Share" title="Share" className="hbtn" style={{width:42,height:42,border:"2px solid #111",background:"#fff",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}} onClick={()=>shareItem(sel)}><Share2 width={18} height={18}/></button>
+                  {sel.listing_type!=="Jewellery"&&<button aria-label="Size guide" title="Size guide" className="hbtn" style={{width:42,height:42,border:"2px solid #111",background:"#fff",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}} onClick={()=>setShowSizeGuide(true)}><Ruler width={18} height={18}/></button>}
+                </div>
+              </div>
+              {/* Price + savings */}
+              <div style={{display:"flex",alignItems:"baseline",gap:12,flexWrap:"wrap",marginTop:14}}>
+                <span style={{...S.detailPrice,color:selColor,marginBottom:0}}>{currencySymbol(sel.currency)}{sel.price}</span>
+                {sel.prev_price>sel.price&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:700,color:"#9a9a9a",textDecoration:"line-through",letterSpacing:-0.5}}>{currencySymbol(sel.currency)}{sel.prev_price}</span>}
+                {sel.prev_price>sel.price&&<span style={{background:"#00E5CC",color:"#111",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:12,letterSpacing:1,padding:"3px 9px"}}>SAVE {currencySymbol(sel.currency)}{sel.prev_price-sel.price}</span>}
+              </div>
               {reviews.length>0&&(
-                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,fontFamily:"'Barlow Condensed',sans-serif"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginTop:12,fontFamily:"'Barlow Condensed',sans-serif"}}>
                   <Stars value={avgRating} size={20} color="#FF1493"/>
                   <span style={{fontSize:20,fontWeight:900,color:"#111",letterSpacing:0.5}}>{avgRating.toFixed(1)}</span>
                   <span style={{fontSize:15,fontWeight:700,color:"#888",letterSpacing:0.5}}>· {reviews.length} review{reviews.length!==1?"s":""}</span>
                 </div>
               )}
-              {!isOwner(sel)&&(()=>{
-                const bagged=inBag(sel.id);
-                const soldStyle={background:"#e5e5e5",color:"#6b6b6b",border:"2px solid #ccc",cursor:"not-allowed"};
-                const baggedStyle={background:"#111",color:"#fff"};
-                return (
-                  <>
-                    <button
-                      ref={bagBtnRef}
-                      className={sel.sold?"":"hbtn"}
-                      disabled={sel.sold}
-                      style={{...S.bagAddBtn,...(sel.sold?soldStyle:bagged?baggedStyle:{})}}
-                      onClick={()=>{ if(!sel.sold) requireAuth("default",()=>toggleBag(sel)); }}>
-                      <ShoppingBag width={18} height={18}/> {sel.sold?"SOLD":bagged?"ADDED TO BAG":"ADD TO BAG"}
-                    </button>
-                    {sel.sold&&<p style={{fontStyle:"italic",fontSize:13,color:"#6b6b6b",marginTop:8,marginBottom:4}}>This piece has found a new home</p>}
-                  </>
-                );
-              })()}
-              {/* MAKE AN OFFER — Phase 14, buyer side. Below ADD TO BAG. If the
-                  buyer already has a pending offer, show OFFER PENDING instead. */}
-              {offersAvailable&&(
-                myOffer?(
-                  <div style={{border:"2px solid #111",borderRadius:0,padding:"16px 18px",marginBottom:16}}>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,letterSpacing:2,color:"#FF1493",marginBottom:8,display:"flex",alignItems:"center",gap:7}}><Tag width={15} height={15}/> OFFER PENDING</p>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:"#111",letterSpacing:0.5,marginBottom:2}}>Your offer: {fmtPence(myOffer.amount_pence)}</p>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,color:"#888",letterSpacing:0.5,marginBottom:14}}>{expiryLabel(myOffer.expires_at)}</p>
-                    <button type="button" className="hbtn" style={{...S.hBtn,width:"100%",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"12px",fontSize:13,letterSpacing:2,display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>{ if(window.confirm("Withdraw your offer? This can't be undone.")) withdrawOffer(); }}>
-                      <X width={15} height={15}/> WITHDRAW OFFER
-                    </button>
-                  </div>
-                ):(
-                  <button type="button" className="hbtn" style={{width:"100%",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:17,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16}} onClick={openOfferModal}>
-                    <Tag width={18} height={18}/> MAKE AN OFFER
-                  </button>
-                )
-              )}
-              <div style={S.guaranteeBanner}>
-                <p style={S.guaranteeHeading}>STITCH'D BUYER GUARANTEE</p>
-                <div style={S.guaranteeList}>
-                  <span style={S.guaranteePoint}><Shield width={16} height={16} color="#00E5CC" style={{flexShrink:0}}/> Secure checkout powered by Stripe</span>
-                  <span style={S.guaranteePoint}><MessageCircle width={16} height={16} color="#00E5CC" style={{flexShrink:0}}/> Message the seller directly before you buy</span>
-                  <span style={S.guaranteePoint}><Clock width={16} height={16} color="#00E5CC" style={{flexShrink:0}}/> Report an issue within 5 days of delivery</span>
-                </div>
-              </div>
-              {/* NEED ALTERATIONS? — connect with a Stitch'd tailor (Phase 15). */}
-              <div style={{border:"2px solid #111",borderRadius:0,background:"#fff",padding:"16px 18px",marginBottom:16}}>
-                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,letterSpacing:2,color:"#111",textTransform:"uppercase",marginBottom:6}}>NEED ALTERATIONS?</p>
-                <p style={{fontSize:13,color:"#666",lineHeight:1.5,marginBottom:14}}>Connect with a Stitch'd tailor before or after you buy</p>
-                <button type="button" className="hbtn" style={{width:"100%",background:"#00E5CC",color:"#111",border:"2px solid #111",borderRadius:0,padding:"15px",fontSize:15,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2.5,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}
-                  onClick={()=>requireAuth("book",()=>onFindTailor(sel))}>
-                  <Scissors width={18} height={18}/> FIND A TAILOR
-                </button>
-              </div>
               {(verifiedSellers.has(sel.user_id)||identityVerifiedSellers.has(sel.user_id)||fastSellers.has(sel.user_id))&&(
-                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:16}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:12}}>
                   {verifiedSellers.has(sel.user_id)&&<VerifiedBadge/>}
                   {identityVerifiedSellers.has(sel.user_id)&&<IDVerifiedBadge size="sm"/>}
                   {fastSellers.has(sel.user_id)&&<div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#00E5CC",color:"#111",border:"1.5px solid #111",padding:"4px 12px",fontSize:11,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif"}}><Zap width={14} height={14} fill="currentColor"/> FAST SELLER</div>}
                 </div>
               )}
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20,flexWrap:"wrap"}}>
-                <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:myWishlist.has(sel.id)?"#FF1493":"#fff",color:myWishlist.has(sel.id)?"#fff":"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>requireAuth("wishlist",()=>toggleFavourite(sel))}><Heart width={15} height={15} fill={myWishlist.has(sel.id)?"currentColor":"none"}/> {myWishlist.has(sel.id)?"SAVED":"SAVE"}</button>
-                <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>shareItem(sel)}><Share2 width={15} height={15}/> SHARE</button>
-                <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"8px 16px"}} onClick={()=>setShowSizeGuide(true)}><Ruler width={15} height={15}/> SIZE GUIDE</button>
+              {sel.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#6f6f6f",letterSpacing:1,display:"flex",alignItems:"center",gap:5,marginTop:12}}><Eye width={13} height={13}/> {sel.views} VIEWS</span>}
+
+              {/* BUY BOX (Option B) — the purchase actions + trust, framed together. */}
+              {!isOwner(sel)&&(()=>{
+                const bagged=inBag(sel.id);
+                if(sel.sold){
+                  return (
+                    <div style={{border:"2px solid #111",padding:18,marginTop:18,marginBottom:16}}>
+                      <button ref={bagBtnRef} disabled style={{...S.bagAddBtn,marginBottom:0,background:"#e5e5e5",color:"#6b6b6b",border:"2px solid #ccc",cursor:"not-allowed"}}><ShoppingBag width={18} height={18}/> SOLD</button>
+                      <p style={{fontStyle:"italic",fontSize:13,color:"#6b6b6b",marginTop:10,marginBottom:0,textAlign:"center"}}>This piece has found a new home</p>
+                    </div>
+                  );
+                }
+                return (
+                  <div style={{border:"2px solid #111",padding:18,marginTop:18,marginBottom:16}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                      <button className="hbtn" style={{...S.hBtn,background:"#111",border:"2px solid #111",padding:"15px",fontSize:16,letterSpacing:2,width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10}} onClick={()=>buyNow(sel)}>
+                        <CreditCard width={18} height={18}/> BUY NOW · {currencySymbol(sel.currency)}{sel.price}
+                      </button>
+                      <button ref={bagBtnRef} className="hbtn" style={{...S.bagAddBtn,marginBottom:0,...(bagged?{background:"#111",color:"#fff"}:{})}} onClick={()=>requireAuth("default",()=>toggleBag(sel))}>
+                        <ShoppingBag width={18} height={18}/> {bagged?"ADDED TO BAG":"ADD TO BAG"}
+                      </button>
+                      {offersAvailable&&(myOffer?(
+                        <div style={{border:"2px solid #111",padding:"14px 16px"}}>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,letterSpacing:2,color:"#FF1493",marginBottom:6,display:"flex",alignItems:"center",gap:7}}><Tag width={15} height={15}/> OFFER PENDING</p>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#111",letterSpacing:0.5,marginBottom:2}}>Your offer: {fmtPence(myOffer.amount_pence)}</p>
+                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#888",letterSpacing:0.5,marginBottom:12}}>{expiryLabel(myOffer.expires_at)}</p>
+                          <button type="button" className="hbtn" style={{...S.hBtn,width:"100%",background:"#fff",color:"#111",border:"2px solid #111",padding:"11px",fontSize:13,letterSpacing:2,display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>{ if(window.confirm("Withdraw your offer? This can't be undone.")) withdrawOffer(); }}>
+                            <X width={15} height={15}/> WITHDRAW OFFER
+                          </button>
+                        </div>
+                      ):(
+                        <button type="button" className="hbtn" style={{...S.hBtn,width:"100%",background:"#fff",color:"#111",border:"2px solid #111",padding:"15px",fontSize:16,letterSpacing:2,display:"flex",alignItems:"center",justifyContent:"center",gap:10}} onClick={openOfferModal}>
+                          <Tag width={18} height={18}/> MAKE AN OFFER
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:7}}>
+                      <span style={{fontFamily:"'Barlow',sans-serif",fontSize:12.5,color:"#444",display:"flex",gap:8,alignItems:"center"}}><Shield width={15} height={15} color="#00E5CC" style={{flexShrink:0}}/> Secure checkout powered by Stripe</span>
+                      <span style={{fontFamily:"'Barlow',sans-serif",fontSize:12.5,color:"#444",display:"flex",gap:8,alignItems:"center"}}><MessageCircle width={15} height={15} color="#00E5CC" style={{flexShrink:0}}/> Message the seller before you buy</span>
+                      <span style={{fontFamily:"'Barlow',sans-serif",fontSize:12.5,color:"#444",display:"flex",gap:8,alignItems:"center"}}><Clock width={15} height={15} color="#00E5CC" style={{flexShrink:0}}/> Report an issue within 5 days</span>
+                    </div>
+                  </div>
+                );
+              })()}
+              {!isOwner(sel)&&!sel.sold&&(
+                <button className="hbtn" style={{...S.hBtn,width:"100%",background:"#FF1493",border:"none",padding:"14px",fontSize:15,letterSpacing:2,display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:12}} onClick={()=>requireAuth("message",()=>startConversation(sel))}><Mail width={16} height={16}/> MESSAGE SELLER</button>
+              )}
+              {/* NEED ALTERATIONS? — slim teal row (Phase 15). */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,border:"2px solid #00E5CC",background:"#E6FFFB",padding:"12px 14px",marginBottom:16,cursor:"pointer"}} onClick={()=>requireAuth("book",()=>onFindTailor(sel))}>
+                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,color:"#0AA493",fontSize:14,display:"flex",alignItems:"center",gap:8}}><Scissors width={16} height={16}/> Need alterations?</span>
+                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,color:"#0AA493",fontSize:13}}>FIND A TAILOR →</span>
               </div>
-              {sel.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#6f6f6f",letterSpacing:1,display:"flex",alignItems:"center",gap:5,marginBottom:16}}><Eye width={13} height={13}/> {sel.views} VIEWS</span>}
+              {/* ── DETAILS ── */}
+              <div style={{height:1,background:"#ececec",margin:"6px 0 22px"}}/>
               {(sel.occasions||[]).length>0&&(
                 <div style={S.dBlock}><p style={{...S.dBlockTitle,borderColor:selColor,color:selColor}}>OCCASIONS</p><div style={S.occRow}>{sel.occasions.map(o=><span key={o} style={{...S.occChip,background:OCC_COLOR[o]||"#999",color:"#fff"}}>{o.toUpperCase()}</span>)}</div></div>
               )}
@@ -342,15 +351,6 @@ export default function Detail({
                 </div>
               )}
               {sel.description&&<p style={S.detailDesc}>{sel.description}</p>}
-              {!isOwner(sel)&&!sel.sold&&<button className="hbtn" style={{...S.waCta,background:"#FF1493",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:10,marginBottom:16}} onClick={()=>requireAuth("message",()=>startConversation(sel))}><Mail width={16} height={16}/> MESSAGE SELLER</button>}
-              {!isOwner(sel)&&!sel.sold&&(
-                <div style={{marginBottom:24}}>
-                  <button className="hbtn" style={{...S.hBtn,background:"#111",border:"none",padding:"16px 32px",fontSize:16,letterSpacing:2,width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:12}} onClick={()=>buyNow(sel)}>
-                    <CreditCard width={18} height={18}/> BUY NOW · {currencySymbol(sel.currency)}{sel.price}
-                  </button>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,color:"#6f6f6f",letterSpacing:1.5,textAlign:"center",marginTop:8,display:"flex",alignItems:"center",justifyContent:"center",gap:5}}><Lock width={12} height={12}/> SECURE CHECKOUT · BUYER PROTECTION INCLUDED</p>
-                </div>
-              )}
               {!isOwner(sel)&&user&&(
                 <div style={{display:"flex",gap:10,marginBottom:24,flexWrap:"wrap"}}>
                   <button className="hbtn" style={{...S.hBtn,display:"inline-flex",alignItems:"center",gap:6,background:"#fff",color:"#FF9500",border:"2px solid #FF9500",fontSize:11,padding:"8px 14px"}} onClick={()=>setShowReview(true)}><Star width={14} height={14} fill="currentColor"/> LEAVE A REVIEW</button>
