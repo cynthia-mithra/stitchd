@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   SUPABASE_URL, SUPABASE_KEY, STRIPE_PK, PLATFORM_FEE, hdrs,
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, SHOE_SIZES, ALL_CATEGORIES,
-  LISTING_TYPES, JEWELLERY_MATERIALS, ORIGINS, FABRICS, CONDITIONS,
+  LISTING_TYPES, JEWELLERY_MATERIALS, ORIGINS, FABRICS, CONDITIONS, SA_BRANDS,
   OCCASIONS, SIZES, OCC_COLOR, CARD_COLORS, EMPTY_FORM, POSTAGE_OPTIONS,
   catEmoji, currencySymbol, buildPaymentSummary, buyerProtectionFee,
   garmentTypesFor, garmentFieldsFor, defaultGarmentFor, parseMeasurements, buildMeasPayload,
@@ -164,6 +164,7 @@ export default function App() {
   const [selImgIdx, setSelImgIdx] = useState(0);
   const [toast,     setToast]     = useState("");
   const [form,      setForm]      = useState(EMPTY_FORM);
+  const [brandOther,setBrandOther]= useState(false); // listing "Brand" field: true when "Other" is picked
   const [aForm,     setAForm]     = useState({email:"",password:""});
   const [otpStep,   setOtpStep]   = useState("form");
   const [otpCode,   setOtpCode]   = useState("");
@@ -3225,9 +3226,9 @@ export default function App() {
       const image_url=urls[0]||"";
       const meas=buildMeasPayload(form);
       const cat=meas.category||form.category;
-      const payload={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
+      const payload={name:form.name,price:parseFloat(form.price),brand:(form.brand||"").trim()||null,condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
       const [created]=await withFreshToken(tok=>db.insert(payload,tok));
-      setItems(p=>[created,...p]); setForm(EMPTY_FORM);
+      setItems(p=>[created,...p]); setForm(EMPTY_FORM); setBrandOther(false);
       // The photo uploaded fine but didn't come back on the saved row — the
       // self-healing insert (see lib/db.js) silently drops columns the table is
       // missing, so an absent image_url column means the photo is lost. Surface
@@ -3277,7 +3278,7 @@ export default function App() {
       const image_url=allUrls[0]||sel.image_url||"";
       const meas=buildMeasPayload(form);
       const cat=meas.category||form.category;
-      const patch={name:form.name,price:parseFloat(form.price),condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
+      const patch={name:form.name,price:parseFloat(form.price),brand:(form.brand||"").trim()||null,condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
       const [updated]=await withFreshToken(tok=>db.update(sel.id,patch,tok));
       setItems(p=>p.map(i=>i.id===sel.id?updated:i)); setSel(updated);
       if(allUrls.length&&!updated.image_url){ flash("Saved — but the photo couldn't be stored: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase.",11000); }
@@ -3307,7 +3308,8 @@ export default function App() {
     const meas_unit=pm?.unit||item.measurements_unit||"inches";
     let meas=pm?.values?{...pm.values}:{};
     if(!pm){ garmentFieldsFor(gender,garment_type).forEach(l=>{ const col=({"Bust":"bust","Chest":"bust","Blouse bust":"bust","Waist":"waist","Hip":"hips","Hips":"hips","Length":"length","Length (floor to shoulder)":"length","Saree length":"length","Lehenga length":"length","Sherwani length":"length","Kurta length":"length","Sleeve length":"sleeve_length","Blouse sleeve length":"sleeve_length","Shoulder width":"shoulder","Inseam":"inseam"})[l]; if(col&&item[col]) meas[l]=item[col]; }); }
-    setForm({name:item.name||"",price:item.price||"",condition:item.condition||"Like New",listing_type:item.listing_type||"Clothing",category:item.category||"Saree",origin:item.origin||"Indian",fabric:item.fabric||"Silk",material:item.material||"",size:item.size||"Free Size",occasions:item.occasions||[],colours:item.colours||[],gender,meas_unit,garment_type,meas,additional_measurements:item.additional_measurements||item.measurement_notes||"",bust:item.bust||"",waist:item.waist||"",hips:item.hips||"",length:item.length||"",underbust:item.underbust||"",shoulder:item.shoulder||"",high_hip:item.high_hip||"",sleeve_length:item.sleeve_length||"",inseam:item.inseam||"",measurement_notes:item.measurement_notes||"",can_take_in:item.can_take_in||false,spare_fabric:item.spare_fabric||false,description:item.description||"",imageFiles:[],imagePreviews:item.images||[item.image_url].filter(Boolean),postage_options:item.postage_options||[],accepts_collection:item.accepts_collection||false,offers_enabled:item.offers_enabled!==false,minimum_offer:item.minimum_offer_pence?String(item.minimum_offer_pence/100):""});
+    setBrandOther(false);
+    setForm({name:item.name||"",price:item.price||"",brand:item.brand||"",condition:item.condition||"Like New",listing_type:item.listing_type||"Clothing",category:item.category||"Saree",origin:item.origin||"Indian",fabric:item.fabric||"Silk",material:item.material||"",size:item.size||"Free Size",occasions:item.occasions||[],colours:item.colours||[],gender,meas_unit,garment_type,meas,additional_measurements:item.additional_measurements||item.measurement_notes||"",bust:item.bust||"",waist:item.waist||"",hips:item.hips||"",length:item.length||"",underbust:item.underbust||"",shoulder:item.shoulder||"",high_hip:item.high_hip||"",sleeve_length:item.sleeve_length||"",inseam:item.inseam||"",measurement_notes:item.measurement_notes||"",can_take_in:item.can_take_in||false,spare_fabric:item.spare_fabric||false,description:item.description||"",imageFiles:[],imagePreviews:item.images||[item.image_url].filter(Boolean),postage_options:item.postage_options||[],accepts_collection:item.accepts_collection||false,offers_enabled:item.offers_enabled!==false,minimum_offer:item.minimum_offer_pence?String(item.minimum_offer_pence/100):""});
     setView("edit");
   }
 
@@ -5035,6 +5037,22 @@ export default function App() {
                 </F>
                 {form.listing_type!=="Clothing"&&<F l="Category"><select style={S.inp} value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))}>{(form.listing_type==="Jewellery"?JEWELLERY_CATS:SHOE_CATS).map(c=><option key={c}>{c}</option>)}</select></F>}
                 <F l="Origin"><select style={S.inp} value={form.origin} onChange={e=>setForm(f=>({...f,origin:e.target.value}))}>{ORIGINS.map(o=><option key={o}>{o}</option>)}</select></F>
+                {(()=>{
+                  // Optional brand (Vinted-style): pick a popular South Asian
+                  // label, or "Other" to type one that isn't listed.
+                  const isCustom=!!form.brand&&!SA_BRANDS.includes(form.brand);
+                  const showOther=brandOther||isCustom;
+                  return (<>
+                    <F l="Brand (optional)">
+                      <select style={S.inp} value={showOther?"__other__":(form.brand||"")} onChange={e=>{const v=e.target.value; if(v==="__other__"){setBrandOther(true);setForm(f=>({...f,brand:""}));} else {setBrandOther(false);setForm(f=>({...f,brand:v}));}}}>
+                        <option value="">No brand / not sure</option>
+                        {SA_BRANDS.map(b=><option key={b} value={b}>{b}</option>)}
+                        <option value="__other__">Other (add your own)…</option>
+                      </select>
+                    </F>
+                    {showOther&&<F l="Brand name"><input style={S.inp} placeholder="e.g. your designer or boutique" value={form.brand} maxLength={40} onChange={e=>setForm(f=>({...f,brand:e.target.value}))}/></F>}
+                  </>);
+                })()}
                 {form.listing_type==="Jewellery"?<F l="Material"><select style={S.inp} value={form.material} onChange={e=>setForm(f=>({...f,material:e.target.value}))}>{JEWELLERY_MATERIALS.map(m=><option key={m}>{m}</option>)}</select></F>:<F l="Fabric"><select style={S.inp} value={form.fabric} onChange={e=>setForm(f=>({...f,fabric:e.target.value}))}>{FABRICS.map(x=><option key={x}>{x}</option>)}</select></F>}
                 <F l="Condition"><select style={S.inp} value={form.condition} onChange={e=>setForm(f=>({...f,condition:e.target.value}))}>{CONDITIONS.map(c=><option key={c}>{c}</option>)}</select></F>
                 {(form.listing_type==="Clothing"||form.listing_type==="Shoes")&&<F l="Size"><select style={S.inp} value={form.size} onChange={e=>setForm(f=>({...f,size:e.target.value}))}>{(form.listing_type==="Shoes"?SHOE_SIZES:SIZES).map(s=><option key={s}>{s}</option>)}</select></F>}
