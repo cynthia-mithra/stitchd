@@ -20,6 +20,11 @@ export const auth = {
   // match the exact domain) and Google Cloud (authorized redirect URI must be
   // <project>.supabase.co/auth/v1/callback), not in this URL.
   googleUrl(){ const target=`${window.location.origin}${window.location.pathname}`; return `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(target)}`; },
+  // Sign in with Apple — same GoTrue OAuth flow as Google. Requires the Apple
+  // provider to be enabled in the Supabase dashboard (Authentication → Providers
+  // → Apple) with a Services ID + key, and stitchd.fit added to Apple's return
+  // URLs. The redirect_to handling mirrors googleUrl() (clean origin+path only).
+  appleUrl(){ const target=`${window.location.origin}${window.location.pathname}`; return `${SUPABASE_URL}/auth/v1/authorize?provider=apple&redirect_to=${encodeURIComponent(target)}`; },
   async refreshSession(refreshToken){ const r=await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:refreshToken})}); const d=await r.json().catch(()=>({})); /* GoTrue returns refresh errors in several shapes ({error:{message}}, {error_description}, {msg}); a non-OK response or a body with no access_token must throw, otherwise getValidToken would hand back an undefined token and the next request fails with "JWT expired". */ if(!r.ok||!d.access_token) throw new Error(d.error_description||d.msg||(d.error&&d.error.message)||(typeof d.error==="string"?d.error:"")||`Token refresh failed (HTTP ${r.status})`); return d; },
   getSession(){ try{return JSON.parse(localStorage.getItem("stitchd_session"));}catch{return null;} },
   saveSession(s){ localStorage.setItem("stitchd_session",JSON.stringify(s)); },
