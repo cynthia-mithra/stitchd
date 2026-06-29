@@ -199,13 +199,14 @@ export function trackingUrl(carrierLabel, number) {
 // back into the "Lehenga · Pink · Wedding · Under £200" chip shown in the save
 // modal, on the saved-searches page and inside the alert email (the Edge Function
 // has its own copy of this so it stays dependency-free).
-export function buildSearchFilters({ query, catFilter, sizeFilter, minPrice, maxPrice, typeFilter, condFilter, occFilter, colourFilter, verifiedOnly }) {
+export function buildSearchFilters({ query, catFilter, sizeFilter, minPrice, maxPrice, typeFilter, condFilter, brandFilter, occFilter, colourFilter, verifiedOnly }) {
   const f = {};
   if (query && String(query).trim()) f.query = String(query).trim();
   if (catFilter && catFilter !== "All") f.category = catFilter;
   if (typeFilter && typeFilter !== "All") f.type = typeFilter;
   if (sizeFilter && sizeFilter !== "All") f.size = sizeFilter;
   if (condFilter && condFilter !== "All") f.condition = condFilter;
+  if (brandFilter && brandFilter !== "All") f.brand = brandFilter;
   if (minPrice !== "" && minPrice != null && !isNaN(Number(minPrice))) f.min_price = Number(minPrice);
   if (maxPrice !== "" && maxPrice != null && !isNaN(Number(maxPrice))) f.max_price = Number(maxPrice);
   if (Array.isArray(occFilter) && occFilter.length) f.occasion = [...occFilter];
@@ -222,6 +223,7 @@ export function filterSummary(filters) {
   if (filters.type) parts.push(filters.type);
   if (filters.size) parts.push(filters.size);
   if (filters.condition) parts.push(filters.condition);
+  if (filters.brand) parts.push(filters.brand);
   (filters.colour || []).forEach(c => parts.push(c));
   (filters.occasion || []).forEach(o => parts.push(o));
   if (filters.verified_only) parts.push("Verified sellers");

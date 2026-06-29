@@ -195,6 +195,7 @@ export default function App() {
   const [saveSearchAlerts,  setSaveSearchAlerts]  = useState(true);
   const [savingSearch,      setSavingSearch]      = useState(false);
   const [catFilter, setCatFilter] = useState("All");
+  const [brandFilter, setBrandFilter] = useState("All");
   const [sizeFilter,setSizeFilter]= useState("All");
   const [shopSort,  setShopSort]  = useState("newest"); // browse-grid sort
 
@@ -836,9 +837,10 @@ export default function App() {
     const matchMax  = maxPrice===""||i.price<=parseFloat(maxPrice);
     const matchType = typeFilter==="All"||(typeFilter==="Jewellery"?JEWELLERY_CATS.includes(i.category):typeFilter==="Shoes"?SHOE_CATS.includes(i.category):(typeFilter==="Clothing"?CATEGORIES.includes(i.category):true));
     const matchCond = condFilter==="All"||i.condition===condFilter;
+    const matchBrand= brandFilter==="All"||i.brand===brandFilter;
     const matchFit  = !showSizeMatch||fitsMe(i)===true;
     const q=search.toLowerCase();
-    const matchSearch=!q||i.name?.toLowerCase().includes(q)||i.description?.toLowerCase().includes(q)||i.fabric?.toLowerCase().includes(q)||i.category?.toLowerCase().includes(q)||i.origin?.toLowerCase().includes(q)||i.material?.toLowerCase().includes(q);
+    const matchSearch=!q||i.name?.toLowerCase().includes(q)||i.description?.toLowerCase().includes(q)||i.fabric?.toLowerCase().includes(q)||i.category?.toLowerCase().includes(q)||i.origin?.toLowerCase().includes(q)||i.material?.toLowerCase().includes(q)||i.brand?.toLowerCase().includes(q);
     // Phase 10d — hide listings whose seller is on vacation, and any the seller
     // has deactivated via bulk edit (status='inactive'). Applies to shop & search.
     const matchVacation=!vacationSellers.has(i.user_id);
@@ -859,7 +861,7 @@ export default function App() {
     const matchOcc=occFilter.length===0||occ.length===0||occFilter.some(o=>occ.includes(o));
     const col=i.colours||[];
     const matchColour=colourFilter.length===0||col.length===0||colourFilter.some(c=>col.includes(c));
-    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchVacation&&matchActive&&matchNotSold&&matchVerified&&matchOcc&&matchColour;
+    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchBrand&&matchVacation&&matchActive&&matchNotSold&&matchVerified&&matchOcc&&matchColour;
    })
    // Sort: price sorts apply across the whole result; "newest" (default) floats
    // promoted (in-window) listings to the top, then keeps the source's
@@ -869,7 +871,15 @@ export default function App() {
      if(shopSort==="price_high") return (parseFloat(b.price)||0)-(parseFloat(a.price)||0);
      return (_live(a)?0:1)-(_live(b)?0:1);
    });
-  },[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers,occFilter,colourFilter,shopSort]);
+  },[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,brandFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers,occFilter,colourFilter,shopSort]);
+
+  // Brands actually present across live listings (for the shop's brand filter) —
+  // unique, non-empty, alphabetical. Includes custom brands sellers typed.
+  const allBrands = useMemo(()=>{
+    const s=new Set();
+    items.forEach(i=>{ if(i.brand&&!i.sold&&i.status!=="sold"&&i.status!=="inactive") s.add(i.brand); });
+    return [...s].sort((a,b)=>a.localeCompare(b));
+  },[items]);
 
   // Toasts carry a type (success / error / info) that picks a leading icon +
   // accent. The type is inferred from the message so the ~40 existing flash()
@@ -958,8 +968,8 @@ export default function App() {
   // Phase 12 — toggle one occasion/colour in the shop filter (multi-select).
   function togOccFilter(o){ setOccFilter(prev=>prev.includes(o)?prev.filter(x=>x!==o):[...prev,o]); }
   function togColourFilter(c){ setColourFilter(prev=>prev.includes(c)?prev.filter(x=>x!==c):[...prev,c]); }
-  function clearFilters(){ setSearch(""); setCatFilter("All"); setSizeFilter("All"); setMinPrice(""); setMaxPrice(""); setTypeFilter("All"); setCondFilter("All"); setShowVerifiedOnly(false); setOccFilter([]); setColourFilter([]); }
-  const hasFilters = search||catFilter!=="All"||sizeFilter!=="All"||minPrice||maxPrice||typeFilter!=="All"||condFilter!=="All"||showVerifiedOnly||occFilter.length>0||colourFilter.length>0;
+  function clearFilters(){ setSearch(""); setCatFilter("All"); setSizeFilter("All"); setMinPrice(""); setMaxPrice(""); setTypeFilter("All"); setCondFilter("All"); setBrandFilter("All"); setShowVerifiedOnly(false); setOccFilter([]); setColourFilter([]); }
+  const hasFilters = search||catFilter!=="All"||sizeFilter!=="All"||minPrice||maxPrice||typeFilter!=="All"||condFilter!=="All"||brandFilter!=="All"||showVerifiedOnly||occFilter.length>0||colourFilter.length>0;
 
   const inBag = (id) => bag.some(b=>b.id===id);
 
@@ -1561,7 +1571,7 @@ export default function App() {
   }
 
   // The live shop filter state captured into the saved_searches `filters` shape.
-  const currentFilters = ()=>buildSearchFilters({query:search,catFilter,sizeFilter,minPrice,maxPrice,typeFilter,condFilter,occFilter,colourFilter,verifiedOnly:showVerifiedOnly});
+  const currentFilters = ()=>buildSearchFilters({query:search,catFilter,sizeFilter,minPrice,maxPrice,typeFilter,condFilter,brandFilter,occFilter,colourFilter,verifiedOnly:showVerifiedOnly});
 
   // Open the SAVE THIS SEARCH modal (issue PART 2). Logged-out buyers are sent to
   // log in first; there must be at least one active filter/query to save.
@@ -1610,6 +1620,7 @@ export default function App() {
     setTypeFilter(f.type||"All");
     setSizeFilter(f.size||"All");
     setCondFilter(f.condition||"All");
+    setBrandFilter(f.brand||"All");
     setMinPrice(f.min_price!=null?String(f.min_price):"");
     setMaxPrice(f.max_price!=null?String(f.max_price):"");
     setOccFilter(Array.isArray(f.occasion)?[...f.occasion]:[]);
@@ -4888,6 +4899,7 @@ export default function App() {
         applySearch={applySearch} applySavedSearch={applySavedSearch} openSaveSearch={openSaveSearch} deleteSavedSearch={deleteSavedSearch}
         showFilters={showFilters} setShowFilters={setShowFilters} hasFilters={hasFilters} clearFilters={clearFilters}
         typeFilter={typeFilter} setTypeFilter={setTypeFilter} condFilter={condFilter} setCondFilter={setCondFilter}
+        brandFilter={brandFilter} setBrandFilter={setBrandFilter} allBrands={allBrands}
         catFilter={catFilter} setCatFilter={setCatFilter} sizeFilter={sizeFilter} setSizeFilter={setSizeFilter}
         shopSort={shopSort} setShopSort={setShopSort}
         minPrice={minPrice} setMinPrice={setMinPrice} maxPrice={maxPrice} setMaxPrice={setMaxPrice}
