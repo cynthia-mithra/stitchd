@@ -3,6 +3,7 @@ import { Package, Mail, AlertCircle, CheckCircle, Star, Truck, ExternalLink } fr
 import { S } from "../styles";
 import { trackingUrl, SHIPPING_LABELS_ENABLED } from "../lib/constants";
 import { VerifiedBadge } from "../components/Shared";
+import { confirmDialog } from "../components/ConfirmModal";
 
 // Post-purchase order history (issue PART 2 & PART 5).
 //
@@ -149,7 +150,7 @@ export default function Orders({
                         held earnings. Shown once the item is on its way and not yet
                         completed. */}
                     {isBuyer && status !== "pending" && status !== "completed" && (
-                      <button className="hbtn" style={{ ...S.hBtn, background: "#34C759", color: "#fff", border: "2px solid #111", borderRadius: 0, fontSize: 11, padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => { if (window.confirm("Confirm you've received this item and everything's OK? This releases the seller's payment.")) confirmOrderReceived(order); }}>
+                      <button className="hbtn" style={{ ...S.hBtn, background: "#34C759", color: "#fff", border: "2px solid #111", borderRadius: 0, fontSize: 11, padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={async () => { if (await confirmDialog({ title: "Confirm receipt?", message: "Confirm you've received this item and everything's OK? This releases the seller's payment.", confirmLabel: "CONFIRM" })) confirmOrderReceived(order); }}>
                         <CheckCircle width={14} height={14} /> CONFIRM RECEIVED
                       </button>
                     )}

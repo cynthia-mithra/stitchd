@@ -4,6 +4,7 @@ import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, co
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 import LoginPromptModal from "../components/LoginPromptModal";
+import { confirmDialog } from "../components/ConfirmModal";
 
 // Phase 14 - compact relative time for comments, e.g. "2 hours ago".
 function timeAgo(ts){
@@ -297,7 +298,7 @@ export default function Detail({
                           <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:900,letterSpacing:2,color:"#FF1493",marginBottom:6,display:"flex",alignItems:"center",gap:7}}><Tag width={15} height={15}/> OFFER PENDING</p>
                           <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#111",letterSpacing:0.5,marginBottom:2}}>Your offer: {fmtPence(myOffer.amount_pence)}</p>
                           <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#888",letterSpacing:0.5,marginBottom:12}}>{expiryLabel(myOffer.expires_at)}</p>
-                          <button type="button" className="hbtn" style={{...S.hBtn,width:"100%",background:"#fff",color:"#111",border:"2px solid #111",padding:"11px",fontSize:13,letterSpacing:2,display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>{ if(window.confirm("Withdraw your offer? This can't be undone.")) withdrawOffer(); }}>
+                          <button type="button" className="hbtn" style={{...S.hBtn,width:"100%",background:"#fff",color:"#111",border:"2px solid #111",padding:"11px",fontSize:13,letterSpacing:2,display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={async()=>{ if(await confirmDialog({title:"Withdraw offer?",message:"Withdraw your offer? This can't be undone.",confirmLabel:"WITHDRAW",danger:true})) withdrawOffer(); }}>
                             <X width={15} height={15}/> WITHDRAW OFFER
                           </button>
                         </div>

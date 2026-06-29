@@ -18,6 +18,7 @@ import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefron
 import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CheckCircle, Info, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock, Home, Plus, User, Palette, Video } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
+import { ConfirmHost, confirmDialog } from "./components/ConfirmModal";
 import { ReviewModal } from "./components/Reviews";
 import PricingGuide from "./components/PricingGuide";
 import Tailors from "./views/Tailors";
@@ -2029,7 +2030,7 @@ export default function App() {
 
   async function deleteSharedList(list){
     if(!user||!token||!list) return;
-    if(!window.confirm(`Delete "${list.name}"? This can't be undone.`)) return;
+    if(!(await confirmDialog({title:"Delete list?",message:`Delete "${list.name}"? This can't be undone.`,confirmLabel:"DELETE",danger:true}))) return;
     try{
       await withFreshToken(tok=>db.deleteSharedWishlist(list.id,tok));
       setMyShared(prev=>prev.filter(l=>l.id!==list.id));
@@ -3015,7 +3016,7 @@ export default function App() {
   // it from every list it might appear in.
   async function deleteStylePost(post){
     if(!user||post.user_id!==user.id) return;
-    if(!window.confirm("Delete this post? This can't be undone.")) return;
+    if(!(await confirmDialog({title:"Delete post?",message:"Delete this post? This can't be undone.",confirmLabel:"DELETE",danger:true}))) return;
     try{
       await db.deleteStylePost(post.id,token);
       setForYouPosts(prev=>prev.filter(p=>p.id!==post.id));
@@ -3860,6 +3861,7 @@ export default function App() {
   return (
     <div className={"app-root"+(user&&view!=="detail"&&view!=="auth"?" has-bottom-nav":"")} style={S.root}>
       <style>{CSS}</style>
+      <ConfirmHost/>
 
       {/* HEADER */}
       <header className={"nav-header"+(scrolled?" scrolled":"")} style={S.header}>

@@ -4,6 +4,7 @@ import { S } from "../styles";
 import { F, Stars, Thumb } from "../components/Shared";
 import { RatingSummary, ReviewList } from "../components/Reviews";
 import LoginPromptModal from "../components/LoginPromptModal";
+import { confirmDialog } from "../components/ConfirmModal";
 import { TAILOR_SPECIALISMS, TAILOR_TURNAROUND, turnaroundLabel, catEmoji } from "../lib/constants";
 import { StatusBadge, gbp } from "./Alterations";
 import { toISODate, parseISODate, startOfDay, todayStart, addDays, monthGrid, monthLabel, rowsByDate, dayState, mondayIndex, WEEKDAYS, ADVANCE_BOOKING_OPTIONS } from "../lib/availability";
@@ -842,7 +843,7 @@ function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuo
     finally{ setBusyId(null); }
   };
   const decline=async(req)=>{
-    if(!window.confirm("Decline this alteration request? The buyer will be notified.")) return;
+    if(!(await confirmDialog({title:"Decline request?",message:"Decline this alteration request? The buyer will be notified.",confirmLabel:"DECLINE",danger:true}))) return;
     setBusyId(req.id);
     try{ await onDeclineRequest(req); }
     finally{ setBusyId(null); }
