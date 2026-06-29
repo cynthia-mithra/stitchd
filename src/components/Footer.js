@@ -27,12 +27,14 @@ const COLUMNS = [
     title: "SELL",
     items: [
       { label: "Sell an item", view: "sell" },
+      { label: "Selling tips", view: "selling-tips" },
       { label: "How to measure", view: "measuring" },
     ],
   },
   {
     title: "HELP",
     items: [
+      { label: "About & sustainability", view: "about" },
       { label: "T&Cs", view: "terms" },
       { label: "Privacy policy", view: "privacy" },
       { label: "Returns policy", view: "returns" },
