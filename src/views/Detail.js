@@ -221,6 +221,7 @@ export default function Detail({
             <div style={S.detailInfo} className="detail-info">
               <p style={{...S.cardCatLabel,color:selColor,fontSize:12,marginBottom:8}}>{sel.category?.toUpperCase()} · {(sel.material||sel.fabric)?.toUpperCase()} · {sel.condition?.toUpperCase()}</p>
               <h2 style={S.detailName}>{sel.name}</h2>
+              {sel.brand&&<div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:1.2,color:"#888",textTransform:"uppercase",marginBottom:8}}>{sel.brand}</div>}
               {sel.prev_price>sel.price&&<div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:700,color:"#6b6b6b",textDecoration:"line-through",letterSpacing:-0.5,marginBottom:2}}>{currencySymbol(sel.currency)}{sel.prev_price}</div>}
               <div style={{...S.detailPrice,color:selColor,marginBottom:sel.prev_price>sel.price?6:16}}>{currencySymbol(sel.currency)}{sel.price}</div>
               {sel.prev_price>sel.price&&<div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#00E5CC",letterSpacing:0.5,marginBottom:16}}>YOU SAVE {currencySymbol(sel.currency)}{sel.prev_price-sel.price}</div>}
