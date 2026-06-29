@@ -42,13 +42,22 @@ export default function Detail({
   // prompt instead of erroring. `gate` holds the context string while open.
   const [gate, setGate] = React.useState(null);
   const requireAuth = (context, action) => { if (user) action(); else setGate(context); };
+  // Gallery media = the photos plus, if present, the seller's video as the LAST
+  // slide. The carousel (main panel, thumbnails, arrows, swipe, lightbox) all
+  // index into this combined list.
+  const media = React.useMemo(() => {
+    const imgs = (selImages || []).map(src => ({ type: "image", src }));
+    return sel?.video_url ? [...imgs, { type: "video", src: sel.video_url }] : imgs;
+  }, [selImages, sel?.video_url]);
+  const mediaCount = media.length;
+  const current = media[selImgIdx] || media[0];
   // Fullscreen image zoom (lightbox) + swipe tracking for the gallery.
   const [zoom, setZoom] = React.useState(false);
   const touchX = React.useRef(null);
-  const nextImg = React.useCallback(() => setSelImgIdx(i => (i + 1) % selImages.length), [setSelImgIdx, selImages.length]);
-  const prevImg = React.useCallback(() => setSelImgIdx(i => (i - 1 + selImages.length) % selImages.length), [setSelImgIdx, selImages.length]);
+  const nextImg = React.useCallback(() => setSelImgIdx(i => (i + 1) % mediaCount), [setSelImgIdx, mediaCount]);
+  const prevImg = React.useCallback(() => setSelImgIdx(i => (i - 1 + mediaCount) % mediaCount), [setSelImgIdx, mediaCount]);
   const onTouchStart = (e) => { touchX.current = e.touches[0].clientX; };
-  const onTouchEnd = (e) => { if (touchX.current == null || selImages.length < 2) return; const dx = e.changedTouches[0].clientX - touchX.current; if (Math.abs(dx) > 40) (dx < 0 ? nextImg() : prevImg()); touchX.current = null; };
+  const onTouchEnd = (e) => { if (touchX.current == null || mediaCount < 2) return; const dx = e.changedTouches[0].clientX - touchX.current; if (Math.abs(dx) > 40) (dx < 0 ? nextImg() : prevImg()); touchX.current = null; };
   // Keyboard control while the lightbox is open: Esc closes, arrows navigate.
   React.useEffect(() => {
     if (!zoom) return;
@@ -172,19 +181,6 @@ export default function Detail({
     io.observe(el);
     return ()=>io.disconnect();
   },[sel, view]);
-  // Listing video — autoplay (muted) once it scrolls into view, pause when it
-  // leaves. Muted is required for browsers to allow programmatic autoplay.
-  const videoRef = React.useRef(null);
-  React.useEffect(()=>{
-    const el = videoRef.current;
-    if(!el || !sel?.video_url || view!=="detail") return;
-    const io = new IntersectionObserver(([e])=>{
-      if(e.isIntersecting){ el.muted = true; el.play().catch(()=>{}); }
-      else { el.pause(); }
-    },{threshold:0.5});
-    io.observe(el);
-    return ()=>io.disconnect();
-  },[sel?.id, sel?.video_url, view]);
   return (
     <>
       {view==="detail"&&sel&&(
@@ -192,47 +188,50 @@ export default function Detail({
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
           <div style={S.detailWrap} className="detail-wrap">
             <div style={S.detailImgWrap} className="detail-img">
-              <div style={{...S.detailPanel,background:selImages.length>0?"#000":selColor,overflow:"hidden",cursor:selImages.length>0?"zoom-in":"default"}}
-                   onClick={()=>{ if(selImages.length>0) setZoom(true); }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-                {selImages.length>0?<img src={selImages[selImgIdx]} alt={sel.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:120}}>{sel.emoji||catEmoji(sel.category)}</span>}
+              <div style={{...S.detailPanel,background:mediaCount>0?"#000":selColor,overflow:"hidden",cursor:current?.type==="image"?"zoom-in":"default"}}
+                   onClick={()=>{ if(current?.type==="image") setZoom(true); }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+                {mediaCount>0?(
+                  current?.type==="video"
+                    ? <video key={current.src} src={current.src} autoPlay muted loop controls playsInline preload="metadata" onClick={(e)=>e.stopPropagation()} style={{width:"100%",height:"100%",objectFit:"cover",background:"#000"}}/>
+                    : <img src={current.src} alt={sel.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                ):<span style={{fontSize:120}}>{sel.emoji||catEmoji(sel.category)}</span>}
                 {sel.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                 {sel.reserved&&!sel.sold&&<div style={S.reservedBadge}>RESERVED</div>}
-                {selImages.length>0&&<div style={{position:"absolute",bottom:10,right:10,background:"rgba(0,0,0,0.55)",color:"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,padding:"4px 9px",pointerEvents:"none",display:"flex",alignItems:"center",gap:5}}><Eye width={12} height={12}/> TAP TO ZOOM</div>}
-                {selImages.length>1&&(
+                {current?.type==="image"&&<div style={{position:"absolute",bottom:10,right:10,background:"rgba(0,0,0,0.55)",color:"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,padding:"4px 9px",pointerEvents:"none",display:"flex",alignItems:"center",gap:5}}><Eye width={12} height={12}/> TAP TO ZOOM</div>}
+                {current?.type==="video"&&<div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.6)",color:"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,padding:"4px 9px",pointerEvents:"none",display:"flex",alignItems:"center",gap:5}}><Video width={12} height={12}/> VIDEO</div>}
+                {mediaCount>1&&(
                   <>
-                    <button aria-label="Previous image" style={{...S.imgNav,left:12}} onClick={(e)=>{e.stopPropagation();prevImg();}}>‹</button>
-                    <button aria-label="Next image" style={{...S.imgNav,right:12}} onClick={(e)=>{e.stopPropagation();nextImg();}}>›</button>
+                    <button aria-label="Previous" style={{...S.imgNav,left:12}} onClick={(e)=>{e.stopPropagation();prevImg();}}>‹</button>
+                    <button aria-label="Next" style={{...S.imgNav,right:12}} onClick={(e)=>{e.stopPropagation();nextImg();}}>›</button>
                   </>
                 )}
               </div>
-              {selImages.length>1&&(
+              {mediaCount>1&&(
                 <div style={S.thumbRow}>
-                  {selImages.map((img,i)=>(
-                    <div key={i} style={{...S.thumb,borderColor:i===selImgIdx?selColor:"#eee"}} onClick={()=>setSelImgIdx(i)}>
-                      <img src={img} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  {media.map((m,i)=>(
+                    <div key={i} style={{...S.thumb,borderColor:i===selImgIdx?selColor:"#eee",position:"relative"}} onClick={()=>setSelImgIdx(i)}>
+                      {m.type==="video"
+                        ? <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"#111"}}><Video width={20} height={20} color="#fff"/></div>
+                        : <img src={m.src} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>}
                     </div>
                   ))}
-                </div>
-              )}
-              {sel.video_url&&(
-                <div style={{marginTop:14}}>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",display:"flex",alignItems:"center",gap:6,marginBottom:8}}><Video width={14} height={14}/> VIDEO</div>
-                  <video ref={videoRef} src={sel.video_url} muted loop controls playsInline preload="metadata" style={{width:"100%",border:"2px solid #111",display:"block",background:"#000"}}/>
                 </div>
               )}
             </div>
             {/* FULLSCREEN ZOOM (lightbox) — tap the main photo to inspect it large.
                 Tap outside / Esc closes; arrows or swipe navigate the gallery. */}
-            {zoom&&selImages.length>0&&(
+            {zoom&&mediaCount>0&&(
               <div onClick={()=>setZoom(false)} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
                    style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.93)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
                 <button aria-label="Close" onClick={(e)=>{e.stopPropagation();setZoom(false);}} style={{position:"absolute",top:18,right:18,background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,width:42,height:42,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}><X width={22} height={22}/></button>
-                <img src={selImages[selImgIdx]} alt={sel.name} onClick={(e)=>e.stopPropagation()} style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain"}}/>
-                {selImages.length>1&&(
+                {current?.type==="video"
+                  ? <video key={current.src} src={current.src} autoPlay muted loop controls playsInline onClick={(e)=>e.stopPropagation()} style={{maxWidth:"100%",maxHeight:"100%"}}/>
+                  : <img src={current?.src} alt={sel.name} onClick={(e)=>e.stopPropagation()} style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain"}}/>}
+                {mediaCount>1&&(
                   <>
-                    <button aria-label="Previous image" onClick={(e)=>{e.stopPropagation();prevImg();}} style={{position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.92)",color:"#111",border:"2px solid #111",borderRadius:0,width:46,height:46,fontSize:24,fontWeight:700,cursor:"pointer",lineHeight:1}}>‹</button>
-                    <button aria-label="Next image" onClick={(e)=>{e.stopPropagation();nextImg();}} style={{position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.92)",color:"#111",border:"2px solid #111",borderRadius:0,width:46,height:46,fontSize:24,fontWeight:700,cursor:"pointer",lineHeight:1}}>›</button>
-                    <div style={{position:"absolute",bottom:22,left:0,right:0,textAlign:"center",color:"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,fontSize:14}}>{selImgIdx+1} / {selImages.length}</div>
+                    <button aria-label="Previous" onClick={(e)=>{e.stopPropagation();prevImg();}} style={{position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.92)",color:"#111",border:"2px solid #111",borderRadius:0,width:46,height:46,fontSize:24,fontWeight:700,cursor:"pointer",lineHeight:1}}>‹</button>
+                    <button aria-label="Next" onClick={(e)=>{e.stopPropagation();nextImg();}} style={{position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.92)",color:"#111",border:"2px solid #111",borderRadius:0,width:46,height:46,fontSize:24,fontWeight:700,cursor:"pointer",lineHeight:1}}>›</button>
+                    <div style={{position:"absolute",bottom:22,left:0,right:0,textAlign:"center",color:"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,fontSize:14}}>{selImgIdx+1} / {mediaCount}</div>
                   </>
                 )}
               </div>
