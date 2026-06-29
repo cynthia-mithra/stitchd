@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Static, always-present pages. Individual /listing/:id and /seller/:id URLs
+     are generated dynamically and aren't enumerated here yet (a build-time or
+     edge-function sitemap can add them later). -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://stitchd.fit/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://stitchd.fit/tailors</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://stitchd.fit/selling-tips</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://stitchd.fit/about</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://stitchd.fit/returns</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://stitchd.fit/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://stitchd.fit/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+</urlset>

@@ -80,6 +80,8 @@ function isKnownPath(raw) {
   if (path.includes("order-success")) return true;
   if (/^\/wishlist\/[^/]+$/.test(path)) return true;
   if (/^\/post\/[^/]+$/.test(path)) return true;
+  if (/^\/listing\/[^/]+$/.test(path)) return true;
+  if (/^\/seller\/[^/]+$/.test(path)) return true;
   if (/^\/tailors\/[0-9a-fA-F-]{8,}$/.test(path)) return true;
   return false;
 }
@@ -602,20 +604,25 @@ export default function App() {
     }).catch(()=>setOrderResult({status:"error"}));
   },[]);
 
-  // LEGAL PAGES (/terms, /privacy, /returns) - hardcoded static pages reachable
-  // from the footer on every page. We map the URL path to a `view` on first load
-  // (so a hard load / shared link of /terms lands on the right page) and keep the
-  // browser Back/Forward buttons in sync via a popstate listener.
+  // URL routing for the deep-linkable pages. Static pages (/terms, /about…) map
+  // straight to a view; a shared /listing/:id or /seller/:id link opens the right
+  // listing/storefront on a cold load (and on browser Back/Forward via popstate),
+  // so links people share actually land on the item — not the home grid.
   useEffect(()=>{
-    const path=window.location.pathname.replace(/\/+$/,"");
-    const v=STATIC_PATHS[path];
-    if(v) setView(v);
-    const onPop=()=>{
-      const p=window.location.pathname.replace(/\/+$/,"");
-      setView(STATIC_PATHS[p]||"shop");
+    const routePath=(raw,initial)=>{
+      const p=(raw||"/").replace(/\/+$/,"")||"/";
+      if(STATIC_PATHS[p]){ setView(STATIC_PATHS[p]); return; }
+      const ml=p.match(/^\/listing\/([^/]+)$/);
+      if(ml){ setRestoreDetailId(ml[1]); return; }   // opened once the catalogue loads
+      const ms=p.match(/^\/seller\/([^/]+)$/);
+      if(ms){ openProfile(ms[1]); return; }
+      if(!initial) setView("shop");
     };
+    routePath(window.location.pathname,true);
+    const onPop=()=>routePath(window.location.pathname,false);
     window.addEventListener("popstate",onPop);
     return ()=>window.removeEventListener("popstate",onPop);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
   // Phase 12 - deep links from the saved-search alert email. "SEE ALL MATCHES"
@@ -804,6 +811,50 @@ export default function App() {
   useEffect(()=>{
     try{ sessionStorage.setItem("stitchd_route",JSON.stringify({v:view,s:sel?.id||null,p:viewedProfile?.id||null})); }catch{ /* storage disabled */ }
   },[view,sel?.id,viewedProfile?.id]);
+
+  // Keep the address bar in sync with the open listing / storefront so the URL is
+  // shareable and a refresh deep-links straight back to it. Uses replaceState (no
+  // extra history spam); the first run is skipped so it never clobbers a cold-load
+  // URL before the routing effect has read it. Static / tailor pages manage their
+  // own URLs, so we only ever set /listing, /seller or reset a stale one to "/".
+  const urlSynced=useRef(false);
+  useEffect(()=>{
+    if(!urlSynced.current){ urlSynced.current=true; return; }
+    const cur=window.location.pathname;
+    let target=null;
+    if(view==="detail"&&sel?.id) target=`/listing/${sel.id}`;
+    else if(view==="profile"&&viewedProfile?.id) target=`/seller/${viewedProfile.id}`;
+    else if(cur.startsWith("/listing/")||cur.startsWith("/seller/")) target="/";
+    if(target&&target!==cur) window.history.replaceState({},"",target);
+  },[view,sel?.id,viewedProfile?.id]);
+
+  // Per-page <title> + Open Graph/Twitter meta so the browser tab and (JS-aware)
+  // crawlers reflect the actual listing instead of the generic site card. Note:
+  // non-JS social scrapers still read the static index.html until edge
+  // prerendering is added (see follow-up).
+  useEffect(()=>{
+    const set=(sel0,attr,val)=>{ const el=document.head.querySelector(sel0); if(el&&val!=null) el.setAttribute(attr,val); };
+    if(view==="detail"&&sel){
+      const title=`${sel.name} · ${currencySymbol(sel.currency)}${sel.price} | Stitch'd`;
+      const desc=`${sel.brand?sel.brand+" · ":""}${sel.category||"Pre-loved South Asian fashion"}${sel.condition?" · "+sel.condition:""} on Stitch'd.`;
+      const img=sel.image_url||(sel.images&&sel.images[0])||"https://stitchd.fit/og-image.png";
+      document.title=title;
+      set('meta[property="og:title"]',"content",`${sel.name} - ${currencySymbol(sel.currency)}${sel.price}`);
+      set('meta[property="og:description"]',"content",desc);
+      set('meta[property="og:image"]',"content",img);
+      set('meta[property="og:url"]',"content",window.location.href);
+      set('meta[name="twitter:title"]',"content",`${sel.name} - ${currencySymbol(sel.currency)}${sel.price}`);
+      set('meta[name="twitter:description"]',"content",desc);
+      set('meta[name="twitter:image"]',"content",img);
+      set('meta[name="description"]',"content",desc);
+    } else {
+      document.title="Stitch'd - Pre-loved South Asian Fashion";
+      set('meta[property="og:title"]',"content","Stitch'd - Pre-loved South Asian Fashion");
+      set('meta[property="og:description"]',"content","Buy & resell South Asian fashion - sarees, lehengas, sherwanis & more. Real measurements, buyer protection, UK delivery.");
+      set('meta[property="og:image"]',"content","https://stitchd.fit/og-image.png");
+      set('meta[property="og:url"]',"content","https://stitchd.fit/");
+    }
+  },[view,sel?.id]);
 
   // Page transition - a gentle opacity fade on the content wrapper each time the
   // view changes. Opacity-only (no transform) so fixed overlays keep working, and
@@ -1184,9 +1235,12 @@ export default function App() {
   }
 
   function shareItem(item){
+    // Share the listing's own URL (not the current page) so the link opens the
+    // item for whoever receives it.
+    const url=`${window.location.origin}/listing/${item.id}`;
     const text=`Check out "${item.name}" for £${item.price} on Stitch'd`;
-    if(navigator.share){ navigator.share({title:item.name,text,url:window.location.href}).catch(()=>{}); }
-    else{ navigator.clipboard.writeText(`${text}\n${window.location.href}`).then(()=>flash("Link copied!")); }
+    if(navigator.share){ navigator.share({title:item.name,text,url}).catch(()=>{}); }
+    else{ navigator.clipboard.writeText(`${text}\n${url}`).then(()=>flash("Link copied!")); }
   }
 
   // Reviews only store reviewer_id, so resolve those ids to profiles in one batch
