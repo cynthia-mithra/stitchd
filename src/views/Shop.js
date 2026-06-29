@@ -39,6 +39,7 @@ export default function Shop({
   applySearch, applySavedSearch = () => {}, openSaveSearch = () => {}, deleteSavedSearch,
   showFilters, setShowFilters, hasFilters, clearFilters,
   typeFilter, setTypeFilter, condFilter, setCondFilter,
+  brandFilter, setBrandFilter, allBrands = [],
   catFilter, setCatFilter, sizeFilter, setSizeFilter,
   shopSort = "newest", setShopSort = () => {},
   minPrice, setMinPrice, maxPrice, setMaxPrice,
@@ -423,6 +424,7 @@ export default function Shop({
             <div style={S.filterGroup}><div style={S.filterLabel}>SELLER</div><div style={S.filterPills}><button className="fpill" onClick={()=>setShowVerifiedOnly(v=>!v)} style={{...S.pill,...(showVerifiedOnly?{background:"#00E5CC",border:"1.5px solid #111",color:"#111"}:{}),display:"inline-flex",alignItems:"center",gap:6}}><BadgeCheck width={13} height={13}/> VERIFIED SELLERS ONLY</button></div></div>
             <div style={S.filterGroup}><div style={S.filterLabel}>TYPE</div><div style={S.filterPills}>{["All","Clothing","Jewellery","Shoes"].map(t=><button key={t} className="fpill" onClick={()=>setTypeFilter(t)} style={{...S.pill,...(typeFilter===t?S.pillOn:{})}}>{t}</button>)}</div></div>
             <div style={S.filterGroup}><div style={S.filterLabel}>CONDITION</div><div style={S.filterPills}>{["All",...CONDITIONS].map(c=><button key={c} className="fpill" onClick={()=>setCondFilter(c)} style={{...S.pill,...(condFilter===c?S.pillOn:{})}}>{c}</button>)}</div></div>
+            {allBrands.length>0&&<div style={S.filterGroup}><div style={S.filterLabel}>BRAND</div><div style={S.filterPills}>{["All",...allBrands].map(b=><button key={b} className="fpill" onClick={()=>setBrandFilter(b)} style={{...S.pill,...(brandFilter===b?S.pillOn:{})}}>{b==="All"?"ALL":b.toUpperCase()}</button>)}</div></div>}
             <div style={S.filterGroup}><div style={S.filterLabel}>CATEGORY</div><div style={S.filterPills}>{["All",...(typeFilter==="Jewellery"?JEWELLERY_CATS:typeFilter==="Shoes"?SHOE_CATS:typeFilter==="Clothing"?CATEGORIES:ALL_CATEGORIES)].map(c=><button key={c} className="fpill" onClick={()=>setCatFilter(c)} style={{...S.pill,...(catFilter===c?S.pillOn:{})}}>{c}</button>)}</div></div>
             <div style={S.filterGroup}><div style={S.filterLabel}>SIZE</div><div style={S.filterPills}>{["All",...SIZES].map(sz=><button key={sz} className="fpill" onClick={()=>setSizeFilter(sz)} style={{...S.pill,...(sizeFilter===sz?S.pillOn:{})}}>{sz}</button>)}</div></div>
             {/* Phase 12 — OCCASION. Multi-select pink pills (2px #111 border, no

@@ -64,6 +64,7 @@ interface Listing {
   category?: string;
   size?: string;
   condition?: string;
+  brand?: string;
   occasions?: string[] | null;
   colours?: string[] | null;
   user_id?: string;
@@ -111,6 +112,7 @@ function filterSummary(f: Record<string, any> | null): string {
   if (f.type) parts.push(f.type);
   if (f.size) parts.push(f.size);
   if (f.condition) parts.push(f.condition);
+  if (f.brand) parts.push(f.brand);
   (f.colour || []).forEach((c: string) => parts.push(c));
   (f.occasion || []).forEach((o: string) => parts.push(o));
   if (f.verified_only) parts.push("Verified sellers");
@@ -131,12 +133,13 @@ function matches(l: Listing, f: Record<string, any> | null): boolean {
 
   if (f.query) {
     const q = String(f.query).toLowerCase();
-    const hay = `${l.name || ""} ${l.category || ""}`.toLowerCase();
+    const hay = `${l.name || ""} ${l.category || ""} ${l.brand || ""}`.toLowerCase();
     if (!hay.includes(q)) return false;
   }
   if (f.category && f.category !== "All" && l.category !== f.category) return false;
   if (f.size && f.size !== "All" && l.size !== f.size) return false;
   if (f.condition && f.condition !== "All" && l.condition !== f.condition) return false;
+  if (f.brand && f.brand !== "All" && l.brand !== f.brand) return false;
   if (f.min_price != null && f.min_price !== "" && Number(l.price) < Number(f.min_price)) return false;
   if (f.max_price != null && f.max_price !== "" && Number(l.price) > Number(f.max_price)) return false;
 
@@ -169,9 +172,16 @@ async function processSearch(s: SavedSearch, verifiedIds: Set<string> | null): P
 
   // Pull the candidate window once (new listings since `since`), then filter in
   // memory — the saved filter set is richer than a single PostgREST query.
-  const candidates = await sbGet<Listing>(
-    `listings?created_at=gt.${encodeURIComponent(sinceIso)}&sold=eq.false&order=created_at.desc&select=id,name,price,category,size,condition,occasions,colours,user_id,sold,status,image_url,images,created_at&limit=100`,
-  );
+  // `brand` is a newer column: if the project hasn't run that migration yet,
+  // selecting it 400s, so fall back to the column set without brand rather than
+  // silently halting every alert.
+  const base = `listings?created_at=gt.${encodeURIComponent(sinceIso)}&sold=eq.false&order=created_at.desc&limit=100&select=`;
+  const cols = "id,name,price,category,size,condition,{brand}occasions,colours,user_id,sold,status,image_url,images,created_at";
+  let candidates = await sbGet<Listing>(`${base}${cols.replace("{brand}", "brand,")}`);
+  if (!candidates.length) {
+    const noBrand = await sbGet<Listing>(`${base}${cols.replace("{brand}", "")}`);
+    if (noBrand.length) candidates = noBrand;
+  }
   if (!candidates.length) { await stamp(s.id); return "no-new-listings"; }
 
   const f = s.filters || {};
