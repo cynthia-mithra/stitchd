@@ -25,11 +25,13 @@ export const auth = {
   // → Apple) with a Services ID + key, and stitchd.fit added to Apple's return
   // URLs. The redirect_to handling mirrors googleUrl() (clean origin+path only).
   appleUrl(){ const target=`${window.location.origin}${window.location.pathname}`; return `${SUPABASE_URL}/auth/v1/authorize?provider=apple&redirect_to=${encodeURIComponent(target)}`; },
-  // Password reset — step 1: email the user a recovery link. GoTrue returns 200
-  // with an empty body whether or not the address exists (no account
-  // enumeration), so we treat any non-error response as success. redirect_to
-  // brings them back to the app, where the hash carries type=recovery.
-  async recover(email){ const redirect=`${window.location.origin}${window.location.pathname}`; const r=await fetch(`${SUPABASE_URL}/auth/v1/recover?redirect_to=${encodeURIComponent(redirect)}`,{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email})}); const d=await r.json().catch(()=>({})); if(!r.ok)throw new Error((d.error&&d.error.message)||d.msg||d.error_description||"Could not send reset email"); return d; },
+  // Password reset — step 1: send the recovery email. Routes through our own
+  // send-reset Edge Function so the email is a BRANDED Stitch'd email (via
+  // Resend) instead of Supabase's plain default. The function generates the
+  // recovery link server-side and always returns ok (no account enumeration);
+  // redirectTo brings the user back to the app, where the hash carries
+  // type=recovery.
+  async sendReset(email){ const redirectTo=`${window.location.origin}${window.location.pathname}`; const r=await fetch(`${SUPABASE_URL}/functions/v1/send-reset`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({email,redirectTo})}); if(!r.ok)throw new Error("Could not send reset email — please try again."); return r.json().catch(()=>({ok:true})); },
   // Password reset — step 2: set the new password using the recovery session's
   // access token (saved when we detect the type=recovery hash on return).
   async updateUser(password,t){ const r=await fetch(`${SUPABASE_URL}/auth/v1/user`,{method:"PUT",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t}`,"Content-Type":"application/json"},body:JSON.stringify({password})}); const d=await r.json().catch(()=>({})); if(!r.ok||d.error||d.code)throw new Error((d.error&&d.error.message)||d.msg||d.error_description||"Could not update password"); return d; },

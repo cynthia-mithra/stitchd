@@ -27,6 +27,13 @@ verify_jwt = false
 [functions.send-email]
 verify_jwt = false
 
+# Password reset — sends the recovery email as a branded Stitch'd email via
+# Resend (replacing Supabase's default mailer). Called from the browser before
+# sign-in, and generates the recovery link server-side via the service role, so
+# JWT verification must be OFF.
+[functions.send-reset]
+verify_jwt = false
+
 # Phase 12 — saved-search alert sweep. Invoked by the pg_cron schedule (every 6h)
 # and fire-and-forget from the browser data layer right after a listing is
 # published — neither presents a Supabase JWT, so verification must be OFF. It

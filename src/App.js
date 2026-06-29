@@ -3105,7 +3105,7 @@ export default function App() {
   async function handleForgot(e){
     e.preventDefault(); setALoading(true); setAError("");
     try{
-      await auth.recover(aForm.email);
+      await auth.sendReset(aForm.email);
       flash("If that email has an account, a reset link is on its way.");
       setOtpStep("form"); setAuthMode("login");
     }catch(err){ setAError(err.message); }
