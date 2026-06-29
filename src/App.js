@@ -16,7 +16,7 @@ import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } fro
 import { startSellerConnect, verifySellerConnect, withdrawFromWallet, refundOrder, refundAlteration, buyShippingLabel } from "./lib/wallet";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CheckCircle, Info, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock, Home, Plus, User, Palette, Video } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CheckCircle, Info, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock, Home, Plus, User, Palette, Video, Compass, Search, Store, Users, LogOut } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import { ConfirmHost, confirmDialog } from "./components/ConfirmModal";
 import { logError, logWarn } from "./lib/log";
@@ -3808,13 +3808,17 @@ export default function App() {
   // Phase 15 - the tailor nav entry depends on the user's application status.
   // 30-day reapply window for a rejected application is measured from created_at
   // (the schema carries no separate rejection timestamp).
-  const tailorIcon=<Scissors width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>;
+  // One consistent menu icon: every dropdown / hamburger entry gets a distinct
+  // lucide glyph at the same size and alignment, so the menu reads as a tidy set
+  // rather than the old mix of some-iconed, some-not rows.
+  const mIcon=(I)=><I width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>;
+  const tailorIcon=mIcon(Scissors);
   const tailorReapplyOk=(()=>{ if(!myTailor||myTailor.status!=="rejected") return false; const t=new Date(myTailor.created_at).getTime(); return isNaN(t)?true:(Date.now()-t)>=30*24*60*60*1000; })();
   const tailorNavItems=(()=>{
     const st=myTailor&&myTailor.status;
     if(!myTailor) return [{label:"BECOME A TAILOR", icon:tailorIcon, run:openTailorApply}];
     if(st==="approved"||st==="suspended") return [{label:"MY TAILOR PROFILE", icon:tailorIcon, run:openTailorDashboard}];
-    if(st==="pending") return [{label:"TAILOR APPLICATION PENDING", icon:<Clock width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>flash("Your tailor application is under review - we'll be in touch within 3 working days.",6000)}];
+    if(st==="pending") return [{label:"TAILOR APPLICATION PENDING", icon:mIcon(Clock), run:()=>flash("Your tailor application is under review - we'll be in touch within 3 working days.",6000)}];
     if(st==="rejected") return [{label:"TAILOR APPLICATION UNSUCCESSFUL", icon:tailorIcon, run:()=>{ if(tailorReapplyOk) openTailorApply(); else flash("Your tailor application wasn't approved. You can reapply 30 days after applying.",6000); }}];
     return [{label:"BECOME A TAILOR", icon:tailorIcon, run:openTailorApply}];
   })();
@@ -3829,32 +3833,32 @@ export default function App() {
   const tailorApproved = !!myTailor && (myTailor.status==="approved" || myTailor.status==="suspended");
   const navSections = [
     {label:"DISCOVER", items:[
-      {label:"✦ NEW ARRIVALS", run:()=>{clearFilters();setView("newarrivals");}},
-      {label:"✦ FEED",         run:()=>{loadFeed();setView("feed");}},
-      {label:"FIND A TAILOR",  icon:<Scissors width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openTailorDirectory},
+      {label:"NEW ARRIVALS",   icon:mIcon(Sparkles), run:()=>{clearFilters();setView("newarrivals");}},
+      {label:"FEED",           icon:mIcon(Compass),  run:()=>{loadFeed();setView("feed");}},
+      {label:"FIND A TAILOR",  icon:mIcon(Scissors), run:openTailorDirectory},
     ]},
     {label:"BUYING", items:[
-      {label:"MY ORDERS",      run:()=>{loadOrders();setView("orders");}},
-      {label:"MY OFFERS",      icon:<Tag width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadBuyerOffers();setView("offers");}},
-      {label:"MY WISHLIST",    icon:<Heart width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>{loadMyWishlist();setView("wishlist");}},
-      {label:"SAVED SEARCHES", run:()=>{loadSavedSearches();setView("saved-searches");}},
-      {label:"ALTERATION REQUESTS", icon:<Scissors width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openAlterations},
+      {label:"MY ORDERS",      icon:mIcon(Package), run:()=>{loadOrders();setView("orders");}},
+      {label:"MY OFFERS",      icon:mIcon(Tag),     run:()=>{loadBuyerOffers();setView("offers");}},
+      {label:"MY WISHLIST",    icon:mIcon(Heart),   run:()=>{loadMyWishlist();setView("wishlist");}},
+      {label:"SAVED SEARCHES", icon:mIcon(Search),  run:()=>{loadSavedSearches();setView("saved-searches");}},
+      {label:"ALTERATION REQUESTS", icon:mIcon(Shirt), run:openAlterations},
     ]},
     {label:"SELLING", items:[
-      {label:"MY DROPS",       run:()=>{loadBundles();loadOrders();loadMyLooks();loadMyPromotions();setView("dashboard");}},
-      {label:"MY WALLET",      icon:<Wallet width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openWallet},
+      {label:"MY DROPS",       icon:mIcon(Store),  run:()=>{loadBundles();loadOrders();loadMyLooks();loadMyPromotions();setView("dashboard");}},
+      {label:"MY WALLET",      icon:mIcon(Wallet), run:openWallet},
       ...(tailorApproved ? [] : tailorNavItems),
     ]},
     ...(tailorApproved ? [{label:"TAILORING", items:tailorNavItems}] : []),
     {label:"ACCOUNT", items:[
-      {label:"MY PROFILE",     run:()=>{load2FAFactors();setView("editprofile");}},
-      {label:"MY FOLLOWING",   run:()=>{loadFollowingList();setView("following-list");}},
-      {label:"STYLE FEED",     icon:<Sparkles width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:openStyleFeed},
-      {label:"MESSAGES",       run:openMessages},
-      {label:"HOW TO MEASURE", run:()=>{setPrevView(view);setView("measuring");}},
+      {label:"MY PROFILE",     icon:mIcon(User),          run:()=>{load2FAFactors();setView("editprofile");}},
+      {label:"MY FOLLOWING",   icon:mIcon(Users),         run:()=>{loadFollowingList();setView("following-list");}},
+      {label:"STYLE FEED",     icon:mIcon(Camera),        run:openStyleFeed},
+      {label:"MESSAGES",       icon:mIcon(MessageCircle), run:openMessages},
+      {label:"HOW TO MEASURE", icon:mIcon(Ruler),         run:()=>{setPrevView(view);setView("measuring");}},
     ]},
     {label:null, items:[
-      {label:"LOG OUT",        run:handleSignOut, danger:true},
+      {label:"LOG OUT",        icon:mIcon(LogOut), run:handleSignOut, danger:true},
     ]},
   ];
   const runNavItem = (item)=>{ setNavMenuOpen(false); setMobileNavOpen(false); item.run(); };
