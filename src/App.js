@@ -40,6 +40,7 @@ import SavedSearches from "./views/SavedSearches";
 import PublicWishlist from "./views/PublicWishlist";
 import ShareWishlistModal from "./components/ShareWishlistModal";
 import Legal, { LEGAL_VIEWS } from "./views/Legal";
+import InfoPage, { INFO_VIEWS } from "./views/Info";
 import Footer from "./components/Footer";
 import NotFound from "./views/NotFound";
 import Onboarding from "./components/Onboarding";
@@ -47,6 +48,11 @@ import Onboarding from "./components/Onboarding";
 // URL path → view for the static legal pages, derived from the views Legal.js
 // owns so the two never drift (e.g. "/terms" → "terms").
 const LEGAL_PATHS = Object.fromEntries(LEGAL_VIEWS.map(v => [`/${v}`, v]));
+// Static info pages (Selling Tips, About) share the legal pages' simple URL ↔
+// view routing. STATIC_PATHS is the union used by the cold-load + popstate
+// routing and the "leave a static page" cleanup.
+const INFO_PATHS = Object.fromEntries(INFO_VIEWS.map(v => [`/${v}`, v]));
+const STATIC_PATHS = { ...LEGAL_PATHS, ...INFO_PATHS };
 
 // Chat day-separator label: TODAY / YESTERDAY / "12 Jun 2026".
 function msgDayLabel(ts) {
@@ -64,7 +70,8 @@ function msgDayLabel(ts) {
 function isKnownPath(raw) {
   const path = (raw || "/").replace(/\/+$/, "") || "/";
   const EXACT = new Set([
-    "/", "/terms", "/privacy", "/returns", "/saved-searches", "/offers",
+    "/", "/terms", "/privacy", "/returns", "/selling-tips", "/about",
+    "/saved-searches", "/offers",
     "/alterations", "/wallet", "/tailor-dashboard", "/tailors", "/tailors/apply",
   ]);
   if (EXACT.has(path)) return true;
@@ -601,11 +608,11 @@ export default function App() {
   // browser Back/Forward buttons in sync via a popstate listener.
   useEffect(()=>{
     const path=window.location.pathname.replace(/\/+$/,"");
-    const v=LEGAL_PATHS[path];
+    const v=STATIC_PATHS[path];
     if(v) setView(v);
     const onPop=()=>{
       const p=window.location.pathname.replace(/\/+$/,"");
-      setView(LEGAL_PATHS[p]||"shop");
+      setView(STATIC_PATHS[p]||"shop");
     };
     window.addEventListener("popstate",onPop);
     return ()=>window.removeEventListener("popstate",onPop);
@@ -766,7 +773,7 @@ export default function App() {
   // Leaving a legal page back to the shop — restore the "/" URL so it doesn't
   // stay stuck on /terms etc. (replaceState: no extra history entry).
   const exitLegal=useCallback(()=>{
-    if(LEGAL_PATHS[window.location.pathname.replace(/\/+$/,"")]) window.history.replaceState({},"","/");
+    if(STATIC_PATHS[window.location.pathname.replace(/\/+$/,"")]) window.history.replaceState({},"","/");
     setView("shop");
   },[]);
 
@@ -777,6 +784,8 @@ export default function App() {
       case "terms":       goLegal("terms","/terms"); return;
       case "privacy":     goLegal("privacy","/privacy"); return;
       case "returns":     goLegal("returns","/returns"); return;
+      case "selling-tips": goLegal("selling-tips","/selling-tips"); return;
+      case "about":       goLegal("about","/about"); return;
       case "tailors":     openTailorDirectory(); return;
       case "newarrivals": clearFilters(); setView("newarrivals"); window.scrollTo(0,0); return;
       case "measuring":   setPrevView(view); setView("measuring"); window.scrollTo(0,0); return;
@@ -5018,6 +5027,7 @@ export default function App() {
 
       {/* LEGAL PAGES — Terms / Privacy / Returns (hardcoded static content) */}
       <Legal view={view} setView={setView} onBack={exitLegal} />
+      <InfoPage view={view} setView={setView} onBack={exitLegal} />
 
       {/* DETAIL */}
       <Detail
