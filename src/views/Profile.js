@@ -1,8 +1,8 @@
 import React from "react";
-import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Plane, Instagram, UserPlus, UserCheck, Tag, Calendar, Clock, Users, ArrowRight } from "lucide-react";
+import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Plane, Instagram, UserPlus, UserCheck, User, Tag, Calendar, Clock, Users, ArrowRight } from "lucide-react";
 import { SIZES, CARD_COLORS, catEmoji, currencySymbol, listingGender } from "../lib/constants";
 import { S } from "../styles";
-import { Sec, F, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
+import { F, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 import LoginPromptModal from "../components/LoginPromptModal";
 
 export default function Profile({
@@ -26,6 +26,16 @@ export default function Profile({
   // the shared sign-up prompt (context: follow) rather than a bounce to /auth.
   const [gate,setGate]=React.useState(null);
   const requireAuth=(context,action)=>{ if(user) action(); else setGate(context); };
+  // Edit-profile styling helpers (Option A revamp): sleeker filled inputs, an
+  // accent "card" per section, and a colour-chip section header with an icon.
+  const inp={...S.inp,background:"#fafafa",borderColor:"#ececec"};
+  const cardBox={border:"2px solid #ececec",padding:"clamp(16px,4vw,22px)",marginBottom:18};
+  const secHead=(c,Icon,label)=>(
+    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+      <span style={{width:30,height:30,background:c,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",flexShrink:0}}><Icon width={16} height={16}/></span>
+      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,letterSpacing:2,color:"#111"}}>{label}</span>
+    </div>
+  );
   if(view!=="editprofile"&&view!=="profile") return null;
   return (
     <>
@@ -33,85 +43,103 @@ export default function Profile({
       {view==="editprofile"&&user&&(
         <main style={{...S.main,maxWidth:600}}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
-          <div style={S.formCard} className="form-card">
-            <div style={S.formHero}>
-              <h2 style={S.formTitle}>YOUR<br/><span style={{color:"#FF1493"}}>PROFILE.</span></h2>
-            </div>
-            <Sec label="PROFILE PICTURE">
-              <div style={{display:"flex",alignItems:"center",gap:20}}>
-                <div style={S.avatarUploadCircle} onClick={()=>document.getElementById("avatar-input").click()}>
-                  {profForm.avatarPreview?<img src={profForm.avatarPreview} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<div style={S.avatarInitials}>{(profForm.full_name||profForm.username||user.email||"?")[0].toUpperCase()}</div>}
-                  <div style={S.avatarEditOverlay}><Camera width={24} height={24} color="#fff"/></div>
-                </div>
-                <div>
-                  <button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",marginBottom:8,display:"block"}} onClick={()=>document.getElementById("avatar-input").click()}>UPLOAD PHOTO</button>
-                  {profForm.avatarPreview&&<button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11}} onClick={()=>setProfForm(f=>({...f,avatarFile:null,avatarPreview:"",avatar_url:""}))}>REMOVE</button>}
+          <div style={{...S.formCard,padding:0,overflow:"hidden"}} className="form-card">
+            {/* Pink hero — avatar + identity + change photo */}
+            <div style={{background:"#FF1493",padding:"28px clamp(20px,5vw,40px)",display:"flex",alignItems:"center",gap:20,flexWrap:"wrap"}}>
+              <div style={{width:92,height:92,borderRadius:"50%",border:"4px solid #fff",overflow:"hidden",cursor:"pointer",position:"relative",flexShrink:0,background:"#ffd6ec",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>document.getElementById("avatar-input").click()}>
+                {profForm.avatarPreview?<img src={profForm.avatarPreview} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:40,fontWeight:900,color:"#FF1493"}}>{(profForm.full_name||profForm.username||user.email||"?")[0].toUpperCase()}</span>}
+                <div style={S.avatarEditOverlay}><Camera width={24} height={24} color="#fff"/></div>
+              </div>
+              <div style={{color:"#fff",minWidth:0,flex:"1 1 200px"}}>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,letterSpacing:.5,lineHeight:1,textTransform:"uppercase",overflowWrap:"anywhere"}}>{profForm.full_name||profForm.username||"Your Profile"}</div>
+                {(profForm.username||profForm.location)&&<div style={{fontSize:14,opacity:.95,marginTop:5,overflowWrap:"anywhere"}}>{[profForm.username&&(profForm.username.startsWith("@")?profForm.username:"@"+profForm.username),profForm.location].filter(Boolean).join("  ·  ")}</div>}
+                <div style={{marginTop:12,display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <button className="hbtn" style={{...S.hBtn,background:"#111",border:"none",fontSize:11,padding:"7px 12px"}} onClick={()=>document.getElementById("avatar-input").click()}>{profForm.avatarPreview?"CHANGE PHOTO":"UPLOAD PHOTO"}</button>
+                  {profForm.avatarPreview&&<button className="hbtn" style={{...S.hBtn,background:"transparent",color:"#fff",border:"2px solid #fff",fontSize:11,padding:"6px 12px"}} onClick={()=>setProfForm(f=>({...f,avatarFile:null,avatarPreview:"",avatar_url:""}))}>REMOVE</button>}
                 </div>
               </div>
               <input id="avatar-input" type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];if(f)setProfForm(p=>({...p,avatarFile:f,avatarPreview:URL.createObjectURL(f)}));}}/>
-            </Sec>
-            <Sec label="YOUR DETAILS">
-              <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                <F l="FULL NAME"><input style={S.inp} placeholder="e.g. Nasreen Ahmed" value={profForm.full_name} onChange={e=>setProfForm(f=>({...f,full_name:e.target.value}))}/></F>
-                <F l="USERNAME"><input style={S.inp} placeholder="e.g. @nasreen.closet" value={profForm.username} onChange={e=>setProfForm(f=>({...f,username:e.target.value}))}/></F>
-                <F l="BIO"><textarea style={{...S.inp,height:80,resize:"vertical",width:"100%"}} value={profForm.bio} onChange={e=>setProfForm(f=>({...f,bio:e.target.value}))}/></F>
-                <F l="LOCATION"><input style={S.inp} placeholder="e.g. London, UK" value={profForm.location} onChange={e=>setProfForm(f=>({...f,location:e.target.value}))}/></F>
-                <F l="I AM">
-                  <div style={{display:"flex",gap:8}}>
-                    {["Woman","Man"].map(g=>{
-                      const on=profForm.gender===g;
-                      return <button key={g} type="button" className="hbtn" style={{...S.hBtn,flex:1,background:on?"#FF1493":"#fff",color:on?"#fff":"#111",border:`2px solid ${on?"#FF1493":"#111"}`,padding:"10px 16px",fontSize:12,letterSpacing:1.5}} onClick={()=>setProfForm(f=>({...f,gender:g}))}>{g.toUpperCase()}</button>;
-                    })}
+            </div>
+
+            <div style={{padding:"clamp(20px,5vw,36px)"}}>
+              {/* YOUR DETAILS */}
+              <div style={cardBox}>
+                {secHead("#FF1493",User,"YOUR DETAILS")}
+                <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                  <F l="FULL NAME"><input style={inp} placeholder="e.g. Nasreen Ahmed" value={profForm.full_name} onChange={e=>setProfForm(f=>({...f,full_name:e.target.value}))}/></F>
+                  <F l="USERNAME"><input style={inp} placeholder="e.g. @nasreen.closet" value={profForm.username} onChange={e=>setProfForm(f=>({...f,username:e.target.value}))}/></F>
+                  <F l="BIO"><textarea style={{...inp,height:80,resize:"vertical"}} value={profForm.bio} onChange={e=>setProfForm(f=>({...f,bio:e.target.value}))}/></F>
+                  <F l="LOCATION"><input style={inp} placeholder="e.g. London, UK" value={profForm.location} onChange={e=>setProfForm(f=>({...f,location:e.target.value}))}/></F>
+                  <F l="I AM">
+                    <div style={{display:"flex",gap:8}}>
+                      {["Woman","Man"].map(g=>{
+                        const on=profForm.gender===g;
+                        return <button key={g} type="button" className="hbtn" style={{...S.hBtn,flex:1,background:on?"#FF1493":"#fff",color:on?"#fff":"#111",border:`2px solid ${on?"#FF1493":"#111"}`,padding:"10px 16px",fontSize:12,letterSpacing:1.5}} onClick={()=>setProfForm(f=>({...f,gender:g}))}>{g.toUpperCase()}</button>;
+                      })}
+                    </div>
+                  </F>
+                </div>
+              </div>
+
+              {/* I SPECIALISE IN */}
+              <div style={cardBox}>
+                {secHead("#111",Tag,"I SPECIALISE IN")}
+                <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                  {["Bridal","Eid","Casual","Party","Vintage","Luxury","Budget-friendly","Handmade","Designer","All Occasions"].map(s=>{
+                    const on=(profForm.specialises_in||[]).includes(s);
+                    return <button key={s} type="button" className="hbtn" style={{...S.hBtn,background:on?"#FF1493":"#fff",color:on?"#fff":"#111",border:`2px solid ${on?"#FF1493":"#111"}`,padding:"8px 16px",fontSize:11,letterSpacing:1.5}} onClick={()=>setProfForm(f=>({...f,specialises_in:on?f.specialises_in.filter(x=>x!==s):[...f.specialises_in,s]}))}>{s.toUpperCase()}</button>;
+                  })}
+                </div>
+              </div>
+
+              {/* RETURN ADDRESS */}
+              <div style={cardBox}>
+                {secHead("#111",Plane,"RETURN ADDRESS")}
+                <p style={{fontSize:13,color:"#666",lineHeight:1.5,marginBottom:14}}>Where you post your sold items from. Used for postage labels and returns — only shared with couriers, never shown publicly.</p>
+                <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                  <F l="FULL NAME"><input style={inp} placeholder="e.g. Nasreen Ahmed" value={profForm.ship_from_name} onChange={e=>setProfForm(f=>({...f,ship_from_name:e.target.value}))}/></F>
+                  <F l="ADDRESS LINE 1"><input style={inp} placeholder="123 Main Street" value={profForm.ship_from_line1} onChange={e=>setProfForm(f=>({...f,ship_from_line1:e.target.value}))}/></F>
+                  <F l="ADDRESS LINE 2 (OPTIONAL)"><input style={inp} placeholder="Flat 2" value={profForm.ship_from_line2} onChange={e=>setProfForm(f=>({...f,ship_from_line2:e.target.value}))}/></F>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                    <F l="CITY"><input style={inp} placeholder="London" value={profForm.ship_from_city} onChange={e=>setProfForm(f=>({...f,ship_from_city:e.target.value}))}/></F>
+                    <F l="POSTCODE"><input style={inp} placeholder="E1 6RF" value={profForm.ship_from_postcode} onChange={e=>setProfForm(f=>({...f,ship_from_postcode:e.target.value}))}/></F>
                   </div>
+                  <F l="COUNTRY"><input style={inp} placeholder="UK" value={profForm.ship_from_country} onChange={e=>setProfForm(f=>({...f,ship_from_country:e.target.value}))}/></F>
+                </div>
+              </div>
+
+              {/* MY MEASUREMENTS */}
+              <div style={cardBox}>
+                {secHead("#00E5CC",Ruler,"MY MEASUREMENTS")}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+                  {(profForm.gender==="Man"
+                    ? [["bust","CHEST (inches)"],["waist","WAIST (inches)"],["height","HEIGHT (cm)"]]
+                    : [["bust","BUST (inches)"],["waist","WAIST (inches)"],["hips","HIPS (inches)"],["height","HEIGHT (cm)"]]
+                  ).map(([k,l])=>(
+                    <F key={k} l={l}><input style={inp} type="number" placeholder="e.g. 34" value={profForm[k]} onChange={e=>setProfForm(f=>({...f,[k]:e.target.value}))}/></F>
+                  ))}
+                </div>
+                <F l="PREFERRED SIZE">
+                  <select style={inp} value={profForm.preferred_size} onChange={e=>setProfForm(f=>({...f,preferred_size:e.target.value}))}>
+                    <option value="">Select...</option>
+                    {SIZES.map(s=><option key={s}>{s}</option>)}
+                  </select>
                 </F>
               </div>
-            </Sec>
-            <Sec label="I SPECIALISE IN">
-              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-                {["Bridal","Eid","Casual","Party","Vintage","Luxury","Budget-friendly","Handmade","Designer","All Occasions"].map(s=>{
-                  const on=(profForm.specialises_in||[]).includes(s);
-                  return <button key={s} type="button" className="hbtn" style={{...S.hBtn,background:on?"#FF1493":"#fff",color:on?"#fff":"#111",border:`2px solid ${on?"#FF1493":"#111"}`,padding:"8px 16px",fontSize:11,letterSpacing:1.5}} onClick={()=>setProfForm(f=>({...f,specialises_in:on?f.specialises_in.filter(x=>x!==s):[...f.specialises_in,s]}))}>{s.toUpperCase()}</button>;
-                })}
+
+              {/* SAVE — now directly under measurements */}
+              <button className="hbtn" style={{...S.hBtn,width:"100%",background:"#FF1493",color:"#fff",border:"none",padding:"16px",fontSize:16,letterSpacing:2,opacity:profSaving?0.5:1}} onClick={saveProfile}>{profSaving?"SAVING...":"SAVE PROFILE →"}</button>
+
+              {/* OFFER ALTERATIONS */}
+              <div style={{...cardBox,borderLeft:"4px solid #FF9500",marginTop:18}}>
+                {secHead("#FF9500",Scissors,"OFFER ALTERATIONS")}
+                <p style={{fontSize:13,color:"#666",lineHeight:1.5,marginBottom:14}}>Want to take in alteration work from buyers? Tailors on Stitch'd have a vetted profile, portfolio, availability calendar and get paid securely through the platform.</p>
+                <button type="button" className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"12px 24px",fontSize:13,letterSpacing:2,display:"inline-flex",alignItems:"center",gap:8}} onClick={()=>onBecomeTailor()}><Scissors width={15} height={15}/> {tailorCtaLabel}</button>
               </div>
-            </Sec>
-            <Sec label="RETURN ADDRESS">
-              <p style={{fontSize:13,color:"#666",lineHeight:1.5,marginBottom:14}}>Where you post your sold items from. Used for postage labels and returns — only shared with couriers, never shown publicly.</p>
-              <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                <F l="FULL NAME"><input style={S.inp} placeholder="e.g. Nasreen Ahmed" value={profForm.ship_from_name} onChange={e=>setProfForm(f=>({...f,ship_from_name:e.target.value}))}/></F>
-                <F l="ADDRESS LINE 1"><input style={S.inp} placeholder="123 Main Street" value={profForm.ship_from_line1} onChange={e=>setProfForm(f=>({...f,ship_from_line1:e.target.value}))}/></F>
-                <F l="ADDRESS LINE 2 (OPTIONAL)"><input style={S.inp} placeholder="Flat 2" value={profForm.ship_from_line2} onChange={e=>setProfForm(f=>({...f,ship_from_line2:e.target.value}))}/></F>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-                  <F l="CITY"><input style={S.inp} placeholder="London" value={profForm.ship_from_city} onChange={e=>setProfForm(f=>({...f,ship_from_city:e.target.value}))}/></F>
-                  <F l="POSTCODE"><input style={S.inp} placeholder="E1 6RF" value={profForm.ship_from_postcode} onChange={e=>setProfForm(f=>({...f,ship_from_postcode:e.target.value}))}/></F>
-                </div>
-                <F l="COUNTRY"><input style={S.inp} placeholder="UK" value={profForm.ship_from_country} onChange={e=>setProfForm(f=>({...f,ship_from_country:e.target.value}))}/></F>
-              </div>
-            </Sec>
-            <button className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:2,opacity:profSaving?0.5:1}} onClick={saveProfile}>{profSaving?"SAVING...":"SAVE PROFILE →"}</button>
-            <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #00E5CC",paddingLeft:12,marginBottom:8,display:"flex",alignItems:"center",gap:8}}><Ruler width={16} height={16}/> MY MEASUREMENTS</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-                {(profForm.gender==="Man"
-                  ? [["bust","CHEST (inches)"],["waist","WAIST (inches)"],["height","HEIGHT (cm)"]]
-                  : [["bust","BUST (inches)"],["waist","WAIST (inches)"],["hips","HIPS (inches)"],["height","HEIGHT (cm)"]]
-                ).map(([k,l])=>(
-                  <F key={k} l={l}><input style={S.inp} type="number" placeholder="e.g. 34" value={profForm[k]} onChange={e=>setProfForm(f=>({...f,[k]:e.target.value}))}/></F>
-                ))}
-              </div>
-              <F l="PREFERRED SIZE">
-                <select style={S.inp} value={profForm.preferred_size} onChange={e=>setProfForm(f=>({...f,preferred_size:e.target.value}))}>
-                  <option value="">Select...</option>
-                  {SIZES.map(s=><option key={s}>{s}</option>)}
-                </select>
-              </F>
-            </div>
-            <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #FF9500",paddingLeft:12,marginBottom:12,display:"flex",alignItems:"center",gap:8}}><Scissors width={16} height={16}/> OFFER ALTERATIONS</div>
-              <p style={{fontSize:13,color:"#666",lineHeight:1.5,marginBottom:14}}>Want to take in alteration work from buyers? Tailors on Stitch'd have a vetted profile, portfolio, availability calendar and get paid securely through the platform.</p>
-              <button type="button" className="hbtn" style={{...S.hBtn,background:"#FF9500",border:"none",padding:"12px 24px",fontSize:13,letterSpacing:2,display:"inline-flex",alignItems:"center",gap:8}} onClick={()=>onBecomeTailor()}><Scissors width={15} height={15}/> {tailorCtaLabel}</button>
-            </div>
-            <div style={{marginTop:36,paddingTop:32,borderTop:"3px solid #111"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:900,letterSpacing:2,color:"#111",borderLeft:"4px solid #34C759",paddingLeft:12,marginBottom:20,display:"flex",alignItems:"center",gap:8}}><ShieldCheck width={16} height={16}/> TWO-FACTOR AUTHENTICATION</div>
+
+              {/* TWO-FACTOR AUTHENTICATION */}
+              <div style={{...cardBox,borderLeft:"4px solid #34C759",marginBottom:0}}>
+                {secHead("#34C759",ShieldCheck,"TWO-FACTOR AUTHENTICATION")}
               {twoFAStep==="enroll"&&twoFAData?(
                 <div>
                   <p style={{fontSize:13,color:"#666",marginBottom:16}}>Scan this QR code with Google Authenticator or Authy.</p>
@@ -144,6 +172,7 @@ export default function Profile({
                   )}
                 </div>
               )}
+              </div>
             </div>
           </div>
         </main>
