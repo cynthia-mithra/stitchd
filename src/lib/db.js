@@ -1,4 +1,5 @@
 import { SUPABASE_URL, SUPABASE_KEY, hdrs } from "./constants";
+import { logWarn } from "./log";
 
 // ── Phase 12 - transactional email triggers ───────────────────────────────────
 // Fire-and-forget POST to the send-email Edge Function. The browser never has
@@ -46,7 +47,7 @@ async function sendHealing(url,method,body,t){
   // Cap iterations well above the column count so a pathological response can't loop forever.
   for(let i=0;i<60;i++){
     const r=await fetch(url,{method,headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(payload)});
-    if(r.ok){ if(dropped.length)console.warn(`Listing saved after dropping column(s) missing from your 'listings' table: ${dropped.join(", ")}. Add them in Supabase to persist these fields.`); return r.json(); }
+    if(r.ok){ if(dropped.length)logWarn(`Listing saved after dropping column(s) missing from your 'listings' table: ${dropped.join(", ")}. Add them in Supabase to persist these fields.`); return r.json(); }
     const text=await r.text(); const col=missingColumn(text);
     if(col&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; dropped.push(col); continue; }
     throw new Error(text);

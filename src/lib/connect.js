@@ -6,6 +6,7 @@
 // hands back a URL / result. The functions return permissive CORS headers so we
 // can call them directly (no Vercel proxy needed).
 import { SUPABASE_URL, SUPABASE_KEY } from "./constants";
+import { logError } from "./log";
 
 const fnHeaders = {
   "Content-Type": "application/json",
@@ -35,7 +36,7 @@ async function callFn(name, body, friendly) {
   let data = {};
   try { data = raw ? JSON.parse(raw) : {}; } catch { /* non-JSON body */ }
   if (!res.ok) {
-    console.error(`[connect:${name}] failed`, { status: res.status, body: raw });
+    logError(`[connect:${name}] failed`, { status: res.status, body: raw });
     const reason = data.error || (raw && !raw.trim().startsWith("<") ? raw : "") || `${friendly} failed (HTTP ${res.status}).`;
     throw new Error(reason);
   }

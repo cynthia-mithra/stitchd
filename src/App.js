@@ -19,6 +19,7 @@ import { S, CSS } from "./styles";
 import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CheckCircle, Info, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock, Home, Plus, User, Palette, Video } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import { ConfirmHost, confirmDialog } from "./components/ConfirmModal";
+import { logError, logWarn } from "./lib/log";
 import { ReviewModal } from "./components/Reviews";
 import PricingGuide from "./components/PricingGuide";
 import Tailors from "./views/Tailors";
@@ -1356,7 +1357,7 @@ export default function App() {
       notify(sel.user_id,"new_offer",`New offer on "${sel.name}"`,`${who} made an offer of ${amt} on ${sel.name}`,sel.id);
       flash("Offer sent! The seller has 48 hours to respond.",6000);
       return true;
-    }catch(e){ console.error("Offer insert failed:",e); flash("Couldn't send your offer. Please try again."); return false; }
+    }catch(e){ logError("Offer insert failed:",e); flash("Couldn't send your offer. Please try again."); return false; }
   }
 
   async function withdrawOffer(){
@@ -1372,7 +1373,7 @@ export default function App() {
     if(!user||!token){ setBuyerOffers([]); return; }
     setOffersLoading(true);
     try{ setBuyerOffers(await db.getBuyerOffers(user.id,token)||[]); }
-    catch(e){ console.error("Load buyer offers failed:",e); setBuyerOffers([]); }
+    catch(e){ logError("Load buyer offers failed:",e); setBuyerOffers([]); }
     finally{ setOffersLoading(false); }
   }
   // COMPLETE PURCHASE on an accepted offer → Stripe checkout for the offer amount
@@ -1382,7 +1383,7 @@ export default function App() {
     if(!offer) return;
     setCheckoutOfferId(offer.id);
     try{ await startOfferCheckout({offerId:offer.id,buyerId:user.id}); }
-    catch(e){ console.error("Offer checkout failed:",e); flash(e.message||"Couldn't start checkout. Please try again."); setCheckoutOfferId(null); }
+    catch(e){ logError("Offer checkout failed:",e); flash(e.message||"Couldn't start checkout. Please try again."); setCheckoutOfferId(null); }
   }
   // Withdraw a still-pending offer from the /offers page, then refresh the list.
   async function withdrawBuyerOffer(offer){
@@ -1436,7 +1437,7 @@ export default function App() {
       await fetchItems(); // listing.offers_enabled changed
       flash("Offer accepted - the buyer has been notified.",6000);
       return true;
-    }catch(e){ console.error("Accept offer failed:",e); flash("Couldn't accept the offer. Please try again."); return false; }
+    }catch(e){ logError("Accept offer failed:",e); flash("Couldn't accept the offer. Please try again."); return false; }
   }
 
   // Decline an offer (PART 4). Optional counter price (in pounds) → pence. Flip
@@ -1458,7 +1459,7 @@ export default function App() {
       await loadSellerOffers();
       flash("Offer declined - the buyer has been notified.");
       return true;
-    }catch(e){ console.error("Decline offer failed:",e); flash("Couldn't decline the offer. Please try again."); return false; }
+    }catch(e){ logError("Decline offer failed:",e); flash("Couldn't decline the offer. Please try again."); return false; }
   }
 
   async function submitReport(){
@@ -2596,7 +2597,7 @@ export default function App() {
     if(!req) return;
     setAlterCheckoutId(req.id);
     try{ await startAlterationCheckout({alterationRequestId:req.id,buyerId:user.id}); }
-    catch(e){ console.error("Alteration checkout failed:",e); flash(e.message||"Couldn't start checkout. Please try again."); setAlterCheckoutId(null); }
+    catch(e){ logError("Alteration checkout failed:",e); flash(e.message||"Couldn't start checkout. Please try again."); setAlterCheckoutId(null); }
   }
   // Buyer declines a quote (status → declined) + notifies the tailor with the
   // listing title. Confirmed via the DECLINE QUOTE modal.
@@ -2647,7 +2648,7 @@ export default function App() {
         // Connect may not be active yet - degrade to the DB-only release so the
         // buyer isn't blocked, and notify the tailor ourselves (the edge function
         // didn't run, so no notification/email fired).
-        console.error("Payout transfer failed, falling back to DB release:",e);
+        logError("Payout transfer failed, falling back to DB release:",e);
         await db.confirmAlterationPayout(req.id,token);
         if(tailorUserId) await notify(tailorUserId,"alteration_payout","Payout confirmed!",`Great news! Your payout of ${gbp(payoutPence)} has been confirmed.`,req.listing_id);
         outcome="fallback";
@@ -3068,7 +3069,7 @@ export default function App() {
       (tags||[]).forEach(l=>{ if(l.user_id&&l.user_id!==user.id) notify(l.user_id,"style_feature","✦ Featured in a style post!",`${me} featured your listing "${l.name}" in their style post`,l.id); });
       setStyleCreateOpen(false);
       flash("Posted to your feed!");
-    }catch(e){ console.error("Style post failed:",e); flash(errMsg(e),8000); }
+    }catch(e){ logError("Style post failed:",e); flash(errMsg(e),8000); }
     finally{ setStyleCreating(false); }
   }
 
@@ -3377,7 +3378,7 @@ export default function App() {
     try{
       urls=await withFreshToken(tok=>Promise.all(form.imageFiles.map(f=>uploadImage(f,tok))));
     }catch(e){
-      console.error("Listing image upload failed:",e);
+      logError("Listing image upload failed:",e);
       flash(errMsg(e),9000);
       setSaving(false);
       if(/sign (in|out)/i.test(errMsg(e))) setView("auth");
@@ -3388,7 +3389,7 @@ export default function App() {
       // Optional video - best-effort: a failed video upload must not block the
       // listing from publishing.
       let video_url=form.video_url||"";
-      if(form.videoFile){ try{ video_url=await withFreshToken(tok=>uploadImage(form.videoFile,tok)); }catch(err){ console.warn("Video upload failed:",err); } }
+      if(form.videoFile){ try{ video_url=await withFreshToken(tok=>uploadImage(form.videoFile,tok)); }catch(err){ logWarn("Video upload failed:",err); } }
       const meas=buildMeasPayload(form);
       const cat=meas.category||form.category;
       const payload={name:form.name,price:parseFloat(form.price),brand:(form.brand||"").trim()||null,video_url:video_url||null,condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
@@ -3413,8 +3414,8 @@ export default function App() {
         const ntok=await getValidToken();
         const myFollowers=await db.getFollowers(user.id,ntok);
         await Promise.all(myFollowers.map(f=>notify(f.follower_id,"new_listing",`New drop from ${profile?.username||"a seller you follow"}`,`"${payload.name}" listed for ${currencySymbol(payload.currency||"USD")}${payload.price}`,created.id)));
-      }catch(e){ console.warn("Post-listing follower notifications failed (listing was saved):",e); }
-    }catch(e){ console.error("Listing insert failed:",e); flash(`Couldn't save listing: ${errMsg(e)}`,9000); }
+      }catch(e){ logWarn("Post-listing follower notifications failed (listing was saved):",e); }
+    }catch(e){ logError("Listing insert failed:",e); flash(`Couldn't save listing: ${errMsg(e)}`,9000); }
     finally{ setSaving(false); }
   }
 
@@ -3431,7 +3432,7 @@ export default function App() {
     try{
       newUrls=await withFreshToken(tok=>Promise.all(form.imageFiles.map(f=>uploadImage(f,tok))));
     }catch(e){
-      console.error("Listing image upload failed:",e);
+      logError("Listing image upload failed:",e);
       flash(errMsg(e),9000);
       setSaving(false);
       if(/sign (in|out)/i.test(errMsg(e))) setView("auth");
@@ -3444,7 +3445,7 @@ export default function App() {
       // Optional video - upload a freshly-picked clip, else keep the existing one
       // (form.video_url is cleared by removeVideo). Best-effort, never blocks save.
       let video_url=form.video_url||"";
-      if(form.videoFile){ try{ video_url=await withFreshToken(tok=>uploadImage(form.videoFile,tok)); }catch(err){ console.warn("Video upload failed:",err); } }
+      if(form.videoFile){ try{ video_url=await withFreshToken(tok=>uploadImage(form.videoFile,tok)); }catch(err){ logWarn("Video upload failed:",err); } }
       const meas=buildMeasPayload(form);
       const cat=meas.category||form.category;
       const patch={name:form.name,price:parseFloat(form.price),brand:(form.brand||"").trim()||null,video_url:video_url||null,condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
@@ -3462,8 +3463,8 @@ export default function App() {
           const myFollowers=await db.getFollowers(user.id,ntok);
           await Promise.all(myFollowers.map(f=>notify(f.follower_id,"price_drop",`Price drop on "${sel.name}"`,`Now ${currencySymbol(updated.currency)}${form.price} (was ${currencySymbol(sel.currency)}${sel.price})`,sel.id)));
         }
-      }catch(e){ console.warn("Price-drop notifications failed (listing was updated):",e); }
-    }catch(e){ console.error("Listing update failed:",e); flash(`Couldn't update listing: ${errMsg(e)}`,9000); }
+      }catch(e){ logWarn("Price-drop notifications failed (listing was updated):",e); }
+    }catch(e){ logError("Listing update failed:",e); flash(`Couldn't update listing: ${errMsg(e)}`,9000); }
     finally{ setSaving(false); }
   }
 
@@ -3714,7 +3715,7 @@ export default function App() {
       flash(active?"Look published!":"Saved as draft.");
       await loadLooks(); await loadMyLooks();
       setView("dashboard");
-    }catch(e){ console.error("Look save failed:",e); flash(`Couldn't save look: ${errMsg(e)}`,9000); }
+    }catch(e){ logError("Look save failed:",e); flash(`Couldn't save look: ${errMsg(e)}`,9000); }
     finally{ setLookSaving(false); }
   }
 

@@ -3,6 +3,8 @@
 // `/api/stripe-checkout` Vercel function (same origin as the app, so there's no
 // CORS preflight to fail), which builds the GBP Checkout Session server-side and
 // returns the hosted-checkout URL to redirect to.
+import { logError } from "./log";
+
 export async function startCheckout(bag, { buyerId, buyerEmail, shipping } = {}) {
   const listing_ids = (bag || []).map((b) => b.id).filter(Boolean);
   if (!listing_ids.length) throw new Error("Your bag is empty.");
@@ -40,7 +42,7 @@ export async function startCheckout(bag, { buyerId, buyerEmail, shipping } = {})
   if (!res.ok || !data.url) {
     // Log the full failure so the exact cause is visible in DevTools → Console,
     // not just the toast. This is what tells us "is it config, Stripe, or data?".
-    console.error("[checkout] failed", { status: res.status, body: raw });
+    logError("[checkout] failed", { status: res.status, body: raw });
     const reason =
       data.error ||
       (raw && !raw.trim().startsWith("<") ? raw : "") ||
@@ -86,7 +88,7 @@ export async function startOfferCheckout({ offerId, buyerId } = {}) {
   try { data = raw ? JSON.parse(raw) : {}; } catch { /* non-JSON body */ }
 
   if (!res.ok || !data.url) {
-    console.error("[offer-checkout] failed", { status: res.status, body: raw });
+    logError("[offer-checkout] failed", { status: res.status, body: raw });
     const reason =
       data.error ||
       (raw && !raw.trim().startsWith("<") ? raw : "") ||
@@ -132,7 +134,7 @@ export async function startAlterationCheckout({ alterationRequestId, buyerId } =
   try { data = raw ? JSON.parse(raw) : {}; } catch { /* non-JSON body */ }
 
   if (!res.ok || !data.url) {
-    console.error("[alteration-checkout] failed", { status: res.status, body: raw });
+    logError("[alteration-checkout] failed", { status: res.status, body: raw });
     const reason =
       data.error ||
       (raw && !raw.trim().startsWith("<") ? raw : "") ||
