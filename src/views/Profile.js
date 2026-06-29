@@ -6,7 +6,7 @@ import { F, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 import LoginPromptModal from "../components/LoginPromptModal";
 
 export default function Profile({
-  view, setView, prevView, user, onGateAuth = () => {},
+  view, setView, prevView, user, profile, onGateAuth = () => {},
   // editprofile
   profForm, setProfForm, saveProfile, profSaving,
   twoFAStep, setTwoFAStep, twoFAData, setTwoFAData, twoFACode, setTwoFACode,
@@ -53,6 +53,12 @@ export default function Profile({
               <div style={{color:"#fff",minWidth:0,flex:"1 1 200px"}}>
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,letterSpacing:.5,lineHeight:1,textTransform:"uppercase",overflowWrap:"anywhere"}}>{profForm.full_name||profForm.username||"Your Profile"}</div>
                 {(profForm.username||profForm.location)&&<div style={{fontSize:14,opacity:.95,marginTop:5,overflowWrap:"anywhere"}}>{[profForm.username&&(profForm.username.startsWith("@")?profForm.username:"@"+profForm.username),profForm.location].filter(Boolean).join("  ·  ")}</div>}
+                {(profile?.verified||profile?.identity_verified)&&(
+                  <div style={{marginTop:12,display:"flex",gap:8,flexWrap:"wrap"}}>
+                    {profile?.verified&&<VerifiedBadge/>}
+                    {profile?.identity_verified&&<IDVerifiedBadge/>}
+                  </div>
+                )}
                 <div style={{marginTop:12,display:"flex",gap:8,flexWrap:"wrap"}}>
                   <button className="hbtn" style={{...S.hBtn,background:"#111",border:"none",fontSize:11,padding:"7px 12px"}} onClick={()=>document.getElementById("avatar-input").click()}>{profForm.avatarPreview?"CHANGE PHOTO":"UPLOAD PHOTO"}</button>
                   {profForm.avatarPreview&&<button className="hbtn" style={{...S.hBtn,background:"transparent",color:"#fff",border:"2px solid #fff",fontSize:11,padding:"6px 12px"}} onClick={()=>setProfForm(f=>({...f,avatarFile:null,avatarPreview:"",avatar_url:""}))}>REMOVE</button>}
