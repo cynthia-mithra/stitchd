@@ -3,7 +3,7 @@ import { Users, UserMinus } from "lucide-react";
 import { S } from "../styles";
 import { VerifiedBadge } from "../components/Shared";
 
-// Phase 13 — MY FOLLOWING. Lists every seller the signed-in user follows, with
+// Phase 13 - MY FOLLOWING. Lists every seller the signed-in user follows, with
 // their avatar, name, verified badge, active-listing count and an UNFOLLOW
 // button. Tapping a row opens that seller's storefront. Reached from the nav
 // dropdown ("MY FOLLOWING"); logged-in only.

@@ -1,6 +1,6 @@
 // Supabase Edge Function: process-tailor-payout
 // ----------------------------------------------
-// Phase 15 — releases a tailor's payout as a REAL Stripe Connect transfer once a
+// Phase 15 - releases a tailor's payout as a REAL Stripe Connect transfer once a
 // booking is complete. Until now confirming completion only flipped the
 // tailor_payouts row to 'paid' in the database; this function moves the money.
 //
@@ -21,7 +21,7 @@
 // commission. transfer_group ties the transfer back to the booking.
 //
 // Required environment variables (Supabase → Project Settings → Edge Functions):
-//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE — Stripe Connect enabled)
+//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE - Stripe Connect enabled)
 //   SUPABASE_URL                 auto-injected by Supabase
 //   SUPABASE_SERVICE_ROLE_KEY    used to read the booking + write the payout
 //   SITE_URL                     e.g. https://stitchd.fit
@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
     ).catch(() => null);
     const payout = pr && pr.ok ? (await pr.json().catch(() => []))[0] : null;
 
-    // Amounts — prefer the payout row, then the request's stored split, then derive.
+    // Amounts - prefer the payout row, then the request's stored split, then derive.
     const totalPence = Number(payout?.amount_pence) ||
       Number(reqRow.quote_amount_pence) || Number(reqRow.quote_pence) || 0;
     const commissionPence = Number(payout?.commission_pence) ||
@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
       return json({ error: "No valid payout amount for this booking." }, 400);
     }
 
-    // 3. Already transferred? Key off the real transfer id, NOT status alone — a
+    // 3. Already transferred? Key off the real transfer id, NOT status alone - a
     //    'paid' row WITHOUT a transfer id is a DB-only fallback release (made when
     //    Connect was unavailable at confirmation time) and SHOULD still transfer
     //    now. Only a present stripe_transfer_id means money actually moved.
@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
       return json({ already_paid: true, payout_pence: payoutPence });
     }
 
-    // 4. Tailor hasn't finished Stripe Connect onboarding — HOLD in pending and
+    // 4. Tailor hasn't finished Stripe Connect onboarding - HOLD in pending and
     //    nudge them to complete setup. Do NOT transfer.
     const onboarded = tailor?.stripe_onboarding_complete === true && !!tailor?.stripe_account_id;
     if (!onboarded) {
@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
       if (tailorUserId) {
         await notify(tailorUserId, {
           type: "alteration_payout",
-          title: "Payout pending — finish payment setup",
+          title: "Payout pending - finish payment setup",
           body: `You have a pending payout of ${fmt(payoutPence)}. Complete your payment setup to receive it.`,
           link_id: reqRow.listing_id,
         });

@@ -4,13 +4,13 @@ import { S } from "../styles";
 import { Thumb } from "./Shared";
 import { CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
 
-// Phase 14 — Create / edit a shareable wishlist (issue PART 2).
+// Phase 14 - Create / edit a shareable wishlist (issue PART 2).
 //
 // One modal, two steps. The "form" step collects a name, a selection of the
 // user's saved pieces (all selected by default) and a public toggle; the
 // "success" step (create only) shows the shareable link with COPY LINK and
 // WhatsApp share. In edit mode the same form is pre-filled and saving closes the
-// modal straight away. Purely presentational — App.js owns all the state and the
+// modal straight away. Purely presentational - App.js owns all the state and the
 // create/save handlers. Design system: Barlow Condensed, #FF1493, 2px #111
 // borders, no border-radius.
 export default function ShareWishlistModal({
@@ -58,7 +58,7 @@ export default function ShareWishlistModal({
           /* ── SUCCESS STATE ─────────────────────────────────────────────── */
           <div>
             <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 14, color: "#666", marginBottom: 18 }}>
-              Share this link with anyone — no login needed to view it.
+              Share this link with anyone - no login needed to view it.
             </p>
 
             {/* Shareable link */}

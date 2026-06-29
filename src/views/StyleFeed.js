@@ -43,7 +43,7 @@ function PostCard({ post, profile, listingsMap, liked, likeCount, isOwn, openPro
   const tagged = (post.listing_ids || []).map(id => listingsMap[id]).filter(Boolean);
   return (
     <article style={{ background: "#fff", border: "2px solid #111", borderRadius: 0, display: "flex", flexDirection: "column" }}>
-      {/* Header — avatar, username, time ago */}
+      {/* Header - avatar, username, time ago */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px" }}>
         <Avatar profile={profile} onClick={() => post.user_id && openProfile(post.user_id)} />
         <div style={{ minWidth: 0, flex: 1 }}>
@@ -52,7 +52,7 @@ function PostCard({ post, profile, listingsMap, liked, likeCount, isOwn, openPro
         </div>
       </div>
 
-      {/* Post image — full width, square crop, 2px #111 top+bottom borders */}
+      {/* Post image - full width, square crop, 2px #111 top+bottom borders */}
       <div style={{ width: "100%", aspectRatio: "1", borderTop: "2px solid #111", borderBottom: "2px solid #111", overflow: "hidden", background: "#fafafa" }}>
         <img src={post.image_url} alt={post.caption || "Outfit"} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
       </div>
@@ -61,7 +61,7 @@ function PostCard({ post, profile, listingsMap, liked, likeCount, isOwn, openPro
         {/* Caption */}
         {post.caption && <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 14, color: "#333", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{post.caption}</p>}
 
-        {/* Tagged listings — horizontal scroll row */}
+        {/* Tagged listings - horizontal scroll row */}
         {tagged.length > 0 && (
           <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
             {tagged.map(l => (
@@ -79,7 +79,7 @@ function PostCard({ post, profile, listingsMap, liked, likeCount, isOwn, openPro
           </div>
         )}
 
-        {/* Action row — like, share, (delete on own) */}
+        {/* Action row - like, share, (delete on own) */}
         <div style={{ display: "flex", alignItems: "center", gap: 18, borderTop: "2px solid #f5f5f5", paddingTop: 12 }}>
           <button onClick={() => onLike(post)} aria-label="Like" style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7, padding: 0 }}>
             <Heart width={22} height={22} color={liked ? "#FF1493" : "#111"} fill={liked ? "#FF1493" : "none"} />
@@ -146,7 +146,7 @@ function CreatePostModal({ open, onClose, onShare, creating, searchActiveListing
           <button onClick={close} aria-label="Close" style={{ background: "none", border: "none", cursor: "pointer", color: "#111", padding: 4 }}><X width={24} height={24} /></button>
         </div>
 
-        {/* STEP 1 — photo */}
+        {/* STEP 1 - photo */}
         <div onClick={() => document.getElementById("style-photo-input").click()} style={{ border: preview ? "2px solid #111" : "3px dashed #e0e0e0", borderRadius: 0, cursor: "pointer", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "#fafafa", minHeight: 240, aspectRatio: preview ? "1" : "auto", marginBottom: 20 }}>
           {preview ? (
             <img src={preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -161,7 +161,7 @@ function CreatePostModal({ open, onClose, onShare, creating, searchActiveListing
         <input id="style-photo-input" type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }} onChange={e => pickFile(e.target.files[0])} />
         {preview && <button onClick={() => document.getElementById("style-photo-input").click()} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: "#FF1493", textTransform: "uppercase", padding: 0, marginBottom: 20 }}>Change photo</button>}
 
-        {/* STEP 2 — caption */}
+        {/* STEP 2 - caption */}
         <div style={{ marginBottom: 20 }}>
           <textarea value={caption} maxLength={MAX_CAPTION} onChange={e => setCaption(e.target.value)} placeholder="Tell us about your outfit..." style={{ ...S.inp, height: 90, resize: "vertical", width: "100%" }} />
           <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#6f6f6f", textAlign: "right", marginTop: 4 }}>{caption.length} / {MAX_CAPTION}</p>
@@ -234,7 +234,7 @@ export default function StyleFeed({
   createOpen, setCreateOpen, onCreate, creating, searchActiveListings,
   flash = () => {},
 }) {
-  // Login gate — CREATE POST and the FOLLOWING tab are already hidden when
+  // Login gate - CREATE POST and the FOLLOWING tab are already hidden when
   // logged out; liking a post opens the shared sign-up prompt (context: default).
   const [gate, setGate] = useState(null);
   const onLike = (post) => { if (user) toggleLike(post); else setGate("default"); };
@@ -272,7 +272,7 @@ export default function StyleFeed({
       {!loading && posts.length === 0 && tab === "foryou" && (
         <div style={{ textAlign: "center", padding: "60px 20px" }}>
           <p style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><Sparkles width={48} height={48} color="#ddd" /></p>
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 24, fontWeight: 900, marginBottom: 16 }}>NO POSTS YET — BE THE FIRST TO SHARE YOUR STYLE!</p>
+          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 24, fontWeight: 900, marginBottom: 16 }}>NO POSTS YET - BE THE FIRST TO SHARE YOUR STYLE!</p>
           {user && <button className="hbtn" style={{ ...S.hBtn, background: "#FF1493", border: "2px solid #111", padding: "12px 24px", fontSize: 14, display: "inline-flex", alignItems: "center", gap: 7 }} onClick={() => setCreateOpen(true)}><Plus width={16} height={16} /> CREATE POST</button>}
         </div>
       )}

@@ -1,7 +1,7 @@
-// Phase 15 — Stripe Connect for tailor payouts (frontend callers).
+// Phase 15 - Stripe Connect for tailor payouts (frontend callers).
 //
 // Three thin wrappers around the Connect Edge Functions. As with lib/identity.js
-// and lib/promotion.js, the browser NEVER touches Stripe with a secret key — it
+// and lib/promotion.js, the browser NEVER touches Stripe with a secret key - it
 // posts ids to a Supabase Edge Function which does the Stripe work server-side and
 // hands back a URL / result. The functions return permissive CORS headers so we
 // can call them directly (no Vercel proxy needed).

@@ -55,7 +55,7 @@ export default function Shop({
   sellerRatings = {},
   fastSellers = new Set(),
   verifiedSellers = new Set(),
-  // Phase 14 — sellers (id → %) whose "BUNDLE & SAVE X%" card banner should show
+  // Phase 14 - sellers (id → %) whose "BUNDLE & SAVE X%" card banner should show
   // (discount enabled + 2+ active listings).
   bundleCardSellers = {},
   wishlistCounts = {},
@@ -63,19 +63,19 @@ export default function Shop({
   toggleFavourite = () => {},
   looks = [],
   openLook = () => {},
-  // Phase 13 — FOLLOWING tab. `shopTab` toggles ALL ↔ FOLLOWING; the feed shows
+  // Phase 13 - FOLLOWING tab. `shopTab` toggles ALL ↔ FOLLOWING; the feed shows
   // listings only from sellers the logged-in user follows.
   shopTab = "all", setShopTab = () => {}, loadFeed = () => {},
   following = [], feedItems = [], feedLoading = false,
-  // Phase 14 — homepage STYLE INSPIRATION preview (4 most recent style posts).
+  // Phase 14 - homepage STYLE INSPIRATION preview (4 most recent style posts).
   homeStylePosts = [], homeStyleProfiles = {}, openStyleFeed = () => {},
 }) {
-  // Login gate — browsing/filtering is fully open; saving a search or
+  // Login gate - browsing/filtering is fully open; saving a search or
   // wishlisting a card opens the shared sign-up prompt instead of bouncing to
   // /auth. `gate` holds the active context while the modal is open.
   const [gate, setGate] = React.useState(null);
   const requireAuth = (context, action) => { if (user) action(); else setGate(context); };
-  // Tapping a listing card while logged out doesn't open the detail page — it
+  // Tapping a listing card while logged out doesn't open the detail page - it
   // shows the sign-up gate instead. We stash the tapped item so App can route the
   // buyer straight to that listing once they've signed up / logged in.
   const [pendingItem, setPendingItem] = React.useState(null);
@@ -86,14 +86,14 @@ export default function Shop({
   const firstName = ((profile?.full_name&&profile.full_name.trim())||profile?.username||user?.email?.split("@")[0]||"").split(" ")[0];
   if(view!=="shop"&&view!=="newarrivals") return null;
   const followingActive = !!user && view==="shop" && shopTab==="following";
-  // BROWSE tab row — shown below the hero + search bar for logged-in users (not on
+  // BROWSE tab row - shown below the hero + search bar for logged-in users (not on
   // /new-arrivals). A small grey "BROWSE" section label introduces the tabs, which
   // sit on a full-width divider that separates them from the listings grid. Tabs are
   // full width on mobile (.shop-tab via media query) and auto width on desktop.
   const ShopTabs = () => (!user||newArrivals) ? null : (
     <div style={{maxWidth:1300,margin:"0 auto",padding:"28px 24px 0"}}>
       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",textTransform:"uppercase",margin:"0 0 10px"}}>BROWSE</p>
-      {/* Self-contained segmented toggle — a bordered box split into two segments,
+      {/* Self-contained segmented toggle - a bordered box split into two segments,
           active one filled pink. No full-width underline (which left a dangling
           line across the page). */}
       <div className="shop-tabs" style={{display:"inline-flex",border:"2px solid #111",borderRadius:0,overflow:"hidden"}}>
@@ -104,7 +104,7 @@ export default function Shop({
       </div>
     </div>
   );
-  // SHOP BY CATEGORY — quick-entry tiles into the main browse categories. Each
+  // SHOP BY CATEGORY - quick-entry tiles into the main browse categories. Each
   // tile borrows a representative photo from the current listings (falls back to
   // a brand monogram), and tapping applies the matching filter + scrolls to the
   // grid. Only shown on the main, unfiltered shop view.
@@ -123,7 +123,7 @@ export default function Shop({
     {label:"Shoes",         apply:()=>{clearFilters();setTypeFilter("Shoes");},     active:typeFilter==="Shoes"},
     {label:"Accessories",   apply:clo("Accessories"),   active:catFilter==="Accessories"},
   ];
-  // SHOP BY CATEGORY — sleek rounded pill chips (matches the search capsule).
+  // SHOP BY CATEGORY - sleek rounded pill chips (matches the search capsule).
   // Active chip is solid pink; the rest are pink-tint outline. Horizontal
   // swipe-scroll on phones.
   const CategoryRail = () => (
@@ -138,7 +138,7 @@ export default function Shop({
       </div>
     </div>
   );
-  // FOLLOWING feed — rendered in the grid position below the hero + tabs (same
+  // FOLLOWING feed - rendered in the grid position below the hero + tabs (same
   // page flow as the ALL LISTINGS grid), so the hero always stays first. Shows a
   // friendly empty state with a DISCOVER SELLERS button when the user follows no
   // one yet.
@@ -157,7 +157,7 @@ export default function Shop({
         <div style={S.empty}>
           <div style={S.emptyIcon}><Sparkles width={40} height={40}/></div>
           <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,margin:"20px 0 6px",letterSpacing:-0.5}}>ALL CAUGHT UP.</p>
-          <p style={S.emptySub}>No new listings from sellers you follow — check back soon.</p>
+          <p style={S.emptySub}>No new listings from sellers you follow - check back soon.</p>
         </div>
       )}
       {!feedLoading&&feedItems.length>0&&(
@@ -175,11 +175,11 @@ export default function Shop({
     fastSellers.has(sellerId)
       ? <div style={{...S.fastBadge,...(raised?{bottom:40}:{}),display:"inline-flex",alignItems:"center",gap:5}}><Zap width={12} height={12} fill="currentColor"/> FAST SELLER</div>
       : null;
-  // Phase 11 — small VERIFIED SELLER badge shown on a card when its seller is
+  // Phase 11 - small VERIFIED SELLER badge shown on a card when its seller is
   // verified. Renders nothing for everyone else.
   const VerifiedSellerBadge = ({ sellerId }) =>
     verifiedSellers.has(sellerId) ? <VerifiedBadge size="sm" style={{marginBottom:10}}/> : null;
-  // Phase 14 — "BUNDLE & SAVE X%" banner across the bottom of a card's image, for
+  // Phase 14 - "BUNDLE & SAVE X%" banner across the bottom of a card's image, for
   // sellers offering a bundle discount who have 2+ active listings. Teal #00E5CC
   // background, #111 text, Barlow Condensed bold, very small, full width.
   const BundleSaveBanner = ({ sellerId }) => {
@@ -191,7 +191,7 @@ export default function Shop({
       </div>
     );
   };
-  // Seller rating chip — sits in the price/views row. Shows up to five #FF1493
+  // Seller rating chip - sits in the price/views row. Shows up to five #FF1493
   // stars filled proportionally to the seller's average, with the review count in
   // brackets (e.g. ★★★★★ (3)). Renders nothing when the seller has no reviews so
   // new sellers never show empty stars.
@@ -208,7 +208,7 @@ export default function Shop({
   // wishlisted the listing, in the price/views row. Filled when the signed-in
   // user has saved it, outline otherwise; clicking toggles the save (or prompts
   // sign-in when logged out). Renders nothing when the count is 0, per spec.
-  // Phase 13 — a listing is "promoted" (shows the PROMOTED label + sorts first)
+  // Phase 13 - a listing is "promoted" (shows the PROMOTED label + sorts first)
   // only while its boost is live: promoted flag set AND promoted_until in the
   // future. The promoted-first ordering itself is applied in App.js (`visible`).
   const isPromoted = (item) =>
@@ -236,7 +236,7 @@ export default function Shop({
   };
   // Single source of truth for a listing card, so the FOLLOWING feed and the
   // main ALL LISTINGS grid render identically (badges, measurements, wishlist,
-  // ratings — the full polished card) rather than two different layouts.
+  // ratings - the full polished card) rather than two different layouts.
   const ListingCard = ({ item, idx }) => {
     const accent=CARD_COLORS[idx%CARD_COLORS.length];
     const saved=myWishlist.has(item.id);
@@ -247,23 +247,23 @@ export default function Shop({
       <article className="scard" style={{...S.card,opacity:item.sold?0.55:1}} onClick={()=>viewListing(item)}>
         <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
           {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
-          {/* TOP-LEFT — status chips, stacked so they never collide */}
+          {/* TOP-LEFT - status chips, stacked so they never collide */}
           <div className="card-ov card-ov-tl">
             {isPromoted(item)&&<span style={{...ovChip,background:"#FF1493",color:"#fff"}}><Zap width={11} height={11} fill="currentColor"/> PROMOTED</span>}
             {item.prev_price>item.price&&<span style={{...ovChip,background:"#00E5CC",color:"#111"}}>PRICE DROP</span>}
             {item.reserved&&!item.sold&&<span style={{...ovChip,background:"#FF9500",color:"#fff"}}>RESERVED</span>}
             {item.origin&&<span style={{...ovChip,background:"rgba(0,0,0,0.55)",color:"#fff",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)"}}>{item.origin.toUpperCase()}</span>}
           </div>
-          {/* TOP-RIGHT — wishlist heart (sharp, frosted, on-theme) */}
+          {/* TOP-RIGHT - wishlist heart (sharp, frosted, on-theme) */}
           <button className="card-heart" aria-label={saved?"Remove from wishlist":"Add to wishlist"} style={saved?{background:"#FF1493",borderColor:"#FF1493"}:null} onClick={e=>{e.stopPropagation();requireAuth("wishlist",()=>toggleFavourite(item));}}><Heart width={15} height={15} fill={saved?"#fff":"none"} color={saved?"#fff":"#111"}/></button>
-          {/* BOTTOM-LEFT — fit + seller chips */}
+          {/* BOTTOM-LEFT - fit + seller chips */}
           <div className="card-ov card-ov-bl">
             {item.video_url&&<span style={{...ovChip,background:"rgba(0,0,0,0.6)",color:"#fff",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)"}}><Video width={11} height={11}/> VIDEO</span>}
             {fitsMe(item)===true&&<span style={{...ovChip,background:"#34C759",color:"#fff"}}><Ruler width={11} height={11}/> FITS YOU</span>}
             {fastSellers.has(item.user_id)&&<span style={{...ovChip,background:"#00E5CC",color:"#111"}}><Zap width={11} height={11} fill="currentColor"/> FAST SELLER</span>}
           </div>
           {!item.sold&&<BundleSaveBanner sellerId={item.user_id}/>}
-          {/* HOVER PRICE — frosted bar slides up on hover (desktop pointer only) */}
+          {/* HOVER PRICE - frosted bar slides up on hover (desktop pointer only) */}
           {!item.sold&&(
             <div className="card-hover-price">
               <span className="chp-price">{currencySymbol(item.currency)}{item.price}</span>
@@ -271,7 +271,7 @@ export default function Shop({
             </div>
           )}
         </Thumb>
-        {/* Compact body — photo-forward: name on one line, then price + size +
+        {/* Compact body - photo-forward: name on one line, then price + size +
             likes. Category / occasions / measurements / rating live on the
             detail page now, keeping the grid clean and image-led. */}
         <div style={S.cardBody} className="card-body">
@@ -293,7 +293,7 @@ export default function Shop({
   };
   // Polished loading placeholder that mirrors the real card layout (image,
   // category line, name, meta tags, price) so the grid keeps its shape while
-  // listings load — a shimmer sweeps across each grey block. Used by both the
+  // listings load - a shimmer sweeps across each grey block. Used by both the
   // main grid and the FOLLOWING feed so loading looks identical everywhere.
   const SkBlock = ({ w="100%", h=12, mb=0, r=2 }) => (
     <div style={{width:w,height:h,marginBottom:mb,borderRadius:r,background:"linear-gradient(90deg,#f3f3f3 25%,#e9e9e9 50%,#f3f3f3 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s ease-in-out infinite"}}/>
@@ -320,7 +320,7 @@ export default function Shop({
   );
   return (
     <>
-      {/* NEW ARRIVALS page header — replaces the hero when this view is the
+      {/* NEW ARRIVALS page header - replaces the hero when this view is the
           /new-arrivals page. The search bar + filters + grid below are shared
           with the main shop, so every filter works here too. */}
       {newArrivals&&(
@@ -341,7 +341,7 @@ export default function Shop({
             <>
               <p style={S.heroTag}>WELCOME BACK{firstName?",":""}</p>
               <h1 style={S.heroH}><span style={S.heroLine1}>HEY</span><span style={S.heroLine2}>{(firstName||"THERE").toUpperCase()}</span><span style={S.heroLine3}>WHAT'S NEW.</span></h1>
-              <p style={S.heroSub}>Fresh drops from across the community — pick up where you left off.</p>
+              <p style={S.heroSub}>Fresh drops from across the community - pick up where you left off.</p>
               <div style={S.heroCtas}>
                 <button className="hbtn" style={S.heroBtnPrimary} onClick={()=>document.getElementById("grid-anchor")?.scrollIntoView({behavior:"smooth"})}><span style={{display:"inline-flex",alignItems:"center",gap:8}}>BROWSE DROPS <ArrowDown width={16} height={16}/></span></button>
                 <button className="hbtn" style={S.heroBtnSecondary} onClick={()=>setView("add")}>LIST YOUR PIECE <span className="btn-arrow">→</span></button>
@@ -358,7 +358,7 @@ export default function Shop({
               </div>
             </>
           )}
-          {/* Editorial value-prop strip — replaces the old hero imagery with a
+          {/* Editorial value-prop strip - replaces the old hero imagery with a
               confident statement of what makes Stitch'd different. */}
           <div className="hero-props">
             {[
@@ -428,7 +428,7 @@ export default function Shop({
             {allBrands.length>0&&<div style={S.filterGroup}><div style={S.filterLabel}>BRAND</div><div style={S.filterPills}>{["All",...allBrands].map(b=><button key={b} className="fpill" onClick={()=>setBrandFilter(b)} style={{...S.pill,...(brandFilter===b?S.pillOn:{})}}>{b==="All"?"ALL":b.toUpperCase()}</button>)}</div></div>}
             <div style={S.filterGroup}><div style={S.filterLabel}>CATEGORY</div><div style={S.filterPills}>{["All",...(typeFilter==="Jewellery"?JEWELLERY_CATS:typeFilter==="Shoes"?SHOE_CATS:typeFilter==="Clothing"?CATEGORIES:ALL_CATEGORIES)].map(c=><button key={c} className="fpill" onClick={()=>setCatFilter(c)} style={{...S.pill,...(catFilter===c?S.pillOn:{})}}>{c}</button>)}</div></div>
             <div style={S.filterGroup}><div style={S.filterLabel}>SIZE</div><div style={S.filterPills}>{["All",...SIZES].map(sz=><button key={sz} className="fpill" onClick={()=>setSizeFilter(sz)} style={{...S.pill,...(sizeFilter===sz?S.pillOn:{})}}>{sz}</button>)}</div></div>
-            {/* Phase 12 — OCCASION. Multi-select pink pills (2px #111 border, no
+            {/* Phase 12 - OCCASION. Multi-select pink pills (2px #111 border, no
                 radius, Barlow Condensed). Wrapped grid; selected = #FF1493. */}
             <div style={S.filterGroup}>
               <div style={S.filterLabel}>OCCASION</div>
@@ -438,7 +438,7 @@ export default function Shop({
                 );})}
               </div>
             </div>
-            {/* Phase 12 — COLOUR. Circular 24px swatches; selected gets a 2px #111
+            {/* Phase 12 - COLOUR. Circular 24px swatches; selected gets a 2px #111
                 ring. Shares the ColourSwatches component with the listing form. */}
             <div style={S.filterGroup}>
               <div style={S.filterLabel}>COLOUR</div>
@@ -448,7 +448,7 @@ export default function Shop({
               <div style={S.filterLabel}>PRICE RANGE</div>
               <div style={{display:"flex",gap:10,alignItems:"center"}}>
                 <input style={{...S.inp,width:100}} type="number" placeholder="MIN" value={minPrice} onChange={e=>setMinPrice(e.target.value)}/>
-                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:"#6f6f6f"}}>—</span>
+                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:"#6f6f6f"}}>-</span>
                 <input style={{...S.inp,width:100}} type="number" placeholder="MAX" value={maxPrice} onChange={e=>setMaxPrice(e.target.value)}/>
                 {hasFilters&&<button className="hbtn" style={{...S.hBtn,background:"#fff",color:"#FF1493",border:"2px solid #FF1493",fontSize:11,padding:"8px 14px"}} onClick={clearFilters}>CLEAR ALL</button>}
               </div>
@@ -457,7 +457,7 @@ export default function Shop({
         )}
       </div>
 
-      {/* BROWSE tab row — sits below the hero + search bar (logged-in only). */}
+      {/* BROWSE tab row - sits below the hero + search bar (logged-in only). */}
       <ShopTabs/>
 
       {/* FOLLOWING tab shows the followed-sellers feed in the grid position; the
@@ -477,7 +477,7 @@ export default function Shop({
               <div style={S.empty}>
                 <div style={S.emptyIcon}>{hasFilters?<Search width={40} height={40}/>:<Shirt width={40} height={40}/>}</div>
                 <p style={{fontSize:30,fontWeight:900,margin:"20px 0 6px",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:-0.5}}>{hasFilters?"NO MATCHES.":"NOTHING HERE YET."}</p>
-                <p style={S.emptySub}>{hasFilters?"Try loosening a filter or two — your perfect piece might be one tweak away.":"Be the first to list a piece and start the rail."}</p>
+                <p style={S.emptySub}>{hasFilters?"Try loosening a filter or two - your perfect piece might be one tweak away.":"Be the first to list a piece and start the rail."}</p>
                 {hasFilters?<button className="hbtn" style={S.hBtn} onClick={clearFilters}>CLEAR FILTERS</button>:<button className="hbtn" style={S.hBtn} onClick={()=>user?setView("add"):(setAuthMode("signup"),setView("auth"))}>LIST YOUR PIECE →</button>}
               </div>
             )}
@@ -487,7 +487,7 @@ export default function Shop({
       </>
       )}
 
-      {/* NEW ARRIVALS — the 4 most recent listings (last 14 days). Horizontal
+      {/* NEW ARRIVALS - the 4 most recent listings (last 14 days). Horizontal
           scroll rail on mobile, grid on desktop. Hidden on the new-arrivals page
           itself, while filtering, and when there are no recent listings. */}
       {!newArrivals&&!hasFilters&&!followingActive&&homeArrivals.length>0&&(
@@ -516,7 +516,7 @@ export default function Shop({
         </Reveal>
       )}
 
-      {/* SHOP THE LOOK — curated outfit collections. Hidden entirely when no
+      {/* SHOP THE LOOK - curated outfit collections. Hidden entirely when no
           looks exist or while the buyer is filtering/searching the grid. The rail
           scrolls horizontally on mobile and is a 3-up grid on desktop. */}
       {!newArrivals&&!hasFilters&&!followingActive&&looks.length>0&&(
@@ -528,7 +528,7 @@ export default function Shop({
         </Reveal>
       )}
 
-      {/* STYLE INSPIRATION — homepage style-feed preview. Hidden when no posts
+      {/* STYLE INSPIRATION - homepage style-feed preview. Hidden when no posts
           exist or while the buyer is filtering/searching the grid. */}
       {!newArrivals&&!hasFilters&&!followingActive&&homeStylePosts.length>0&&(
         <Reveal><StyleInspiration posts={homeStylePosts} profilesMap={homeStyleProfiles} onOpen={openStyleFeed} /></Reveal>

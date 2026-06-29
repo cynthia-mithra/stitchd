@@ -1,7 +1,7 @@
 {
   "short_name": "Stitch'd",
-  "name": "Stitch'd — Pre-loved South Asian Fashion",
-  "description": "Buy & resell pre-loved South Asian fashion — sarees, lehengas, sherwanis and more.",
+  "name": "Stitch'd - Pre-loved South Asian Fashion",
+  "description": "Buy & resell pre-loved South Asian fashion - sarees, lehengas, sherwanis and more.",
   "icons": [
     { "src": "favicon.svg", "type": "image/svg+xml", "sizes": "any" },
     { "src": "logo.png", "type": "image/png", "sizes": "1254x1254", "purpose": "any maskable" }

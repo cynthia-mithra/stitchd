@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 
 /* ------------------------------------------------------------------ *
- * How to Measure — gender toggle, garment-specific accordions,
+ * How to Measure - gender toggle, garment-specific accordions,
  * inline SVG body diagrams with numbered measurement markers.
  *
  * Marker coordinates are tuned to the silhouette viewBox (0 0 200 430).
- * Diagrams are deliberately simple flat-fashion silhouettes — they only
+ * Diagrams are deliberately simple flat-fashion silhouettes - they only
  * need to be recognisable, not anatomically accurate.
  * ------------------------------------------------------------------ */
 
@@ -25,7 +25,7 @@ const GARMENTS = {
         ["Blouse bust", "Around the fullest part of the chest", 100, 92],
         ["Blouse waist", "Around the natural waist", 100, 126],
         ["Blouse length", "Shoulder to bottom of blouse", 138, 116],
-        ["Saree length", "Full length of the saree drape (usually a standard 5.5m — note any alterations)", 46, 275],
+        ["Saree length", "Full length of the saree drape (usually a standard 5.5m - note any alterations)", 46, 275],
         ["Blouse sleeve length", "Shoulder seam to wrist", 52, 150],
       ],
     },
@@ -297,14 +297,14 @@ function GarmentSection({ gender, garment, open, onToggle }) {
         aria-expanded={open}
       >
         <span>{garment.name}</span>
-        <span style={{ color: PINK, fontSize: 26, lineHeight: 1 }}>{open ? "–" : "+"}</span>
+        <span style={{ color: PINK, fontSize: 26, lineHeight: 1 }}>{open ? "-" : "+"}</span>
       </button>
       {open && (
         garment.image ? (
           <div style={{ padding: "20px 18px", borderTop: "2px solid #111" }}>
             <img
               src={garment.image}
-              alt="How to measure a lehenga — waist, hip, lehenga length, blouse bust, blouse waist, blouse length"
+              alt="How to measure a lehenga - waist, hip, lehenga length, blouse bust, blouse waist, blouse length"
               style={{ width: "100%", maxWidth: "800px", height: "auto", display: "block", margin: "0 auto" }}
             />
           </div>
@@ -408,7 +408,7 @@ export default function MeasuringGuide() {
 export function GeneralTips() {
   const tips = [
     "Always measure over lightweight clothing or underwear only",
-    "Use a soft measuring tape — not a ruler",
+    "Use a soft measuring tape - not a ruler",
     "Ask someone to help for shoulder and back measurements",
     "When in doubt, size up",
     "All measurements on Stitch'd are actual garment measurements unless stated otherwise",

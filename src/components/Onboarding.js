@@ -2,15 +2,15 @@ import React from "react";
 import { X, Search, ShieldCheck, Tag } from "lucide-react";
 import { S } from "../styles";
 
-// First-run welcome — shown once to a new visitor (gated by localStorage in App).
+// First-run welcome - shown once to a new visitor (gated by localStorage in App).
 // A short "how Stitch'd works" with two CTAs: browse, or list a piece. Dismissible
 // by the X, the backdrop, or either CTA.
 export default function Onboarding({ show, onClose, onBrowse, onSell }) {
   if (!show) return null;
   const steps = [
-    { Icon: Search,      title: "DISCOVER",    body: "Browse pre-loved South Asian fashion — every piece listed with real measurements." },
+    { Icon: Search,      title: "DISCOVER",    body: "Browse pre-loved South Asian fashion - every piece listed with real measurements." },
     { Icon: ShieldCheck, title: "BUY SAFELY",  body: "Buyer Protection on every order, with tracked UK delivery from the seller." },
-    { Icon: Tag,         title: "SELL FREE",   body: "List your own pieces for free — set a price, add photos, and you're live." },
+    { Icon: Tag,         title: "SELL FREE",   body: "List your own pieces for free - set a price, add photos, and you're live." },
   ];
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>

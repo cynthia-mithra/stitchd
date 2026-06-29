@@ -3,7 +3,7 @@ import { Eye, Heart, Mail, Star, TrendingUp, Zap } from "lucide-react";
 import { catEmoji, CARD_COLORS } from "../lib/constants";
 import { Thumb, Stars } from "../components/Shared";
 
-// Phase 10c — seller analytics dashboard.
+// Phase 10c - seller analytics dashboard.
 //
 // Rendered as a third tab inside the seller Dashboard (alongside ACTIVE / SOLD).
 // Everything here is the logged-in seller's own data only: `myItems` are already
@@ -14,8 +14,8 @@ import { Thumb, Stars } from "../components/Shared";
 // SCHEMA NOTE (flagged in the PR): `listings.views` is a single lifetime counter
 // with no per-event timestamps, so view-derived metrics (Total Views, per-listing
 // views, conversion, avg-views, most-viewed) are LIFETIME and cannot honour the
-// time filter. The filter therefore drives only the timestamped metrics — total
-// earnings, sales count, the earnings chart and recent sales — via orders.created_at.
+// time filter. The filter therefore drives only the timestamped metrics - total
+// earnings, sales count, the earnings chart and recent sales - via orders.created_at.
 
 // Currency is always £ GBP per the issue's design system.
 const gbp = (n) => `£${(Number(n) || 0).toFixed(2)}`;
@@ -77,7 +77,7 @@ const ST = {
   },
 };
 
-// Headline / engagement stat card — same styling for both per the issue.
+// Headline / engagement stat card - same styling for both per the issue.
 function StatCard({ label, value, sub, valueNode }) {
   return (
     <div style={ST.card}>
@@ -118,7 +118,7 @@ function buildBuckets(orders, period, now) {
     }
     return out;
   }
-  // ALL TIME — one bucket per calendar month that actually has sales.
+  // ALL TIME - one bucket per calendar month that actually has sales.
   const months = {};
   orders.forEach(o => {
     const t = new Date(o.created_at);
@@ -181,7 +181,7 @@ function EarningsChart({ buckets }) {
   );
 }
 
-// Phase 13 — collapse the promotion lifecycle onto a badge. 'active' only counts
+// Phase 13 - collapse the promotion lifecycle onto a badge. 'active' only counts
 // while expires_at is still in the future; a stale 'active' the cron hasn't swept
 // reads as expired so the row never lies about being live.
 const promoStatus = (p) => {
@@ -207,7 +207,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
   const cutoff = days == null ? null : new Date(now.getTime() - days * 86400000);
 
   // Seller-scoped orders, then period-scoped (the only place the time filter
-  // applies — see the SCHEMA NOTE at the top of this file).
+  // applies - see the SCHEMA NOTE at the top of this file).
   const sellerOrders = React.useMemo(
     () => orders.filter(o => o.seller_id === user?.id),
     [orders, user]
@@ -247,14 +247,14 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
 
   const buckets = buildBuckets(periodOrders, period, now);
 
-  // Listing performance rows — sortable by the three tappable columns.
+  // Listing performance rows - sortable by the three tappable columns.
   const rows = [...myItems].sort((a, b) => {
     if (sortBy === "price") return (b.price || 0) - (a.price || 0);
     if (sortBy === "saves") return savesFor(b.id) - savesFor(a.id);
     return (b.views || 0) - (a.views || 0); // views (default)
   });
 
-  // Recent sales — 5 newest seller orders within the selected period.
+  // Recent sales - 5 newest seller orders within the selected period.
   const recentSales = [...periodOrders]
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .slice(0, 5);
@@ -272,7 +272,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
         ))}
       </div>
 
-      {/* SECTION 1 — OVERVIEW STATS */}
+      {/* SECTION 1 - OVERVIEW STATS */}
       <div>
         <div style={ST.sectionLabel}><TrendingUp width={15} height={15} /> OVERVIEW</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 12 }} className="analytics-stat-grid">
@@ -284,13 +284,13 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
         </div>
       </div>
 
-      {/* SECTION 2 — EARNINGS CHART */}
+      {/* SECTION 2 - EARNINGS CHART */}
       <div>
         <div style={ST.sectionLabel}>EARNINGS OVER TIME</div>
         <EarningsChart buckets={buckets} />
       </div>
 
-      {/* SECTION 2b — SALES BY CATEGORY */}
+      {/* SECTION 2b - SALES BY CATEGORY */}
       <div>
         <div style={ST.sectionLabel}>SALES BY CATEGORY</div>
         {catRows.length === 0 ? (
@@ -312,7 +312,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
         )}
       </div>
 
-      {/* SECTION 3 — LISTING PERFORMANCE TABLE */}
+      {/* SECTION 3 - LISTING PERFORMANCE TABLE */}
       <div>
         <div style={ST.sectionLabel}>LISTING PERFORMANCE</div>
         {rows.length === 0 ? (
@@ -371,7 +371,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
         )}
       </div>
 
-      {/* SECTION 4 — ENGAGEMENT METRICS */}
+      {/* SECTION 4 - ENGAGEMENT METRICS */}
       <div>
         <div style={ST.sectionLabel}>ENGAGEMENT</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 12 }} className="analytics-stat-grid">
@@ -389,7 +389,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
                 >
                   {mostViewed.name}
                 </span>
-              ) : "—"
+              ) : "-"
             }
             sub={mostViewed ? `${mostViewed.views || 0} views` : "no views yet"}
           />
@@ -402,7 +402,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
                   <Stars value={rating.average} size={16} />
                 </span>
               ) : (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6f6f6f" }}>—<Star width={16} height={16} /></span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6f6f6f" }}>-<Star width={16} height={16} /></span>
               )
             }
             sub={rating && rating.count > 0 ? `from ${rating.count} review${rating.count === 1 ? "" : "s"}` : "no reviews yet"}
@@ -410,12 +410,12 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
         </div>
       </div>
 
-      {/* SECTION 5 — RECENT SALES */}
+      {/* SECTION 5 - RECENT SALES */}
       <div>
         <div style={ST.sectionLabel}>RECENT SALES</div>
         {recentSales.length === 0 ? (
           <div style={{ border: "2px solid #111", padding: "40px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 1, color: "#6f6f6f" }}>
-            NO SALES YET — YOUR SALES WILL APPEAR HERE
+            NO SALES YET - YOUR SALES WILL APPEAR HERE
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -448,12 +448,12 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
         )}
       </div>
 
-      {/* SECTION 6 — PROMOTIONS (Phase 13) */}
+      {/* SECTION 6 - PROMOTIONS (Phase 13) */}
       <div>
         <div style={ST.sectionLabel}><Zap width={15} height={15} /> PROMOTIONS</div>
         {promotions.length === 0 ? (
           <div style={{ border: "2px solid #111", padding: "40px 20px", textAlign: "center", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 1, color: "#6f6f6f" }}>
-            NO PROMOTIONS YET — BOOST A LISTING FROM THE ACTIVE TAB
+            NO PROMOTIONS YET - BOOST A LISTING FROM THE ACTIVE TAB
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -466,7 +466,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
               const fmt = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }).toUpperCase() : null;
               const start = fmt(promo.started_at) || fmt(promo.created_at);
               const end = fmt(promo.expires_at);
-              const dateStr = start && end ? `${start} – ${end}` : (start || end || "");
+              const dateStr = start && end ? `${start} - ${end}` : (start || end || "");
               const daysLeft = status === "active" && promo.expires_at
                 ? Math.max(0, Math.ceil((new Date(promo.expires_at).getTime() - Date.now()) / 86400000))
                 : null;

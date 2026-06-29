@@ -9,7 +9,7 @@ const MIN_ITEMS = 2;
 const MAX_ITEMS = 8;
 
 // Three-step create / edit flow for a Shop the Look outfit. Reached from the
-// seller dashboard TOOLS tab. Admins use the exact same flow — only the stored
+// seller dashboard TOOLS tab. Admins use the exact same flow - only the stored
 // created_by_type differs (handled by publishLook in App.js).
 export default function CreateLook({
   view, setView, user, isAdmin = false,
@@ -62,7 +62,7 @@ export default function CreateLook({
           <Step n={3} label="Publish" />
         </div>
 
-        {/* STEP 1 — DETAILS */}
+        {/* STEP 1 - DETAILS */}
         {lookStep === 1 && (
           <>
             <Sec label="LOOK DETAILS">
@@ -83,7 +83,7 @@ export default function CreateLook({
                     </div>
                   )}
                 </div>
-                <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 13, color: "#888", maxWidth: 280 }}>A square hero shot works best — square crop, no rounded corners.</p>
+                <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 13, color: "#888", maxWidth: 280 }}>A square hero shot works best - square crop, no rounded corners.</p>
               </div>
               <input id="look-cover-input" type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const file = e.target.files[0]; if (file) setLookForm(f => ({ ...f, coverFile: file, coverPreview: URL.createObjectURL(file) })); }} />
             </Sec>
@@ -91,10 +91,10 @@ export default function CreateLook({
           </>
         )}
 
-        {/* STEP 2 — ADD LISTINGS */}
+        {/* STEP 2 - ADD LISTINGS */}
         {lookStep === 2 && (
           <>
-            <Sec label={`ADD PIECES (${items.length}/${MAX_ITEMS} — min ${MIN_ITEMS})`}>
+            <Sec label={`ADD PIECES (${items.length}/${MAX_ITEMS} - min ${MIN_ITEMS})`}>
               <div style={{ ...S.searchBox, height: 44, marginBottom: 14 }}>
                 <span style={S.searchIcon}><Search width={16} height={16} /></span>
                 <input style={S.searchInput} placeholder="SEARCH ALL LISTINGS BY TITLE…" value={lookSearch} onChange={e => { setLookSearch(e.target.value); searchLookListings(e.target.value); }} />
@@ -156,7 +156,7 @@ export default function CreateLook({
           </>
         )}
 
-        {/* STEP 3 — PREVIEW + PUBLISH */}
+        {/* STEP 3 - PREVIEW + PUBLISH */}
         {lookStep === 3 && (
           <>
             <Sec label="PREVIEW">

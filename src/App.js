@@ -84,13 +84,13 @@ function isKnownPath(raw) {
   return false;
 }
 
-// Issue #115 — a listing may have at most this many photos (and at least 1).
+// Issue #115 - a listing may have at most this many photos (and at least 1).
 const MAX_LISTING_IMAGES = 8;
 
-// Phase 14 — style feed pagination: LOAD MORE pulls this many posts at a time.
+// Phase 14 - style feed pagination: LOAD MORE pulls this many posts at a time.
 const STYLE_PAGE = 12;
 
-// Phase 14 — shareable wishlist links. Public lists live at stitchd.fit/wishlist/<slug>.
+// Phase 14 - shareable wishlist links. Public lists live at stitchd.fit/wishlist/<slug>.
 // `shareSlugUrl` is the full link we copy to the clipboard; `shareSlugDisplay` is
 // the protocol-less form shown in the UI / WhatsApp text (per the issue spec).
 const SHARE_HOST = "stitchd.fit";
@@ -116,7 +116,7 @@ function errMsg(e){
 // True when an error is specifically an expired/invalid-JWT failure from Supabase
 // (e.g. "JWT expired", `"exp" claim timestamp check failed`). We retry these once
 // with a force-refreshed token. Note: this deliberately does NOT match generic 403
-// RLS errors — retrying those would just fail again the same way.
+// RLS errors - retrying those would just fail again the same way.
 function isExpiredTokenErr(e){
   const m=(errMsg(e)||"").toLowerCase();
   return m.includes("jwt expired")||m.includes("exp claim")||m.includes("token is expired")||m.includes("invalid jwt")||(m.includes("jwt")&&m.includes("expir"));
@@ -154,13 +154,13 @@ export default function App() {
   const [items,     setItems]     = useState([]);
   const [view,      setView]      = useState("shop");
   const [prevView,  setPrevView]  = useState("shop");
-  // Drives the sticky header's scroll state — once the page scrolls a little, the
+  // Drives the sticky header's scroll state - once the page scrolls a little, the
   // header gains a hairline shadow (it's frosted glass at rest). See nav-header CSS.
   const [scrolled,  setScrolled]  = useState(false);
   const [authMode,  setAuthMode]  = useState("login");
   // When a login gate (LoginPromptModal) sends a logged-out buyer to /auth, we
   // stash the page they were on so we can return them there after they sign in
-  // or sign up — instead of the default bounce to the shop. Normal LOG IN / SIGN
+  // or sign up - instead of the default bounce to the shop. Normal LOG IN / SIGN
   // UP from the nav leaves this null, preserving the existing behaviour.
   const [postAuthView, setPostAuthView] = useState(null);
   // A logged-out buyer who taps a listing card is gated behind the sign-up
@@ -196,7 +196,7 @@ export default function App() {
   const [showSuggestions,   setShowSuggestions]   = useState(false);
   const [savedSearches,     setSavedSearches]     = useState([]);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
-  // Phase 12 — the "SAVE THIS SEARCH" modal (name + email-alert toggle).
+  // Phase 12 - the "SAVE THIS SEARCH" modal (name + email-alert toggle).
   const [showSaveSearch,    setShowSaveSearch]    = useState(false);
   const [saveSearchName,    setSaveSearchName]    = useState("");
   const [saveSearchAlerts,  setSaveSearchAlerts]  = useState(true);
@@ -207,7 +207,7 @@ export default function App() {
   const [shopSort,  setShopSort]  = useState("newest"); // browse-grid sort
 
 
-  // Phase 12 — multi-select occasion + colour filters. Each is an array of the
+  // Phase 12 - multi-select occasion + colour filters. Each is an array of the
   // selected tag names; a listing matches when it carries ANY of them (OR within
   // a group). Untagged listings (null/empty array) are never hidden by either
   // filter so nothing already listed gets buried.
@@ -216,12 +216,12 @@ export default function App() {
   const [minPrice,  setMinPrice]  = useState("");
   const [maxPrice,  setMaxPrice]  = useState("");
   const [showFilters,setShowFilters]=useState(false);
-  // Phase 14 — the signed-in user's wishlisted listing_ids in most-recently-saved
+  // Phase 14 - the signed-in user's wishlisted listing_ids in most-recently-saved
   // order (created_at desc), backing the /wishlist page. Derived from the DB
   // `wishlists` table alongside `myWishlist` (the Set that drives the filled
   // heart); see loadMyWishlist / toggleFavourite below.
   const [wishlistOrder, setWishlistOrder] = useState([]);
-  // Phase 14 — Shareable wishlists. `myShared` backs the MY SHARED LISTS section
+  // Phase 14 - Shareable wishlists. `myShared` backs the MY SHARED LISTS section
   // on /wishlist; the share* state drives the create/edit modal; the public*
   // state backs the no-login /wishlist/<slug> page.
   const [myShared,        setMyShared]        = useState([]);
@@ -258,25 +258,25 @@ export default function App() {
   const [recentlyViewed,setRecentlyViewed]=useState(()=>{ try{return JSON.parse(localStorage.getItem("stitchd_recent"))||[];}catch{return[];} });
   const [showSizeGuide,setShowSizeGuide]=useState(false);
   const [reviews,      setReviews]      = useState([]);
-  // Phase 14 — comments on the open listing, plus the add-comment textarea.
+  // Phase 14 - comments on the open listing, plus the add-comment textarea.
   const [comments,     setComments]     = useState([]);
   const [commentText,  setCommentText]  = useState("");
-  // Phase 14 — the signed-in buyer's pending offer on the open listing (or null).
+  // Phase 14 - the signed-in buyer's pending offer on the open listing (or null).
   const [myOffer,      setMyOffer]      = useState(null);
   const [sellerRatings,setSellerRatings]= useState({});
   const [fastSellers,  setFastSellers]  = useState(()=>new Set());
-  // Phase 10d — seller ids with vacation_mode=true; their listings are hidden
+  // Phase 10d - seller ids with vacation_mode=true; their listings are hidden
   // from the shop/search grid. `vacationSaving` guards the dashboard toggle and
   // `promoteNotified` flips once the seller has registered Promote interest.
   const [vacationSellers,setVacationSellers]=useState(()=>new Set());
   const [vacationSaving,setVacationSaving]=useState(false);
   const [promoteNotified,setPromoteNotified]=useState(false);
-  // Phase 14 — bundle discounts. `bundleSellers` maps seller id → discount % for
+  // Phase 14 - bundle discounts. `bundleSellers` maps seller id → discount % for
   // every seller with bundle_discount_enabled=true, so the shop cards, storefront
   // and bag can apply the deal without a per-card profile fetch. Mirrors the other
   // seller-set lookups above.
   const [bundleSellers,setBundleSellers]=useState(()=>new Map());
-  // Phase 11 — verified sellers. `verifiedSellers` is the set of seller ids
+  // Phase 11 - verified sellers. `verifiedSellers` is the set of seller ids
   // flagged verified=true (drives the badge on cards/Detail + the "Verified
   // sellers only" filter). `myVerificationApp` is the signed-in seller's latest
   // application (its reviewed_at backs the reapply-after-30-days rule).
@@ -284,7 +284,7 @@ export default function App() {
   const [showVerifiedOnly,setShowVerifiedOnly]=useState(false);
   const [myVerificationApp,setMyVerificationApp]=useState(null);
   const [verificationBusy,setVerificationBusy]=useState(false);
-  // Phase 11 — ID verification (Stripe Identity). `identityVerifiedSellers` drives
+  // Phase 11 - ID verification (Stripe Identity). `identityVerifiedSellers` drives
   // the ID VERIFIED badge on cards/Detail; `identityBusy` disables the dashboard
   // button while the verification session is being created; `dashTabRequest` lets
   // other views (e.g. the listing form's over-£200 prompt, or the return from
@@ -292,7 +292,7 @@ export default function App() {
   const [identityVerifiedSellers,setIdentityVerifiedSellers]=useState(()=>new Set());
   const [identityBusy,setIdentityBusy]=useState(false);
   const [dashTabRequest,setDashTabRequest]=useState(null);
-  // Admin panel — every verification application + applicant profiles (id->profile
+  // Admin panel - every verification application + applicant profiles (id->profile
   // for name/email/username), loaded alongside reports + disputes for an admin.
   const [adminApplications,setAdminApplications]=useState([]);
   const [adminApplicants,setAdminApplicants]=useState({});
@@ -313,16 +313,16 @@ export default function App() {
   const [reportReason, setReportReason] = useState("");
   const [reportDetails,setReportDetails]= useState("");
   const [reportDone,   setReportDone]   = useState(false);
-  // Phase 11 — dispute resolution. `disputeOrder` is the order a buyer is raising a
+  // Phase 11 - dispute resolution. `disputeOrder` is the order a buyer is raising a
   // problem with (null = modal closed); `disputeForm` holds the form state.
   const [disputeOrder, setDisputeOrder] = useState(null);
-  // "order" (a purchase) or "alteration" (a tailoring booking) — drives both the
+  // "order" (a purchase) or "alteration" (a tailoring booking) - drives both the
   // problem-type options shown and how submitDispute records/holds funds.
   const [disputeKind,  setDisputeKind]  = useState("order");
   const [disputeForm,  setDisputeForm]  = useState({problem_type:"",details:"",photoFile:null,photoPreview:""});
   const [disputeBusy,  setDisputeBusy]  = useState(false);
   const [disputeDone,  setDisputeDone]  = useState(false);
-  // Phase 11 — admin panel data (reports + disputes), loaded when an admin opens
+  // Phase 11 - admin panel data (reports + disputes), loaded when an admin opens
   // the dashboard. `adminNames` maps user_id -> display name for reporters/buyers.
   const [adminReports, setAdminReports] = useState([]);
   const [adminDisputes,setAdminDisputes]= useState([]);
@@ -343,7 +343,7 @@ export default function App() {
   const [condFilter,     setCondFilter]     = useState("All");
   const [showSizeMatch,  setShowSizeMatch]  = useState(false);
   const [myOrders,       setMyOrders]       = useState([]);
-  // Phase 13 — promoted listings. `myPromotions` backs the dashboard ANALYTICS
+  // Phase 13 - promoted listings. `myPromotions` backs the dashboard ANALYTICS
   // PROMOTIONS history; `promoteBusyId` is the listing id whose checkout session
   // is being created (disables that card's PROMOTE button until the redirect).
   const [myPromotions,   setMyPromotions]   = useState([]);
@@ -355,18 +355,18 @@ export default function App() {
   const [priceDrops,     setPriceDrops]     = useState([]);
   const [trendingItems,  setTrendingItems]  = useState([]);
   const [ordersTab,      setOrdersTab]      = useState("all");
-  // Phase 15 — public tailor directory (browse approved tailors). Backed by the
+  // Phase 15 - public tailor directory (browse approved tailors). Backed by the
   // `tailors` table (status='approved'); replaces the retired tailor_services
   // marketplace as the buyer-facing discovery surface.
   const [directoryTailors,  setDirectoryTailors]  = useState([]);
   const [directoryLoading,  setDirectoryLoading]  = useState(false);
-  // Wallet — seller earnings ledger + Stripe Connect payout state.
+  // Wallet - seller earnings ledger + Stripe Connect payout state.
   const [walletTxns,        setWalletTxns]        = useState([]);
   const [walletLoading,     setWalletLoading]     = useState(false);
   const [payoutBusy,        setPayoutBusy]        = useState(false);
   const [withdrawBusy,      setWithdrawBusy]      = useState(false);
   const [walletConnectReturn,setWalletConnectReturn]=useState(null);
-  // ── Phase 15 — Tailor profiles (the single tailor system). `myTailor` is the
+  // ── Phase 15 - Tailor profiles (the single tailor system). `myTailor` is the
   // signed-in user's tailor row (application/profile) or null. The apply flow,
   // dashboard edit form, portfolio and public profile each get their own state.
   const [myTailor,          setMyTailor]          = useState(null);
@@ -380,7 +380,7 @@ export default function App() {
   const [publicTailor,      setPublicTailor]      = useState(null);
   const [publicTailorLoading,setPublicTailorLoading]=useState(false);
   const [adminTailors,      setAdminTailors]      = useState([]);
-  // ── Phase 15 — Request alterations on a listing. The request modal (launched
+  // ── Phase 15 - Request alterations on a listing. The request modal (launched
   // from the listing detail FIND A TAILOR button), the buyer's /alterations page
   // and the tailor's dashboard BOOKINGS tab share these.
   const [approvedTailors,   setApprovedTailors]   = useState([]);
@@ -392,18 +392,18 @@ export default function App() {
   const [tailorAlterations, setTailorAlterations] = useState([]);
   const [alterationBuyers,  setAlterationBuyers]  = useState({});
   const [tailorAlterationsLoading,setTailorAlterationsLoading]=useState(false);
-  // Phase 15 — booking payments: which quote is mid-checkout, the tailor's
+  // Phase 15 - booking payments: which quote is mid-checkout, the tailor's
   // payout rows (EARNINGS section) and the buyer's decline-quote confirm modal.
   const [alterCheckoutId,   setAlterCheckoutId]   = useState(null);
   const [tailorPayouts,     setTailorPayouts]     = useState([]);
-  // Phase 15 — Stripe Connect: PAYMENTS section busy flag, and the admin PAYOUTS
+  // Phase 15 - Stripe Connect: PAYMENTS section busy flag, and the admin PAYOUTS
   // oversight rows (every payout with status, for the admin dashboard).
   const [paymentsBusy,      setPaymentsBusy]      = useState(false);
   const [adminPayouts,      setAdminPayouts]      = useState([]);
-  // Phase 15 — Stripe's return from Connect onboarding (?connect=success|refresh).
+  // Phase 15 - Stripe's return from Connect onboarding (?connect=success|refresh).
   // Captured on cold load, then resolved once myTailor is ready (see the effect).
   const [connectReturn,     setConnectReturn]     = useState(null);
-  // Phase 15 — Tailor reviews & ratings. The review modal (request being reviewed
+  // Phase 15 - Tailor reviews & ratings. The review modal (request being reviewed
   // + submit busy flag), the buyer's own reviews (so /alterations shows reviewed
   // state), the public-profile reviews (+ reviewer profiles) and the dashboard
   // REVIEWS tab reviews (+ reviewer profiles).
@@ -414,7 +414,7 @@ export default function App() {
   const [publicReviewBuyers, setPublicReviewBuyers] =useState({});
   const [tailorReviews,     setTailorReviews]     = useState([]);
   const [tailorReviewBuyers,setTailorReviewBuyers]=useState({});
-  // Phase 15 — Tailor availability calendar. The signed-in tailor's own
+  // Phase 15 - Tailor availability calendar. The signed-in tailor's own
   // availability rows (dashboard AVAILABILITY tab), the public profile's rows,
   // a busy/loading flag, and a preferred-date hint carried from the public
   // profile's SEND ALTERATION REQUEST button into the request modal.
@@ -427,7 +427,7 @@ export default function App() {
   const [feedItems,      setFeedItems]      = useState([]);
   const [feedLoading,    setFeedLoading]    = useState(false);
   const [feedProfiles,   setFeedProfiles]   = useState({});
-  // Phase 14 — STYLE FEED. Two tabs each keep their own paginated post array
+  // Phase 14 - STYLE FEED. Two tabs each keep their own paginated post array
   // (FOR YOU = everyone, FOLLOWING = followed users). `styleProfiles` /
   // `styleListings` are shared id→object maps accumulated across both tabs so a
   // card can render its author + tagged pieces. `styleLiked` is the set of post
@@ -449,7 +449,7 @@ export default function App() {
   const [styleCreating,    setStyleCreating]    = useState(false);
   const [homeStylePosts,   setHomeStylePosts]   = useState([]);
   const [homeStyleProfiles,setHomeStyleProfiles]= useState({});
-  // Phase 13 — seller storefronts + follow. `followerCount` is the count for the
+  // Phase 13 - seller storefronts + follow. `followerCount` is the count for the
   // currently-open storefront (kept in sync as you follow/unfollow). `storeForm`
   // backs the EDIT STOREFRONT section in the dashboard TOOLS tab. The MY FOLLOWING
   // list resolves the followed sellers' profiles + active-listing counts. `shopTab`
@@ -461,11 +461,11 @@ export default function App() {
   const [followingLoading, setFollowingLoading] = useState(false);
   const [shopTab,          setShopTab]          = useState("all");
   const [notifications,  setNotifications]  = useState([]);
-  // Phase 14 — seller's incoming offers (OFFERS tab) + a buyer-id→profile map so
+  // Phase 14 - seller's incoming offers (OFFERS tab) + a buyer-id→profile map so
   // each card can show the buyer's first name ("From Sarah").
   const [sellerOffers,   setSellerOffers]   = useState([]);
   const [offerBuyers,    setOfferBuyers]    = useState({});
-  // Phase 14 — the signed-in buyer's own offers (the /offers page), and the offer
+  // Phase 14 - the signed-in buyer's own offers (the /offers page), and the offer
   // id currently being handed to Stripe checkout (disables that card's button).
   const [buyerOffers,    setBuyerOffers]    = useState([]);
   const [offersLoading,  setOffersLoading]  = useState(false);
@@ -473,7 +473,7 @@ export default function App() {
   const [showNotifs,     setShowNotifs]     = useState(false);
   const [navMenuOpen,    setNavMenuOpen]    = useState(false);
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
-  // First-run welcome — shown once per browser (localStorage), only on the home
+  // First-run welcome - shown once per browser (localStorage), only on the home
   // view so it never pops over checkout/detail/etc.
   const [showOnboard,    setShowOnboard]    = useState(false);
   useEffect(()=>{ try{ if(!localStorage.getItem("stitchd_onboarded_v1")) setShowOnboard(true); }catch(e){} },[]);
@@ -482,7 +482,7 @@ export default function App() {
   const [paymentListing, setPaymentListing] = useState(null);
   const [paymentStep,    setPaymentStep]    = useState("summary");
   const [selectedPostage,setSelectedPostage]= useState(null);
-  // Phase 10e — Shop the Look. `looks` are active, published looks (homepage rail
+  // Phase 10e - Shop the Look. `looks` are active, published looks (homepage rail
   // + /looks page); `myLooks` are the signed-in seller/admin's own looks (drafts
   // included) for the TOOLS tab. `selLook`/`selLookCreator` back the detail view.
   // The create flow uses `lookForm`/`lookStep` + the search picker state.
@@ -541,7 +541,7 @@ export default function App() {
 
   useEffect(()=>{ fetchItems(); },[]);
 
-  // Phase 13 — deep link to a seller storefront (?seller=<id>), used by the
+  // Phase 13 - deep link to a seller storefront (?seller=<id>), used by the
   // dashboard "PREVIEW STOREFRONT" button which opens the public storefront in a
   // new tab. Clears the param afterwards so a refresh lands on the shop.
   useEffect(()=>{
@@ -559,16 +559,16 @@ export default function App() {
   // order, notify seller) are handled by the stripe-webhook function; here we
   // only confirm to the buyer and clear the purchased pieces from their bag.
   useEffect(()=>{
-    // Stripe's cancel_url is /bag — drop the buyer back on the shop with the bag
+    // Stripe's cancel_url is /bag - drop the buyer back on the shop with the bag
     // panel open (the bag is a slide-in panel, not its own route).
     if(window.location.pathname.includes("/bag")){
       window.history.replaceState({},document.title,"/");
       setShowBag(true);
     }
-    // Phase 11 — return from the Stripe Identity hosted flow (return_url is
+    // Phase 11 - return from the Stripe Identity hosted flow (return_url is
     // /dashboard?verified=true). Land on the dashboard TOOLS tab; the profile
     // reload (user/token effect) picks up the webhook-driven status change.
-    // Phase 13 — return from a successful £2.99 promotion checkout
+    // Phase 13 - return from a successful £2.99 promotion checkout
     // (/dashboard?promoted=true&listing_id=…). Land on the dashboard (ACTIVE tab),
     // optimistically mark the listing promoted (the webhook does the real update),
     // and confirm to the seller. Checked before the generic /dashboard→TOOLS rule
@@ -602,7 +602,7 @@ export default function App() {
     }).catch(()=>setOrderResult({status:"error"}));
   },[]);
 
-  // LEGAL PAGES (/terms, /privacy, /returns) — hardcoded static pages reachable
+  // LEGAL PAGES (/terms, /privacy, /returns) - hardcoded static pages reachable
   // from the footer on every page. We map the URL path to a `view` on first load
   // (so a hard load / shared link of /terms lands on the right page) and keep the
   // browser Back/Forward buttons in sync via a popstate listener.
@@ -618,7 +618,7 @@ export default function App() {
     return ()=>window.removeEventListener("popstate",onPop);
   },[]);
 
-  // Phase 12 — deep links from the saved-search alert email. "SEE ALL MATCHES"
+  // Phase 12 - deep links from the saved-search alert email. "SEE ALL MATCHES"
   // carries the saved filters as a base64url `sf` param so the shop pre-applies
   // them on a cold load; "Manage your saved searches" lands on /saved-searches.
   // Both clear the param/path afterwards so a refresh doesn't re-trigger.
@@ -632,22 +632,22 @@ export default function App() {
         const json=decodeURIComponent(Array.prototype.map.call(bin,c=>"%"+("00"+c.charCodeAt(0).toString(16)).slice(-2)).join(""));
         const filters=JSON.parse(json);
         if(filters&&typeof filters==="object") applySavedSearch({filters});
-      }catch{ /* malformed link — ignore, land on the shop */ }
+      }catch{ /* malformed link - ignore, land on the shop */ }
       window.history.replaceState({},"","/");
     } else if(path==="/saved-searches"){
       setView("saved-searches");
       window.history.replaceState({},"","/saved-searches");
     } else if(path==="/offers"){
-      // Phase 14 — deep link / Stripe cancel_url lands here; data loads via the
+      // Phase 14 - deep link / Stripe cancel_url lands here; data loads via the
       // view-watching effect once the session is ready.
       setView("offers");
       window.history.replaceState({},"","/offers");
     } else if(path==="/alterations"){
-      // Phase 15 — buyer's alteration requests deep link (email CTA / direct).
+      // Phase 15 - buyer's alteration requests deep link (email CTA / direct).
       // Data loads via the view-watching effect once the session is ready.
-      // ?paid=true is Stripe's return from a completed alteration checkout — show
+      // ?paid=true is Stripe's return from a completed alteration checkout - show
       // a confirmation (the webhook does the real work async).
-      try{ if(new URLSearchParams(window.location.search).get("paid")==="true"){ setTimeout(()=>flash("Payment received — your booking is confirmed!",6000),400); } }catch(e){}
+      try{ if(new URLSearchParams(window.location.search).get("paid")==="true"){ setTimeout(()=>flash("Payment received - your booking is confirmed!",6000),400); } }catch(e){}
       setView("alterations");
       window.history.replaceState({},"","/alterations");
     } else if(path==="/wallet"){
@@ -658,7 +658,7 @@ export default function App() {
       setView("wallet");
       window.history.replaceState({},"","/wallet");
     } else if(path==="/tailor-dashboard"){
-      // Phase 15 — Stripe Connect onboarding return. ?connect=success means the
+      // Phase 15 - Stripe Connect onboarding return. ?connect=success means the
       // tailor finished the hosted flow; ?connect=refresh means the link expired.
       // Capture it for the myTailor-ready effect, which opens the dashboard and
       // verifies onboarding (the actual completion is confirmed against Stripe).
@@ -668,22 +668,22 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
-  // Phase 14 — (re)load the buyer's offers whenever they're on /offers, so the
+  // Phase 14 - (re)load the buyer's offers whenever they're on /offers, so the
   // page is current after navigating to it or returning from a cancelled checkout.
   useEffect(()=>{ if(view==="offers"&&user&&token) loadBuyerOffers(); // eslint-disable-next-line react-hooks/exhaustive-deps
   },[view,user,token]);
 
-  // Phase 15 — (re)load the buyer's alteration requests whenever they're on
+  // Phase 15 - (re)load the buyer's alteration requests whenever they're on
   // /alterations, so the page is current after navigating to it or deep-linking.
   useEffect(()=>{ if(view==="alterations"&&user&&token) loadBuyerAlterations(); // eslint-disable-next-line react-hooks/exhaustive-deps
   },[view,user,token]);
 
-  // Wallet — (re)load the ledger whenever the wallet view is open with a session
+  // Wallet - (re)load the ledger whenever the wallet view is open with a session
   // (covers a cold /wallet deep link, where openWallet ran before auth resolved).
   useEffect(()=>{ if(view==="wallet"&&user&&token) loadWallet(); // eslint-disable-next-line react-hooks/exhaustive-deps
   },[view,user,token]);
 
-  // Wallet — Stripe Connect onboarding return. After ?connect=success, confirm
+  // Wallet - Stripe Connect onboarding return. After ?connect=success, confirm
   // details_submitted against Stripe and flip the local onboarding flag.
   useEffect(()=>{
     if(!walletConnectReturn||!user||!token) return;
@@ -693,14 +693,14 @@ export default function App() {
       try{ const res=await verifySellerConnect(user.id);
         const done=!!(res&&res.onboarding_complete);
         setProfile(p=>p?{...p,stripe_onboarding_complete:done}:p);
-        if(done) flash("Your bank account is connected — you can withdraw now.");
-        else if(wasSuccess) flash("Almost there — finish your payout setup to withdraw.",6000);
+        if(done) flash("Your bank account is connected - you can withdraw now.");
+        else if(wasSuccess) flash("Almost there - finish your payout setup to withdraw.",6000);
       }catch(e){}
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[walletConnectReturn,user,token]);
 
-  // Phase 14 — public shared wishlist deep link (/wishlist/<slug>). A shared link
+  // Phase 14 - public shared wishlist deep link (/wishlist/<slug>). A shared link
   // lands here on a cold load with no login required; we detect the slug, switch
   // to the public-wishlist view and fetch the list. The URL is left intact so a
   // refresh / re-share still works (it's cleared only when the viewer navigates
@@ -721,7 +721,7 @@ export default function App() {
   useEffect(()=>{ if(view==="wishlist"&&user) loadMySharedWishlists(); // eslint-disable-next-line react-hooks/exhaustive-deps
   },[view,user]);
 
-  // Phase 15 — public tailor profile deep link (/tailors/<id>). A shared link or
+  // Phase 15 - public tailor profile deep link (/tailors/<id>). A shared link or
   // PREVIEW PROFILE (new tab) lands here on a cold load with no login required.
   // /tailors/apply opens the application flow instead.
   useEffect(()=>{
@@ -733,7 +733,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
-  // Custom 404 — on a cold load, if the URL path matches none of the routes the
+  // Custom 404 - on a cold load, if the URL path matches none of the routes the
   // app knows, show the branded not-found page instead of silently falling back
   // to the shop. Runs once on mount; in-app navigation is all view-state driven.
   useEffect(()=>{
@@ -745,7 +745,7 @@ export default function App() {
   // Most pages live in React state at the "/" URL (not their own path), so a
   // browser refresh used to drop the user back on the home grid. We snapshot the
   // current page (view + the open listing / storefront) to sessionStorage and
-  // restore it on the next load. Capture the saved route during render — before
+  // restore it on the next load. Capture the saved route during render - before
   // the persist effect below can overwrite it on mount.
   const bootRoute = useRef(undefined);
   if(bootRoute.current===undefined){
@@ -756,7 +756,7 @@ export default function App() {
   useEffect(()=>{
     if(didRestoreRoute.current) return;
     didRestoreRoute.current=true;
-    // Only take over the plain "/" load — real paths (/terms, /tailors, deep
+    // Only take over the plain "/" load - real paths (/terms, /tailors, deep
     // links, payment returns) are handled by their own effects above.
     const path=(window.location.pathname||"/").replace(/\/+$/,"")||"/";
     if(path!=="/") return;
@@ -805,7 +805,7 @@ export default function App() {
     try{ sessionStorage.setItem("stitchd_route",JSON.stringify({v:view,s:sel?.id||null,p:viewedProfile?.id||null})); }catch{ /* storage disabled */ }
   },[view,sel?.id,viewedProfile?.id]);
 
-  // Page transition — a gentle opacity fade on the content wrapper each time the
+  // Page transition - a gentle opacity fade on the content wrapper each time the
   // view changes. Opacity-only (no transform) so fixed overlays keep working, and
   // skipped when the user prefers reduced motion.
   useEffect(()=>{
@@ -818,7 +818,7 @@ export default function App() {
   // item-review step with no stale shipping selection.
   useEffect(()=>{ if(!showBag){ setBagStep("items"); setBagShipping({}); } },[showBag]);
 
-  // Sticky header shadow — flips `scrolled` on once the page has moved past a few
+  // Sticky header shadow - flips `scrolled` on once the page has moved past a few
   // pixels so the frosted header lifts off the content with a hairline shadow.
   useEffect(()=>{
     const onScroll=()=>setScrolled(window.scrollY>6);
@@ -834,7 +834,7 @@ export default function App() {
     setView(v);
     window.scrollTo(0,0);
   },[]);
-  // Leaving a legal page back to the shop — restore the "/" URL so it doesn't
+  // Leaving a legal page back to the shop - restore the "/" URL so it doesn't
   // stay stuck on /terms etc. (replaceState: no extra history entry).
   const exitLegal=useCallback(()=>{
     if(STATIC_PATHS[window.location.pathname.replace(/\/+$/,"")]) window.history.replaceState({},"","/");
@@ -869,14 +869,14 @@ export default function App() {
       db.getNotifications(user.id,token).then(setNotifications);
       loadSavedSearches();
       loadMyWishlist();
-      // Phase 11 — the seller's latest verification application (for the rejected
+      // Phase 11 - the seller's latest verification application (for the rejected
       // → reapply-after-30-days rule in the dashboard GET VERIFIED section).
       db.getMyVerificationApplication(user.id,token).then(setMyVerificationApp).catch(()=>{});
-      // Phase 13 — the seller's promotions for the dashboard ANALYTICS history.
+      // Phase 13 - the seller's promotions for the dashboard ANALYTICS history.
       db.getMyPromotions(user.id,token).then(setMyPromotions).catch(()=>{});
-      // Phase 14 — the seller's incoming offers for the dashboard OFFERS tab.
+      // Phase 14 - the seller's incoming offers for the dashboard OFFERS tab.
       loadSellerOffers();
-      // Phase 15 — the user's tailor row (drives the BECOME A TAILOR / PENDING /
+      // Phase 15 - the user's tailor row (drives the BECOME A TAILOR / PENDING /
       // MY TAILOR PROFILE nav entries).
       db.getMyTailor(user.id,token).then(setMyTailor).catch(()=>{});
     } else {
@@ -897,7 +897,7 @@ export default function App() {
     finally{ setLoading(false); }
   }
 
-  // Phase 13 — a listing counts as "promoted" for sorting only while its boost is
+  // Phase 13 - a listing counts as "promoted" for sorting only while its boost is
   // live (promoted flag set AND promoted_until still in the future), so an expired
   // promotion the cron hasn't swept yet never floats to the top.
   const visible = useMemo(()=>{
@@ -914,20 +914,20 @@ export default function App() {
     const matchFit  = !showSizeMatch||fitsMe(i)===true;
     const q=search.toLowerCase();
     const matchSearch=!q||i.name?.toLowerCase().includes(q)||i.description?.toLowerCase().includes(q)||i.fabric?.toLowerCase().includes(q)||i.category?.toLowerCase().includes(q)||i.origin?.toLowerCase().includes(q)||i.material?.toLowerCase().includes(q)||i.brand?.toLowerCase().includes(q);
-    // Phase 10d — hide listings whose seller is on vacation, and any the seller
+    // Phase 10d - hide listings whose seller is on vacation, and any the seller
     // has deactivated via bulk edit (status='inactive'). Applies to shop & search.
     const matchVacation=!vacationSellers.has(i.user_id);
     const matchActive=i.status!=="inactive";
-    // Issue #167 — hide SOLD listings from every browse/discovery view (shop,
+    // Issue #167 - hide SOLD listings from every browse/discovery view (shop,
     // homepage grid, search, new arrivals). "Sold" is matched by EITHER signal:
     // the legacy sold=true flag (set when a seller marks a piece sold) OR
     // status='sold' (set by the stripe-webhook on a real purchase). Sold pieces
     // remain visible on the dashboard SOLD tab, order history, Shop the Look and
-    // Recently Viewed (each with a SOLD overlay) — none of which use this filter.
+    // Recently Viewed (each with a SOLD overlay) - none of which use this filter.
     const matchNotSold=!i.sold&&i.status!=="sold";
-    // Phase 11 — "Verified sellers only" filter: keep listings from verified sellers.
+    // Phase 11 - "Verified sellers only" filter: keep listings from verified sellers.
     const matchVerified=!showVerifiedOnly||verifiedSellers.has(i.user_id);
-    // Phase 12 — occasion + colour filters. Multi-select, OR within a group. An
+    // Phase 12 - occasion + colour filters. Multi-select, OR within a group. An
     // untagged listing (no occasions/colours) is never hidden by that filter so
     // existing listings show under every selection.
     const occ=i.occasions||[];
@@ -946,7 +946,7 @@ export default function App() {
    });
   },[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,brandFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers,occFilter,colourFilter,shopSort]);
 
-  // Brands actually present across live listings (for the shop's brand filter) —
+  // Brands actually present across live listings (for the shop's brand filter) -
   // unique, non-empty, alphabetical. Includes custom brands sellers typed.
   const allBrands = useMemo(()=>{
     const s=new Set();
@@ -995,7 +995,7 @@ export default function App() {
   },[session]);
 
   // Runs a token-using operation and, if it fails specifically because the token
-  // expired mid-flight (a window the pre-check can miss — clock skew, a slow
+  // expired mid-flight (a window the pre-check can miss - clock skew, a slow
   // multi-image upload, or the tab being backgrounded), force-refreshes and
   // retries ONCE. This is what makes the listing flow self-heal instead of
   // surfacing "JWT expired" / `"exp" claim timestamp check failed`.
@@ -1038,7 +1038,7 @@ export default function App() {
 
   function togOcc(o){ setForm(f=>({...f,occasions:f.occasions.includes(o)?f.occasions.filter(x=>x!==o):[...f.occasions,o]})); }
   function togColour(c){ setForm(f=>({...f,colours:(f.colours||[]).includes(c)?f.colours.filter(x=>x!==c):[...(f.colours||[]),c]})); }
-  // Phase 12 — toggle one occasion/colour in the shop filter (multi-select).
+  // Phase 12 - toggle one occasion/colour in the shop filter (multi-select).
   function togOccFilter(o){ setOccFilter(prev=>prev.includes(o)?prev.filter(x=>x!==o):[...prev,o]); }
   function togColourFilter(c){ setColourFilter(prev=>prev.includes(c)?prev.filter(x=>x!==c):[...prev,c]); }
   function clearFilters(){ setSearch(""); setCatFilter("All"); setSizeFilter("All"); setMinPrice(""); setMaxPrice(""); setTypeFilter("All"); setCondFilter("All"); setBrandFilter("All"); setShowVerifiedOnly(false); setOccFilter([]); setColourFilter([]); }
@@ -1047,7 +1047,7 @@ export default function App() {
   const inBag = (id) => bag.some(b=>b.id===id);
 
   // Add/remove a listing from the bag (toggle). Each piece is one-of-a-kind so the
-  // bag never holds more than one of the same listing — adding an item already in
+  // bag never holds more than one of the same listing - adding an item already in
   // the bag removes it. Stores a small snapshot so the panel needs no extra fetch.
   function toggleBag(item){
     setBag(prev=>{
@@ -1064,7 +1064,7 @@ export default function App() {
           image:item.image_url||(item.images&&item.images[0])||"",
           emoji:item.emoji||catEmoji(item.category),
           seller:item.seller_username||item.seller_name||item.username||"",
-          // Phase 14 — stable seller id so the bag can group items per seller and
+          // Phase 14 - stable seller id so the bag can group items per seller and
           // apply that seller's bundle discount (the `seller` name above is display-only).
           sellerId:item.user_id||item.seller_id||null,
           sold:!!item.sold,
@@ -1087,7 +1087,7 @@ export default function App() {
 
   const bagTotal = bag.reduce((sum,b)=>sum+(parseFloat(b.price)||0),0);
 
-  // Phase 14 — bundle discounts in the bag. Group bagged items by seller; a seller
+  // Phase 14 - bundle discounts in the bag. Group bagged items by seller; a seller
   // who has bundle_discount_enabled and 2+ of their items in the bag gives that %
   // off their own items only. With items from several discounting sellers, each
   // seller's discount applies to just their own items (separate lines). Legacy bag
@@ -1126,7 +1126,7 @@ export default function App() {
     return [...groups.values()];
   })();
 
-  // Phase 14 — sellers whose "BUNDLE & SAVE X%" card banner should show: the
+  // Phase 14 - sellers whose "BUNDLE & SAVE X%" card banner should show: the
   // discount is enabled AND they have 2+ active listings (so a bundle is actually
   // possible). Maps seller id → % for the shop grid. The storefront banner has no
   // 2+ requirement, so it reads bundle_discount_enabled off the profile directly.
@@ -1227,11 +1227,11 @@ export default function App() {
       setShowReview(false); setReviewOrder(null); setReviewForm({rating:5,comment:""});
       // Refresh the grid-wide rating lookup so the new review updates card stars too.
       loadSellerRatings();
-      flash("Review submitted — thanks!");
+      flash("Review submitted - thanks!");
     }catch(e){ flash("Failed to submit review."); }
   }
 
-  // Phase 14 — load a listing's comments and attach the commenter's username +
+  // Phase 14 - load a listing's comments and attach the commenter's username +
   // avatar (comments only store user_id). Mirrors loadReviews' batch lookup.
   async function loadComments(listingId){
     const rows=await db.getComments(listingId,token);
@@ -1256,7 +1256,7 @@ export default function App() {
       await db.insertComment({listing_id:sel.id,user_id:user.id,content},token);
       setComments(await loadComments(sel.id));
       setCommentText("");
-      // In-app notification to the seller (never to yourself — notify() guards).
+      // In-app notification to the seller (never to yourself - notify() guards).
       const who=(profile?.username||profile?.full_name||"Someone").trim();
       notify(sel.user_id,"comment","New question",`${who} asked a question on your listing ${sel.name}`,sel.id);
       flash("Question posted!");
@@ -1270,7 +1270,7 @@ export default function App() {
     }catch(e){ flash("Failed to delete comment."); }
   }
 
-  // Phase 14 — seller replies to a buyer's question. The reply is just another
+  // Phase 14 - seller replies to a buyer's question. The reply is just another
   // comment row pointing back at the question via parent_comment_id; the
   // original commenter is notified that the seller answered.
   async function submitReply(parent,content){
@@ -1285,7 +1285,7 @@ export default function App() {
     }catch(e){ flash("Failed to post your reply."); }
   }
 
-  // ── Phase 14 — Make an offer (buyer side) ─────────────────────────────────
+  // ── Phase 14 - Make an offer (buyer side) ─────────────────────────────────
   // Insert the offer, notify the seller in-app (the email fires from the data
   // layer), then flip the Detail page to its OFFER PENDING state. `amountPence`
   // is already validated in the modal. Returns true so the modal can close only
@@ -1310,9 +1310,9 @@ export default function App() {
     catch(e){ flash("Couldn't withdraw your offer."); }
   }
 
-  // ── Phase 14 — Buyer's own offers + offer checkout (the /offers page) ──────
+  // ── Phase 14 - Buyer's own offers + offer checkout (the /offers page) ──────
   // Load every offer this buyer has made (grouped by status on the page). Safe to
-  // call without a session — it just clears the list.
+  // call without a session - it just clears the list.
   async function loadBuyerOffers(){
     if(!user||!token){ setBuyerOffers([]); return; }
     setOffersLoading(true);
@@ -1345,7 +1345,7 @@ export default function App() {
     catch(e){ flash("That listing is no longer available."); }
   }
 
-  // ── Phase 14 — Seller responds to offers (accept / decline) ───────────────
+  // ── Phase 14 - Seller responds to offers (accept / decline) ───────────────
   // Load the seller's incoming offers for the dashboard OFFERS tab and resolve
   // the buyer names ("From Sarah") in one batched profiles fetch.
   const loadSellerOffers=useCallback(async()=>{
@@ -1364,7 +1364,7 @@ export default function App() {
 
   // Accept an offer (PART 3). Flip status, pause offers on the listing, decline
   // the other pending offers, then fire every in-app notification (the emails
-  // fire from the data layer). The listing is NOT marked sold — payment is the
+  // fire from the data layer). The listing is NOT marked sold - payment is the
   // next issue. Returns true so the modal can close only on success.
   async function acceptOffer(offer){
     if(!user||!offer) return false;
@@ -1379,7 +1379,7 @@ export default function App() {
       (declined||[]).forEach(d=>notify(d.buyer_id,"offer","Offer not accepted",`Your offer on ${title} was not accepted this time.`,offer.listing_id));
       await loadSellerOffers();
       await fetchItems(); // listing.offers_enabled changed
-      flash("Offer accepted — the buyer has been notified.",6000);
+      flash("Offer accepted - the buyer has been notified.",6000);
       return true;
     }catch(e){ console.error("Accept offer failed:",e); flash("Couldn't accept the offer. Please try again."); return false; }
   }
@@ -1401,7 +1401,7 @@ export default function App() {
         notify(offer.buyer_id,"offer","Offer not accepted",`Your offer on ${title} was not accepted this time.`,offer.listing_id);
       }
       await loadSellerOffers();
-      flash("Offer declined — the buyer has been notified.");
+      flash("Offer declined - the buyer has been notified.");
       return true;
     }catch(e){ console.error("Decline offer failed:",e); flash("Couldn't decline the offer. Please try again."); return false; }
   }
@@ -1418,7 +1418,7 @@ export default function App() {
     }catch(e){ flash("Failed to submit report."); }
   }
 
-  // Phase 11 — open the "Report a problem" modal for an order (buyer side).
+  // Phase 11 - open the "Report a problem" modal for an order (buyer side).
   function openDispute(order){
     if(!user){ setAuthMode("login"); setView("auth"); return; }
     setDisputeForm({problem_type:"",details:"",photoFile:null,photoPreview:""});
@@ -1454,7 +1454,7 @@ export default function App() {
       const o=disputeOrder;
       const admins=await db.getAdmins(token);
       if(disputeKind==="alteration"){
-        // Tailoring dispute — link to the alteration request, mark it 'disputed'
+        // Tailoring dispute - link to the alteration request, mark it 'disputed'
         // (the tailor's payout only releases on buyer confirmation, so this both
         // freezes it and replaces the confirm UI with an under-review state).
         await db.insertDispute({alteration_request_id:o.id,order_id:null,buyer_id:user.id,seller_id:o.tailors?.user_id||null,problem_type:disputeForm.problem_type,details:disputeForm.details.trim(),photo_url,status:"open"},token);
@@ -1464,10 +1464,10 @@ export default function App() {
         await Promise.all((admins||[]).map(a=>notify(a.id,"dispute","New tailoring dispute",`A buyer reported a problem with the alteration of "${name}": ${disputeForm.problem_type}`,o.listing_id||null)));
       }else{
         await db.insertDispute({order_id:o.id,buyer_id:user.id,seller_id:o.seller_id||null,problem_type:disputeForm.problem_type,details:disputeForm.details.trim(),photo_url,status:"open"},token);
-        // Dispute hold — keep the seller's earnings held (won't auto-release) until
+        // Dispute hold - keep the seller's earnings held (won't auto-release) until
         // an admin resolves it.
         if(o.listing_id) await db.holdDisputedEarnings(o.listing_id,token);
-        // Notify the Stitch'd admin(s) — type='dispute', routed to each is_admin user.
+        // Notify the Stitch'd admin(s) - type='dispute', routed to each is_admin user.
         const title=items.find(i=>i.id===o.listing_id)?.name||"an order";
         await Promise.all((admins||[]).map(a=>notify(a.id,"dispute","New dispute raised",`A buyer reported a problem with "${title}": ${disputeForm.problem_type}`,o.listing_id)));
       }
@@ -1477,7 +1477,7 @@ export default function App() {
     finally{ setDisputeBusy(false); }
   }
 
-  // Phase 11 — admin panel: load all reports + disputes plus the display names of
+  // Phase 11 - admin panel: load all reports + disputes plus the display names of
   // the reporters/buyers referenced. Called when an admin opens the dashboard.
   async function loadAdminData(){
     if(!isAdmin||!token) return;
@@ -1535,15 +1535,15 @@ export default function App() {
       }
       if(newStatus==="refunded"){
         flash(refundFailed
-          ? "Dispute marked REFUNDED, but the auto-refund failed — issue it manually in Stripe."
-          : "Dispute REFUNDED — the buyer has been refunded.",7000);
+          ? "Dispute marked REFUNDED, but the auto-refund failed - issue it manually in Stripe."
+          : "Dispute REFUNDED - the buyer has been refunded.",7000);
       }else{
         flash(`Dispute marked ${label}.`);
       }
     }catch(e){ flash("Failed to update dispute."); }
   }
 
-  // Phase 11 — admin: approve a verification application. Flips the seller's
+  // Phase 11 - admin: approve a verification application. Flips the seller's
   // profile to verified, stamps the application approved, notifies the seller, and
   // keeps the verifiedSellers set in sync so the badge appears immediately.
   async function approveVerification(app){
@@ -1729,7 +1729,7 @@ export default function App() {
   async function updateOrderStatus(orderId,newStatus){
     const order=myOrders.find(o=>o.id===orderId);
     try{
-      // Only patch `status` — it's the one column the orders table is guaranteed to
+      // Only patch `status` - it's the one column the orders table is guaranteed to
       // have. db.updateOrder isn't self-healing, so sending an optional column the
       // deployment lacks (e.g. shipped_at) would fail the whole update.
       await db.updateOrder(orderId,{status:newStatus},token);
@@ -1753,10 +1753,10 @@ export default function App() {
       setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:num,tracking_carrier:order.postage_carrier||order.tracking_carrier||null}:o));
       if(num&&order.buyer_id){
         const title=items.find(i=>i.id===order.listing_id)?.name||"your order";
-        await notify(order.buyer_id,"order","Tracking added",`${title} is on its way — track it from your orders. Tracking: ${num}`,order.listing_id);
+        await notify(order.buyer_id,"order","Tracking added",`${title} is on its way - track it from your orders. Tracking: ${num}`,order.listing_id);
       }
-      flash(num?"Tracking saved — the buyer's been notified.":"Tracking cleared.");
-    }catch(e){ flash("Couldn't save tracking — the orders table may need the tracking columns."); }
+      flash(num?"Tracking saved - the buyer's been notified.":"Tracking cleared.");
+    }catch(e){ flash("Couldn't save tracking - the orders table may need the tracking columns."); }
   }
 
   // Buyer confirms they've received the item and it's all OK (Vinted-style):
@@ -1769,7 +1769,7 @@ export default function App() {
       setMyOrders(p=>p.map(o=>o.id===order.id?{...o,status:"completed"}:o));
       if(order.listing_id) await db.releaseSaleEarnings(order.listing_id,token);
       const title=items.find(i=>i.id===order.listing_id)?.name||"your order";
-      if(order.seller_id) await notify(order.seller_id,"sale","Payment released",`The buyer confirmed receipt of "${title}" — your earnings are now available to withdraw.`,order.listing_id);
+      if(order.seller_id) await notify(order.seller_id,"sale","Payment released",`The buyer confirmed receipt of "${title}" - your earnings are now available to withdraw.`,order.listing_id);
       flash("Thanks for confirming! The seller's payment has been released.",6000);
     }catch(e){ flash("Couldn't confirm receipt. Please try again."); }
   }
@@ -1780,7 +1780,7 @@ export default function App() {
   // rather than by who is currently signed in (unlike startConversation).
   async function startOrderConversation(order){
     if(!user){ setAuthMode("login"); setView("auth"); return; }
-    if(!order.buyer_id){ flash("This was a guest checkout — there's no buyer account to message."); return; }
+    if(!order.buyer_id){ flash("This was a guest checkout - there's no buyer account to message."); return; }
     const { buyer_id:buyerId, seller_id:sellerId, listing_id:listingId }=order;
     try{
       let conv=await db.findConversation(buyerId,sellerId,listingId,token);
@@ -1799,7 +1799,7 @@ export default function App() {
 
   useEffect(()=>{ loadHomeSections(); },[]);
 
-  // Phase 10e — load active, published looks (with their items + listings
+  // Phase 10e - load active, published looks (with their items + listings
   // embedded) for the homepage rail and the /looks page.
   async function loadLooks(){
     try{ setLooks(await db.getActiveLooks(token)); }catch(e){ /* non-fatal: section just hides */ }
@@ -1829,7 +1829,7 @@ export default function App() {
   useEffect(()=>{ loadSellerRatings(); },[]);
 
   // Fetch every wishlist row once (listing_id only) and aggregate into a
-  // listing_id -> count map for the whole grid — one request beats a per-card
+  // listing_id -> count map for the whole grid - one request beats a per-card
   // count, same shape as loadSellerRatings.
   async function loadWishlistCounts(){
     const rows=await db.getAllWishlists(token);
@@ -1868,7 +1868,7 @@ export default function App() {
     }
   }
 
-  // Phase 14 — clear every SOLD item from the wishlist in one tap (the sold
+  // Phase 14 - clear every SOLD item from the wishlist in one tap (the sold
   // section's "CLEAR ALL SOLD ITEMS" action). Optimistic across the batch; on any
   // failure we resync from the table rather than guess which deletes landed.
   async function clearSoldWishlist(){
@@ -1883,7 +1883,7 @@ export default function App() {
     catch(e){ flash("Couldn't clear sold items. Try again."); loadMyWishlist(); }
   }
 
-  // Phase 14 — "FIND SIMILAR" on a sold wishlist card: clear active filters, pin
+  // Phase 14 - "FIND SIMILAR" on a sold wishlist card: clear active filters, pin
   // the category and drop the buyer on the shop grid showing comparable pieces.
   function findSimilar(item){
     clearFilters();
@@ -1891,7 +1891,7 @@ export default function App() {
     setView("shop");
   }
 
-  // ── Phase 14 — Shareable wishlists ──────────────────────────────────────────
+  // ── Phase 14 - Shareable wishlists ──────────────────────────────────────────
   // Load the signed-in user's shared lists for the MY SHARED LISTS section.
   async function loadMySharedWishlists(){
     if(!user||!token){ setMyShared([]); return; }
@@ -2034,7 +2034,7 @@ export default function App() {
 
   useEffect(()=>{ loadFastSellers(); },[]);
 
-  // Phase 10d — load the set of sellers currently on vacation so their listings
+  // Phase 10d - load the set of sellers currently on vacation so their listings
   // can be filtered out of the shop/search grid.
   async function loadVacationSellers(){
     const rows=await db.getVacationSellers(token);
@@ -2042,7 +2042,7 @@ export default function App() {
   }
   useEffect(()=>{ loadVacationSellers(); },[]);
 
-  // Phase 14 — load the sellers offering a bundle discount (id → %) so cards,
+  // Phase 14 - load the sellers offering a bundle discount (id → %) so cards,
   // storefronts and the bag can apply it. Mirrors loadVacationSellers.
   async function loadBundleSellers(){
     const rows=await db.getBundleDiscountSellers(token);
@@ -2050,7 +2050,7 @@ export default function App() {
   }
   useEffect(()=>{ loadBundleSellers(); },[]);
 
-  // Phase 11 — load the set of verified sellers so cards/Detail can show the
+  // Phase 11 - load the set of verified sellers so cards/Detail can show the
   // VERIFIED SELLER badge and the search filter can hide everyone else.
   async function loadVerifiedSellers(){
     const rows=await db.getVerifiedSellers(token);
@@ -2058,7 +2058,7 @@ export default function App() {
   }
   useEffect(()=>{ loadVerifiedSellers(); },[]);
 
-  // Phase 11 — load the set of identity-verified sellers (Stripe Identity) so
+  // Phase 11 - load the set of identity-verified sellers (Stripe Identity) so
   // cards/Detail can show the ID VERIFIED badge. Mirrors loadVerifiedSellers.
   async function loadIdentityVerifiedSellers(){
     const rows=await db.getIdentityVerifiedSellers(token);
@@ -2066,7 +2066,7 @@ export default function App() {
   }
   useEffect(()=>{ loadIdentityVerifiedSellers(); },[]);
 
-  // Phase 15 — open the public tailor directory (browse approved tailors). Loads
+  // Phase 15 - open the public tailor directory (browse approved tailors). Loads
   // fresh each time so a newly-approved tailor shows without a refresh.
   async function openTailorDirectory(){
     setView("tailor-directory"); window.scrollTo(0,0);
@@ -2100,7 +2100,7 @@ export default function App() {
     setPayoutBusy(true);
     try{
       const res=await startSellerConnect(user.id); // redirects on success; returns {onboarding_complete} if done
-      if(res&&res.onboarding_complete){ setProfile(p=>p?{...p,stripe_onboarding_complete:true}:p); flash("Your bank account is connected — you can withdraw now."); }
+      if(res&&res.onboarding_complete){ setProfile(p=>p?{...p,stripe_onboarding_complete:true}:p); flash("Your bank account is connected - you can withdraw now."); }
     }catch(e){ flash(errMsg(e)); }
     finally{ setPayoutBusy(false); }
   }
@@ -2134,7 +2134,7 @@ export default function App() {
     catch(e){}
   }
 
-  // ── Phase 15 — Tailor profiles ──────────────────────────────────────────────
+  // ── Phase 15 - Tailor profiles ──────────────────────────────────────────────
   const poundsToPence=(v)=>{ const n=parseFloat(v); return isNaN(n)?null:Math.round(n*100); };
 
   // Open the multi-step BECOME A TAILOR application flow with a blank form.
@@ -2241,7 +2241,7 @@ export default function App() {
     }catch(e){ setTailorReviews([]); setTailorReviewBuyers({}); }
   }
 
-  // ── Phase 15 — Tailor availability calendar ────────────────────────────────
+  // ── Phase 15 - Tailor availability calendar ────────────────────────────────
   // Load the signed-in tailor's availability rows for the dashboard tab.
   async function loadTailorAvailability(){
     if(!myTailor||!token) return;
@@ -2302,7 +2302,7 @@ export default function App() {
     catch(e){ flash("Couldn't update those days."); }
     finally{ setAvailabilityBusy(false); }
   }
-  // MARK ALL AS AVAILABLE — clear every override.
+  // MARK ALL AS AVAILABLE - clear every override.
   async function markAllAvailable(){
     if(!myTailor||!token) return;
     setAvailabilityBusy(true);
@@ -2341,7 +2341,7 @@ export default function App() {
     finally{ setTailorEditBusy(false); }
   }
 
-  // PORTFOLIO tab — add images (respecting the max of 8).
+  // PORTFOLIO tab - add images (respecting the max of 8).
   async function addPortfolioImages(files){
     if(!myTailor||!token) return;
     const remaining=8-(tailorPortfolio?.length||0);
@@ -2354,7 +2354,7 @@ export default function App() {
       const rows=urls.map((u,i)=>({tailor_id:myTailor.id,image_url:u,caption:null,garment_type:null,position:base+i}));
       const inserted=await db.insertPortfolioItems(rows,token);
       setTailorPortfolio(p=>[...p,...inserted]);
-      if(files.length>remaining) flash(`Added ${remaining} — portfolio is now full (max 8).`);
+      if(files.length>remaining) flash(`Added ${remaining} - portfolio is now full (max 8).`);
     }catch(e){ flash("Couldn't add photos: "+errMsg(e)); }
     finally{ setPortfolioBusy(false); }
   }
@@ -2393,7 +2393,7 @@ export default function App() {
     catch(e){ setPublicTailor(null); }
     finally{ setPublicTailorLoading(false); }
     // Reviews for the profile's REVIEWS section, plus the reviewers' profiles
-    // (first name + avatar). Best-effort — the section degrades to its empty state.
+    // (first name + avatar). Best-effort - the section degrades to its empty state.
     try{
       const reviews=await db.getTailorReviews(id,token);
       setPublicTailorReviews(reviews);
@@ -2410,7 +2410,7 @@ export default function App() {
     catch(e){ return {}; }
   }
 
-  // ── Phase 15 — Request alterations on a listing ────────────────────────────
+  // ── Phase 15 - Request alterations on a listing ────────────────────────────
   // The buyer's display name, used in the in-app notification to the tailor.
   const buyerDisplayName=()=>(profile?.full_name&&profile.full_name.trim())||profile?.username||user?.email?.split("@")[0]||"A buyer";
   // The garment type a request is about, derived from the listing's measurements
@@ -2571,11 +2571,11 @@ export default function App() {
   }
   // Buyer confirms completion → release the tailor's payout as a real Stripe
   // Connect transfer (process-tailor-payout). That function decides the outcome:
-  //   • paid  — the tailor's onboarded; the transfer went out (it notifies/emails)
-  //   • held  — the tailor hasn't finished payment setup; payout stays pending
+  //   • paid  - the tailor's onboarded; the transfer went out (it notifies/emails)
+  //   • held  - the tailor hasn't finished payment setup; payout stays pending
   //             (it nudges the tailor to finish)
   // If the function is unreachable (e.g. Connect not yet live on the account), we
-  // fall back to the DB-only release so completion still works — the transfer can
+  // fall back to the DB-only release so completion still works - the transfer can
   // be retried later from the admin PAYOUTS panel.
   // Returns true so the card can switch to the review prompt.
   async function confirmAlterationCompletion(req){
@@ -2589,7 +2589,7 @@ export default function App() {
         if(res&&res.held) outcome="held";
         else outcome="paid"; // paid or already_paid
       }catch(e){
-        // Connect may not be active yet — degrade to the DB-only release so the
+        // Connect may not be active yet - degrade to the DB-only release so the
         // buyer isn't blocked, and notify the tailor ourselves (the edge function
         // didn't run, so no notification/email fired).
         console.error("Payout transfer failed, falling back to DB release:",e);
@@ -2597,7 +2597,7 @@ export default function App() {
         if(tailorUserId) await notify(tailorUserId,"alteration_payout","Payout confirmed!",`Great news! Your payout of ${gbp(payoutPence)} has been confirmed.`,req.listing_id);
         outcome="fallback";
       }
-      // The buyer has done their part — advance their own card to the review
+      // The buyer has done their part - advance their own card to the review
       // prompt regardless of the payout outcome (held is the tailor's concern,
       // surfaced on the tailor EARNINGS + admin PAYOUTS views from the real
       // tailor_payouts.status). This is a local-only optimistic flag.
@@ -2613,7 +2613,7 @@ export default function App() {
     }catch(e){ flash("Couldn't confirm completion: "+errMsg(e)); return false; }
   }
 
-  // ── Phase 15 — Leave a review for a tailor ─────────────────────────────────
+  // ── Phase 15 - Leave a review for a tailor ─────────────────────────────────
   // Open the review modal for a completed booking. Guard against reviewing twice
   // (the UNIQUE(alteration_request_id) constraint also enforces this server-side).
   function openTailorReview(req){
@@ -2657,7 +2657,7 @@ export default function App() {
     catch(e){ setTailorPayouts([]); }
   }
 
-  // ── Phase 15 — Stripe Connect onboarding (tailor PAYMENTS section) ─────────
+  // ── Phase 15 - Stripe Connect onboarding (tailor PAYMENTS section) ─────────
   // Tap CONNECT BANK ACCOUNT → create-connect-account creates/reuses the tailor's
   // Express account and redirects to the Stripe-hosted onboarding flow, which
   // returns to /tailor-dashboard?connect=success.
@@ -2666,7 +2666,7 @@ export default function App() {
     setPaymentsBusy(true);
     try{ await startConnectOnboarding(myTailor.id,user.id); }
     catch(e){ flash(e.message||"Couldn't start payment setup. Please try again."); setPaymentsBusy(false); }
-    // No finally — on success the browser navigates away to Stripe.
+    // No finally - on success the browser navigates away to Stripe.
   }
   // Re-check onboarding against Stripe (details_submitted) and sync myTailor.
   // Called on the ?connect=success return; returns the function's JSON.
@@ -2703,7 +2703,7 @@ export default function App() {
       if(mode==="success"){
         const res=await verifyTailorPayments({silent:true});
         if(res&&res.onboarding_complete) flash("Payment account connected successfully!",6000);
-        else flash("Almost there — finish your payment setup to start receiving payouts.",6000);
+        else flash("Almost there - finish your payment setup to start receiving payouts.",6000);
       }else{
         flash("Payment setup wasn't completed. You can resume it anytime from your profile.",6000);
       }
@@ -2711,7 +2711,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[connectReturn,myTailor,token]);
 
-  // Admin — approve a tailor application: flip status to approved, stamp the
+  // Admin - approve a tailor application: flip status to approved, stamp the
   // approval, notify + email the tailor, keep myTailor in sync if it's me.
   async function approveTailor(t){
     const now=new Date().toISOString();
@@ -2726,7 +2726,7 @@ export default function App() {
     }catch(e){ flash("Failed to approve tailor."); }
   }
 
-  // Admin — reject a tailor application.
+  // Admin - reject a tailor application.
   async function rejectTailor(t){
     try{
       await db.updateTailor(t.id,{status:"rejected"},token);
@@ -2737,7 +2737,7 @@ export default function App() {
     }catch(e){ flash("Failed to reject tailor."); }
   }
 
-  // Admin — retry a failed (or stuck-pending) payout. Re-runs process-tailor-payout
+  // Admin - retry a failed (or stuck-pending) payout. Re-runs process-tailor-payout
   // for the booking; the function re-verifies everything and either transfers,
   // holds (tailor not onboarded) or reports a fresh failure. Reloads the panel.
   async function retryPayout(po){
@@ -2745,7 +2745,7 @@ export default function App() {
     if(!reqId){ flash("Couldn't find the booking for this payout."); return; }
     try{
       const res=await processTailorPayout(reqId);
-      if(res&&res.held) flash("Payout still pending — the tailor hasn't finished their payment setup yet.",6000);
+      if(res&&res.held) flash("Payout still pending - the tailor hasn't finished their payment setup yet.",6000);
       else if(res&&(res.paid||res.already_paid)) flash("Payout transferred successfully.");
       else flash("Payout retried.");
     }catch(e){ flash("Retry failed: "+errMsg(e)); }
@@ -2814,7 +2814,7 @@ export default function App() {
         setFollowing(p=>[...p,{follower_id:user.id,following_id:targetId}]);
         if(viewing) setFollowerCount(c=>c+1);
         flash("✦ Following!");
-        // Phase 13 PART 7 — tell the seller they have a new follower. Link to the
+        // Phase 13 PART 7 - tell the seller they have a new follower. Link to the
         // follower's profile (this user). Best-effort: never block the follow.
         const me=(profile?.full_name&&profile.full_name.trim())||profile?.username||user.email?.split("@")[0]||"Someone";
         notify(targetId,"new_follower","✦ New follower",`${me} started following you`,user.id);
@@ -2822,7 +2822,7 @@ export default function App() {
     }catch(e){ flash("Could not update follow."); }
   }
 
-  // Phase 13 — MY FOLLOWING list. Resolve each followed seller's profile and
+  // Phase 13 - MY FOLLOWING list. Resolve each followed seller's profile and
   // count their active (unsold, not deactivated) listings for the row subtitle.
   async function loadFollowingList(){
     if(!user||!token) return;
@@ -2840,7 +2840,7 @@ export default function App() {
     finally{ setFollowingLoading(false); }
   }
 
-  // Phase 13 — save the seller's storefront (banner upload + text fields) from the
+  // Phase 13 - save the seller's storefront (banner upload + text fields) from the
   // dashboard TOOLS tab. Self-healing patch tolerates a not-yet-migrated schema.
   async function saveStorefront(){
     if(!user||storeSaving) return;
@@ -2849,7 +2849,7 @@ export default function App() {
       let banner_url=storeForm.storefront_banner_url||"";
       if(storeForm.bannerFile){
         try{ banner_url=await withFreshToken(tok=>uploadStorefrontBanner(storeForm.bannerFile,tok)); }
-        catch(e){ flash("Banner upload failed — saved the rest of your storefront."); }
+        catch(e){ flash("Banner upload failed - saved the rest of your storefront."); }
       }
       const patch={
         storefront_banner_url:banner_url||null,
@@ -2881,7 +2881,7 @@ export default function App() {
     finally{ setFeedLoading(false); }
   }
 
-  // ── Phase 14 — STYLE FEED ───────────────────────────────────────────────────
+  // ── Phase 14 - STYLE FEED ───────────────────────────────────────────────────
   // Resolve the author profiles, tagged listings, seed like counts and the
   // viewer's likes for a freshly-fetched page of posts. Only fetches the bits not
   // already cached in the shared maps (so LOAD MORE / tab switches stay cheap).
@@ -2972,7 +2972,7 @@ export default function App() {
   }
 
   // Search ACTIVE listings by title for the create-post tag picker (reuses the
-  // Shop-the-Look picker query — case-insensitive, unsold only).
+  // Shop-the-Look picker query - case-insensitive, unsold only).
   async function searchActiveListings(q){
     if(!q||!q.trim()) return [];
     try{ return await db.searchListings(q.trim(),token); }catch{ return []; }
@@ -3017,7 +3017,7 @@ export default function App() {
     finally{ setStyleCreating(false); }
   }
 
-  // Homepage STYLE INSPIRATION preview — 4 newest posts + their authors. Non-fatal.
+  // Homepage STYLE INSPIRATION preview - 4 newest posts + their authors. Non-fatal.
   async function loadHomeStylePosts(){
     try{
       const posts=await db.getRecentStylePosts(4,token);
@@ -3029,7 +3029,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(()=>{ loadHomeStylePosts(); },[]);
 
-  // Style post share deep link (/post/<id>) — open the feed and make sure the
+  // Style post share deep link (/post/<id>) - open the feed and make sure the
   // shared post is visible (prepended if it's not on the first FOR YOU page).
   useEffect(()=>{
     const m=window.location.pathname.replace(/\/+$/,"").match(/^\/post\/([^/]+)$/);
@@ -3042,7 +3042,7 @@ export default function App() {
         const posts=(post&&!page.some(p=>p.id===post.id))?[post,...page]:page;
         setForYouPosts(posts); setStyleLoadedForYou(true); setHasMoreForYou(page.length===STYLE_PAGE);
         await resolveStyleMeta(posts);
-      }catch(e){ /* ignore — land on an empty feed */ }
+      }catch(e){ /* ignore - land on an empty feed */ }
       finally{ setStyleFeedLoading(false); }
     })();
     window.history.replaceState({},"","/");
@@ -3110,7 +3110,7 @@ export default function App() {
     const listing=items.find(i=>i.id===activeConv.listing_id);
     if(!listing)return;
     const offerAmount=parseFloat((listing.price*(1-percent/100)).toFixed(2));
-    const content=`OFFER: ${percent}% off — ${currencySymbol(listing.currency)}${offerAmount} (original: ${currencySymbol(listing.currency)}${listing.price})`;
+    const content=`OFFER: ${percent}% off - ${currencySymbol(listing.currency)}${offerAmount} (original: ${currencySymbol(listing.currency)}${listing.price})`;
     setMsgSending(true);
     try{
       const [msg]=await db.sendMessage({conversation_id:activeConv.id,sender_id:user.id,content,message_type:"offer",offer_percent:percent,offer_amount:offerAmount,offer_status:"pending"},token);
@@ -3154,7 +3154,7 @@ export default function App() {
     setForm(f=>({...f,imageFiles:f.imageFiles.filter((_,i)=>i!==idx),imagePreviews:f.imagePreviews.filter((_,i)=>i!==idx)}));
   }
 
-  // Optional listing video. One short clip: 3–30 seconds, under ~50MB so uploads
+  // Optional listing video. One short clip: 3-30 seconds, under ~50MB so uploads
   // stay quick and within storage limits. Duration is read from the file's
   // metadata before it's accepted; preview via an object URL until publish.
   function addVideoFile(files){
@@ -3178,7 +3178,7 @@ export default function App() {
 
   // Login gate → /auth. Remembers the current page so we can return here once
   // the buyer is signed in. Used by the reusable LoginPromptModal everywhere.
-  // `pending` (optional) is the listing the buyer tapped while logged out — we
+  // `pending` (optional) is the listing the buyer tapped while logged out - we
   // remember it so postAuthNavigate can open its detail page after they sign in.
   function gateAuth(mode, pending){ setPostAuthView(view); setPendingDetail(pending||null); setAuthMode(mode==="signup"?"signup":"login"); setView("auth"); window.scrollTo(0,0); }
   // Where to land after a successful sign in/up: the gated page the buyer came
@@ -3207,7 +3207,7 @@ export default function App() {
     finally{ setALoading(false); }
   }
 
-  // Forgot password — send the reset email, then bounce back to the login form
+  // Forgot password - send the reset email, then bounce back to the login form
   // with a neutral confirmation (no account enumeration).
   async function handleForgot(e){
     e.preventDefault(); setALoading(true); setAError("");
@@ -3224,7 +3224,7 @@ export default function App() {
     e.preventDefault(); setALoading(true); setAError("");
     try{
       await auth.updateUser(aForm.password, session?.access_token);
-      flash("Password updated — you're signed in.");
+      flash("Password updated - you're signed in.");
       setOtpStep("form"); setAForm({email:"",password:""}); postAuthNavigate();
     }catch(err){ setAError(err.message); }
     finally{ setALoading(false); }
@@ -3273,15 +3273,15 @@ export default function App() {
       if(res&&res.label_url){
         setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number||o.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null,label_url:res.label_url}:o));
         try{ window.open(res.label_url,"_blank"); }catch(e){}
-        flash("Label ready — opening the PDF. It stays on the order as VIEW LABEL.");
+        flash("Label ready - opening the PDF. It stays on the order as VIEW LABEL.");
         return;
       }
       // Legacy order (bought before in-app PDFs were stored) → print from Parcel2Go.
-      if(res&&res.legacy){ try{ window.open("https://www.parcel2go.com/myaccount/myorders","_blank"); }catch(e){} flash("This label was bought earlier — opening your Parcel2Go account to print it."); return; }
+      if(res&&res.legacy){ try{ window.open("https://www.parcel2go.com/myaccount/myorders","_blank"); }catch(e){} flash("This label was bought earlier - opening your Parcel2Go account to print it."); return; }
       // Bought but Parcel2Go hasn't finished generating the PDF yet.
       if(res&&res.tracking_number){
         setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null}:o));
-        flash(res.error||(res.pending?"Label bought — Parcel2Go is still generating the PDF. Tap GET LABEL again in a minute.":"Tracking added."),12000);
+        flash(res.error||(res.pending?"Label bought - Parcel2Go is still generating the PDF. Tap GET LABEL again in a minute.":"Tracking added."),12000);
         return;
       }
       if(res&&res.error){ flash(res.error); return; }
@@ -3296,11 +3296,11 @@ export default function App() {
     const revs=await loadReviews(userId);
     setViewedProfile(p||{id:userId,username:"Seller",bio:""});
     setProfileListings(listings); setReviews(revs); setView("profile");
-    // Phase 13 — live follower count for the storefront.
+    // Phase 13 - live follower count for the storefront.
     db.getFollowers(userId,token).then(f=>setFollowerCount(f.length)).catch(()=>setFollowerCount(0));
   }
 
-  // Phase 14 — the optional minimum-offer floor, in pence, from the form. Only
+  // Phase 14 - the optional minimum-offer floor, in pence, from the form. Only
   // meaningful when offers are enabled; a blank/invalid value stores null.
   function offerFloorPence(f){
     if(f.offers_enabled===false) return null;
@@ -3312,7 +3312,7 @@ export default function App() {
     if(!form.name||!form.price)return;
     if(!user){setView("auth");return;}
     if(!form.imagePreviews.length){ flash("Add at least one photo to publish your listing."); return; }
-    // Phase 11 — items over £200 require ID verification (also gated in the UI).
+    // Phase 11 - items over £200 require ID verification (also gated in the UI).
     if(parseFloat(form.price)>200&&!(profile?.identity_verified)){
       flash("Items over £200 require identity verification. Verify your identity in the dashboard TOOLS tab first.",8000);
       return;
@@ -3330,7 +3330,7 @@ export default function App() {
     }
     try{
       const image_url=urls[0]||"";
-      // Optional video — best-effort: a failed video upload must not block the
+      // Optional video - best-effort: a failed video upload must not block the
       // listing from publishing.
       let video_url=form.video_url||"";
       if(form.videoFile){ try{ video_url=await withFreshToken(tok=>uploadImage(form.videoFile,tok)); }catch(err){ console.warn("Video upload failed:",err); } }
@@ -3339,19 +3339,19 @@ export default function App() {
       const payload={name:form.name,price:parseFloat(form.price),brand:(form.brand||"").trim()||null,video_url:video_url||null,condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
       const [created]=await withFreshToken(tok=>db.insert(payload,tok));
       setItems(p=>[created,...p]); setForm(EMPTY_FORM); setBrandOther(false);
-      // The photo uploaded fine but didn't come back on the saved row — the
+      // The photo uploaded fine but didn't come back on the saved row - the
       // self-healing insert (see lib/db.js) silently drops columns the table is
       // missing, so an absent image_url column means the photo is lost. Surface
       // it instead of a misleading plain "Listed!".
-      if(urls.length&&!created.image_url){ flash("Listed — but the photo couldn't be saved: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase so photos persist.",11000); }
+      if(urls.length&&!created.image_url){ flash("Listed - but the photo couldn't be saved: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase so photos persist.",11000); }
       else{ flash("Listed!"); }
       setView("shop");
-      // Phase 12 PART 5 — kick the saved-search alert sweep so buyers whose saved
+      // Phase 12 PART 5 - kick the saved-search alert sweep so buyers whose saved
       // filters match this fresh listing are emailed within minutes rather than
       // waiting up to 6 hours for the cron run. Fire-and-forget; never blocks.
       if(created?.id) db.triggerSavedSearchAlerts(created.id);
       // The listing is already saved at this point. Notifying followers is a
-      // best-effort extra — if it throws (e.g. a follows/notifications RLS issue)
+      // best-effort extra - if it throws (e.g. a follows/notifications RLS issue)
       // it must NOT fall into the catch below and show a false "Couldn't save
       // listing" toast for a listing that actually saved fine.
       try{
@@ -3366,7 +3366,7 @@ export default function App() {
   async function saveEdit(){
     if(!form.name||!form.price)return;
     if(!form.imagePreviews.length){ flash("Add at least one photo to publish your listing."); return; }
-    // Phase 11 — items over £200 require ID verification (also gated in the UI).
+    // Phase 11 - items over £200 require ID verification (also gated in the UI).
     if(parseFloat(form.price)>200&&!(profile?.identity_verified)){
       flash("Items over £200 require identity verification. Verify your identity in the dashboard TOOLS tab first.",8000);
       return;
@@ -3386,7 +3386,7 @@ export default function App() {
       const existingUrls=(sel.images||[]).filter((_,i)=>form.imagePreviews[i]&&!form.imageFiles[i]);
       const allUrls=[...existingUrls,...newUrls];
       const image_url=allUrls[0]||sel.image_url||"";
-      // Optional video — upload a freshly-picked clip, else keep the existing one
+      // Optional video - upload a freshly-picked clip, else keep the existing one
       // (form.video_url is cleared by removeVideo). Best-effort, never blocks save.
       let video_url=form.video_url||"";
       if(form.videoFile){ try{ video_url=await withFreshToken(tok=>uploadImage(form.videoFile,tok)); }catch(err){ console.warn("Video upload failed:",err); } }
@@ -3395,7 +3395,7 @@ export default function App() {
       const patch={name:form.name,price:parseFloat(form.price),brand:(form.brand||"").trim()||null,video_url:video_url||null,condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),image_url,images:allUrls,postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
       const [updated]=await withFreshToken(tok=>db.update(sel.id,patch,tok));
       setItems(p=>p.map(i=>i.id===sel.id?updated:i)); setSel(updated);
-      if(allUrls.length&&!updated.image_url){ flash("Saved — but the photo couldn't be stored: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase.",11000); }
+      if(allUrls.length&&!updated.image_url){ flash("Saved - but the photo couldn't be stored: your 'listings' table has no image_url column. Add image_url (text) and images (text[]) columns in Supabase.",11000); }
       else{ flash("✓ Updated!"); }
       setView("detail");
       // The update is already saved. Price-drop notifications are best-effort and
@@ -3432,7 +3432,7 @@ export default function App() {
   async function relist(id){ try{ await db.update(id,{sold:false,reserved:false},token); setItems(p=>p.map(i=>i.id===id?{...i,sold:false,reserved:false}:i)); if(sel?.id===id)setSel(s=>({...s,sold:false,reserved:false})); flash("Relisted!"); }catch(e){flash("Relist failed.");} }
   async function del(id){ try{ await db.remove(id,token); setItems(p=>p.filter(i=>i.id!==id)); setView("shop"); flash("Listing deleted."); }catch(e){flash("Delete failed.");} }
 
-  // ── Phase 10d — seller tools ────────────────────────────────────────────────
+  // ── Phase 10d - seller tools ────────────────────────────────────────────────
   // Bulk edit: patch every selected listing at once, then mirror the change into
   // local state so the dashboard updates without a refetch. Returns true on success
   // so the dashboard can clear its selection / close the price modal.
@@ -3469,19 +3469,19 @@ export default function App() {
       await db.setVacationMode(user.id,on,token);
       setProfile(p=>p?{...p,vacation_mode:on}:p);
       setVacationSellers(prev=>{ const s=new Set(prev); if(on)s.add(user.id); else s.delete(user.id); return s; });
-      // Phase 15 — if this seller is also a tailor, mirror vacation onto their
+      // Phase 15 - if this seller is also a tailor, mirror vacation onto their
       // tailor row so the public availability calendar shows every date as
       // unavailable while away. The per-day availability rows are left untouched,
       // so turning vacation off restores the tailor's saved availability exactly.
       if(myTailor&&myTailor.id){
         try{ await db.updateTailor(myTailor.id,{vacation_mode:on},token); setMyTailor(m=>m?{...m,vacation_mode:on}:m); }catch(e){ /* non-fatal */ }
       }
-      flash(on?"You're on vacation — your listings are now hidden.":"Welcome back! Your listings are visible again.");
+      flash(on?"You're on vacation - your listings are now hidden.":"Welcome back! Your listings are visible again.");
     }catch(e){ flash("Couldn't update vacation mode."); }
     finally{ setVacationSaving(false); }
   }
 
-  // Phase 14 — save the seller's bundle-discount settings (TOOLS tab). Persists to
+  // Phase 14 - save the seller's bundle-discount settings (TOOLS tab). Persists to
   // the profile, updates the in-memory profile + the bundleSellers map (so the
   // banners/bag reflect the change immediately) and shows the success message.
   async function saveBundleDiscount(enabled,percentage){
@@ -3500,10 +3500,10 @@ export default function App() {
       await db.insertFeatureInterest({user_id:user.id,feature:"promote"},token);
       setPromoteNotified(true);
       flash("We'll let you know when Promote launches!");
-    }catch(e){ flash("Couldn't save your interest — try again."); }
+    }catch(e){ flash("Couldn't save your interest - try again."); }
   }
 
-  // ── Phase 13 — promoted listings ──────────────────────────────────────────
+  // ── Phase 13 - promoted listings ──────────────────────────────────────────
   // Load the signed-in seller's promotions for the dashboard ANALYTICS history.
   async function loadMyPromotions(){
     if(!user||!token) return;
@@ -3526,7 +3526,7 @@ export default function App() {
     }
   }
 
-  // Phase 11 — seller submits a verification application. Inserts the application,
+  // Phase 11 - seller submits a verification application. Inserts the application,
   // flips the profile to 'pending', and mirrors both into local state so the
   // dashboard GET VERIFIED section switches to APPLICATION UNDER REVIEW. Returns
   // true on success so the dashboard can close its modal.
@@ -3552,7 +3552,7 @@ export default function App() {
     finally{ setVerificationBusy(false); }
   }
 
-  // Phase 11 — start (or retry) Stripe Identity verification. Calls the
+  // Phase 11 - start (or retry) Stripe Identity verification. Calls the
   // create-verification-session Edge Function and redirects the seller to the
   // Stripe-hosted flow. The function also flips the profile to 'pending'; we
   // mirror that locally so the dashboard reflects it if the redirect is slow.
@@ -3573,7 +3573,7 @@ export default function App() {
   // dashboard TOOLS tab where the IDENTITY VERIFICATION section lives.
   const goVerifyIdentity=()=>{ setDashTabRequest("tools"); setView("dashboard"); window.scrollTo(0,0); };
 
-  // ── Phase 10e — Shop the Look ─────────────────────────────────────────────
+  // ── Phase 10e - Shop the Look ─────────────────────────────────────────────
   // Open a look's detail view. The look already carries its items + listings
   // embedded; we additionally resolve the curator's profile (unless it's an
   // admin look, which always reads "Curated by Stitch'd").
@@ -3584,7 +3584,7 @@ export default function App() {
     }
   }
 
-  // ADD ALL TO BAG — add every non-sold piece of a look to the bag at once,
+  // ADD ALL TO BAG - add every non-sold piece of a look to the bag at once,
   // skipping any already there (each piece is one-of-a-kind). Mirrors toggleBag's
   // snapshot shape so the bag panel renders without a refetch.
   function addLookToBag(look){
@@ -3608,7 +3608,7 @@ export default function App() {
     flash(addedCount?`Added ${addedCount} piece${addedCount!==1?"s":""} to bag!`:"Those pieces are already in your bag.");
   }
 
-  // Create-a-look listing picker — searches listings by title across ALL sellers.
+  // Create-a-look listing picker - searches listings by title across ALL sellers.
   async function searchLookListings(q){
     if(!q||q.trim().length<2){ setLookSearchResults([]); return; }
     try{ setLookSearchResults(await db.searchListings(q.trim(),token)); }catch(e){ setLookSearchResults([]); }
@@ -3675,7 +3675,7 @@ export default function App() {
     if(item.user_id) loadReviews(item.user_id).then(setReviews);
     setComments([]); setCommentText("");
     loadComments(item.id).then(setComments);
-    // Phase 14 — does the buyer already have a pending offer on this listing? If
+    // Phase 14 - does the buyer already have a pending offer on this listing? If
     // so the Detail page shows OFFER PENDING instead of MAKE AN OFFER.
     setMyOffer(null);
     if(user&&item.user_id!==user.id) db.getMyOffer(item.id,user.id,token).then(setMyOffer);
@@ -3685,29 +3685,29 @@ export default function App() {
   const selColor = CARD_COLORS[Math.max(0,selIdx)%CARD_COLORS.length];
   const isOwner  = (item)=>user&&item.user_id===user.id;
   const myItems  = items.filter(i=>i.user_id===user?.id);
-  // Phase 10e — the Stitch'd admin: profiles.is_admin, or an email match to the
+  // Phase 10e - the Stitch'd admin: profiles.is_admin, or an email match to the
   // configured ADMIN_EMAIL. Admin-created looks show "Curated by Stitch'd".
   const isAdmin  = !!(profile?.is_admin) || (!!ADMIN_EMAIL && user?.email===ADMIN_EMAIL);
-  // Phase 11 — load the admin panel's reports + disputes whenever an admin opens
+  // Phase 11 - load the admin panel's reports + disputes whenever an admin opens
   // the dashboard. Declared after `isAdmin` so it isn't read in the TDZ.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(()=>{ if(view==="dashboard"&&isAdmin) loadAdminData(); },[view,isAdmin]);
   const selImages= sel?(sel.images&&sel.images.length>0?sel.images:[sel.image_url].filter(Boolean)):[];
-  // Issue #167 — "YOU MIGHT ALSO LIKE" is a discovery rail, so exclude SOLD
+  // Issue #167 - "YOU MIGHT ALSO LIKE" is a discovery rail, so exclude SOLD
   // (and inactive) pieces the same way the shop grid does. Recently Viewed below
   // deliberately keeps sold items (with a SOLD overlay) and is not filtered here.
   // Other live pieces from the same seller (shown first on Detail), and similar
   // pieces from OTHER sellers (so the two rails don't duplicate each other).
   const sellerItems  = sel ? items.filter(i=>i.id!==sel.id&&i.user_id===sel.user_id&&!i.sold&&i.status!=="sold"&&i.status!=="inactive").slice(0,4) : [];
   const similarItems = sel ? items.filter(i=>i.id!==sel.id&&i.user_id!==sel.user_id&&!i.sold&&i.status!=="sold"&&i.status!=="inactive"&&(i.category===sel.category||i.fabric===sel.fabric||i.origin===sel.origin)).slice(0,4) : [];
-  // Phase 12 — recently viewed, in view order (newest first), excluding the
+  // Phase 12 - recently viewed, in view order (newest first), excluding the
   // current listing, capped at 6 for the Detail "RECENTLY VIEWED" rail.
   const recentItems  = recentlyViewed
     .filter(id=>!sel||id!==sel.id)
     .map(id=>items.find(i=>i.id===id))
     .filter(Boolean)
     .slice(0,6);
-  // Phase 12 — listings created in the last 14 days (newest first), for the
+  // Phase 12 - listings created in the last 14 days (newest first), for the
   // /new-arrivals page and the homepage NEW ARRIVALS rail. `visible` already
   // applies every active shop filter and is ordered created_at.desc, so the
   // /new-arrivals grid honours the filters for free.
@@ -3725,14 +3725,14 @@ export default function App() {
     return items.filter(i=>!i.sold&&i.status!=="inactive"&&!vacationSellers.has(i.user_id)&&i.created_at&&new Date(i.created_at).getTime()>=cutoff).slice(0,8);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[items,vacationSellers]);
-  // Phase 14 — resolve the wishlisted listing_ids (most-recent-first) to full
+  // Phase 14 - resolve the wishlisted listing_ids (most-recent-first) to full
   // listing objects, then split into still-available vs SOLD for the two page
   // sections. Ids with no matching listing (deleted) are dropped.
   const wishlistById = useMemo(()=> new Map(items.map(i=>[i.id,i])), [items]);
   const wishlistItems = useMemo(()=> wishlistOrder.map(id=>wishlistById.get(id)).filter(Boolean), [wishlistOrder,wishlistById]);
   const liveWishlist = wishlistItems.filter(i=>!i.sold);
   const soldWishlist = wishlistItems.filter(i=>i.sold);
-  // Phase 14 — the pieces shown in the create/edit shareable-list selector. In
+  // Phase 14 - the pieces shown in the create/edit shareable-list selector. In
   // create mode that's every wishlisted piece; in edit mode we also fold in any
   // pieces already in the list that the user has since un-wishlisted, so editing
   // never silently drops them.
@@ -3746,10 +3746,10 @@ export default function App() {
   },[shareMode,editingShared,wishlistItems]);
 
   // Items collapsed behind the desktop hover-dropdown / mobile hamburger menu.
-  // Favourites, Notifications and LIST IT deliberately stay out of this list —
+  // Favourites, Notifications and LIST IT deliberately stay out of this list -
   // they remain always-visible in the navbar. Each onClick also closes whichever
   // menu was open so navigating dismisses the overlay.
-  // Phase 15 — the tailor nav entry depends on the user's application status.
+  // Phase 15 - the tailor nav entry depends on the user's application status.
   // 30-day reapply window for a rejected application is measured from created_at
   // (the schema carries no separate rejection timestamp).
   const tailorIcon=<Scissors width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>;
@@ -3758,14 +3758,14 @@ export default function App() {
     const st=myTailor&&myTailor.status;
     if(!myTailor) return [{label:"BECOME A TAILOR", icon:tailorIcon, run:openTailorApply}];
     if(st==="approved"||st==="suspended") return [{label:"MY TAILOR PROFILE", icon:tailorIcon, run:openTailorDashboard}];
-    if(st==="pending") return [{label:"TAILOR APPLICATION PENDING", icon:<Clock width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>flash("Your tailor application is under review — we'll be in touch within 3 working days.",6000)}];
+    if(st==="pending") return [{label:"TAILOR APPLICATION PENDING", icon:<Clock width={15} height={15} style={{verticalAlign:"-2px",marginRight:8}}/>, run:()=>flash("Your tailor application is under review - we'll be in touch within 3 working days.",6000)}];
     if(st==="rejected") return [{label:"TAILOR APPLICATION UNSUCCESSFUL", icon:tailorIcon, run:()=>{ if(tailorReapplyOk) openTailorApply(); else flash("Your tailor application wasn't approved. You can reapply 30 days after applying.",6000); }}];
     return [{label:"BECOME A TAILOR", icon:tailorIcon, run:openTailorApply}];
   })();
 
-  // Issue #173 — the dropdown / hamburger menu is grouped into labelled sections
+  // Issue #173 - the dropdown / hamburger menu is grouped into labelled sections
   // with subtle dividers rather than one flat list. We only REORGANISE the
-  // existing entries (same labels, same navigation) — nothing is added or
+  // existing entries (same labels, same navigation) - nothing is added or
   // removed. The TAILORING section header only appears for an approved (or
   // suspended, who keep profile access) tailor; for everyone else the single
   // tailor entry (BECOME A TAILOR / pending / unsuccessful) folds into SELLING
@@ -3819,7 +3819,7 @@ export default function App() {
             </button>
             {user?(
               <>
-                {/* SHOPPING BAG — signed-in only, sits alongside Notifications. */}
+                {/* SHOPPING BAG - signed-in only, sits alongside Notifications. */}
                 <button className="hbtn" style={{...S.hBtn,background:showBag?"#FF1493":"#fff",color:showBag?"#fff":"#111",border:"2px solid #111",position:"relative"}} onClick={()=>setShowBag(true)} aria-label="Shopping bag">
                   <ShoppingBag width={18} height={18} style={{verticalAlign:"middle"}}/> {bag.length>0&&<span style={S.bagBadge}>{bag.length}</span>}
                 </button>
@@ -3861,7 +3861,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* MOBILE NAV MENU — full-width slide-in, only reachable via the hamburger */}
+      {/* MOBILE NAV MENU - full-width slide-in, only reachable via the hamburger */}
       {user&&mobileNavOpen&&(
         <div style={S.mobileNav}>
           <div style={S.mobileNavHead}>
@@ -3882,7 +3882,7 @@ export default function App() {
 
       <div style={S.ticker}><div style={S.tickerInner}>{Array(4).fill("STITCH'D \u00a0·\u00a0 PRE-LOVED SOUTH ASIAN FASHION \u00a0·\u00a0 BUY. SELL. STYLE. \u00a0·\u00a0 MEASURED FITS ONLY \u00a0·\u00a0 ").join("")}</div></div>
 
-      {/* PAGE CONTENT — wrapped so a gentle fade plays on every view change
+      {/* PAGE CONTENT - wrapped so a gentle fade plays on every view change
           (opacity-only, so fixed overlays/modals keep working). */}
       <div id="page-view">
       {/* NOTIFICATION PANEL */}
@@ -3929,7 +3929,7 @@ export default function App() {
         );
       })()}
 
-      {/* SHOPPING BAG PANEL — slide-in from the right. UI/state only; the checkout
+      {/* SHOPPING BAG PANEL - slide-in from the right. UI/state only; the checkout
           button is a placeholder until Stripe is wired up in a separate issue. */}
       {user&&showBag&&(
         <div style={S.bagOverlay} onClick={()=>setShowBag(false)}>
@@ -3960,11 +3960,11 @@ export default function App() {
                     <button style={S.bagRemove} aria-label="Remove from bag" onClick={()=>removeFromBag(b.id)}><X width={20} height={20}/></button>
                   </div>
                 ))}
-                {/* Phase 14 — bundle deal banner(s): one per seller offering a
+                {/* Phase 14 - bundle deal banner(s): one per seller offering a
                     discount on 2+ of their items in the bag. */}
                 {bagBundles.map(bd=>(
                   <div key={bd.sellerId} style={{display:"flex",alignItems:"center",gap:9,background:"#00E5CC",color:"#111",border:"2px solid #111",borderRadius:0,padding:"10px 12px",marginTop:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:13,letterSpacing:0.3,lineHeight:1.2}}>
-                    <Tag width={16} height={16} style={{flexShrink:0}}/> BUNDLE DEAL — {bd.pct}% off {bd.name}'s items!
+                    <Tag width={16} height={16} style={{flexShrink:0}}/> BUNDLE DEAL - {bd.pct}% off {bd.name}'s items!
                   </div>
                 ))}
                 <div style={S.bagDivider}/>
@@ -4276,7 +4276,7 @@ export default function App() {
         </div>
       )}
 
-      {/* REPORT MODAL (issue PART 1) — white box, 2px #111 border, no radius,
+      {/* REPORT MODAL (issue PART 1) - white box, 2px #111 border, no radius,
           Barlow Condensed, #FF1493 selected radios. */}
       {showReport&&(()=>{
         const closeReport=()=>{ setShowReport(false); setReportDone(false); setReportReason(""); setReportDetails(""); };
@@ -4321,7 +4321,7 @@ export default function App() {
         );
       })()}
 
-      {/* REPORT A PROBLEM MODAL (issue PART 2) — buyer dispute on an order. */}
+      {/* REPORT A PROBLEM MODAL (issue PART 2) - buyer dispute on an order. */}
       {disputeOrder&&(()=>{
         const PROBLEMS=disputeKind==="alteration"
           ? ["Alteration not as agreed","Garment damaged by the tailor","Work not completed","Item not returned","Other"]
@@ -4377,7 +4377,7 @@ export default function App() {
         );
       })()}
 
-      {/* SAVE THIS SEARCH MODAL (issue PART 2) — name the search + choose whether
+      {/* SAVE THIS SEARCH MODAL (issue PART 2) - name the search + choose whether
           to get email alerts, with a summary of the filters being saved. */}
       {showSaveSearch&&(()=>{
         const summary=filterSummary(currentFilters());
@@ -4405,7 +4405,7 @@ export default function App() {
               <div style={{fontSize:16,fontWeight:800,color:"#111",letterSpacing:0.3,lineHeight:1.3}}>{summary}</div>
             </div>
 
-            {/* Email-alert toggle — #FF1493 active state */}
+            {/* Email-alert toggle - #FF1493 active state */}
             <button type="button" onClick={()=>setSaveSearchAlerts(v=>!v)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",background:"none",border:"none",cursor:"pointer",padding:0,marginBottom:22,fontFamily:"'Barlow Condensed',sans-serif"}}>
               <span style={{fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.5,display:"inline-flex",alignItems:"center",gap:8}}><Bell width={16} height={16}/> Email me when new listings match</span>
               <span style={{width:48,height:26,borderRadius:0,border:"2px solid #111",background:saveSearchAlerts?"#FF1493":"#fff",position:"relative",flexShrink:0,transition:"background .15s"}}>
@@ -4445,7 +4445,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ORDER SUCCESS PAGE — shown after Stripe redirects back from a paid
+      {/* ORDER SUCCESS PAGE - shown after Stripe redirects back from a paid
           checkout. Session is verified server-side via the verify-session Edge
           Function before anything is confirmed. */}
       {view==="order-success"&&(
@@ -4497,7 +4497,7 @@ export default function App() {
                     <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:22,color:"#FF1493"}}>£{(orderResult.amount/100).toFixed(2)}</span>
                   </div>
                   <div style={{display:"flex",justifyContent:"space-between",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#888",letterSpacing:0.5}}>
-                    <span>ORDER REF</span><span style={{fontWeight:800,color:"#111"}}>#{refNo||"—"}</span>
+                    <span>ORDER REF</span><span style={{fontWeight:800,color:"#111"}}>#{refNo||"-"}</span>
                   </div>
                   <div style={{display:"flex",justifyContent:"space-between",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#888",letterSpacing:0.5}}>
                     <span>DATE</span><span style={{fontWeight:800,color:"#111"}}>{purchaseDate}</span>
@@ -4524,7 +4524,7 @@ export default function App() {
             <div style={{background:"#fff",border:"2px solid #111",padding:"40px 32px"}}>
               <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,lineHeight:1,marginBottom:8,color:"#111"}}>HMM, SOMETHING'S OFF</h1>
               <div style={{height:4,width:80,background:"#FF1493",marginBottom:24}}/>
-              <p style={{fontSize:15,color:"#111",marginBottom:28,lineHeight:1.6}}>We couldn't confirm this payment. If you were charged, don't worry — your order is recorded and the seller notified once Stripe confirms. Otherwise, head back to your bag and try again.</p>
+              <p style={{fontSize:15,color:"#111",marginBottom:28,lineHeight:1.6}}>We couldn't confirm this payment. If you were charged, don't worry - your order is recorded and the seller notified once Stripe confirms. Otherwise, head back to your bag and try again.</p>
               <button className="hbtn" style={{width:"100%",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:16,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,textTransform:"uppercase"}}
                 onClick={()=>{ window.history.replaceState({},document.title,"/"); setOrderResult(null); setView("shop"); setShowBag(true); }}>BACK TO BAG</button>
             </div>
@@ -4532,7 +4532,7 @@ export default function App() {
         </main>
       )}
 
-      {/* WISHLIST VIEW — Phase 14. DB-backed (the `wishlists` table), logged-in
+      {/* WISHLIST VIEW - Phase 14. DB-backed (the `wishlists` table), logged-in
           only. Most-recently-saved first; available pieces in the main grid, SOLD
           ones split out into the ALREADY SOLD section at the bottom. */}
       {view==="wishlist"&&(
@@ -4553,14 +4553,14 @@ export default function App() {
                 <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:48,fontWeight:900,letterSpacing:-1,display:"flex",alignItems:"center",gap:12,lineHeight:1}}>MY WISHLIST <Heart width={40} height={40} fill="#FF1493" color="#FF1493"/></h2>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap",marginTop:10}}>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:700,letterSpacing:1,color:"#111"}}>{wishlistItems.length} item{wishlistItems.length===1?"":"s"} saved</p>
-                  {/* SHARE WISHLIST — only when there's at least one saved piece. */}
+                  {/* SHARE WISHLIST - only when there's at least one saved piece. */}
                   {wishlistItems.length>0&&(
                     <button className="hbtn" onClick={openShareModal} style={{...S.hBtn,background:"#fff",color:"#111",border:"2px solid #111",fontSize:13,padding:"10px 16px",display:"inline-flex",alignItems:"center",gap:8}}>
                       <Share2 width={16} height={16}/> SHARE WISHLIST
                     </button>
                   )}
                 </div>
-                <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#6b6b6b",marginTop:4}}>Items are not reserved — buy before they're gone</p>
+                <p style={{fontFamily:"'Barlow',sans-serif",fontSize:13,color:"#6b6b6b",marginTop:4}}>Items are not reserved - buy before they're gone</p>
               </div>
 
               {wishlistItems.length===0?(
@@ -4596,7 +4596,7 @@ export default function App() {
                     </div>
                   )}
                   {liveWishlist.length===0&&soldWishlist.length>0&&(
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#6f6f6f",letterSpacing:1,padding:"8px 0 4px"}}>Every saved piece has sold — see below.</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,color:"#6f6f6f",letterSpacing:1,padding:"8px 0 4px"}}>Every saved piece has sold - see below.</p>
                   )}
 
                   {/* ALREADY SOLD */}
@@ -4635,7 +4635,7 @@ export default function App() {
                 </>
               )}
 
-              {/* MY SHARED LISTS — Phase 14 PART 4. Hidden entirely when the user
+              {/* MY SHARED LISTS - Phase 14 PART 4. Hidden entirely when the user
                   has no shared lists. */}
               {myShared.length>0&&(
                 <div style={{marginTop:56,paddingTop:28,borderTop:"3px solid #111"}}>
@@ -4884,7 +4884,7 @@ export default function App() {
         feedLoading={feedLoading} following={following} feedItems={feedItems} openDetail={openDetail}
       />
 
-      {/* STYLE FEED — Phase 14 */}
+      {/* STYLE FEED - Phase 14 */}
       <StyleFeed
         view={view} setView={setView} user={user} profile={profile}
         tab={styleFeedTab} setTab={switchStyleTab}
@@ -4906,7 +4906,7 @@ export default function App() {
       {/* HOW TO MEASURE guide */}
       <Tailors view={view} setView={setView} user={user} prevView={prevView}/>
 
-      {/* TAILOR PROFILES — Phase 15 (apply / dashboard / public profile) */}
+      {/* TAILOR PROFILES - Phase 15 (apply / dashboard / public profile) */}
       <TailorProfiles
         view={view} setView={setView} user={user} flash={flash}
         myTailor={myTailor}
@@ -4931,7 +4931,7 @@ export default function App() {
         setAuthMode={setAuthMode} onGateAuth={gateAuth}
       />
 
-      {/* ALTERATIONS — Phase 15 buyer page (/alterations) */}
+      {/* ALTERATIONS - Phase 15 buyer page (/alterations) */}
       <Alterations
         view={view} setView={setView} loading={buyerAlterationsLoading} requests={buyerAlterations}
         onMessageTailor={messageTailorFromRequest} onFindTailor={openTailorDirectory}
@@ -4941,7 +4941,7 @@ export default function App() {
         onLeaveReview={openTailorReview} reviews={buyerReviews}
       />
 
-      {/* REQUEST ALTERATIONS modal — launched from the listing detail page */}
+      {/* REQUEST ALTERATIONS modal - launched from the listing detail page */}
       <RequestAlterationModal
         open={alterReqOpen} onClose={()=>setAlterReqOpen(false)}
         listing={alterReqListing} tailors={approvedTailors} busy={alterReqBusy}
@@ -4952,14 +4952,14 @@ export default function App() {
         browseAllTailors={()=>{ setAlterReqOpen(false); openTailorDirectory(); }}
       />
 
-      {/* LEAVE A REVIEW modal — Phase 15 (opened from /alterations) */}
+      {/* LEAVE A REVIEW modal - Phase 15 (opened from /alterations) */}
       <ReviewModal
         open={!!reviewReq} onClose={()=>setReviewReq(null)}
         tailor={reviewReq&&reviewReq.tailors} busy={reviewBusy}
         onSubmit={submitTailorReview}
       />
 
-      {/* WALLET — seller earnings balance, withdrawals (Stripe Connect) */}
+      {/* WALLET - seller earnings balance, withdrawals (Stripe Connect) */}
       <WalletView
         view={view} setView={setView} user={user}
         transactions={walletTxns} loading={walletLoading}
@@ -4981,7 +4981,7 @@ export default function App() {
         saveOrderTracking={saveOrderTracking} onBuyLabel={buyOrderLabel}
       />
 
-      {/* MY OFFERS (buyer) — Phase 14 offer checkout */}
+      {/* MY OFFERS (buyer) - Phase 14 offer checkout */}
       <Offers
         view={view} setView={setView} user={user}
         buyerOffers={buyerOffers} offersLoading={offersLoading}
@@ -5032,7 +5032,7 @@ export default function App() {
         deleteSavedSearch={deleteSavedSearch}
       />
 
-      {/* PUBLIC SHARED WISHLIST — /wishlist/<slug>, no login required */}
+      {/* PUBLIC SHARED WISHLIST - /wishlist/<slug>, no login required */}
       <PublicWishlist
         view={view}
         list={publicList}
@@ -5068,7 +5068,7 @@ export default function App() {
         onDone={closeShareModal}
       />
 
-      {/* SHOP THE LOOK — /looks page + look detail */}
+      {/* SHOP THE LOOK - /looks page + look detail */}
       <Looks
         view={view} setView={setView}
         looks={looks} lookFilter={lookFilter} setLookFilter={setLookFilter}
@@ -5089,7 +5089,7 @@ export default function App() {
         editingLook={editingLook} flash={flash}
       />
 
-      {/* LEGAL PAGES — Terms / Privacy / Returns (hardcoded static content) */}
+      {/* LEGAL PAGES - Terms / Privacy / Returns (hardcoded static content) */}
       <Legal view={view} setView={setView} onBack={exitLegal} />
       <InfoPage view={view} setView={setView} onBack={exitLegal} />
 
@@ -5137,7 +5137,7 @@ export default function App() {
               </div>
               <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,color:"#6b6b6b",marginTop:8,letterSpacing:0.5}}>{form.imagePreviews.length} / {MAX_LISTING_IMAGES} photos added</p>
               <input id="img-input" type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>addImageFiles(e.target.files)}/>
-              {/* Optional video — one short clip to show fabric/drape/sparkle. */}
+              {/* Optional video - one short clip to show fabric/drape/sparkle. */}
               <div style={{marginTop:18,borderTop:"1px solid #f0f0f0",paddingTop:18}}>
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1.5,color:"#555",marginBottom:8,display:"flex",alignItems:"center",gap:7}}><Video width={15} height={15}/> VIDEO (OPTIONAL)</div>
                 {form.videoPreview?(
@@ -5150,7 +5150,7 @@ export default function App() {
                     <div style={S.uploadPlaceholder}><div style={{...S.uploadIcon,display:"flex",justifyContent:"center"}}><Video width={24} height={24}/></div><p style={S.uploadText}>ADD VIDEO</p></div>
                   </div>
                 )}
-                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#888",marginTop:8,letterSpacing:0.5}}>3–30 seconds, max 50MB — show the fabric, drape or sparkle. Plays muted on the listing.</p>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#888",marginTop:8,letterSpacing:0.5}}>3-30 seconds, max 50MB - show the fabric, drape or sparkle. Plays muted on the listing.</p>
                 <input id="vid-input" type="file" accept="video/*" style={{display:"none"}} onChange={e=>addVideoFile(e.target.files)}/>
               </div>
             </Sec>
@@ -5189,7 +5189,7 @@ export default function App() {
                 <F l="Condition"><select style={S.inp} value={form.condition} onChange={e=>setForm(f=>({...f,condition:e.target.value}))}>{CONDITIONS.map(c=><option key={c}>{c}</option>)}</select></F>
                 {(form.listing_type==="Clothing"||form.listing_type==="Shoes")&&<F l="Size"><select style={S.inp} value={form.size} onChange={e=>setForm(f=>({...f,size:e.target.value}))}>{(form.listing_type==="Shoes"?SHOE_SIZES:SIZES).map(s=><option key={s}>{s}</option>)}</select></F>}
               </div>
-              {/* Phase 13 — pricing suggestion from similar sold listings. Sits below
+              {/* Phase 13 - pricing suggestion from similar sold listings. Sits below
                   the price input; collapsed by default on the edit form. The effective
                   category for Clothing comes from the chosen garment type (the Category
                   dropdown is hidden for Clothing), matching how `add`/`saveEdit` store it. */}
@@ -5205,7 +5205,7 @@ export default function App() {
               <div style={S.occGrid}>{OCCASIONS.map(o=>{const on=form.occasions.includes(o),col=OCC_COLOR[o];return<button key={o} type="button" onClick={()=>togOcc(o)} style={{...S.occToggle,background:on?col:"#fff",color:on?"#fff":"#111",border:`2px solid ${on?col:"#111"}`,fontWeight:on?800:600}}>{o.toUpperCase()}</button>;})}</div>
             </Sec>
             <Sec icon={Palette} label="COLOUR">
-              <p style={{fontSize:12,color:"#888",marginBottom:12}}>Optional — tag the main colours so buyers can filter by them.</p>
+              <p style={{fontSize:12,color:"#888",marginBottom:12}}>Optional - tag the main colours so buyers can filter by them.</p>
               <ColourSwatches selected={form.colours||[]} onToggle={togColour}/>
             </Sec>
             {form.listing_type==="Clothing"&&(()=>{
@@ -5263,7 +5263,7 @@ export default function App() {
             <Sec icon={Package} color="#FF9500" label="POSTAGE">
               <Tog on={form.accepts_collection} onToggle={()=>setForm(f=>({...f,accepts_collection:!f.accepts_collection}))} color="#34C759" label="ACCEPT COLLECTION IN PERSON" sub="Buyer can collect for free"/>
             </Sec>
-            {/* Phase 14 — OFFERS. Sellers can let buyers make an offer below the
+            {/* Phase 14 - OFFERS. Sellers can let buyers make an offer below the
                 asking price (default ON), with an optional minimum-offer floor. */}
             <Sec icon={Tag} label="OFFERS">
               <Tog on={form.offers_enabled!==false} onToggle={()=>setForm(f=>({...f,offers_enabled:!(f.offers_enabled!==false)}))} color="#FF1493" label="ACCEPT OFFERS ON THIS LISTING" sub="Buyers can propose a price; you have 48 hours to respond"/>
@@ -5282,7 +5282,7 @@ export default function App() {
             <Sec icon={Pencil} color="#111" label="DESCRIBE IT">
               <textarea style={{...S.inp,height:110,resize:"vertical",width:"100%"}} placeholder="Fabric feel, embroidery, wear history, any flaws…" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}/>
             </Sec>
-            {/* Phase 11 — items over £200 require ID verification. Show a prompt and
+            {/* Phase 11 - items over £200 require ID verification. Show a prompt and
                 block publishing until the seller is identity-verified. */}
             {(()=>{
               const idGate=parseFloat(form.price)>200&&!(profile?.identity_verified);
@@ -5303,7 +5303,7 @@ export default function App() {
         </main>
       )}
 
-      {/* CUSTOM 404 — unknown URL on a cold load (see isKnownPath + routing effect). */}
+      {/* CUSTOM 404 - unknown URL on a cold load (see isKnownPath + routing effect). */}
       <NotFound
         view={view}
         onHome={()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("shop"); window.scrollTo(0,0); }}
@@ -5311,11 +5311,11 @@ export default function App() {
       />
       </div>{/* /#page-view */}
 
-      {/* GLOBAL FOOTER — appears on every page (modals/overlays render on top and
+      {/* GLOBAL FOOTER - appears on every page (modals/overlays render on top and
           are unaffected; the Stripe checkout is an external hosted page). */}
       <Footer onNav={footerNav} />
 
-      {/* FIRST-RUN WELCOME — once per browser, only over the home view. */}
+      {/* FIRST-RUN WELCOME - once per browser, only over the home view. */}
       <Onboarding
         show={showOnboard&&(view==="shop"||view==="newarrivals")}
         onClose={dismissOnboard}
@@ -5323,8 +5323,8 @@ export default function App() {
         onSell={()=>{ dismissOnboard(); if(user){ setView("add"); } else { setAuthMode("signup"); setView("auth"); } window.scrollTo(0,0); }}
       />
 
-      {/* MOBILE BOTTOM NAV — app-style tab bar (phones only; CSS-gated). Signed-in
-          only — logged-out visitors get the header LOG IN / SIGN UP instead. Hidden
+      {/* MOBILE BOTTOM NAV - app-style tab bar (phones only; CSS-gated). Signed-in
+          only - logged-out visitors get the header LOG IN / SIGN UP instead. Hidden
           on the detail page (its own sticky buy bar lives there) and the auth screen. */}
       {user&&view!=="detail"&&view!=="auth"&&(
         <nav className="bottom-nav" style={S.bottomNav} aria-label="Primary">

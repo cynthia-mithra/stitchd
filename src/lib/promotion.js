@@ -1,5 +1,5 @@
 // Kicks off a £2.99 Stripe Checkout to promote a listing for 7 days. We never
-// touch Stripe with a secret key from the browser — this posts { listing_id,
+// touch Stripe with a secret key from the browser - this posts { listing_id,
 // seller_id } to the `create-promotion-session` Supabase Edge Function, which
 // verifies the listing belongs to the seller, creates the GBP Checkout Session
 // (metadata.type='promotion'), records a pending promotions row, and returns the

@@ -26,7 +26,7 @@ export const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
 };
 
-// ── Supabase reads (service role — bypasses RLS) ──────────────────────────────
+// ── Supabase reads (service role - bypasses RLS) ──────────────────────────────
 
 async function sbGet<T = unknown>(path: string): Promise<T[]> {
   try {
@@ -48,7 +48,7 @@ export async function sbPatch(table: string, filter: string, body: Record<string
   } catch { /* best-effort */ }
 }
 
-// Profiles don't store the email address — it lives on auth.users. The Admin API
+// Profiles don't store the email address - it lives on auth.users. The Admin API
 // is the only service-role way to read it from a user id.
 export async function emailForUser(userId: string): Promise<string | null> {
   try {
@@ -120,7 +120,7 @@ export async function verifyUnsubscribe(userId: string, sig: string): Promise<bo
 
 export async function sendViaResend(to: string, subject: string, html: string): Promise<{ ok: boolean; error?: string }> {
   // Log every send attempt so it's traceable in the Edge Function logs, and make
-  // the two "silent" early-returns below noisy — these used to fail without any
+  // the two "silent" early-returns below noisy - these used to fail without any
   // log line, so a missing key or empty recipient looked like nothing happened.
   console.log(`[email] attempting send to: ${to || "(none)"} | subject: ${subject}`);
   if (!RESEND_API_KEY) {
@@ -151,7 +151,7 @@ export async function sendViaResend(to: string, subject: string, html: string): 
 }
 
 // Build a rendered email (subject + html) for a given type. Resolves the signed
-// unsubscribe link for the recipient. Pure rendering — no delivery, no DB reads
+// unsubscribe link for the recipient. Pure rendering - no delivery, no DB reads
 // beyond the unsubscribe signature.
 export async function render(
   type: EmailType,

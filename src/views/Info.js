@@ -2,7 +2,7 @@ import React from "react";
 import { Leaf, Recycle, Sparkles, Camera, Video, Ruler, Tag, MessageCircle, Share2, PoundSterling, Heart, ShieldCheck } from "lucide-react";
 
 /* ------------------------------------------------------------------ *
- * Static content pages — Selling Tips (/selling-tips) and About &
+ * Static content pages - Selling Tips (/selling-tips) and About &
  * Sustainability (/about). Hardcoded (no CMS); a single component renders
  * whichever page matches the current `view`. The global Footer is rendered
  * once in App.js so it sits below this (and every other) page.
@@ -12,27 +12,27 @@ const BC = "'Barlow Condensed',sans-serif";
 const PINK = "#FF1493";
 const TEAL = "#00E5CC";
 
-// Selling tips — each a numbered card with an icon, headline and body.
+// Selling tips - each a numbered card with an icon, headline and body.
 const TIPS = [
-  { Icon: Camera, title: "Nail your photos", body: "Shoot in natural daylight against a plain background. Show the full piece, then close-ups of the embroidery, fabric and any flaws. Your first photo is your shop window — make it count." },
-  { Icon: Video, title: "Add a short video", body: "A 3–30 second clip showing the drape, sheen and movement sells far better than stills alone — especially for silks, sequins and flowy fabrics. It plays right inside your listing's gallery." },
+  { Icon: Camera, title: "Nail your photos", body: "Shoot in natural daylight against a plain background. Show the full piece, then close-ups of the embroidery, fabric and any flaws. Your first photo is your shop window - make it count." },
+  { Icon: Video, title: "Add a short video", body: "A 3-30 second clip showing the drape, sheen and movement sells far better than stills alone - especially for silks, sequins and flowy fabrics. It plays right inside your listing's gallery." },
   { Icon: Ruler, title: "Give real measurements", body: "Buyers can't try it on, so accurate bust, waist, hips and length (in cm or inches) build trust and dramatically cut returns. Note if it can be taken in or has spare fabric to let out." },
-  { Icon: ShieldCheck, title: "Be honest about condition", body: "Mention any marks, missing beads, loose threads or past alterations. Honesty earns great reviews and repeat buyers — and protects you if there's ever a dispute." },
-  { Icon: Tag, title: "Price it to sell", body: "Check what similar pieces have sold for (the pricing guide on the listing form helps). Competitive prices move faster — and you can always switch on offers and set a minimum you'll accept." },
-  { Icon: Sparkles, title: "Tag everything", body: "Add the occasion, colours and brand. These power search and saved-search alerts, putting your piece in front of buyers who are looking for exactly that — and earn you the badges that build trust." },
-  { Icon: MessageCircle, title: "Reply quickly", body: "Momentum closes sales. Answer questions and offers fast — responsive sellers convert more and earn the FAST SELLER badge that buyers look for." },
-  { Icon: Share2, title: "Share your listing", body: "Tap Share to post a branded card to Instagram or WhatsApp. Your own network is your best marketing — a single share can be the difference between sitting and selling." },
+  { Icon: ShieldCheck, title: "Be honest about condition", body: "Mention any marks, missing beads, loose threads or past alterations. Honesty earns great reviews and repeat buyers - and protects you if there's ever a dispute." },
+  { Icon: Tag, title: "Price it to sell", body: "Check what similar pieces have sold for (the pricing guide on the listing form helps). Competitive prices move faster - and you can always switch on offers and set a minimum you'll accept." },
+  { Icon: Sparkles, title: "Tag everything", body: "Add the occasion, colours and brand. These power search and saved-search alerts, putting your piece in front of buyers who are looking for exactly that - and earn you the badges that build trust." },
+  { Icon: MessageCircle, title: "Reply quickly", body: "Momentum closes sales. Answer questions and offers fast - responsive sellers convert more and earn the FAST SELLER badge that buyers look for." },
+  { Icon: Share2, title: "Share your listing", body: "Tap Share to post a branded card to Instagram or WhatsApp. Your own network is your best marketing - a single share can be the difference between sitting and selling." },
   { Icon: PoundSterling, title: "Bundle and bargain", body: "Offer bundle discounts to encourage multi-buys, and welcome offers from keen buyers. A small discount on two pieces often beats waiting weeks for full price on one." },
 ];
 
-// About page — story, a sustainability callout, and a short "how it works".
+// About page - story, a sustainability callout, and a short "how it works".
 const ABOUT = {
   title: "ABOUT\nSTITCH'D",
-  lead: "Stitch'd is the UK marketplace for pre-loved South Asian fashion — sarees, lehengas, sherwanis, salwar kameez and more, given a second life with real measurements, verified sellers and buyer protection.",
+  lead: "Stitch'd is the UK marketplace for pre-loved South Asian fashion - sarees, lehengas, sherwanis, salwar kameez and more, given a second life with real measurements, verified sellers and buyer protection.",
   sections: [
     {
       heading: "Our story",
-      body: "South Asian occasionwear is some of the most beautiful — and most expensive — clothing in the world. Yet so much of it is worn once for a wedding or Eid, then sits in a wardrobe for years. Stitch'd was built for our community to buy, sell and restyle these pieces, so a lehenga that lit up one celebration can light up the next.",
+      body: "South Asian occasionwear is some of the most beautiful - and most expensive - clothing in the world. Yet so much of it is worn once for a wedding or Eid, then sits in a wardrobe for years. Stitch'd was built for our community to buy, sell and restyle these pieces, so a lehenga that lit up one celebration can light up the next.",
     },
   ],
 };
@@ -97,7 +97,7 @@ export default function Info({ view, setView, onBack }) {
             <span style={st.sustainChip}><Leaf width={18} height={18} /></span>
             <h2 style={st.sustainTitle}>FASHION WITH A CONSCIENCE</h2>
           </div>
-          <p style={st.body}>Buying and selling pre-loved isn't just kinder on your wallet — it's kinder on the planet.</p>
+          <p style={st.body}>Buying and selling pre-loved isn't just kinder on your wallet - it's kinder on the planet.</p>
           <div style={st.sustainGrid}>
             {SUSTAIN.map(({ Icon, title, body }) => (
               <div key={title} style={st.sustainCard}>

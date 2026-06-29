@@ -5,7 +5,7 @@
 //
 // POST { email, redirectTo? }
 //   1. Generates a GoTrue recovery action link via the Admin API (service role).
-//      This does NOT send any email — it just returns the link.
+//      This does NOT send any email - it just returns the link.
 //   2. Renders the `password_reset` brand template and sends it through Resend
 //      (from "Stitch'd <hello@stitchd.fit>", same as every other email).
 //
@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
   }
 
   const email = (body.email || "").trim();
-  // Always answer success — never reveal whether the address has an account.
+  // Always answer success - never reveal whether the address has an account.
   if (!email) return json({ ok: true });
 
   // Bring the user back to the app; default to the live site. Must be allow-listed
@@ -53,9 +53,9 @@ Deno.serve(async (req) => {
     });
 
     if (!r.ok) {
-      // Most commonly "user not found" — swallow it and still return ok so the
+      // Most commonly "user not found" - swallow it and still return ok so the
       // caller can't tell registered emails apart from unregistered ones.
-      console.log(`[send-reset] generate_link non-OK (${r.status}) for a request — returning ok`);
+      console.log(`[send-reset] generate_link non-OK (${r.status}) for a request - returning ok`);
       return json({ ok: true });
     }
 
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     return json({ ok: true });
   } catch (e) {
     console.error("[send-reset] threw:", (e as Error).message);
-    // Still return ok — don't leak internal state to the caller.
+    // Still return ok - don't leak internal state to the caller.
     return json({ ok: true });
   }
 });

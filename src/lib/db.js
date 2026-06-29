@@ -1,10 +1,10 @@
 import { SUPABASE_URL, SUPABASE_KEY, hdrs } from "./constants";
 
-// ── Phase 12 — transactional email triggers ───────────────────────────────────
+// ── Phase 12 - transactional email triggers ───────────────────────────────────
 // Fire-and-forget POST to the send-email Edge Function. The browser never has
 // the recipient's email (it lives on auth.users), so we send only the event +
 // ids and the function resolves the address, renders the brand template, and
-// honours the unsubscribe flag server-side. Failures are swallowed — a missing
+// honours the unsubscribe flag server-side. Failures are swallowed - a missing
 // email must never break the user action that triggered it.
 export function fireEmail(payload){
   try{
@@ -35,7 +35,7 @@ function touchActive(uid,t){
 // table doesn't have, e.g. PGRST204 "Could not find the 'image_url' column of
 // 'listings' in the schema cache". When a user's schema is missing one of the
 // ~30 columns the app sends, that one absent column blocks every save. Rather
-// than fail the whole listing, drop the offending column and retry — so a
+// than fail the whole listing, drop the offending column and retry - so a
 // listing still saves with whatever columns the schema actually has. The
 // dropped column simply isn't persisted (e.g. a missing `image_url` means the
 // grid thumbnail falls back to `images`), which is a far better outcome than a
@@ -73,7 +73,7 @@ export const db = {
       if(col&&col!=="id"&&Object.prototype.hasOwnProperty.call(payload,col)){ delete payload[col]; continue; }
       throw new Error(text);
     }
-    // Email 7 — welcome. Fired on every upsert; send-email dedupes via the
+    // Email 7 - welcome. Fired on every upsert; send-email dedupes via the
     // welcome_email_sent flag so a returning user is only ever welcomed once.
     if(profile&&profile.id) fireEmail({type:"welcome",userId:profile.id});
     return d; },
@@ -83,12 +83,12 @@ export const db = {
   async getListing(id,t){ if(!id)return null; const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   async incrementViews(id,views,t){ await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({views:(views||0)+1})}); },
   async getReviews(sellerId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?seller_id=eq.${sellerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  // The listing ids a buyer has already reviewed — drives the "Leave a review" vs
+  // The listing ids a buyer has already reviewed - drives the "Leave a review" vs
   // "Reviewed" state on their orders so the same purchase isn't reviewed twice.
   async getMyReviews(uid,t){ if(!uid)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?reviewer_id=eq.${uid}&select=listing_id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getAllReviewStats(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?select=seller_id,rating`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getFastSellers(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?fast_seller=eq.true&select=id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  // Phase 10d — seller tools.
+  // Phase 10d - seller tools.
   // Sellers flagged vacation_mode=true on their profile; their active listings are
   // filtered out of the shop/search grid (see `visible` in App.js). One request
   // feeds the whole grid, mirroring getFastSellers.
@@ -110,7 +110,7 @@ export const db = {
   },
   // "Notify me" interest for the coming-soon Promote feature.
   async insertFeatureInterest(rec,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/feature_interest`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(rec)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
-  // ── Phase 13 — Promoted listings ──────────────────────────────────────────
+  // ── Phase 13 - Promoted listings ──────────────────────────────────────────
   // The signed-in seller's promotions (pending / active / expired), newest first,
   // with the listing name embedded for the dashboard ANALYTICS history. Falls back
   // to a plain select if the embed isn't available on this deployment, then to []
@@ -118,23 +118,23 @@ export const db = {
   // its empty state rather than throwing.
   async getMyPromotions(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/promotions?seller_id=eq.${uid}&select=*,listings(id,name,image_url,images)&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/promotions?seller_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
   // Wishlists / favourites. getAllWishlists returns one row per save (listing_id
-  // only) for the whole grid — counted client-side into a listing_id->count map,
+  // only) for the whole grid - counted client-side into a listing_id->count map,
   // mirroring getAllReviewStats. getMyWishlist returns just the current user's
   // saved listing_ids so cards can show a filled heart. add/remove toggle a row;
   // the table's UNIQUE(user_id,listing_id) makes a double-add a harmless 409.
   async getAllWishlists(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?select=listing_id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getMyWishlist(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?user_id=eq.${uid}&select=listing_id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  // Phase 14 — the signed-in user's saves with created_at, newest first, so the
+  // Phase 14 - the signed-in user's saves with created_at, newest first, so the
   // /wishlist page can order cards "most recently wishlisted first". Same table,
   // just selecting the timestamp and ordering on it.
   async getMyWishlistDetailed(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?user_id=eq.${uid}&select=listing_id,created_at&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async addWishlist(uid,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?on_conflict=user_id,listing_id`,{method:"POST",headers:{...hdrs(t),Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({user_id:uid,listing_id:listingId})}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async removeWishlist(uid,listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/wishlists?user_id=eq.${uid}&listing_id=eq.${listingId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
-  // ── Phase 14 — Shareable wishlists ────────────────────────────────────────
+  // ── Phase 14 - Shareable wishlists ────────────────────────────────────────
   // A named, public list of saved pieces reachable at /wishlist/<slug>. The
   // public page (no login) reads one list by slug WITH its items and each item's
   // listing embedded in a single PostgREST request via the shared_wishlist_items
-  // / listings FKs — so the grid has every listing with no per-item round-trip.
+  // / listings FKs - so the grid has every listing with no per-item round-trip.
   // Items are ordered by `position` client-side. Returns null if the list
   // doesn't exist (deleted/never created) so the page shows its "no longer
   // available" state rather than throwing.
@@ -153,30 +153,30 @@ export const db = {
   async clearSharedWishlistItems(listId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/shared_wishlist_items?shared_wishlist_id=eq.${listId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
   async insertReview(review,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(review)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async insertReport(report,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reports`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(report)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
-  // ── Phase 14 — Comments on listings (basic, no replies) ───────────────────
+  // ── Phase 14 - Comments on listings (basic, no replies) ───────────────────
   // Only non-deleted comments are returned; usernames/avatars are resolved
   // separately via getProfilesByIds (mirrors how reviews resolve reviewer_name).
   async getComments(listingId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/comments?listing_id=eq.${listingId}&deleted=eq.false&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async insertComment(comment,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/comments`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(comment)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
   async deleteComment(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({deleted:true})}); if(!r.ok)throw new Error(await r.text()); },
-  // ── Phase 14 — Make an offer (buyer side) ─────────────────────────────────
-  // A buyer's current PENDING offer on a listing — drives the MAKE AN OFFER /
+  // ── Phase 14 - Make an offer (buyer side) ─────────────────────────────────
+  // A buyer's current PENDING offer on a listing - drives the MAKE AN OFFER /
   // OFFER PENDING toggle on the Detail page. Newest pending row or null. Returns
   // null on any error (e.g. the offers table doesn't exist yet because the
   // migration hasn't run) so the button degrades to plain MAKE AN OFFER.
   async getMyOffer(listingId,buyerId,t){ if(!listingId||!buyerId)return null; const r=await fetch(`${SUPABASE_URL}/rest/v1/offers?listing_id=eq.${listingId}&buyer_id=eq.${buyerId}&status=eq.pending&order=created_at.desc&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   async insertOffer(offer,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/offers`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(offer)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); const created=d[0];
-    // Email to the seller — send-email resolves the seller + listing + buyer name
+    // Email to the seller - send-email resolves the seller + listing + buyer name
     // from the offer id (the browser never has the seller's email address).
     if(created&&created.id) fireEmail({type:"new_offer",offerId:created.id});
     return created; },
   async withdrawOffer(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/offers?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify({status:"withdrawn"})}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
-  // Phase 14 — every offer THIS buyer has made, newest first, with the listing
+  // Phase 14 - every offer THIS buyer has made, newest first, with the listing
   // (title/thumbnail/price/currency) embedded so the /offers page renders grouped
   // by status without a per-offer round-trip. Falls back to a plain select where
   // the embed isn't available, then [] if the offers table doesn't exist yet.
   async getBuyerOffers(buyerId,t){ if(!buyerId)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/offers?buyer_id=eq.${buyerId}&select=*,listings(id,name,image_url,images,price,currency,sold,status,offers_enabled)&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/offers?buyer_id=eq.${buyerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
-  // ── Phase 14 — Seller responds to offers (accept / decline) ───────────────
+  // ── Phase 14 - Seller responds to offers (accept / decline) ───────────────
   // Every offer on the seller's listings, newest first, with the listing
   // (title/thumbnail/price) embedded so the dashboard OFFERS tab renders without
   // a per-offer round-trip. Falls back to a plain select where the embed isn't
@@ -184,7 +184,7 @@ export const db = {
   async getSellerOffers(sellerId,t){ if(!sellerId)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/offers?seller_id=eq.${sellerId}&select=*,listings(id,name,image_url,images,price,currency,offers_enabled)&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/offers?seller_id=eq.${sellerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
   // Accept an offer (issue PART 3). Sets it 'accepted', turns OFF offers on the
   // listing so no new offers arrive while payment is pending (the listing is NOT
-  // marked sold — that's the next issue, after payment), then declines every
+  // marked sold - that's the next issue, after payment), then declines every
   // OTHER pending offer on the same listing. Returns the declined rows so the
   // caller can fire their in-app decline notifications. The accept + auto-decline
   // emails fire from here.
@@ -232,8 +232,8 @@ export const db = {
     }
     fireEmail(counterPence!=null?{type:"offer_declined",offerId:offer.id,counterPence}:{type:"offer_declined",offerId:offer.id});
   },
-  // ── Phase 11 — Report a listing + dispute resolution ──────────────────────
-  // The Stitch'd admin account(s) — profiles flagged is_admin=true. Dispute
+  // ── Phase 11 - Report a listing + dispute resolution ──────────────────────
+  // The Stitch'd admin account(s) - profiles flagged is_admin=true. Dispute
   // notifications are routed to every admin id this returns.
   async getAdmins(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?is_admin=eq.true&select=id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   // Buyer raising a problem with an order. Self-heals like the listing insert: if
@@ -258,12 +258,12 @@ export const db = {
   // back to a plain select if the embed isn't available on this deployment.
   async getAllDisputes(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/disputes?select=*,orders(id,listing_id,status),alteration_requests(id,garment_type,listing_id,listings(name))&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r1=await fetch(`${SUPABASE_URL}/rest/v1/disputes?select=*,orders(id,listing_id,status)&order=created_at.desc`,{headers:hdrs(t)}); if(r1.ok)return r1.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/disputes?order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
   async updateDispute(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/disputes?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
-  // ── Phase 11 — Verified seller badges ─────────────────────────────────────
+  // ── Phase 11 - Verified seller badges ─────────────────────────────────────
   // The set of sellers flagged verified=true on their profile, so cards/Detail
   // can show the VERIFIED SELLER badge (and the search filter can hide everyone
   // else) without a per-card profile fetch. Mirrors getFastSellers/getVacationSellers.
   async getVerifiedSellers(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?verified=eq.true&select=id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  // Phase 11 — the set of sellers who passed Stripe Identity (identity_verified=true),
+  // Phase 11 - the set of sellers who passed Stripe Identity (identity_verified=true),
   // so cards/Detail can show the ID VERIFIED badge without a per-card profile fetch.
   // Mirrors getVerifiedSellers. Returns [] if the column doesn't exist yet.
   async getIdentityVerifiedSellers(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/profiles?identity_verified=eq.true&select=id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
@@ -281,7 +281,7 @@ export const db = {
     }
     throw new Error("Couldn't submit the verification application.");
   },
-  // The signed-in seller's latest application — its reviewed_at backs the
+  // The signed-in seller's latest application - its reviewed_at backs the
   // "reapply after 30 days" rule shown when an application was rejected.
   async getMyVerificationApplication(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/verification_applications?user_id=eq.${uid}&order=created_at.desc&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   // Patch the verification columns on a profile (apply → pending, approve →
@@ -298,10 +298,10 @@ export const db = {
     }
     throw new Error("Couldn't update verification status.");
   },
-  // Admin panel — every verification application (all statuses), newest first.
+  // Admin panel - every verification application (all statuses), newest first.
   async getVerificationApplications(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/verification_applications?order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async updateVerificationApplication(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/verification_applications?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json();
-    // Email 6 — verification approved. send-email resolves the seller from the
+    // Email 6 - verification approved. send-email resolves the seller from the
     // application id and respects their unsubscribe preference.
     if((patch.status||"")==="approved") fireEmail({type:"verification_approved",applicationId:id});
     return d; },
@@ -316,7 +316,7 @@ export const db = {
     // Sender is by definition active right now; stamp it so a reply back to them
     // is suppressed while they're online.
     touchActive(msg.sender_id,t);
-    // Email 5 — new message. send-email finds the recipient from the conversation,
+    // Email 5 - new message. send-email finds the recipient from the conversation,
     // skips them if active in the last 10 minutes, and trims the preview to 100 chars.
     fireEmail({type:"new_message",conversationId:msg.conversation_id,senderId:msg.sender_id,content:msg.content});
     return d; },
@@ -328,7 +328,7 @@ export const db = {
   async getBundleItems(bundleId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/bundle_items?bundle_id=eq.${bundleId}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async addBundleItem(item,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/bundle_items`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(item)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async removeBundleItem(id,t){ await fetch(`${SUPABASE_URL}/rest/v1/bundle_items?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); },
-  // ── Phase 13 — seller storefronts ─────────────────────────────────────────
+  // ── Phase 13 - seller storefronts ─────────────────────────────────────────
   // Patch the storefront columns on a profile (banner, bio, tagline, location,
   // instagram). Self-heals like updateProfileVerification: if the schema is
   // missing a column (migration not yet run) drop it and retry so the rest of
@@ -344,7 +344,7 @@ export const db = {
     }
     throw new Error("Couldn't save your storefront.");
   },
-  // ── Phase 14 — Bundle discounts ───────────────────────────────────────────
+  // ── Phase 14 - Bundle discounts ───────────────────────────────────────────
   // The set of sellers offering a bundle discount (bundle_discount_enabled=true),
   // with the % each offers, so the shop grid / storefront / bag can apply it
   // without a per-card profile fetch. Mirrors getVacationSellers/getVerifiedSellers.
@@ -413,7 +413,7 @@ export const db = {
   },
   async getMyOrders(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders?or=(buyer_id.eq.${uid},seller_id.eq.${uid})&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async updateOrder(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json();
-    // Emails 3 & 4 — seller moving the order through DISPATCHED / DELIVERED. The
+    // Emails 3 & 4 - seller moving the order through DISPATCHED / DELIVERED. The
     // function looks up the buyer + listing from the order id.
     const st=(patch.status||"").toLowerCase();
     if(st==="dispatched") fireEmail({type:"order_dispatched",orderId:id});
@@ -422,11 +422,11 @@ export const db = {
   async getNewListings(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?sold=eq.false&order=created_at.desc&limit=12`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getPriceDrops(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?sold=eq.false&prev_price=not.is.null&order=updated_at.desc&limit=12`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getTrending(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?sold=eq.false&order=views.desc&limit=12`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  // ── Phase 10e — Shop the Look ─────────────────────────────────────────────
+  // ── Phase 10e - Shop the Look ─────────────────────────────────────────────
   // Each look is fetched WITH its items embedded, and each item WITH its listing
   // embedded, in a single PostgREST request via the look_items / listings FKs.
   // That gives the card everything it needs (piece count, total price, cover) and
-  // the detail view every listing — no per-item round-trips. Items are ordered by
+  // the detail view every listing - no per-item round-trips. Items are ordered by
   // `position` client-side after the fetch.
   async getActiveLooks(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/looks?active=eq.true&select=*,look_items(*,listings(*))&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getLook(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/looks?id=eq.${id}&select=*,look_items(*,listings(*))&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
@@ -442,10 +442,10 @@ export const db = {
   // only) for the create-a-look listing picker.
   async searchListings(q,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?name=ilike.*${encodeURIComponent(q)}*&sold=eq.false&order=created_at.desc&limit=20`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
 
-  // ── Phase 13 — Pricing suggestions ────────────────────────────────────────
+  // ── Phase 13 - Pricing suggestions ────────────────────────────────────────
   // Fetch SOLD comparable listings for the pricing-guide panel on the create/edit
   // form. Returns up to 50 rows ({price}) so the frontend can compute min/max/avg/
-  // count itself — no aggregate Edge Function needed (issue PART 3).
+  // count itself - no aggregate Edge Function needed (issue PART 3).
   //
   // "Sold" is matched by EITHER signal: status='sold' (set by the stripe-webhook
   // on a real purchase) OR the legacy sold=true flag (set when a seller manually
@@ -466,14 +466,14 @@ export const db = {
     catch{ return []; }
   },
 
-  // ── Phase 14 — Style feed ─────────────────────────────────────────────────
+  // ── Phase 14 - Style feed ─────────────────────────────────────────────────
   // A page of non-deleted posts, newest first. `limit`/`offset` drive the LOAD
   // MORE pagination (12 at a time). Profiles (avatar/username) and the tagged
-  // listings are resolved separately — style_posts has no PostgREST FK to either
+  // listings are resolved separately - style_posts has no PostgREST FK to either
   // (user_id → auth.users, listing_ids is a uuid[]), so we batch-fetch them with
   // getProfilesFullByIds / getListingsByIds rather than embedding.
   async getStylePosts(limit,offset,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/style_posts?deleted=eq.false&order=created_at.desc&limit=${limit}&offset=${offset}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  // The FOLLOWING tab — posts authored by the users this person follows, newest
+  // The FOLLOWING tab - posts authored by the users this person follows, newest
   // first, paginated. Returns [] when they follow no-one (caller short-circuits).
   async getStylePostsByUsers(userIds,limit,offset,t){ if(!userIds.length)return []; const ids=userIds.map(id=>`user_id.eq.${id}`).join(","); const r=await fetch(`${SUPABASE_URL}/rest/v1/style_posts?and=(deleted.eq.false,or(${ids}))&order=created_at.desc&limit=${limit}&offset=${offset}`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   // The N most recent posts for the homepage STYLE INSPIRATION rail.
@@ -481,13 +481,13 @@ export const db = {
   // A single post by id (the /post/<id> share deep link). Null if missing/deleted.
   async getStylePost(id,t){ if(!id)return null; const r=await fetch(`${SUPABASE_URL}/rest/v1/style_posts?id=eq.${id}&deleted=eq.false&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
   // Batch-fetch listings by id (for a post's tagged pieces). Preserves nothing
-  // about order — the caller maps them by id. Returns [] on error/empty.
+  // about order - the caller maps them by id. Returns [] on error/empty.
   async getListingsByIds(ids,t){ if(!ids||!ids.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?id=in.(${ids.join(",")})`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   // Which of these posts the signed-in user has liked, so hearts render filled.
   // Returns the liked post_ids (a subset of `postIds`).
   async getMyStyleLikes(userId,postIds,t){ if(!userId||!postIds||!postIds.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/style_post_likes?user_id=eq.${userId}&post_id=in.(${postIds.join(",")})&select=post_id`,{headers:hdrs(t)}); if(!r.ok)return []; const d=await r.json(); return d.map(x=>x.post_id); },
   async insertStylePost(post,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/style_posts`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(post)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
-  // Soft delete — own post only. Sets deleted=true; the row is never removed.
+  // Soft delete - own post only. Sets deleted=true; the row is never removed.
   async deleteStylePost(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/style_posts?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({deleted:true})}); if(!r.ok)throw new Error(await r.text()); },
   // Like / unlike. The UNIQUE(post_id,user_id) constraint makes a re-like a
   // harmless 409; the optimistic UI has already flipped the heart either way.
@@ -496,7 +496,7 @@ export const db = {
   // Sync the denormalised counter after a like/unlike (best-effort background write).
   async setStylePostLikes(id,count,t){ await fetch(`${SUPABASE_URL}/rest/v1/style_posts?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({likes_count:Math.max(0,count)})}); },
 
-  // ── Phase 15 — Tailor profiles ────────────────────────────────────────────
+  // ── Phase 15 - Tailor profiles ────────────────────────────────────────────
   // The single tailor system: any user can apply to become a tailor, an admin
   // approves them, and approved tailors get a public profile at /tailors/<id>
   // with a portfolio (browsable via the tailor directory).
@@ -539,15 +539,15 @@ export const db = {
     }
     throw new Error("Couldn't update the tailor profile.");
   },
-  // Admin panel — every application that isn't approved yet (pending/rejected/
+  // Admin panel - every application that isn't approved yet (pending/rejected/
   // suspended), newest first. Returns [] if the table doesn't exist yet.
   async getPendingTailors(t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailors?select=*,tailor_portfolio(*)&order=created_at.desc`,{headers:hdrs(t)}); if(r.ok)return r.json(); const r2=await fetch(`${SUPABASE_URL}/rest/v1/tailors?order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
-  // Portfolio — a tailor's images, ordered by position then created_at.
+  // Portfolio - a tailor's images, ordered by position then created_at.
   async getTailorPortfolio(tailorId,t){ if(!tailorId)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio?tailor_id=eq.${tailorId}&order=position.asc,created_at.asc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async insertPortfolioItems(rows,t){ if(!rows.length)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(rows)}); if(!r.ok)throw new Error(await r.text()); return r.json(); },
   async updatePortfolioItem(id,patch,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio?id=eq.${id}`,{method:"PATCH",headers:{...hdrs(t),Prefer:"return=representation"},body:JSON.stringify(patch)}); if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0]; },
   async deletePortfolioItem(id,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_portfolio?id=eq.${id}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },
-  // ── Wallet — a seller's earnings ledger (sale credits + withdrawals) ──────────
+  // ── Wallet - a seller's earnings ledger (sale credits + withdrawals) ──────────
   // Newest first. Balance is derived client-side as the sum of every non-'failed'
   // row's amount_pence (credits positive, withdrawals negative).
   async getWalletTransactions(uid,t){ if(!uid)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
@@ -570,7 +570,7 @@ export const db = {
   fireTailorApplicationReceivedEmail(tailorId){ if(tailorId) fireEmail({type:"tailor_application_received",tailorId}); },
   fireTailorApplicationAdminEmail(tailorId,adminUserId){ if(tailorId&&adminUserId) fireEmail({type:"tailor_application_admin",tailorId,userId:adminUserId}); },
 
-  // ── Phase 15 — Request alterations on a listing ───────────────────────────
+  // ── Phase 15 - Request alterations on a listing ───────────────────────────
   // A buyer picks an approved tailor and describes the alterations they need.
   // The request lives in alteration_requests; the tailor responds (quote/decline)
   // from their dashboard. Payment for an accepted quote comes in a later issue.
@@ -594,7 +594,7 @@ export const db = {
     throw new Error("Couldn't send your alteration request.");
   },
   // The buyer's own requests, newest first, WITH the listing (thumbnail/title)
-  // and tailor (name/image/user) embedded for the /alterations page — no per-row
+  // and tailor (name/image/user) embedded for the /alterations page - no per-row
   // round-trip. Falls back to a plain select where the embed isn't available,
   // then [] if the table doesn't exist yet (migration not run).
   async getBuyerAlterationRequests(buyerId,t){ if(!buyerId)return [];
@@ -635,7 +635,7 @@ export const db = {
     if(!r.ok)throw new Error(await r.text()); const d=await r.json(); return d[0];
   },
 
-  // ── Phase 15 — Tailor booking payments + completion ───────────────────────
+  // ── Phase 15 - Tailor booking payments + completion ───────────────────────
   // Buyer declines a quote: status -> declined. Fires the decline email to the
   // tailor (reuses the existing alteration_declined template).
   async declineAlterationQuote(id,t){
@@ -663,7 +663,7 @@ export const db = {
     const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_payouts?tailor_id=eq.${tailorId}&select=*,alteration_requests(id,garment_type,listing_id,paid_at,listings(name,image_url,images))&order=created_at.desc`,{headers:hdrs(t)});
     if(r.ok)return r.json();
     const r2=await fetch(`${SUPABASE_URL}/rest/v1/tailor_payouts?tailor_id=eq.${tailorId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
-  // Admin PAYOUTS oversight — EVERY payout, newest first, with the booking (+
+  // Admin PAYOUTS oversight - EVERY payout, newest first, with the booking (+
   // listing) and tailor embedded for the table. Falls back to a plain select where
   // the embed isn't available, then [] if the table doesn't exist yet.
   async getAllPayouts(t){
@@ -671,7 +671,7 @@ export const db = {
     if(r.ok)return r.json();
     const r2=await fetch(`${SUPABASE_URL}/rest/v1/tailor_payouts?order=created_at.desc`,{headers:hdrs(t)}); if(!r2.ok)return []; return r2.json(); },
 
-  // ── Phase 15 — Tailor reviews & ratings ───────────────────────────────────
+  // ── Phase 15 - Tailor reviews & ratings ───────────────────────────────────
   // A buyer reviews a tailor after a completed booking. Reviews live in their own
   // tailor_reviews table (separate from the Phase 10b listing `reviews`); the
   // tailor row carries a denormalised average_rating / review_count roll-up.
@@ -719,7 +719,7 @@ export const db = {
   async getMyTailorReviews(buyerId,t){ if(!buyerId)return [];
     const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_reviews?buyer_id=eq.${buyerId}&select=id,alteration_request_id,rating,comment`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
 
-  // ── Phase 15 — Tailor availability calendar ───────────────────────────────
+  // ── Phase 15 - Tailor availability calendar ───────────────────────────────
   // Every availability row for one tailor (the dates they've explicitly marked).
   // A date with NO row falls back to "available with the tailor's default slots".
   // Used both by the tailor's own dashboard AVAILABILITY tab and the read-only
@@ -739,7 +739,7 @@ export const db = {
   async bulkUpsertTailorAvailability(rows,t){ if(!rows||!rows.length)return [];
     const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_availability`,{method:"POST",headers:{...hdrs(t),Prefer:"return=representation,resolution=merge-duplicates"},body:JSON.stringify(rows)});
     if(!r.ok)throw new Error(await r.text()); return r.json(); },
-  // MARK ALL AS AVAILABLE — wipe every override so all dates fall back to the
+  // MARK ALL AS AVAILABLE - wipe every override so all dates fall back to the
   // tailor's default (available with default slots).
   async clearTailorAvailability(tailorId,t){ if(!tailorId)return;
     const r=await fetch(`${SUPABASE_URL}/rest/v1/tailor_availability?tailor_id=eq.${tailorId}`,{method:"DELETE",headers:hdrs(t)}); if(!r.ok)throw new Error(await r.text()); },

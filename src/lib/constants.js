@@ -19,7 +19,7 @@ export const hdrs = (t) => ({ apikey: SUPABASE_KEY, Authorization: `Bearer ${t||
 
 export function buildPaymentSummary(listing) {
   const amount = parseFloat(listing.price);
-  const fee    = parseFloat((amount * PLATFORM_FEE).toFixed(2)); // 0 — sellers sell free
+  const fee    = parseFloat((amount * PLATFORM_FEE).toFixed(2)); // 0 - sellers sell free
   const sellerGets = parseFloat((amount - fee).toFixed(2));
   return { amount, fee, sellerGets };
 }
@@ -37,7 +37,7 @@ export const CONDITIONS = ["Brand New (with tags)","Brand New (without tags)","L
 export const OCCASIONS  = ["Wedding","Eid","Diwali","Mehndi","Nikah","Sangeet","Navratri","Puja","Party","Casual","Graduation","Other"];
 export const SIZES      = ["XS","S","M","L","XL","XXL","Free Size","Custom Stitched"];
 export const OCC_COLOR  = {Wedding:"#FF1493",Eid:"#34C759",Diwali:"#FF9500",Mehndi:"#30D158",Nikah:"#007AFF",Sangeet:"#FF2D55",Navratri:"#FF6B00",Puja:"#FF1493",Party:"#BF5AF2",Casual:"#8E8E93",Graduation:"#0A84FF",Other:"#636366"};
-// ── Phase 12 — Colour filter ──────────────────────────────────────────────────
+// ── Phase 12 - Colour filter ──────────────────────────────────────────────────
 // Buyers filter listings by colour and sellers tag a listing with one or more
 // colours. Stored in the `colours` text[] column (see the phase12 migration).
 // COLOUR_HEX is the swatch fill for each colour; Multicolour is rendered as a
@@ -92,7 +92,7 @@ const MEN_CAT_MAP={Sherwani:"Sherwani",Kurta:"Kurta / Kurta Pyjama","Salwar Kame
 export const defaultGarmentFor=(g,cat)=>(g==="men"?MEN_CAT_MAP:WOMEN_CAT_MAP)[cat]||"Other / General";
 
 // Reverse mapping: Clothing listings no longer have a separate Category dropdown
-// — the garment type IS the category. This picks the closest legacy `category`
+// - the garment type IS the category. This picks the closest legacy `category`
 // value so card labels, emoji, search and the Shop category filter keep working.
 const GARMENT_CAT_MAP={
   "Saree":"Saree","Lehenga":"Lehenga","Salwar Kameez / Suit":"Salwar Kameez",
@@ -149,7 +149,7 @@ export function buildMeasPayload(form){
 }
 
 // Each carrier carries an `Icon` (a Lucide React component) rendered in the
-// delivery picker instead of an emoji — see the PAYMENT MODAL in App.js.
+// delivery picker instead of an emoji - see the PAYMENT MODAL in App.js.
 export const POSTAGE_OPTIONS = [
   {id:"evri",name:"Evri",Icon:Package,prices:[{label:"Small parcel (up to 2kg)",price:3.99},{label:"Medium parcel (up to 5kg)",price:5.49},{label:"Large parcel (up to 15kg)",price:7.49}]},
   {id:"royal_mail",name:"Royal Mail",Icon:Mailbox,prices:[{label:"Tracked 48 (up to 2kg)",price:3.35},{label:"Tracked 24 (up to 2kg)",price:4.35},{label:"Special Delivery",price:7.85}]},
@@ -191,10 +191,10 @@ export function trackingUrl(carrierLabel, number) {
   return fn ? fn(enc) : `https://www.google.com/search?q=${encodeURIComponent((name ? name + " " : "") + "tracking " + number)}`;
 }
 
-// ── Phase 12 — Saved searches ──────────────────────────────────────────────────
+// ── Phase 12 - Saved searches ──────────────────────────────────────────────────
 // A saved search persists the buyer's live shop filters as a `filters` jsonb blob
 // (see the phase12 saved_searches migration). buildSearchFilters snapshots the
-// current filter state into that shape — omitting "All"/empty values so the blob
+// current filter state into that shape - omitting "All"/empty values so the blob
 // only carries the criteria the buyer actually set. filterSummary renders a blob
 // back into the "Lehenga · Pink · Wedding · Under £200" chip shown in the save
 // modal, on the saved-searches page and inside the alert email (the Edge Function
@@ -229,14 +229,14 @@ export function filterSummary(filters) {
   if (filters.verified_only) parts.push("Verified sellers");
   const hasMin = filters.min_price != null && filters.min_price !== "";
   const hasMax = filters.max_price != null && filters.max_price !== "";
-  if (hasMin && hasMax) parts.push(`£${filters.min_price}–£${filters.max_price}`);
+  if (hasMin && hasMax) parts.push(`£${filters.min_price}-£${filters.max_price}`);
   else if (hasMax) parts.push(`Under £${filters.max_price}`);
   else if (hasMin) parts.push(`Over £${filters.min_price}`);
   return parts.length ? parts.join(" · ") : "All listings";
 }
 
 // Image-less listings fall back to a clean typographic monogram (e.g. "SK" for
-// Salwar Kameez) rendered in the brand's bold condensed face — no emojis. Multi-
+// Salwar Kameez) rendered in the brand's bold condensed face - no emojis. Multi-
 // word categories use their initials; single words use the first two letters.
 export const catEmoji = c=>{
   const s=String(c||"").trim();
@@ -244,13 +244,13 @@ export const catEmoji = c=>{
   const w=s.split(/[\s-]+/).filter(Boolean);
   return (w.length>1 ? (w[0][0]+w[1][0]) : s.slice(0,2)).toUpperCase();
 };
-export const waLink   = (n,name,price)=>`https://wa.me/${n.replace(/\D/g,"")}?text=${encodeURIComponent(`Hi! I saw "${name}" (£${price}) on Stitch'd — still available?`)}`;
+export const waLink   = (n,name,price)=>`https://wa.me/${n.replace(/\D/g,"")}?text=${encodeURIComponent(`Hi! I saw "${name}" (£${price}) on Stitch'd - still available?`)}`;
 // Stitch'd is UK-only: all prices are displayed in GBP (£), regardless of any
 // legacy currency code stored on a listing/profile. Payment-processing currency
 // is handled separately in the Stripe call sites and is intentionally untouched.
 export const currencySymbol = ()=>"£";
 
-// ── Phase 15 — Tailor profiles ────────────────────────────────────────────────
+// ── Phase 15 - Tailor profiles ────────────────────────────────────────────────
 // The specialism pills a tailor selects on application (Step 2) and that show on
 // their public profile, and the turnaround-time options (Step 3). turnaround_days
 // stores a single representative day count; turnaroundLabel maps it back to the
@@ -270,11 +270,11 @@ export const turnaroundLabel = (days) => {
   return m ? m.label : (days ? `${days} days` : "");
 };
 
-// ── Phase 15 — Request alterations on a listing ───────────────────────────────
+// ── Phase 15 - Request alterations on a listing ───────────────────────────────
 // The alteration types a buyer can pick (Step 1 of the request flow). Each maps
 // to zero or more tailor specialisms (from TAILOR_SPECIALISMS) so Step 2 can
 // surface the most relevant tailors first. A type with no mapping (e.g. "Other")
-// matches no specialism — when NOTHING matches the buyer's whole selection we
+// matches no specialism - when NOTHING matches the buyer's whole selection we
 // fall back to showing every approved tailor (see tailorsForAlterations).
 export const ALTERATION_TYPES = [
   "Take in / let out",
@@ -307,7 +307,7 @@ export function specialismsForAlterations(selected = []) {
 
 // Filter approved tailors to those whose specialisms overlap the buyer's
 // selection. If no tailor matches (or the selection maps to no specialism), the
-// caller should show ALL approved tailors — so this returns the matches and a
+// caller should show ALL approved tailors - so this returns the matches and a
 // flag indicating whether the match narrowed anything.
 export function tailorsForAlterations(tailors = [], selected = []) {
   const wanted = new Set(specialismsForAlterations(selected));
@@ -316,7 +316,7 @@ export function tailorsForAlterations(tailors = [], selected = []) {
   return matched.length ? { matched, narrowed: true } : { matched: tailors, narrowed: false };
 }
 
-// ── Phase 10e — Shop the Look helpers ─────────────────────────────────────────
+// ── Phase 10e - Shop the Look helpers ─────────────────────────────────────────
 // The Stitch'd admin account. Looks created by this account (or any profile with
 // is_admin=true) are stamped created_by_type='admin' and show "Curated by
 // Stitch'd". Set this to the admin's email to also recognise them by email; the

@@ -2,7 +2,7 @@
 // ----------------------------------------------------
 // Starts a Stripe Identity verification for a seller and returns the URL of the
 // Stripe-hosted flow to redirect them to. The browser NEVER talks to Stripe with
-// the secret key — it posts the seller's user_id here; this function creates the
+// the secret key - it posts the seller's user_id here; this function creates the
 // VerificationSession, records it on the seller's profile (status → 'pending'),
 // and hands back the hosted-flow URL.
 //
@@ -11,7 +11,7 @@
 // flips identity_verified / identity_verification_status.
 //
 // Required environment variables (Supabase → Project Settings → Edge Functions):
-//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE — Stripe Identity must be
+//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE - Stripe Identity must be
 //                                enabled on the account)
 //   SUPABASE_URL                 auto-injected by Supabase
 //   SUPABASE_SERVICE_ROLE_KEY    used to write the session id onto the profile

@@ -124,7 +124,7 @@ export default function Wallet({
           </div>
           {amtError && <p style={{ fontSize: 13, color: PINK, fontWeight: 700, marginTop: 8 }}>{amtError}</p>}
           <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, color: "#6f6f6f", letterSpacing: 0.5, marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
-            <Check width={13} height={13} /> Bank connected · funds arrive in 2–7 business days
+            <Check width={13} height={13} /> Bank connected · funds arrive in 2-7 business days
           </p>
         </div>
       )}

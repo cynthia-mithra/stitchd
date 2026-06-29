@@ -93,7 +93,7 @@ export default function Looks({
     );
   }
 
-  // ── LOOK DETAIL — /looks/[id] ──────────────────────────────────────────────
+  // ── LOOK DETAIL - /looks/[id] ──────────────────────────────────────────────
   if (view === "lookdetail" && selLook) {
     const listings = lookListings(selLook);
     const available = listings.filter(l => !l.sold);

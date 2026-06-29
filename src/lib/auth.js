@@ -14,25 +14,25 @@ export const auth = {
   // Use a CLEAN return target (origin + path only). window.location.href can
   // carry a leftover "?error=...&error_code=bad_oauth_state..." from a previous
   // failed login; feeding that back as redirect_to pollutes the next attempt.
-  // NOTE: this stays on whatever domain the page was actually loaded from — if
+  // NOTE: this stays on whatever domain the page was actually loaded from - if
   // the OAuth state error persists, the real fix is in the Supabase dashboard
   // (Authentication → URL Configuration: Site URL + allowed Redirect URLs must
   // match the exact domain) and Google Cloud (authorized redirect URI must be
   // <project>.supabase.co/auth/v1/callback), not in this URL.
   googleUrl(){ const target=`${window.location.origin}${window.location.pathname}`; return `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(target)}`; },
-  // Sign in with Apple — same GoTrue OAuth flow as Google. Requires the Apple
+  // Sign in with Apple - same GoTrue OAuth flow as Google. Requires the Apple
   // provider to be enabled in the Supabase dashboard (Authentication → Providers
   // → Apple) with a Services ID + key, and stitchd.fit added to Apple's return
   // URLs. The redirect_to handling mirrors googleUrl() (clean origin+path only).
   appleUrl(){ const target=`${window.location.origin}${window.location.pathname}`; return `${SUPABASE_URL}/auth/v1/authorize?provider=apple&redirect_to=${encodeURIComponent(target)}`; },
-  // Password reset — step 1: send the recovery email. Routes through our own
+  // Password reset - step 1: send the recovery email. Routes through our own
   // send-reset Edge Function so the email is a BRANDED Stitch'd email (via
   // Resend) instead of Supabase's plain default. The function generates the
   // recovery link server-side and always returns ok (no account enumeration);
   // redirectTo brings the user back to the app, where the hash carries
   // type=recovery.
-  async sendReset(email){ const redirectTo=`${window.location.origin}${window.location.pathname}`; const r=await fetch(`${SUPABASE_URL}/functions/v1/send-reset`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({email,redirectTo})}); if(!r.ok)throw new Error("Could not send reset email — please try again."); return r.json().catch(()=>({ok:true})); },
-  // Password reset — step 2: set the new password using the recovery session's
+  async sendReset(email){ const redirectTo=`${window.location.origin}${window.location.pathname}`; const r=await fetch(`${SUPABASE_URL}/functions/v1/send-reset`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({email,redirectTo})}); if(!r.ok)throw new Error("Could not send reset email - please try again."); return r.json().catch(()=>({ok:true})); },
+  // Password reset - step 2: set the new password using the recovery session's
   // access token (saved when we detect the type=recovery hash on return).
   async updateUser(password,t){ const r=await fetch(`${SUPABASE_URL}/auth/v1/user`,{method:"PUT",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t}`,"Content-Type":"application/json"},body:JSON.stringify({password})}); const d=await r.json().catch(()=>({})); if(!r.ok||d.error||d.code)throw new Error((d.error&&d.error.message)||d.msg||d.error_description||"Could not update password"); return d; },
   async refreshSession(refreshToken){ const r=await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:refreshToken})}); const d=await r.json().catch(()=>({})); /* GoTrue returns refresh errors in several shapes ({error:{message}}, {error_description}, {msg}); a non-OK response or a body with no access_token must throw, otherwise getValidToken would hand back an undefined token and the next request fails with "JWT expired". */ if(!r.ok||!d.access_token) throw new Error(d.error_description||d.msg||(d.error&&d.error.message)||(typeof d.error==="string"?d.error:"")||`Token refresh failed (HTTP ${r.status})`); return d; },
@@ -64,9 +64,9 @@ export function isTokenExpired(token,skewMs=60000){
 // bucket defaults to "listings" (every listing photo goes there); Shop the Look
 // cover images pass bucket="looks" instead (see uploadLookImage). Both buckets
 // must exist and be public in Supabase Storage.
-// Upload to `bucket`. If that bucket can't accept the upload — it doesn't exist
+// Upload to `bucket`. If that bucket can't accept the upload - it doesn't exist
 // yet (migration not applied) OR storage RLS blocks writes to it (no INSERT
-// policy) — and a `fallbackBucket` is given, retry once against it so the feature
+// policy) - and a `fallbackBucket` is given, retry once against it so the feature
 // keeps working rather than the whole action failing. The fallback should be a
 // bucket known to accept logged-in uploads (e.g. "listings").
 export async function uploadImage(file,t,bucket="listings",fallbackBucket=null){
@@ -91,21 +91,21 @@ export async function uploadImage(file,t,bucket="listings",fallbackBucket=null){
 // Shop the Look cover images live in a separate "looks" storage bucket.
 export const uploadLookImage=(file,t)=>uploadImage(file,t,"looks");
 
-// Phase 13 — seller storefront banners live in their own public
+// Phase 13 - seller storefront banners live in their own public
 // "storefront-banners" bucket (created by the phase13 migration).
 export const uploadStorefrontBanner=(file,t)=>uploadImage(file,t,"storefront-banners");
 
-// Phase 11 — the optional photo a buyer attaches to a dispute lands in the
+// Phase 11 - the optional photo a buyer attaches to a dispute lands in the
 // private "disputes" bucket. The returned URL is the public-object form; if the
 // bucket is kept private the admin panel links out to it (a signed/authorised
 // fetch) rather than embedding it inline.
 export const uploadDisputeImage=(file,t)=>uploadImage(file,t,"disputes");
 
-// Phase 14 — style feed post photos live in their own public "style-posts"
+// Phase 14 - style feed post photos live in their own public "style-posts"
 // bucket (created by the phase14 style-feed migration).
 export const uploadStylePostImage=(file,t)=>uploadImage(file,t,"style-posts");
 
-// Phase 15 — tailor profile/banner images live in the public "tailor-profiles"
+// Phase 15 - tailor profile/banner images live in the public "tailor-profiles"
 // bucket; portfolio images in the public "tailor-portfolio" bucket (both created
 // by the phase15 migration). Fall back to the always-present "listings" bucket so
 // registration still works if those buckets haven't been created on the project.

@@ -3,7 +3,7 @@ import { Bookmark, Trash2, Search, Bell } from "lucide-react";
 import { S } from "../styles";
 import { filterSummary } from "../lib/constants";
 
-// Phase 12 — My Saved Searches (issue PART 3).
+// Phase 12 - My Saved Searches (issue PART 3).
 //
 // Reached from the logged-in nav dropdown ("SAVED SEARCHES") and the
 // /saved-searches path. Lists the buyer's saved shop filters; each card runs the
@@ -79,7 +79,7 @@ export default function SavedSearches({
                 </div>
 
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 16 }}>
-                  {/* Email alerts toggle — #FF1493 active state */}
+                  {/* Email alerts toggle - #FF1493 active state */}
                   <button
                     type="button"
                     onClick={() => toggleSavedSearchAlerts(s.id, !alertsOn)}

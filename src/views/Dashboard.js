@@ -5,7 +5,7 @@ import { S } from "../styles";
 import { Sec, F, Thumb, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 import Analytics from "./Analytics";
 
-// Phase 10d — public URL for a listing, used by Share (copy link / socials) and
+// Phase 10d - public URL for a listing, used by Share (copy link / socials) and
 // the share-card download. Falls back to the live domain when there's no origin.
 const listingUrl = (id) => `${(typeof window!=="undefined"&&window.location&&window.location.origin)||"https://stitchd.fit"}/?listing=${id}`;
 
@@ -87,28 +87,28 @@ export default function Dashboard({
   myVerificationApp = null, verificationBusy = false, submitVerification = () => {},
   adminApplications = [], adminApplicants = {},
   approveVerification = () => {}, rejectVerification = () => {},
-  // ID verification (Phase 11 — Stripe Identity)
+  // ID verification (Phase 11 - Stripe Identity)
   verifyIdentity = () => {}, identityBusy = false,
   requestTab = null, clearRequestTab = () => {},
   // Edit storefront (Phase 13)
   storeForm = {}, setStoreForm = () => {}, saveStorefront = () => {}, storeSaving = false,
   // Seller responds to offers (Phase 14)
   sellerOffers = [], offerBuyers = {}, acceptOffer = () => {}, declineOffer = () => {},
-  // Tailor applications (Phase 15 — admin)
+  // Tailor applications (Phase 15 - admin)
   adminTailors = [], approveTailor = () => {}, rejectTailor = () => {}, openTailorPublic = () => {},
-  // Tailor payouts oversight (Phase 15 — admin)
+  // Tailor payouts oversight (Phase 15 - admin)
   adminPayouts = [], retryPayout = () => {},
 }) {
-  // Split listings into ACTIVE vs SOLD (issue PART 4 — sold listings move to a
+  // Split listings into ACTIVE vs SOLD (issue PART 4 - sold listings move to a
   // separate SOLD tab in the seller dashboard).
   const [dashTab,setDashTab]=React.useState("active");
-  // Phase 11 — allow other views to deep-link to a tab (e.g. the listing form's
+  // Phase 11 - allow other views to deep-link to a tab (e.g. the listing form's
   // over-£200 prompt jumps straight to TOOLS for identity verification).
   React.useEffect(()=>{ if(requestTab){ setDashTab(requestTab); clearRequestTab(); } },[requestTab,clearRequestTab]);
   // The seller's own overall rating, shown as a stat tile when they have reviews.
   const myRating = user ? sellerRatings[user.id] : null;
 
-  // ── Phase 14 — bundle discount form (TOOLS tab) ──────────────────────────────
+  // ── Phase 14 - bundle discount form (TOOLS tab) ──────────────────────────────
   // Seeded from the profile and kept in sync when the profile loads/changes.
   const [bundleOn,setBundleOn]=React.useState(!!profile?.bundle_discount_enabled);
   const [bundlePct,setBundlePct]=React.useState(profile?.bundle_discount_percentage||10);
@@ -136,14 +136,14 @@ export default function Dashboard({
   const [relistBusy,setRelistBusy]=React.useState(false);
   const [copied,setCopied]=React.useState(false);
 
-  // ── Phase 11 — verified seller badges ────────────────────────────────────────
+  // ── Phase 11 - verified seller badges ────────────────────────────────────────
   const [verifyModal,setVerifyModal]=React.useState(false);  // APPLY FOR VERIFICATION modal
   const [verifyForm,setVerifyForm]=React.useState({full_name:"",reason:"",selling_experience:"Less than 6 months",instagram_handle:""});
   const [adminAppTab,setAdminAppTab]=React.useState("pending"); // admin PENDING/APPROVED/REJECTED
   const [rejectApp,setRejectApp]=React.useState(null);       // application being rejected
   const [rejectNotes,setRejectNotes]=React.useState("");
 
-  // ── Phase 14 — seller responds to offers ─────────────────────────────────────
+  // ── Phase 14 - seller responds to offers ─────────────────────────────────────
   const [offerTab,setOfferTab]=React.useState("pending");   // PENDING/ACCEPTED/DECLINED/EXPIRED filter
   const [acceptModal,setAcceptModal]=React.useState(null);  // offer pending an ACCEPT confirm
   const [declineModal,setDeclineModal]=React.useState(null);// offer pending a DECLINE confirm
@@ -156,7 +156,7 @@ export default function Dashboard({
     if(o.status==="pending"&&o.expires_at&&new Date(o.expires_at).getTime()<=Date.now()) return "expired";
     return o.status;
   };
-  // Withdrawn offers (buyer pulled out) aren't a tab — hide them everywhere.
+  // Withdrawn offers (buyer pulled out) aren't a tab - hide them everywhere.
   const visibleOffers=sellerOffers.filter(o=>effectiveStatus(o)!=="withdrawn");
   const pendingCount=visibleOffers.filter(o=>effectiveStatus(o)==="pending").length;
   const buyerFirstName=(o)=>{ const p=offerBuyers[o.buyer_id]||{}; const name=(p.full_name||p.username||"").trim(); return name?name.split(/\s+/)[0]:"a buyer"; };
@@ -168,7 +168,7 @@ export default function Dashboard({
   const confirmReject=async()=>{ if(!rejectApp) return; await rejectVerification(rejectApp,rejectNotes.trim()); setRejectApp(null); setRejectNotes(""); };
 
   const activeItems=myItems.filter(i=>!i.sold);
-  // Phase 13 — a listing's boost is live only while promoted is set AND
+  // Phase 13 - a listing's boost is live only while promoted is set AND
   // promoted_until is still in the future.
   const isPromoted=(i)=>!!i.promoted&&!!i.promoted_until&&new Date(i.promoted_until).getTime()>Date.now();
   const promotedUntilLabel=(i)=>i.promoted_until?new Date(i.promoted_until).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}):"";
@@ -202,7 +202,7 @@ export default function Dashboard({
     const url=listingUrl(item.id);
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(url).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),1800); }).catch(()=>flash("Couldn't copy link."));
-    } else { flash("Copy not supported — link: "+url); }
+    } else { flash("Copy not supported - link: "+url); }
   };
 
   if(view!=="dashboard"&&view!=="createbundle") return null;
@@ -241,7 +241,7 @@ export default function Dashboard({
             </div>
           )}
           {myItems.length===0?(
-            <div style={S.empty}><div style={S.emptyIcon}><Shirt width={40} height={40}/></div><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,margin:"20px 0 6px",letterSpacing:-0.5}}>NO LISTINGS YET.</p><p style={S.emptySub}>List your first piece and it'll show up here — with stats, offers and tools to manage it.</p><button className="hbtn" style={S.hBtn} onClick={()=>setView("add")}>LIST YOUR FIRST PIECE →</button></div>
+            <div style={S.empty}><div style={S.emptyIcon}><Shirt width={40} height={40}/></div><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,margin:"20px 0 6px",letterSpacing:-0.5}}>NO LISTINGS YET.</p><p style={S.emptySub}>List your first piece and it'll show up here - with stats, offers and tools to manage it.</p><button className="hbtn" style={S.hBtn} onClick={()=>setView("add")}>LIST YOUR FIRST PIECE →</button></div>
           ):(()=>{
             const tabItems=dashTab==="sold"?myItems.filter(i=>i.sold):dashTab==="active"?activeItems:[];
             return (
@@ -249,17 +249,17 @@ export default function Dashboard({
             <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
               <TabBtn l="ACTIVE" v="active" n={activeItems.length}/>
               <TabBtn l="SOLD" v="sold" n={myItems.filter(i=>i.sold).length}/>
-              {/* Phase 14 — OFFERS tab. Count badge shows pending offers only. */}
+              {/* Phase 14 - OFFERS tab. Count badge shows pending offers only. */}
               <TabBtn l="OFFERS" v="offers" n={pendingCount>0?pendingCount:null} activeBg="#FF1493"/>
-              {/* Phase 10c — ANALYTICS sits alongside ACTIVE / SOLD; active state uses the pink accent. */}
+              {/* Phase 10c - ANALYTICS sits alongside ACTIVE / SOLD; active state uses the pink accent. */}
               <TabBtn l="ANALYTICS" v="analytics" n={null} activeBg="#FF1493"/>
-              {/* Phase 10d — TOOLS tab. */}
+              {/* Phase 10d - TOOLS tab. */}
               <TabBtn l="TOOLS" v="tools" n={null} activeBg="#00E5CC"/>
-              {/* Phase 11 — ADMIN tab, only for the Stitch'd admin. */}
+              {/* Phase 11 - ADMIN tab, only for the Stitch'd admin. */}
               {isAdmin&&<TabBtn l="ADMIN" v="admin" n={null} activeBg="#FF1493"/>}
             </div>
 
-            {/* Phase 10d — BULK EDIT toolbar above the ACTIVE grid. */}
+            {/* Phase 10d - BULK EDIT toolbar above the ACTIVE grid. */}
             {dashTab==="active"&&activeItems.length>0&&(
               <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
                 {!bulkMode?(
@@ -284,7 +284,7 @@ export default function Dashboard({
             ):dashTab==="tools"?(
               /* ── TOOLS TAB (Storefront + Verification + Vacation mode + Promote) ─ */
               <div style={{display:"flex",flexDirection:"column",gap:3,maxWidth:680}}>
-                {/* Phase 13 — EDIT STOREFRONT. Banner upload + tagline/bio/location/
+                {/* Phase 13 - EDIT STOREFRONT. Banner upload + tagline/bio/location/
                     Instagram, a PREVIEW STOREFRONT link (opens the public page in a
                     new tab) and a pink SAVE CHANGES button. */}
                 <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
@@ -292,7 +292,7 @@ export default function Dashboard({
                     <Store width={20} height={20} color="#FF1493"/>
                     <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>EDIT STOREFRONT</h3>
                   </div>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>Customise your public storefront — the page buyers see when they tap your name.</p>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>Customise your public storefront - the page buyers see when they tap your name.</p>
 
                   {/* Banner upload */}
                   <div style={{marginBottom:18}}>
@@ -325,7 +325,7 @@ export default function Dashboard({
                   </div>
                 </div>
 
-                {/* Phase 11 — VERIFICATION. The body switches on verification_status:
+                {/* Phase 11 - VERIFICATION. The body switches on verification_status:
                     unverified → GET VERIFIED apply CTA; pending → under review;
                     verified → the badge + verified-since date; rejected → reapply
                     after 30 days from the application's reviewed_at. */}
@@ -385,7 +385,7 @@ export default function Dashboard({
                   );
                 })()}
 
-                {/* Phase 11 — IDENTITY VERIFICATION (Stripe Identity). Separate from
+                {/* Phase 11 - IDENTITY VERIFICATION (Stripe Identity). Separate from
                     the verified-seller badge above. Body switches on
                     identity_verification_status: unverified → CTA; pending → in
                     progress; verified → badge + date; failed → try again. */}
@@ -436,7 +436,7 @@ export default function Dashboard({
                   );
                 })()}
 
-                {/* Shop the Look — create & manage curated outfits (Phase 10e) */}
+                {/* Shop the Look - create & manage curated outfits (Phase 10e) */}
                 <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                     <Layers width={20} height={20} color="#FF1493"/>
@@ -469,7 +469,7 @@ export default function Dashboard({
                   )}
                 </div>
 
-                {/* Tool 2 — Vacation mode */}
+                {/* Tool 2 - Vacation mode */}
                 <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                     <Plane width={20} height={20} color="#FF1493"/>
@@ -477,11 +477,11 @@ export default function Dashboard({
                   </div>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>Hide all your listings while you're away. Your listings will be restored when you return.</p>
                   <div style={{display:"flex",alignItems:"center",gap:14}}>
-                    {/* Large toggle switch — #FF1493 active, #111 2px border, no radius */}
+                    {/* Large toggle switch - #FF1493 active, #111 2px border, no radius */}
                     <button aria-label="Toggle vacation mode" disabled={vacationSaving} onClick={()=>toggleVacation(!profile?.vacation_mode)} style={{width:74,height:38,border:"2px solid #111",borderRadius:0,background:profile?.vacation_mode?"#FF1493":"#fff",position:"relative",cursor:vacationSaving?"wait":"pointer",padding:0,transition:"background .15s",opacity:vacationSaving?0.6:1}}>
                       <span style={{position:"absolute",top:2,left:profile?.vacation_mode?40:2,width:30,height:30,background:profile?.vacation_mode?"#fff":"#111",transition:"left .15s",display:"block"}}/>
                     </button>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,letterSpacing:1,color:profile?.vacation_mode?"#FF1493":"#111"}}>{profile?.vacation_mode?"ON — YOU'RE AWAY":"OFF"}</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,letterSpacing:1,color:profile?.vacation_mode?"#FF1493":"#111"}}>{profile?.vacation_mode?"ON - YOU'RE AWAY":"OFF"}</span>
                   </div>
                   {profile?.vacation_mode&&(
                     <div style={{marginTop:16,background:"#FFF0F7",border:"2px solid #FF1493",padding:"12px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#111"}}>
@@ -490,7 +490,7 @@ export default function Dashboard({
                   )}
                 </div>
 
-                {/* Phase 14 — BUNDLE DISCOUNT. Toggle on, pick a % (5/10/15/20),
+                {/* Phase 14 - BUNDLE DISCOUNT. Toggle on, pick a % (5/10/15/20),
                     live preview, SAVE. Persists to the profile; the deal then shows
                     on cards/storefront and applies automatically in the bag. */}
                 <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
@@ -499,14 +499,14 @@ export default function Dashboard({
                     <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>BUNDLE DISCOUNT</h3>
                   </div>
                   <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>Offer buyers a discount when they purchase 2 or more of your items at once.</p>
-                  {/* Toggle — #FF1493 active state */}
+                  {/* Toggle - #FF1493 active state */}
                   <div style={{display:"flex",alignItems:"center",gap:14}}>
                     <button aria-label="Enable bundle discount" onClick={()=>setBundleOn(v=>!v)} style={{width:74,height:38,border:"2px solid #111",borderRadius:0,background:bundleOn?"#FF1493":"#fff",position:"relative",cursor:"pointer",padding:0,transition:"background .15s"}}>
                       <span style={{position:"absolute",top:2,left:bundleOn?40:2,width:30,height:30,background:bundleOn?"#fff":"#111",transition:"left .15s",display:"block"}}/>
                     </button>
-                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,letterSpacing:1,color:bundleOn?"#FF1493":"#111"}}>{bundleOn?"ENABLE BUNDLE DISCOUNT — ON":"ENABLE BUNDLE DISCOUNT — OFF"}</span>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,letterSpacing:1,color:bundleOn?"#FF1493":"#111"}}>{bundleOn?"ENABLE BUNDLE DISCOUNT - ON":"ENABLE BUNDLE DISCOUNT - OFF"}</span>
                   </div>
-                  {/* Percentage selector — only visible when ON. Pills: selected #FF1493. */}
+                  {/* Percentage selector - only visible when ON. Pills: selected #FF1493. */}
                   {bundleOn&&(
                     <div style={{marginTop:20}}>
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",marginBottom:10}}>DISCOUNT PERCENTAGE</p>
@@ -524,7 +524,7 @@ export default function Dashboard({
                   <button className="hbtn" style={{...S.hBtn,background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,fontSize:13,padding:"12px 22px",marginTop:20,opacity:bundleSaving?0.5:1}} disabled={bundleSaving} onClick={doSaveBundleDiscount}>{bundleSaving?"SAVING…":"SAVE"}</button>
                 </div>
 
-                {/* Tool 5 — Promote (coming soon) */}
+                {/* Tool 5 - Promote (coming soon) */}
                 <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                     <Rocket width={20} height={20} color="#00E5CC"/>
@@ -539,7 +539,7 @@ export default function Dashboard({
                 </div>
               </div>
             ):dashTab==="admin"?(
-              /* ── ADMIN TAB (Phase 11 — reports + disputes) ───────────────────── */
+              /* ── ADMIN TAB (Phase 11 - reports + disputes) ───────────────────── */
               <div style={{display:"flex",flexDirection:"column",gap:32,maxWidth:860}}>
                 {/* REPORTS */}
                 <div>
@@ -689,7 +689,7 @@ export default function Dashboard({
                       <div style={{display:"flex",flexDirection:"column",gap:10}}>
                         {pending.map(t=>{
                           const date=t.created_at?new Date(t.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase():"";
-                          const priceRange=(t.price_from_pence!=null||t.price_to_pence!=null)?`${fmt(t.price_from_pence)||"?"} – ${fmt(t.price_to_pence)||"?"}`:"Not set";
+                          const priceRange=(t.price_from_pence!=null||t.price_to_pence!=null)?`${fmt(t.price_from_pence)||"?"} - ${fmt(t.price_to_pence)||"?"}`:"Not set";
                           const portfolio=Array.isArray(t.tailor_portfolio)?t.tailor_portfolio:[];
                           return(
                             <div key={t.id} style={{border:"2px solid #111",padding:"14px 16px",fontFamily:"'Barlow Condensed',sans-serif"}}>
@@ -724,7 +724,7 @@ export default function Dashboard({
                     );
                   })()}
                 </div>
-                {/* TAILOR PAYOUTS (Phase 15 — Stripe Connect oversight) */}
+                {/* TAILOR PAYOUTS (Phase 15 - Stripe Connect oversight) */}
                 {(()=>{
                   const gbp=(p)=>`£${((Number(p)||0)/100).toFixed(2).replace(/\.00$/,"")}`;
                   const fmtDate=(d)=>{ try{ return new Date(d).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}).toUpperCase(); }catch{ return ""; } };
@@ -786,7 +786,7 @@ export default function Dashboard({
                 })()}
               </div>
             ):dashTab==="offers"?(
-              /* ── OFFERS TAB (Phase 14 — seller responds to offers) ───────────── */
+              /* ── OFFERS TAB (Phase 14 - seller responds to offers) ───────────── */
               (()=>{
                 const sym=currencySymbol();
                 const fmtMoney=(n)=>`${sym}${Number(n).toFixed(2).replace(/\.00$/,"")}`;
@@ -822,7 +822,7 @@ export default function Dashboard({
                       <p style={{display:"flex",justifyContent:"center",marginBottom:12,color:"#ddd"}}><Tag width={40} height={40}/></p>
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:900,color:"#6f6f6f",letterSpacing:1}}>
                         {visibleOffers.length===0
-                          ?"NO OFFERS YET — BUYERS CAN MAKE OFFERS ON YOUR ACTIVE LISTINGS"
+                          ?"NO OFFERS YET - BUYERS CAN MAKE OFFERS ON YOUR ACTIVE LISTINGS"
                           :offerTab==="pending"?"NO PENDING OFFERS":`NO ${offerTab.toUpperCase()} OFFERS`}
                       </p>
                     </div>
@@ -839,7 +839,7 @@ export default function Dashboard({
                         const msg=(o.message||"").trim();
                         return (
                         <div key={o.id} style={{border:"2px solid #111",padding:"16px",fontFamily:"'Barlow Condensed',sans-serif",display:"flex",gap:14,alignItems:"flex-start",flexWrap:"wrap"}}>
-                          {/* Listing thumbnail — 60px square, 2px #111 border */}
+                          {/* Listing thumbnail - 60px square, 2px #111 border */}
                           <div style={{width:60,height:60,flexShrink:0,border:"2px solid #111",overflow:"hidden"}}>
                             <Thumb src={listing.image_url||(listing.images&&listing.images[0])||""} emoji={<Tag width={24} height={24}/>} accent="#fafafa" style={{width:"100%",height:"100%"}} emojiStyle={{color:"#111"}}/>
                           </div>
@@ -847,7 +847,7 @@ export default function Dashboard({
                             {/* Status pill on non-pending tabs */}
                             {meta&&<span style={{display:"inline-block",background:meta.bg,color:"#fff",fontSize:10,fontWeight:800,letterSpacing:1.5,padding:"3px 10px",marginBottom:6}}>{meta.label}</span>}
                             <p style={{fontSize:17,fontWeight:900,color:"#111",lineHeight:1.1,marginBottom:6}}>{listing.name||"Listing"}</p>
-                            {/* Offer amount — large, bold, #111 */}
+                            {/* Offer amount - large, bold, #111 */}
                             <p style={{fontSize:30,fontWeight:900,color:"#111",letterSpacing:-0.5,lineHeight:1,marginBottom:2}}>{fmtMoney(offerAmount)}</p>
                             {/* Listed price + difference */}
                             <p style={{fontSize:14,fontWeight:700,color:"#6b6b6b",marginBottom:2}}>Listed at {fmtMoney(listed)}</p>
@@ -912,7 +912,7 @@ export default function Dashboard({
                       {!item.sold&&<button className="hbtn" style={{...S.dashBtn,background:"#111",color:"#fff"}} onClick={()=>markSold(item.id,item.sold)}>MARK SOLD</button>}
                       {item.sold&&<button className="hbtn" style={{...S.dashBtn,background:"#34C759",color:"#fff"}} onClick={()=>setRelistItem(item)}>RELIST</button>}
                       <button className="hbtn" style={{...S.dashBtn,background:"#fff",color:"#111",border:"1.5px solid #111",display:"inline-flex",alignItems:"center",gap:4}} onClick={()=>{setShareItem(item);setCopied(false);}}><Share2 width={12} height={12}/> SHARE</button>
-                      {/* Phase 13 — PROMOTE button (active, unpromoted listings) or
+                      {/* Phase 13 - PROMOTE button (active, unpromoted listings) or
                           a PROMOTED badge once a boost is live. */}
                       {!item.sold&&(isPromoted(item)
                         ? <span style={{...S.dashBtn,background:"#FF1493",color:"#fff",border:"1.5px solid #FF1493",display:"inline-flex",alignItems:"center",gap:4,cursor:"default"}}><Zap width={12} height={12} fill="currentColor"/> PROMOTED</span>
@@ -960,7 +960,7 @@ export default function Dashboard({
             )}
           </div>
 
-          {/* ── Phase 10d — BULK ACTION BAR (fixed bottom) ───────────────────────── */}
+          {/* ── Phase 10d - BULK ACTION BAR (fixed bottom) ───────────────────────── */}
           {bulkMode&&selectedIds.length>0&&(
             <div style={{position:"fixed",left:0,right:0,bottom:0,zIndex:400,background:"#111",borderTop:"2px solid #111",borderRadius:0,padding:"14px 18px",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
               <span style={{background:"#FF1493",color:"#fff",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,letterSpacing:1,fontSize:14,padding:"6px 12px"}}>{selectedIds.length} SELECTED</span>
@@ -1030,14 +1030,14 @@ export default function Dashboard({
                 <div style={{padding:"0 16px 16px"}}>
                   <div style={{display:"flex",gap:10,marginBottom:10}}>
                     <button className="hbtn" style={{...S.hBtn,flex:1,padding:"12px",fontSize:13,background:copied?"#34C759":"#111",border:"none",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6}} onClick={()=>copyLink(shareItem)}>{copied?<><Check width={15} height={15}/> COPIED</>:<><Copy width={15} height={15}/> COPY LINK</>}</button>
-                    <button className="hbtn" style={{...S.hBtn,flex:1,padding:"12px",fontSize:13,background:"#fff",color:"#111",border:"2px solid #111",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6}} onClick={()=>downloadShareCard(shareItem,()=>flash("Couldn't generate image — use Copy Link or screenshot the card."))}><Download width={15} height={15}/> DOWNLOAD IMAGE</button>
+                    <button className="hbtn" style={{...S.hBtn,flex:1,padding:"12px",fontSize:13,background:"#fff",color:"#111",border:"2px solid #111",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6}} onClick={()=>downloadShareCard(shareItem,()=>flash("Couldn't generate image - use Copy Link or screenshot the card."))}><Download width={15} height={15}/> DOWNLOAD IMAGE</button>
                   </div>
                   <div style={{display:"flex",gap:10}}>
                     <a className="hbtn" href={`whatsapp://send?text=${encodeURIComponent(listingUrl(shareItem.id))}`} style={{...S.hBtn,flex:1,padding:"11px",fontSize:12,background:"#25D366",border:"none",textDecoration:"none",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6}}><MessageCircle width={15} height={15}/> WHATSAPP</a>
                     <button className="hbtn" onClick={()=>copyLink(shareItem)} style={{...S.hBtn,flex:1,padding:"11px",fontSize:12,background:"#111",border:"none",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6}}><Instagram width={15} height={15}/> INSTAGRAM</button>
                     <a className="hbtn" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(listingUrl(shareItem.id))}&text=${encodeURIComponent("Check out this listing on Stitch'd")}`} target="_blank" rel="noreferrer" style={{...S.hBtn,flex:1,padding:"11px",fontSize:12,background:"#000",border:"none",textDecoration:"none",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6}}><Twitter width={15} height={15}/> X</a>
                   </div>
-                  <p style={{fontSize:11,color:"#6e6e6e",marginTop:10,textAlign:"center"}}>Instagram has no direct share API — the link is copied to your clipboard to paste in your story or bio.</p>
+                  <p style={{fontSize:11,color:"#6e6e6e",marginTop:10,textAlign:"center"}}>Instagram has no direct share API - the link is copied to your clipboard to paste in your story or bio.</p>
                 </div>
               </div>
             </div>
@@ -1113,7 +1113,7 @@ export default function Dashboard({
             );
           })()}
 
-          {/* REJECT APPLICATION MODAL (Phase 11 — admin) */}
+          {/* REJECT APPLICATION MODAL (Phase 11 - admin) */}
           {rejectApp&&(
             <div style={S.modalOverlay} onClick={()=>setRejectApp(null)}>
               <div style={{background:"#fff",border:"2px solid #111",borderRadius:0,padding:28,maxWidth:420,width:"100%",fontFamily:"'Barlow Condensed',sans-serif"}} onClick={e=>e.stopPropagation()}>
@@ -1186,7 +1186,7 @@ export default function Dashboard({
                 </F>
               </div>
             </Sec>
-            <Sec label={`SELECT LISTINGS (${bundleForm.selectedListings.length} selected — min 2)`}>
+            <Sec label={`SELECT LISTINGS (${bundleForm.selectedListings.length} selected - min 2)`}>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:8,marginBottom:14}}>
                 {myItems.filter(i=>!i.sold).map((item,idx)=>{
                   const isSel=bundleForm.selectedListings.includes(item.id);

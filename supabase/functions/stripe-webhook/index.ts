@@ -21,7 +21,7 @@
 // Use Deno's native npm specifier rather than the esm.sh build. esm.sh bundles a
 // `node:process` polyfill whose microtask/nextTick shim calls
 // `Deno.core.runMicrotasks()`, which the current Supabase Edge Runtime no longer
-// supports — that threw "Deno.core.runMicrotasks() is not supported in this
+// supports - that threw "Deno.core.runMicrotasks() is not supported in this
 // environment" on every checkout.session.completed event and aborted the sale
 // path. The `npm:` specifier uses Deno's built-in Node compatibility layer (the
 // approach Supabase's own Stripe examples use) and avoids that broken shim.
@@ -53,7 +53,7 @@ const sbHeaders = {
 // that's PGRST204 ("Could not find the 'x' column"); on a SELECT it's Postgres
 // error 42703 ("column listings.x does not exist"). The schema varies between
 // deployments, so detect either form, drop the offending column and retry rather
-// than losing the whole record / query — same approach as src/lib/db.js.
+// than losing the whole record / query - same approach as src/lib/db.js.
 const missingColumn = (msg: string) => {
   const m = /Could not find the '([^']+)' column/.exec(msg || "") ||
     /column (?:[\w.]+\.)?"?([\w]+)"? does not exist/.exec(msg || "");
@@ -63,7 +63,7 @@ const missingColumn = (msg: string) => {
 // Listing fields the sale path needs: id/name/price/user_id are REQUIRED (orders,
 // notifications, emails); image_url/images are OPTIONAL email thumbnails that some
 // older deployments don't have. Fetch with column-healing so a missing optional
-// column 400s only that column away instead of failing the entire fetch — which
+// column 400s only that column away instead of failing the entire fetch - which
 // is exactly the bug behind "[webhook] per-id listing fetch failed". Mirrors the
 // self-healing the rest of the codebase already relies on.
 type ListingRow = {
@@ -104,8 +104,8 @@ async function fetchListingsHealing(filter: string): Promise<ListingRow[] | null
   }
   return null;
 }
-// ── Wallet — credit the seller's earnings on a completed sale ─────────────────
-// Vinted-style fees: sellers sell FREE (no commission) — the platform's revenue is
+// ── Wallet - credit the seller's earnings on a completed sale ─────────────────
+// Vinted-style fees: sellers sell FREE (no commission) - the platform's revenue is
 // the Buyer Protection fee charged to the buyer at checkout. The seller credit is
 // held as 'pending' (escrow) and released when the buyer confirms receipt.
 // Idempotent on (listing_id, session) via the wallet_tx_sale_unique index, so a
@@ -155,7 +155,7 @@ async function insertHealing(table: string, body: Record<string, unknown>) {
   }
 }
 
-// ── Phase 13 — promotion payment ──────────────────────────────────────────────
+// ── Phase 13 - promotion payment ──────────────────────────────────────────────
 // A £2.99 "Promoted Listing" checkout (created by create-promotion-session, tagged
 // metadata.type='promotion') completed. Flip the listing's promoted flag + 7-day
 // expiry, mark the promotions row active, and notify the seller in-app + by email.
@@ -186,7 +186,7 @@ async function handlePromotion(session: Stripe.Checkout.Session) {
   }).catch(() => {});
 
   // 2. Flip the pending promotions row → active. If create-promotion-session's
-  //    insert never landed (best-effort), PATCH matches nothing — insert a fresh
+  //    insert never landed (best-effort), PATCH matches nothing - insert a fresh
   //    active row so the dashboard history is still complete.
   const patchRes = await fetch(
     `${SUPABASE_URL}/rest/v1/promotions?stripe_session_id=eq.${session.id}`,
@@ -262,14 +262,14 @@ function listingThumb(l: { image_url?: string; images?: unknown }): string | und
   return undefined;
 }
 
-// ── Phase 14 — accepted-offer payment ─────────────────────────────────────────
+// ── Phase 14 - accepted-offer payment ─────────────────────────────────────────
 // An offer-checkout session (created by create-offer-checkout, tagged
 // metadata.type='offer') completed. The buyer paid the ACCEPTED offer amount, so:
 //   1. mark the listing sold + offers_enabled=false
 //   2. flip the offer to 'completed'
 //   3. write the order row (offer amount, offer_accepted=true)
 //   4. notify the seller + buyer in-app
-//   5. email both — the buyer's regular order confirmation (with a "you saved £X"
+//   5. email both - the buyer's regular order confirmation (with a "you saved £X"
 //      note) and the seller's regular sale email (with a "sold via accepted offer"
 //      note).
 // Kept entirely separate from the bag-sale path below so the existing type='sale'
@@ -331,7 +331,7 @@ async function handleOffer(session: Stripe.Checkout.Session) {
     return { name: d?.name || "", line1: a.line1 || "", line2: a.line2 || "", city: a.city || "", postcode: a.postal_code || "", country: a.country || "GB" };
   })();
 
-  // 3. Order row — offer amount (NOT the list price), flagged offer_accepted.
+  // 3. Order row - offer amount (NOT the list price), flagged offer_accepted.
   await insertHealing("orders", {
     listing_id: listingId,
     buyer_id: buyerId,
@@ -344,14 +344,14 @@ async function handleOffer(session: Stripe.Checkout.Session) {
     ...(offerShipAddr ? { delivery_address: offerShipAddr } : {}),
   });
 
-  // 3b. Credit the seller's wallet (offer amount — sellers sell free).
+  // 3b. Credit the seller's wallet (offer amount - sellers sell free).
   await creditSellerWallet(sellerId, offerPence, {
     listingId,
     sessionId: session.id,
     description: `Sale: ${title} (offer)`,
   });
 
-  // 4. In-app notifications — seller + buyer.
+  // 4. In-app notifications - seller + buyer.
   if (sellerId) {
     await insertHealing("notifications", {
       user_id: sellerId,
@@ -373,14 +373,14 @@ async function handleOffer(session: Stripe.Checkout.Session) {
     });
   }
 
-  // 5. Emails — same templates as a regular purchase/sale, with offer notes.
+  // 5. Emails - same templates as a regular purchase/sale, with offer notes.
   try {
     const buyerEmail = session.customer_details?.email || session.customer_email || "";
     const buyerName = firstName(session.customer_details?.name || "");
     const orderRef = session.id.slice(-8);
     const savingNote = savedPence > 0 ? `You saved ${fmt(savedPence)} with your offer.` : "";
 
-    // Buyer — order confirmation with the saving note.
+    // Buyer - order confirmation with the saving note.
     const buyerProfile = buyerId ? await getProfile(buyerId) : null;
     if (buyerEmail && buyerProfile?.email_notifications !== false) {
       const { subject, html } = await render(
@@ -391,7 +391,7 @@ async function handleOffer(session: Stripe.Checkout.Session) {
       await sendViaResend(buyerEmail, subject, html);
     }
 
-    // Seller — sale email noting it was via an accepted offer.
+    // Seller - sale email noting it was via an accepted offer.
     if (sellerId) {
       const sellerProfile = await getProfile(sellerId);
       if (sellerProfile?.email_notifications !== false) {
@@ -411,13 +411,13 @@ async function handleOffer(session: Stripe.Checkout.Session) {
   }
 }
 
-// ── Phase 15 — alteration booking payment ─────────────────────────────────────
+// ── Phase 15 - alteration booking payment ─────────────────────────────────────
 // An alteration-checkout session (created by create-alteration-checkout, tagged
 // metadata.type='alteration') completed. The buyer paid the tailor's full quote,
 // so:
 //   1. flip the request to 'accepted', stamp paid_at + the session id + the
 //      commission split (15% to Stitch'd, the rest owed to the tailor)
-//   2. record a tailor_payouts row (status 'pending' — released on completion)
+//   2. record a tailor_payouts row (status 'pending' - released on completion)
 //   3. notify the tailor + buyer in-app
 //   4. email the tailor (earnings after commission) and buyer (amount paid)
 // Kept entirely separate from the sale / offer / promotion paths so the existing
@@ -442,7 +442,7 @@ async function handleAlteration(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // Amounts — prefer the stored quote, fall back to metadata then the session.
+  // Amounts - prefer the stored quote, fall back to metadata then the session.
   const quotePence = Number(reqRow.quote_pence) ||
     Number(session.metadata?.quote_amount_pence) ||
     session.amount_total || 0;
@@ -491,7 +491,7 @@ async function handleAlteration(session: Stripe.Checkout.Session) {
     break;
   }
 
-  // 2. Record the payout (pending — released when the buyer confirms completion).
+  // 2. Record the payout (pending - released when the buyer confirms completion).
   await insertHealing("tailor_payouts", {
     tailor_id: tailorId,
     alteration_request_id: requestId,
@@ -501,7 +501,7 @@ async function handleAlteration(session: Stripe.Checkout.Session) {
     status: "pending",
   });
 
-  // 3. In-app notifications — tailor + buyer.
+  // 3. In-app notifications - tailor + buyer.
   if (tailorUserId) {
     await insertHealing("notifications", {
       user_id: tailorUserId,
@@ -523,7 +523,7 @@ async function handleAlteration(session: Stripe.Checkout.Session) {
     });
   }
 
-  // 4. Emails — tailor (earnings after commission) + buyer (amount paid).
+  // 4. Emails - tailor (earnings after commission) + buyer (amount paid).
   try {
     // Tailor.
     if (tailorUserId) {
@@ -583,7 +583,7 @@ Deno.serve(async (req) => {
     return new Response(`Webhook Error: ${(e as Error).message}`, { status: 400 });
   }
 
-  // ── Phase 11 — Stripe Identity results ──────────────────────────────────────
+  // ── Phase 11 - Stripe Identity results ──────────────────────────────────────
   // The identity flow is started by the create-verification-session function,
   // which stamps the session id onto the seller's profile. Here we resolve the
   // async pass/fail: `verified` → ID VERIFIED badge goes live; `requires_input`
@@ -595,7 +595,7 @@ Deno.serve(async (req) => {
   ) {
     const vs = event.data.object as Stripe.Identity.VerificationSession;
     try {
-      // Find the profile this session belongs to — primary link is the session id
+      // Find the profile this session belongs to - primary link is the session id
       // we stored at creation, with metadata.user_id as a fallback.
       let userId = (vs.metadata?.user_id as string) || null;
       const pr = await fetch(
@@ -655,14 +655,14 @@ Deno.serve(async (req) => {
 
   const session = event.data.object as Stripe.Checkout.Session;
 
-  // Diagnostics — surface the data the email branches depend on so a missing
+  // Diagnostics - surface the data the email branches depend on so a missing
   // metadata field or unset secret is obvious in the Edge Function logs rather
   // than silently skipping the send.
   console.log("[webhook] checkout.session.completed:", session.id);
   console.log("[webhook] session metadata:", JSON.stringify(session.metadata ?? {}));
   console.log("[webhook] RESEND_API_KEY present:", !!Deno.env.get("RESEND_API_KEY"));
 
-  // Phase 13 — a promotion checkout (metadata.type='promotion') is handled on a
+  // Phase 13 - a promotion checkout (metadata.type='promotion') is handled on a
   // completely separate path; the sale logic below is left exactly as it was.
   if (session.metadata?.type === "promotion") {
     try {
@@ -673,7 +673,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ received: true, promotion: true }), { status: 200 });
   }
 
-  // Phase 14 — an accepted-offer payment (metadata.type='offer') is handled on a
+  // Phase 14 - an accepted-offer payment (metadata.type='offer') is handled on a
   // completely separate path; the bag-sale logic below is left exactly as it was.
   if (session.metadata?.type === "offer") {
     try {
@@ -684,7 +684,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ received: true, offer: true }), { status: 200 });
   }
 
-  // Phase 15 — an alteration booking payment (metadata.type='alteration') is
+  // Phase 15 - an alteration booking payment (metadata.type='alteration') is
   // handled on a completely separate path; the bag-sale logic below is untouched.
   if (session.metadata?.type === "alteration") {
     try {
@@ -699,7 +699,7 @@ Deno.serve(async (req) => {
   const buyerId = session.metadata?.buyer_id || null;
   const stripeSessionId = session.id;
 
-  // Phase 14 — bundle discount breakdown (seller_id → {percentage, amount_pence}),
+  // Phase 14 - bundle discount breakdown (seller_id → {percentage, amount_pence}),
   // carried in the checkout metadata by api/stripe-checkout.js. Used to record the
   // discount against each order row below. Absent for non-bundle checkouts.
   const bundleBySeller: Record<string, { percentage: number; amount_pence: number }> = {};
@@ -710,12 +710,12 @@ Deno.serve(async (req) => {
         if (b && b.seller_id) bundleBySeller[b.seller_id] = b;
       }
     }
-  } catch { /* no/!invalid bundle metadata — proceed as a normal sale */ }
+  } catch { /* no/!invalid bundle metadata - proceed as a normal sale */ }
 
   try {
     // Re-fetch authoritative listing data (price + seller) for the order rows.
     // The ids are bare UUIDs (stripe-checkout stores `listings.map(l => l.id)`),
-    // and PostgREST's `in.()` matches UUID columns WITHOUT quoting — wrapping each
+    // and PostgREST's `in.()` matches UUID columns WITHOUT quoting - wrapping each
     // id in double quotes was unnecessary, so encode them plainly. Note there is
     // deliberately NO status filter here: a listing already flipped to 'sold'
     // (e.g. a Stripe retry, or the offer path) must still resolve so the order
@@ -724,12 +724,12 @@ Deno.serve(async (req) => {
     const ids = listingIds.map((id) => encodeURIComponent(id)).join(",");
     let listings = (await fetchListingsHealing(`id=in.(${ids})`)) ?? [];
 
-    // Fallback — if the batch query returned nothing but we DO have ids, re-fetch
+    // Fallback - if the batch query returned nothing but we DO have ids, re-fetch
     // each id individually. This both works around any `in.()` quirk and makes the
     // logs show exactly which ids resolve, so one unresolved id can't silently
     // block the emails for the whole order.
     if (listings.length === 0 && listingIds.length > 0) {
-      console.warn("[webhook] sale path — batch fetch returned 0 rows; retrying per id");
+      console.warn("[webhook] sale path - batch fetch returned 0 rows; retrying per id");
       const perId = await Promise.all(
         listingIds.map(async (id) => {
           const rows = await fetchListingsHealing(`id=eq.${encodeURIComponent(id)}&limit=1`);
@@ -744,13 +744,13 @@ Deno.serve(async (req) => {
       listings = perId.filter((l): l is ListingRow => !!l);
     }
 
-    // Diagnostics — surface the inputs so a missing metadata field, an id/format
+    // Diagnostics - surface the inputs so a missing metadata field, an id/format
     // mismatch or a failed fetch is obvious in the Edge logs rather than silently
     // skipping the send.
-    console.log("[webhook] sale path — listing_ids:", JSON.stringify(listingIds));
-    console.log("[webhook] sale path — listings fetched:", listings.length);
+    console.log("[webhook] sale path - listing_ids:", JSON.stringify(listingIds));
+    console.log("[webhook] sale path - listings fetched:", listings.length);
 
-    // Phase 12 — buyer details for the order-confirmation + sale emails. The buyer
+    // Phase 12 - buyer details for the order-confirmation + sale emails. The buyer
     // email comes straight off the Stripe session (works even for guest checkout);
     // the first name is best-effort from the Stripe customer name.
     const buyerEmail = session.customer_details?.email || session.customer_email || "";
@@ -797,11 +797,11 @@ Deno.serve(async (req) => {
       }).catch(() => {});
 
       // 2. Order record (pence). Resilient to whichever columns the table has.
-      //    Phase 14 — when this seller offered a bundle discount, record the % and
+      //    Phase 14 - when this seller offered a bundle discount, record the % and
       //    this listing's share of the discount (linePence × %); insertHealing
       //    drops the columns on a deployment where the migration hasn't run.
       const bundle = bundleBySeller[l.user_id];
-      // Postage the buyer paid for this seller — credited to the seller ONCE (on
+      // Postage the buyer paid for this seller - credited to the seller ONCE (on
       // their first item) so they can cover posting it themselves, and recorded as
       // the order's postage_amount once. No commission is taken on postage.
       const sellerKey = String(l.user_id);
@@ -846,13 +846,13 @@ Deno.serve(async (req) => {
         read: false,
       });
 
-      // 4. Phase 12 — transactional emails. Wrapped so an email failure never
+      // 4. Phase 12 - transactional emails. Wrapped so an email failure never
       //    blocks the order processing the webhook is really responsible for.
       try {
         const priceStr = `£${parseFloat(String(l.price)).toFixed(2)}`;
         const image = listingThumb(l);
 
-        // Email 1 — order confirmation (buyer). Honour unsubscribe when the buyer
+        // Email 1 - order confirmation (buyer). Honour unsubscribe when the buyer
         // is a known user; guests (no buyer_id) always get the receipt.
         const buyerProfile = buyerId ? await getProfile(buyerId) : null;
         if (buyerEmail && buyerProfile?.email_notifications !== false) {
@@ -866,14 +866,14 @@ Deno.serve(async (req) => {
           if (!res.ok) console.error("[webhook] buyer order-confirmation NOT sent:", res.error);
         } else {
           console.log(
-            "[webhook] buyer email skipped — email:",
+            "[webhook] buyer email skipped - email:",
             buyerEmail || "(none)",
             "| email_notifications:",
             buyerProfile?.email_notifications,
           );
         }
 
-        // Email 2 — sale notification (seller).
+        // Email 2 - sale notification (seller).
         const sellerProfile = await getProfile(l.user_id);
         if (sellerProfile?.email_notifications !== false) {
           const sellerEmail = await emailForUser(l.user_id);
@@ -887,10 +887,10 @@ Deno.serve(async (req) => {
             const res = await sendViaResend(sellerEmail, subject, html);
             if (!res.ok) console.error("[webhook] seller sale email NOT sent:", res.error);
           } else {
-            console.log("[webhook] seller email skipped — no address for user:", l.user_id);
+            console.log("[webhook] seller email skipped - no address for user:", l.user_id);
           }
         } else {
-          console.log("[webhook] seller email skipped — email_notifications disabled:", l.user_id);
+          console.log("[webhook] seller email skipped - email_notifications disabled:", l.user_id);
         }
       } catch (e) {
         console.error("Phase 12 email send error:", (e as Error).message);

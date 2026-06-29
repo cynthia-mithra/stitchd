@@ -9,7 +9,7 @@
 //   4. emails the seller              (promotion_expired template, PROMOTE AGAIN)
 //
 // Doing this in an Edge Function rather than pure SQL is what lets the cron send
-// the notification + email a plain UPDATE can't — mirroring saved-search-alerts.
+// the notification + email a plain UPDATE can't - mirroring saved-search-alerts.
 //
 // Required environment variables (auto-injected / shared with the other functions):
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY   auto-injected by Supabase
@@ -38,7 +38,7 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
 // PostgREST rejects the whole insert if a column doesn't exist (PGRST204). Drop
-// any missing column and retry — same approach as the stripe-webhook function.
+// any missing column and retry - same approach as the stripe-webhook function.
 const missingColumn = (msg: string) => {
   const m = /Could not find the '([^']+)' column/.exec(msg || "");
   return m ? m[1] : null;

@@ -2,12 +2,12 @@
 // ----------------------------------
 // Provider-agnostic prepaid shipping-label groundwork. The seller (or admin)
 // posts { order_id, user_id }; this function gathers everything a courier API
-// needs — the buyer's delivery address (to), the seller's return address (from,
-// from their profile), the parcel weight band and the chosen service — and, when
+// needs - the buyer's delivery address (to), the seller's return address (from,
+// from their profile), the parcel weight band and the chosen service - and, when
 // a courier is configured, buys a label and writes the tracking number back onto
 // the order (the same column the manual tracking flow already uses).
 //
-// It is deliberately courier-agnostic: set two env vars to go live —
+// It is deliberately courier-agnostic: set two env vars to go live -
 //   SHIPPING_PROVIDER   one of: royal_mail | shippo | easypost
 //   SHIPPING_API_KEY    that provider's API key
 // Until those are set it returns { configured:false } so the UI can stay hidden
@@ -82,12 +82,12 @@ async function callProvider(p: LabelPayload): Promise<ProviderResult> {
   throw new Error(`Shipping provider "${SHIPPING_PROVIDER}" is not implemented yet.`);
 }
 
-// ── Parcel2Go (UK broker) — https://api-docs.parcel2go.com ──────────────────────
+// ── Parcel2Go (UK broker) - https://api-docs.parcel2go.com ──────────────────────
 // OAuth2 client-credentials: POST the client id/secret to the token endpoint, then
 // call the API with the bearer token. Buying a label is a quote → order → label
 // sequence. The shapes below follow the documented API but MUST be verified
 // against api-docs.parcel2go.com and TESTED with real credentials before enabling
-// SHIPPING_LABELS_ENABLED — every call throws a clear error rather than guessing.
+// SHIPPING_LABELS_ENABLED - every call throws a clear error rather than guessing.
 async function p2gToken(): Promise<string> {
   const res = await fetch("https://www.parcel2go.com/auth/connect/token", {
     method: "POST",
@@ -114,8 +114,8 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
   // Parcel2Go addresses: ContactName/Property/Street/Town/Postcode/CountryIsoCode.
   // It validates that `Street` (the road) is non-empty. Our address lines usually
   // hold the whole street in line1 ("14 Windermere Close") with line2 blank, so
-  // split a leading house number/name into Property and keep the road in Street —
-  // appending line2 when present — so Street is never empty.
+  // split a leading house number/name into Property and keep the road in Street -
+  // appending line2 when present - so Street is never empty.
   const splitAddr = (line1: string, line2: string) => {
     const l1 = String(line1 || "").trim();
     const l2 = String(line2 || "").trim();
@@ -165,7 +165,7 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
   const serviceSlug = chosen?.Service?.Slug || chosen?.Slug;
   if (!serviceSlug || typeof serviceSlug !== "string") throw new Error("Parcel2Go quote returned no service slug.");
 
-  // 2) Create the order — Parcel2Go's exact shape (matches their production API):
+  // 2) Create the order - Parcel2Go's exact shape (matches their production API):
   //    a UUID Id, CollectionDate, the service slug, CollectionAddress, and Parcels
   //    each with their own Id, EstimatedValue, Contents and a nested DeliveryAddress.
   const nameParts = String(collectionAddress.ContactName || "Stitchd Seller").trim().split(" ");
@@ -179,7 +179,7 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
         Id: crypto.randomUUID(),
         Height: 5, Length: 30, Width: 25, Weight: weightKg,
         EstimatedValue: 20,
-        // Parcel2Go's `Contents` is a string|null, NOT an array — sending an
+        // Parcel2Go's `Contents` is a string|null, NOT an array - sending an
         // array is what produced the "Badly formatted json" 400. The
         // human-readable summary is the field that matters.
         ContentsSummary: "Pre-loved clothing",
@@ -210,7 +210,7 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
   if (!payRes.ok) throw new Error(`Parcel2Go payment failed (${payRes.status}): ${payText.slice(0, 300)}`);
 
   // 4) Try to fetch the label PDF now, but Parcel2Go generates it ASYNCHRONOUSLY
-  //    after payment — it's often not ready for 30s+ — so this frequently misses.
+  //    after payment - it's often not ready for 30s+ - so this frequently misses.
   //    We still persist the Parcel2Go OrderId + hash (returned below) so VIEW LABEL
   //    can re-fetch the PDF on demand later, by which point it's ready.
   const tracking = orderLineId || orderId;
@@ -219,7 +219,7 @@ async function buyParcel2GoLabel(p: LabelPayload): Promise<{ tracking_number: st
 }
 
 // Fetch a Parcel2Go label PDF (Bearer-authenticated) and stash it in public
-// Storage. Returns { url, diag } — url present on success, diag always explains
+// Storage. Returns { url, diag } - url present on success, diag always explains
 // the outcome (HTTP status + body snippet of a non-PDF response, or the stash
 // error) so callers can surface exactly where it failed. The labels endpoint
 // needs the token (a plain browser open 404s) and the PDF is generated
@@ -261,7 +261,7 @@ async function fetchAndStashP2GLabel(token: string, orderId: string, hash: strin
   return { diag };
 }
 
-// ── Veeqo (Amazon, UK) — https://developers.veeqo.com ───────────────────────────
+// ── Veeqo (Amazon, UK) - https://developers.veeqo.com ───────────────────────────
 // Auth is the account API key in the `x-api-key` header; labels are purchased via
 // POST https://api.veeqo.com/shipping/shipments (a shipment created with a chosen
 // service_code returns the tracking number + label).
@@ -269,7 +269,7 @@ async function fetchAndStashP2GLabel(token: string, orderId: string, hash: strin
 // ⚠️ PLAN GATE: Veeqo's *programmatic* Shipping API is Open Beta and only enabled
 // on the ENTERPRISE plan (or Veeqo Appstore partners). On the free plan you buy &
 // print labels in Veeqo's own dashboard and paste the tracking number into the
-// order by hand (which already works) — this branch only does anything once your
+// order by hand (which already works) - this branch only does anything once your
 // account has API access. Verify the exact request against developers.veeqo.com
 // and TEST with a real key before enabling SHIPPING_LABELS_ENABLED.
 async function buyVeeqoLabel(p: LabelPayload): Promise<{ tracking_number: string; label_url?: string }> {
@@ -307,7 +307,7 @@ async function buyVeeqoLabel(p: LabelPayload): Promise<{ tracking_number: string
   try { data = text ? JSON.parse(text) : {}; } catch { /* non-JSON */ }
   const tracking = (data.tracking_number || data.trackingNumber || (data.shipment as Record<string, unknown>)?.tracking_number) as string | undefined;
   const labelUrl = (data.label_url || data.labelUrl || (data.shipment as Record<string, unknown>)?.label_url) as string | undefined;
-  if (!tracking) throw new Error("Veeqo returned no tracking number — check the request shape against your account's carriers.");
+  if (!tracking) throw new Error("Veeqo returned no tracking number - check the request shape against your account's carriers.");
   return { tracking_number: String(tracking), label_url: labelUrl ? String(labelUrl) : undefined };
 }
 
@@ -351,7 +351,7 @@ Deno.serve(async (req) => {
 
     // Label already bought (tracking set) but no stored PDF. If we kept Parcel2Go's
     // OrderId + hash, re-fetch the PDF now (by now Parcel2Go has generated it) and
-    // stash it — no new order, no extra charge. Legacy orders without the stored
+    // stash it - no new order, no extra charge. Legacy orders without the stored
     // ids can't be re-fetched (the one-time hash is gone) → tell the caller.
     if (order.tracking_number) {
       if (SHIPPING_PROVIDER === "parcel2go" && order.p2g_order_id && order.p2g_hash) {

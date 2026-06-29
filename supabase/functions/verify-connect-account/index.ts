@@ -1,6 +1,6 @@
 // Supabase Edge Function: verify-connect-account
 // -----------------------------------------------
-// Phase 15 — confirms whether a tailor has finished Stripe Connect (Express)
+// Phase 15 - confirms whether a tailor has finished Stripe Connect (Express)
 // onboarding. Called when the tailor returns to /tailor-dashboard?connect=success
 // (and any time the dashboard wants to re-check). It posts { tailor_id }; this
 // function:
@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
     const tailor = tr && tr.ok ? (await tr.json().catch(() => []))[0] : null;
     if (!tailor) return json({ error: "Tailor not found." }, 404);
     if (!tailor.stripe_account_id) {
-      // Onboarding never started — nothing to verify.
+      // Onboarding never started - nothing to verify.
       await patchTailor(tailor_id, { stripe_onboarding_complete: false });
       return json({ onboarding_complete: false, details_submitted: false, needs_onboarding: true });
     }
@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
 
     if (detailsSubmitted) {
       // A login link to the tailor's Express dashboard (MANAGE PAYMENTS). Only
-      // available once onboarding is far enough along — wrap so a not-yet-ready
+      // available once onboarding is far enough along - wrap so a not-yet-ready
       // account still returns onboarding_complete without failing the whole call.
       let dashboardUrl: string | undefined;
       try {
@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Not finished — hand back a fresh onboarding link so the tailor can resume.
+    // Not finished - hand back a fresh onboarding link so the tailor can resume.
     const link = await stripe.accountLinks.create({
       account: tailor.stripe_account_id,
       refresh_url: `${SITE_URL}/tailor-dashboard?connect=refresh`,

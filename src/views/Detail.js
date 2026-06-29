@@ -5,7 +5,7 @@ import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 import LoginPromptModal from "../components/LoginPromptModal";
 
-// Phase 14 — compact relative time for comments, e.g. "2 hours ago".
+// Phase 14 - compact relative time for comments, e.g. "2 hours ago".
 function timeAgo(ts){
   if(!ts) return "";
   const secs=Math.max(0,Math.floor((Date.now()-new Date(ts).getTime())/1000));
@@ -37,7 +37,7 @@ export default function Detail({
   identityVerifiedSellers = new Set(),
   onFindTailor = () => {},
 }) {
-  // Login gate — logged-out buyers can browse everything, but actions that need
+  // Login gate - logged-out buyers can browse everything, but actions that need
   // an account (bag, offer, wishlist, comment, message) open the shared sign-up
   // prompt instead of erroring. `gate` holds the context string while open.
   const [gate, setGate] = React.useState(null);
@@ -65,9 +65,9 @@ export default function Detail({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [zoom, nextImg, prevImg]);
-  // Buyer-side unit toggle — converts on the fly, never writes back (PART 2a).
+  // Buyer-side unit toggle - converts on the fly, never writes back (PART 2a).
   const [dispUnit, setDispUnit] = React.useState("cm");
-  // Phase 14 — split top-level questions from their replies. Replies point at
+  // Phase 14 - split top-level questions from their replies. Replies point at
   // their parent via parent_comment_id and are grouped under it (oldest first,
   // so a thread reads top-to-bottom). Top-level questions stay newest-first.
   const topComments = comments.filter(c => !c.parent_comment_id);
@@ -77,13 +77,13 @@ export default function Detail({
   });
   Object.values(repliesByParent).forEach(arr =>
     arr.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
-  // Phase 14 — show only the 3 newest questions until "SHOW ALL COMMENTS".
+  // Phase 14 - show only the 3 newest questions until "SHOW ALL COMMENTS".
   const [showAllComments, setShowAllComments] = React.useState(false);
   const visibleComments = showAllComments ? topComments : topComments.slice(0, 3);
   // Only one inline reply form open at a time, keyed by the question's id.
   const [replyingTo, setReplyingTo] = React.useState(null);
   const [replyText, setReplyText] = React.useState("");
-  // Phase 14 — Make an offer (buyer side). Modal open state + the offer form.
+  // Phase 14 - Make an offer (buyer side). Modal open state + the offer form.
   const [showOffer, setShowOffer] = React.useState(false);
   const [offerAmount, setOfferAmount] = React.useState("");
   const [offerMessage, setOfferMessage] = React.useState("");
@@ -95,7 +95,7 @@ export default function Detail({
     submitReply(parent, replyText.trim());
     closeReply();
   };
-  // Shared comment display (avatar, username, SELLER badge, text, time ago) —
+  // Shared comment display (avatar, username, SELLER badge, text, time ago) -
   // used for both top-level questions and the seller's replies.
   const renderCommentCard = (c) => {
     const isSeller = sel.user_id && c.user_id === sel.user_id;
@@ -126,14 +126,14 @@ export default function Detail({
     : [["BUST",sel?.bust],["WAIST",sel?.waist],["HIPS",sel?.hips],["LENGTH",sel?.length],["UNDERBUST",sel?.underbust],["SHOULDER",sel?.shoulder],["HIGH HIP",sel?.high_hip],["SLEEVE",sel?.sleeve_length],["INSEAM",sel?.inseam]].filter(([,v])=>v);
   const hasMeas = sel && sel.listing_type!=="Jewellery" && measRows.length>0;
   const sellerNotes = sel ? (sel.additional_measurements||sel.measurement_notes) : "";
-  // Seller's average across all their reviews — drives the prominent stars/score
+  // Seller's average across all their reviews - drives the prominent stars/score
   // shown under the price (e.g. "4.8 · 12 reviews").
   const avgRating = reviews.length ? reviews.reduce((a,r)=>a+r.rating,0)/reviews.length : 0;
-  // ── Phase 14 — Make an offer (buyer side) ─────────────────────────────────
+  // ── Phase 14 - Make an offer (buyer side) ─────────────────────────────────
   const cur = sel ? currencySymbol(sel.currency) : "£";
   // Show the offer area when offers are on, the piece is active (not sold) and
   // the viewer isn't the seller. (isOwner is false when logged out, so a
-  // logged-out visitor still sees the button — it prompts login on tap.)
+  // logged-out visitor still sees the button - it prompts login on tap.)
   const offersAvailable = sel && sel.offers_enabled !== false && !sel.sold && !isOwner(sel);
   const minPence = sel && Number.isFinite(sel.minimum_offer_pence) ? sel.minimum_offer_pence : null;
   // Whole-pound display of an amount stored in pence, e.g. 4500 → "45".
@@ -170,7 +170,7 @@ export default function Detail({
     if(ok) closeOffer(); else setOfferSending(false);
   };
   const thumbSrc = sel ? (sel.image_url || (sel.images && sel.images[0]) || "") : "";
-  // Sticky buy bar — show it once the inline ADD TO BAG button scrolls out of
+  // Sticky buy bar - show it once the inline ADD TO BAG button scrolls out of
   // view, so the price + buy action are always one tap away on long pages.
   const bagBtnRef = React.useRef(null);
   const [showBuyBar, setShowBuyBar] = React.useState(false);
@@ -218,7 +218,7 @@ export default function Detail({
                 </div>
               )}
             </div>
-            {/* FULLSCREEN ZOOM (lightbox) — tap the main photo to inspect it large.
+            {/* FULLSCREEN ZOOM (lightbox) - tap the main photo to inspect it large.
                 Tap outside / Esc closes; arrows or swipe navigate the gallery. */}
             {zoom&&mediaCount>0&&(
               <div onClick={()=>setZoom(false)} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
@@ -237,7 +237,7 @@ export default function Detail({
               </div>
             )}
             <div style={S.detailInfo} className="detail-info">
-              {/* Header — title block + compact save / share / size-guide icons */}
+              {/* Header - title block + compact save / share / size-guide icons */}
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:14}}>
                 <div style={{minWidth:0}}>
                   <p style={{...S.cardCatLabel,color:selColor,fontSize:12,marginBottom:8}}>{sel.category?.toUpperCase()} · {(sel.material||sel.fabric)?.toUpperCase()} · {sel.condition?.toUpperCase()}</p>
@@ -272,7 +272,7 @@ export default function Detail({
               )}
               {sel.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#6f6f6f",letterSpacing:1,display:"flex",alignItems:"center",gap:5,marginTop:12}}><Eye width={13} height={13}/> {sel.views} VIEWS</span>}
 
-              {/* BUY BOX (Option B) — the purchase actions + trust, framed together. */}
+              {/* BUY BOX (Option B) - the purchase actions + trust, framed together. */}
               {!isOwner(sel)&&(()=>{
                 const bagged=inBag(sel.id);
                 if(sel.sold){
@@ -318,7 +318,7 @@ export default function Detail({
               {!isOwner(sel)&&!sel.sold&&(
                 <button className="hbtn" style={{...S.hBtn,width:"100%",background:"#FF1493",border:"none",padding:"14px",fontSize:15,letterSpacing:2,display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:12}} onClick={()=>requireAuth("message",()=>startConversation(sel))}><Mail width={16} height={16}/> MESSAGE SELLER</button>
               )}
-              {/* NEED ALTERATIONS? — slim teal row (Phase 15). */}
+              {/* NEED ALTERATIONS? - slim teal row (Phase 15). */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,border:"2px solid #00E5CC",background:"#E6FFFB",padding:"12px 14px",marginBottom:16,cursor:"pointer"}} onClick={()=>requireAuth("book",()=>onFindTailor(sel))}>
                 <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,color:"#0AA493",fontSize:14,display:"flex",alignItems:"center",gap:8}}><Scissors width={16} height={16}/> Need alterations?</span>
                 <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,color:"#0AA493",fontSize:13}}>FIND A TAILOR →</span>
@@ -449,7 +449,7 @@ export default function Detail({
               </div>
             </div>
           )}
-          {/* RECENTLY VIEWED — Phase 12. Listings the user has opened before (from
+          {/* RECENTLY VIEWED - Phase 12. Listings the user has opened before (from
               localStorage, newest first, excluding the current one). Same card
               style as YOU MIGHT ALSO LIKE. Hidden when there's nothing to show. */}
           {recentItems.length>0&&(
@@ -475,7 +475,7 @@ export default function Detail({
               </div>
             </div>
           )}
-          {/* QUESTIONS & COMMENTS — Phase 14. Thread below reviews / above the
+          {/* QUESTIONS & COMMENTS - Phase 14. Thread below reviews / above the
               footer: buyers ask questions, the seller can reply inline. Replies
               are shown indented under their question. */}
           <div style={{marginTop:48}}>
@@ -488,12 +488,12 @@ export default function Detail({
                     <div key={c.id}>
                       <div style={{border:"2px solid #111",borderRadius:0,padding:"14px 16px"}}>
                         {renderCommentCard(c)}
-                        {/* REPLY — seller only. Opens an inline reply form below. */}
+                        {/* REPLY - seller only. Opens an inline reply form below. */}
                         {isSellerViewer&&replyingTo!==c.id&&(
                           <button type="button" onClick={()=>{setReplyingTo(c.id);setReplyText("");}} style={{marginTop:10,marginLeft:44,background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#6b6b6b",display:"inline-flex",alignItems:"center",gap:5,padding:0}}><CornerDownRight width={14} height={14}/> REPLY</button>
                         )}
                       </div>
-                      {/* INLINE REPLY FORM — directly below the question. */}
+                      {/* INLINE REPLY FORM - directly below the question. */}
                       {isSellerViewer&&replyingTo===c.id&&(
                         <div style={{marginLeft:24,marginTop:10,paddingLeft:14,borderLeft:"2px solid #111"}}>
                           <textarea value={replyText} maxLength={300} onChange={e=>setReplyText(e.target.value)} placeholder="Reply to this question..." style={{...S.inp,height:72,resize:"vertical",fontFamily:"'Barlow Condensed',sans-serif",marginBottom:6}}/>
@@ -506,7 +506,7 @@ export default function Detail({
                           </div>
                         </div>
                       )}
-                      {/* REPLIES — indented under their question, always fully visible. */}
+                      {/* REPLIES - indented under their question, always fully visible. */}
                       {replies.length>0&&(
                         <div style={{marginLeft:24,marginTop:10,paddingLeft:14,borderLeft:"2px solid #111",display:"flex",flexDirection:"column",gap:10}}>
                           {replies.map(r=>(
@@ -534,7 +534,7 @@ export default function Detail({
               </div>
             </div>
           </div>
-          {/* REPORT THIS LISTING — small, unobtrusive link at the very bottom of the
+          {/* REPORT THIS LISTING - small, unobtrusive link at the very bottom of the
               page. Logged-in users only (issue PART 1). */}
           {user&&(
             <div style={{display:"flex",justifyContent:"center",marginTop:40}}>
@@ -543,7 +543,7 @@ export default function Detail({
               </button>
             </div>
           )}
-          {/* MAKE AN OFFER MODAL — Phase 14, buyer side. */}
+          {/* MAKE AN OFFER MODAL - Phase 14, buyer side. */}
           {showOffer&&sel&&(
             <div style={S.modalOverlay} onClick={closeOffer}>
               <div style={{background:"#fff",border:"2px solid #111",borderRadius:0,padding:28,maxWidth:460,width:"100%",maxHeight:"88vh",overflowY:"auto",fontFamily:"'Barlow Condensed',sans-serif"}} onClick={e=>e.stopPropagation()}>
@@ -588,7 +588,7 @@ export default function Detail({
           )}
         </main>
       )}
-      {/* STICKY BUY BAR — appears once the inline ADD TO BAG scrolls away. */}
+      {/* STICKY BUY BAR - appears once the inline ADD TO BAG scrolls away. */}
       {view==="detail"&&sel&&!isOwner(sel)&&(()=>{
         const bagged=inBag(sel.id);
         return (

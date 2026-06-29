@@ -2,11 +2,11 @@ import React from "react";
 import { Star, BadgeCheck, ShieldCheck } from "lucide-react";
 import { COLOURS, colourSwatchBg } from "../lib/constants";
 
-// Phase 12 — circular colour swatches, used identically by the shop/new-arrivals
+// Phase 12 - circular colour swatches, used identically by the shop/new-arrivals
 // filter panel and the listing create/edit form. Each swatch is a 24px disc
 // filled with the actual colour; the selected ones get a 2px #111 ring (drawn
 // with box-shadow so toggling never shifts layout). `selected` is an array of
-// chosen colour names; `onToggle(colour)` flips one. Multi-select — tapping a
+// chosen colour names; `onToggle(colour)` flips one. Multi-select - tapping a
 // swatch adds/removes it. White/Cream get a faint base border so they read
 // against the white panel.
 export function ColourSwatches({ selected = [], onToggle }) {
@@ -36,7 +36,7 @@ export function ColourSwatches({ selected = [], onToggle }) {
   );
 }
 
-// Phase 11 — reusable VERIFIED SELLER badge. Shown anywhere a verified seller's
+// Phase 11 - reusable VERIFIED SELLER badge. Shown anywhere a verified seller's
 // name appears (listing cards, listing detail, seller profile, order cards,
 // dashboard header). Design system: #00E5CC teal fill, #111 ink + 2px #111
 // border, square corners, Barlow Condensed bold. `size="sm"` is the compact
@@ -57,7 +57,7 @@ export function VerifiedBadge({ size = "md", style }) {
   );
 }
 
-// Phase 11 — ID VERIFIED badge. Separate from the VERIFIED SELLER badge: this one
+// Phase 11 - ID VERIFIED badge. Separate from the VERIFIED SELLER badge: this one
 // means the seller passed Stripe Identity. Shown on the seller profile and the
 // listing detail (and the dashboard IDENTITY VERIFICATION section). Design system:
 // #111 black fill, white text, 2px #111 border, square corners, Barlow Condensed
@@ -82,7 +82,7 @@ export function IDVerifiedBadge({ size = "md", style }) {
 // horizontally-clipped filled copy laid over it, so a 4.3 average shows four
 // solid stars plus 30% of the fifth. `color` drives the fill via currentColor
 // (defaults to the #FF1493 brand pink). Callers decide whether to render at all
-// — with no reviews we show nothing rather than five empty stars.
+// - with no reviews we show nothing rather than five empty stars.
 export function Stars({value=0,size=14,color="#FF1493",gap=2}){
   return (
     <span style={{display:"inline-flex",alignItems:"center",gap,color,lineHeight:0}}>
@@ -103,7 +103,7 @@ export function Stars({value=0,size=14,color="#FF1493",gap=2}){
 
 // Section wrapper. Default: a simple pink left-border label + children (used by
 // Dashboard / CreateLook). When given an `icon` (and optional `color`), it
-// renders as an accent card — a bordered panel with a colour-chip icon header —
+// renders as an accent card - a bordered panel with a colour-chip icon header -
 // used by the revamped listing form so each section reads as its own block.
 export function Sec({label,children,icon:Icon,color="#FF1493"}){
   if(Icon){
@@ -138,14 +138,14 @@ export function Thumb({src,emoji,accent,gradient=false,imgOpacity=1,imgStyle,emo
       {showImg
         ?<img src={src} alt="" loading="lazy" decoding="async" onError={()=>setOk(false)} onLoad={()=>setLoaded(true)} style={{width:"100%",height:"100%",objectFit:"cover",opacity:loaded?imgOpacity:0,transition:"opacity .4s ease",...imgStyle}}/>
         :<span style={emojiStyle}>{emoji}</span>}
-      {/* Shimmer placeholder while the photo loads — fades out as the image fades in. */}
+      {/* Shimmer placeholder while the photo loads - fades out as the image fades in. */}
       {showImg&&!loaded&&<div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,#ededed 25%,#e0e0e0 50%,#ededed 75%)",backgroundSize:"200% 100%",animation:"shimmer 1.4s ease-in-out infinite"}}/>}
       {showImg&&gradient&&<div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.45))"}}/>}
       {children}
     </div>
   );
 }
-// Scroll-reveal wrapper — fades + lifts its children into view the first time
+// Scroll-reveal wrapper - fades + lifts its children into view the first time
 // they enter the viewport (then disconnects). Renders straight away (no hidden
 // state) when the user prefers reduced motion or IntersectionObserver is missing.
 export function Reveal({children,style,className="",delay=0}){
