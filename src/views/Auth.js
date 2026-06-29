@@ -7,7 +7,7 @@ export default function Auth({
   view, setView,
   authMode, setAuthMode,
   aForm, setAForm, aError, setAError, aLoading,
-  handleAuth, handleOTPVerify,
+  handleAuth, handleOTPVerify, handleForgot, handleResetPassword,
   otpStep, setOtpStep, otpCode, setOtpCode, otpEmail,
   flash,
 }) {
@@ -30,7 +30,32 @@ export default function Auth({
         </div>
         {/* RIGHT — form */}
         <div style={S.authFormCol}>
-        {otpStep==="otp"?(
+        {otpStep==="forgot"?(
+          <>
+            <div style={S.formHero}>
+              <h2 style={S.formTitle}>RESET YOUR<br/><span style={{color:"#FF1493"}}>PASSWORD.</span></h2>
+              <p style={S.formSub}>Enter your email and we'll send you a reset link.</p>
+            </div>
+            <form onSubmit={handleForgot} style={{display:"flex",flexDirection:"column",gap:14}}>
+              <F l="EMAIL"><input style={S.inp} type="email" placeholder="you@email.com" value={aForm.email} onChange={e=>setAForm(f=>({...f,email:e.target.value}))} required autoFocus/></F>
+              {aError&&<div style={S.aError}>{aError}</div>}
+              <button type="submit" className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:2,opacity:aLoading?0.5:1}} disabled={aLoading}>{aLoading?"SENDING...":<>SEND RESET LINK <span className="btn-arrow">→</span></>}</button>
+            </form>
+            <p style={S.authSwitch}>Remembered it? <span style={S.authSwitchLink} onClick={()=>{setOtpStep("form");setAError("");}}>Back to log in</span></p>
+          </>
+        ):otpStep==="reset"?(
+          <>
+            <div style={S.formHero}>
+              <h2 style={S.formTitle}>NEW<br/><span style={{color:"#FF1493"}}>PASSWORD.</span></h2>
+              <p style={S.formSub}>Choose a new password for your account.</p>
+            </div>
+            <form onSubmit={handleResetPassword} style={{display:"flex",flexDirection:"column",gap:14}}>
+              <F l="NEW PASSWORD"><input style={S.inp} type="password" placeholder="••••••••" value={aForm.password} onChange={e=>setAForm(f=>({...f,password:e.target.value}))} required minLength={6} autoFocus/></F>
+              {aError&&<div style={S.aError}>{aError}</div>}
+              <button type="submit" className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:2,opacity:(aLoading||aForm.password.length<6)?0.5:1}} disabled={aLoading||aForm.password.length<6}>{aLoading?"UPDATING...":<>UPDATE PASSWORD <span className="btn-arrow">→</span></>}</button>
+            </form>
+          </>
+        ):otpStep==="otp"?(
           <>
             <div style={S.formHero}>
               <h2 style={S.formTitle}>CHECK YOUR<br/><span style={{color:"#FF1493"}}>EMAIL.</span></h2>
@@ -54,6 +79,7 @@ export default function Auth({
             <form onSubmit={handleAuth} style={{display:"flex",flexDirection:"column",gap:14}}>
               <F l="EMAIL"><input style={S.inp} type="email" placeholder="you@email.com" value={aForm.email} onChange={e=>setAForm(f=>({...f,email:e.target.value}))} required/></F>
               {authMode==="login"&&<F l="PASSWORD"><input style={S.inp} type="password" placeholder="••••••••" value={aForm.password} onChange={e=>setAForm(f=>({...f,password:e.target.value}))} required/></F>}
+              {authMode==="login"&&<div style={{textAlign:"right",marginTop:-6}}><span style={{...S.authSwitchLink,fontSize:12}} onClick={()=>{setOtpStep("forgot");setAError("");}}>Forgot password?</span></div>}
               {aError&&<div style={S.aError}>{aError}</div>}
               <button type="submit" className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:2,opacity:aLoading?0.5:1}}>{aLoading?"...":authMode==="login"?<>SIGN IN <span className="btn-arrow">→</span></>:<>GET VERIFICATION CODE <span className="btn-arrow">→</span></>}</button>
             </form>

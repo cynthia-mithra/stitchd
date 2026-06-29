@@ -25,6 +25,14 @@ export const auth = {
   // → Apple) with a Services ID + key, and stitchd.fit added to Apple's return
   // URLs. The redirect_to handling mirrors googleUrl() (clean origin+path only).
   appleUrl(){ const target=`${window.location.origin}${window.location.pathname}`; return `${SUPABASE_URL}/auth/v1/authorize?provider=apple&redirect_to=${encodeURIComponent(target)}`; },
+  // Password reset — step 1: email the user a recovery link. GoTrue returns 200
+  // with an empty body whether or not the address exists (no account
+  // enumeration), so we treat any non-error response as success. redirect_to
+  // brings them back to the app, where the hash carries type=recovery.
+  async recover(email){ const redirect=`${window.location.origin}${window.location.pathname}`; const r=await fetch(`${SUPABASE_URL}/auth/v1/recover?redirect_to=${encodeURIComponent(redirect)}`,{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email})}); const d=await r.json().catch(()=>({})); if(!r.ok)throw new Error((d.error&&d.error.message)||d.msg||d.error_description||"Could not send reset email"); return d; },
+  // Password reset — step 2: set the new password using the recovery session's
+  // access token (saved when we detect the type=recovery hash on return).
+  async updateUser(password,t){ const r=await fetch(`${SUPABASE_URL}/auth/v1/user`,{method:"PUT",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t}`,"Content-Type":"application/json"},body:JSON.stringify({password})}); const d=await r.json().catch(()=>({})); if(!r.ok||d.error||d.code)throw new Error((d.error&&d.error.message)||d.msg||d.error_description||"Could not update password"); return d; },
   async refreshSession(refreshToken){ const r=await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:refreshToken})}); const d=await r.json().catch(()=>({})); /* GoTrue returns refresh errors in several shapes ({error:{message}}, {error_description}, {msg}); a non-OK response or a body with no access_token must throw, otherwise getValidToken would hand back an undefined token and the next request fails with "JWT expired". */ if(!r.ok||!d.access_token) throw new Error(d.error_description||d.msg||(d.error&&d.error.message)||(typeof d.error==="string"?d.error:"")||`Token refresh failed (HTTP ${r.status})`); return d; },
   getSession(){ try{return JSON.parse(localStorage.getItem("stitchd_session"));}catch{return null;} },
   saveSession(s){ localStorage.setItem("stitchd_session",JSON.stringify(s)); },

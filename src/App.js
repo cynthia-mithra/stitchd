@@ -511,7 +511,14 @@ export default function App() {
         user:{email:claims.email||p.get("email")||"user",id:claims.sub||p.get("user_id")||null},
       };
       auth.saveSession(s); setSession(s); window.location.hash="";
-      flash("Signed in!"); setView("shop");
+      // Password-recovery links land here too (type=recovery). Instead of
+      // dropping the user on the shop, keep the recovery session (so we have a
+      // token to PUT the new password) and send them to the set-password screen.
+      if(p.get("type")==="recovery"){
+        setView("auth"); setOtpStep("reset"); flash("Choose a new password.");
+      } else {
+        flash("Signed in!"); setView("shop");
+      }
     }
     const urlParams=new URLSearchParams(window.location.search);
     if(urlParams.get("payment")==="success"){
@@ -3093,6 +3100,29 @@ export default function App() {
     finally{ setALoading(false); }
   }
 
+  // Forgot password — send the reset email, then bounce back to the login form
+  // with a neutral confirmation (no account enumeration).
+  async function handleForgot(e){
+    e.preventDefault(); setALoading(true); setAError("");
+    try{
+      await auth.recover(aForm.email);
+      flash("If that email has an account, a reset link is on its way.");
+      setOtpStep("form"); setAuthMode("login");
+    }catch(err){ setAError(err.message); }
+    finally{ setALoading(false); }
+  }
+
+  // Set the new password using the recovery session, then continue signed in.
+  async function handleResetPassword(e){
+    e.preventDefault(); setALoading(true); setAError("");
+    try{
+      await auth.updateUser(aForm.password, session?.access_token);
+      flash("Password updated — you're signed in.");
+      setOtpStep("form"); setAForm({email:"",password:""}); postAuthNavigate();
+    }catch(err){ setAError(err.message); }
+    finally{ setALoading(false); }
+  }
+
   async function handleOTPVerify(e){
     e.preventDefault(); setALoading(true); setAError("");
     try{
@@ -4679,6 +4709,7 @@ export default function App() {
         authMode={authMode} setAuthMode={setAuthMode}
         aForm={aForm} setAForm={setAForm} aError={aError} setAError={setAError} aLoading={aLoading}
         handleAuth={handleAuth} handleOTPVerify={handleOTPVerify}
+        handleForgot={handleForgot} handleResetPassword={handleResetPassword}
         otpStep={otpStep} setOtpStep={setOtpStep} otpCode={otpCode} setOtpCode={setOtpCode} otpEmail={otpEmail}
         flash={flash}
       />
