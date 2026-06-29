@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Scissors, Zap, Heart, Ruler, Eye, ArrowDown, ArrowRight, Sparkles, TrendingDown, Flame, Shirt, BadgeCheck, Bookmark, Recycle, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
+import { Search, Scissors, Zap, Heart, Ruler, Eye, ArrowDown, ArrowRight, Sparkles, TrendingDown, Flame, Shirt, BadgeCheck, Bookmark, Recycle, ShieldCheck, SlidersHorizontal, X, Video } from "lucide-react";
 import {
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, ALL_CATEGORIES,
   CONDITIONS, SIZES, OCCASIONS, COLOURS, OCC_COLOR, CARD_COLORS,
@@ -258,6 +258,7 @@ export default function Shop({
           <button className="card-heart" aria-label={saved?"Remove from wishlist":"Add to wishlist"} style={saved?{background:"#FF1493",borderColor:"#FF1493"}:null} onClick={e=>{e.stopPropagation();requireAuth("wishlist",()=>toggleFavourite(item));}}><Heart width={15} height={15} fill={saved?"#fff":"none"} color={saved?"#fff":"#111"}/></button>
           {/* BOTTOM-LEFT — fit + seller chips */}
           <div className="card-ov card-ov-bl">
+            {item.video_url&&<span style={{...ovChip,background:"rgba(0,0,0,0.6)",color:"#fff",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)"}}><Video width={11} height={11}/> VIDEO</span>}
             {fitsMe(item)===true&&<span style={{...ovChip,background:"#34C759",color:"#fff"}}><Ruler width={11} height={11}/> FITS YOU</span>}
             {fastSellers.has(item.user_id)&&<span style={{...ovChip,background:"#00E5CC",color:"#111"}}><Zap width={11} height={11} fill="currentColor"/> FAST SELLER</span>}
           </div>
