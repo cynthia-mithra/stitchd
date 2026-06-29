@@ -1,16 +1,16 @@
 // Supabase Edge Function: saved-search-alerts
 // --------------------------------------------
-// Phase 12 PART 4/5 — emails buyers when new listings match a saved search.
+// Phase 12 PART 4/5 - emails buyers when new listings match a saved search.
 //
 // Two triggers, one code path:
-//   • Cron (every 6 hours) — POST {} (see the phase12 saved_search_cron migration).
-//   • New listing published — POST {listingId, trigger:"new_listing"} fired
+//   • Cron (every 6 hours) - POST {} (see the phase12 saved_search_cron migration).
+//   • New listing published - POST {listingId, trigger:"new_listing"} fired
 //     fire-and-forget by db.triggerSavedSearchAlerts so matches go out within
 //     minutes instead of waiting for the next cron sweep.
 //
 // For each saved search with email_alerts = true it queries listings created
 // after last_alerted_at (or the last 6 hours when null), applies the saved
-// `filters` jsonb, and — if anything matches — renders the brand
+// `filters` jsonb, and - if anything matches - renders the brand
 // `saved_search_alert` template and sends it through the shared Resend helper
 // (same delivery path as the stripe-webhook emails), then stamps
 // last_alerted_at = now() so the same listings are never emailed twice.
@@ -18,10 +18,10 @@
 // Unsubscribe is honoured: a buyer with profiles.email_notifications = false is
 // skipped (their last_alerted_at is still advanced so they don't pile up).
 //
-// Required secrets (already set for send-email — see DEPLOY.md):
+// Required secrets (already set for send-email - see DEPLOY.md):
 //   RESEND_API_KEY, SITE_URL, SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (auto).
 //
-// Deploy: supabase functions deploy saved-search-alerts  (verify_jwt=false — it
+// Deploy: supabase functions deploy saved-search-alerts  (verify_jwt=false - it
 // is called by cron/pg_net and by the browser data layer, neither with a JWT;
 // it only ever sends predefined brand templates to server-resolved recipients).
 
@@ -102,7 +102,7 @@ function thumb(l: Listing): string | undefined {
   return undefined;
 }
 
-// Human filter chip — kept in sync with constants.js filterSummary (this function
+// Human filter chip - kept in sync with constants.js filterSummary (this function
 // can't import the React bundle, so the logic is duplicated deliberately).
 function filterSummary(f: Record<string, any> | null): string {
   if (!f || typeof f !== "object") return "All listings";
@@ -118,7 +118,7 @@ function filterSummary(f: Record<string, any> | null): string {
   if (f.verified_only) parts.push("Verified sellers");
   const hasMin = f.min_price != null && f.min_price !== "";
   const hasMax = f.max_price != null && f.max_price !== "";
-  if (hasMin && hasMax) parts.push(`£${f.min_price}–£${f.max_price}`);
+  if (hasMin && hasMax) parts.push(`£${f.min_price}-£${f.max_price}`);
   else if (hasMax) parts.push(`Under £${f.max_price}`);
   else if (hasMin) parts.push(`Over £${f.min_price}`);
   return parts.length ? parts.join(" · ") : "All listings";
@@ -126,7 +126,7 @@ function filterSummary(f: Record<string, any> | null): string {
 
 // Does a listing satisfy the saved filters? Mirrors App.js's `visible` matcher.
 // Array filters (occasion/colour) match when the listing has none tagged (NULL =
-// "untagged", stays visible) or overlaps the requested set — same as the shop.
+// "untagged", stays visible) or overlaps the requested set - same as the shop.
 function matches(l: Listing, f: Record<string, any> | null): boolean {
   if (!f || typeof f !== "object") return true;
   if (l.sold || l.status === "inactive") return false;
@@ -171,7 +171,7 @@ async function processSearch(s: SavedSearch, verifiedIds: Set<string> | null): P
   const sinceIso = since.toISOString();
 
   // Pull the candidate window once (new listings since `since`), then filter in
-  // memory — the saved filter set is richer than a single PostgREST query.
+  // memory - the saved filter set is richer than a single PostgREST query.
   // `brand` is a newer column: if the project hasn't run that migration yet,
   // selecting it 400s, so fall back to the column set without brand rather than
   // silently halting every alert.

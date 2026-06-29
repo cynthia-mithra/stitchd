@@ -1,7 +1,7 @@
 // Supabase Edge Function: refund-order
 // -------------------------------------
 // Issues a REAL Stripe refund to the buyer when the Stitch'd admin resolves a
-// dispute as "refunded" — for BOTH a purchase (order) and a tailoring booking
+// dispute as "refunded" - for BOTH a purchase (order) and a tailoring booking
 // (alteration_request). The browser posts { order_id | alteration_request_id,
 // admin_id }; this function, all server-side:
 //   1. verifies admin_id is a real admin (profiles.is_admin = true),
@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
       await notify(buyerId, {
         type: "dispute",
         title: "💸 Refund issued",
-        body: `Your dispute was resolved in your favour — ${fmt(amountPence)} has been refunded to your original payment method (5–10 working days).`,
+        body: `Your dispute was resolved in your favour - ${fmt(amountPence)} has been refunded to your original payment method (5-10 working days).`,
         listing_id: listingId ?? null,
       });
     }

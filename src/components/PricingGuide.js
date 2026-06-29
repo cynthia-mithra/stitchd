@@ -2,20 +2,20 @@ import React, { useState, useEffect, useCallback } from "react";
 import { TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
 import { db } from "../lib/db";
 
-// ── Phase 13 — Pricing suggestions based on similar sold listings ──────────────
+// ── Phase 13 - Pricing suggestions based on similar sold listings ──────────────
 // A self-contained panel shown below the price input on the listing create/edit
 // form. When the seller has picked a category and typed at least 3 characters of
 // a title, it queries SOLD comparable listings (db.getSoldComps) and surfaces the
 // price range, average, a suggested price (average − 10%) and a USE THIS PRICE
 // button. With too little data it shows a "not enough data" message and a BROWSE
-// SIMILAR link into the shop pre-filtered by category. Frontend-only — all the
+// SIMILAR link into the shop pre-filtered by category. Frontend-only - all the
 // aggregation happens here from the rows the query returns.
 //
 // Props:
 //   category   effective listing category (e.g. "Lehenga")
 //   title      the item name the seller is typing
-//   token      auth token for the query (may be null — anon read is fine)
-//   onUsePrice (price:number) => void  — fills the price input
+//   token      auth token for the query (may be null - anon read is fine)
+//   onUsePrice (price:number) => void  - fills the price input
 //   collapsible  edit form: render collapsed behind a SHOW PRICING GUIDE toggle
 
 const FONT = "'Barlow Condensed',sans-serif";
@@ -64,7 +64,7 @@ export default function PricingGuide({ category, title, token, onUsePrice, colla
     const keywords = keywordsFromTitle(title);
     let rows = await db.getSoldComps(category, keywords, token);
     let usedFallback = false;
-    // PART 3 — too few keyword matches: fall back to category-only matching.
+    // PART 3 - too few keyword matches: fall back to category-only matching.
     if (rows.length < MIN_COMPS) {
       const catOnly = await db.getSoldComps(category, [], token);
       if (catOnly.length > rows.length) { rows = catOnly; usedFallback = true; }
@@ -153,7 +153,7 @@ export default function PricingGuide({ category, title, token, onUsePrice, colla
         <div>
           <p style={{ fontFamily: FONT, fontSize: 14, color: "#666", margin: "0 0 8px", letterSpacing: 0.3 }}>Similar items have sold for:</p>
           <p style={{ fontFamily: FONT, fontSize: 26, fontWeight: 900, color: "#111", margin: "0 0 6px", letterSpacing: -0.5 }}>
-            {money(state.min)} — {money(state.max)}
+            {money(state.min)} - {money(state.max)}
           </p>
           <p style={{ fontFamily: FONT, fontSize: 15, fontWeight: 700, color: "#111", margin: "0 0 2px", letterSpacing: 0.3 }}>Average: {money(state.avg)}</p>
           <p style={{ fontFamily: FONT, fontSize: 13, color: "#888", margin: "0 0 14px", letterSpacing: 0.5 }}>

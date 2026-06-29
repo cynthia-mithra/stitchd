@@ -3,7 +3,7 @@
 // Creates a Stripe Checkout Session that charges a seller £2.99 to promote one
 // of their listings to the top of search results for 7 days, and returns the
 // hosted-checkout URL to redirect to. The browser NEVER talks to Stripe with the
-// secret key — it posts { listing_id, seller_id } here; this function:
+// secret key - it posts { listing_id, seller_id } here; this function:
 //   1. verifies the listing exists AND belongs to the seller (so a seller can't
 //      pay to promote someone else's listing),
 //   2. creates a £2.99 GBP Checkout Session tagged metadata.type='promotion',
@@ -15,7 +15,7 @@
 // listing's promoted flag + promoted_until and the promotions row to 'active'.
 //
 // Required environment variables (Supabase → Project Settings → Edge Functions):
-//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE — do NOT use a live key)
+//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE - do NOT use a live key)
 //   SUPABASE_URL                 auto-injected by Supabase
 //   SUPABASE_SERVICE_ROLE_KEY    used to verify ownership + insert the promotion
 //   SITE_URL                     e.g. https://stitchd.fit  (success/cancel base)
@@ -29,7 +29,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const SITE_URL = (Deno.env.get("SITE_URL") ?? "https://stitchd.fit").replace(/\/$/, "");
 
-// £2.99 for 7 days — hardcoded GBP per the issue. Kept as named constants so the
+// £2.99 for 7 days - hardcoded GBP per the issue. Kept as named constants so the
 // webhook + emails can never drift from the amount actually charged here.
 const PROMOTION_PENCE = 299;
 const PROMOTION_DAYS = 7;
@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
         {
           price_data: {
             currency: "gbp",
-            product_data: { name: "Promoted Listing — 7 days" },
+            product_data: { name: "Promoted Listing - 7 days" },
             unit_amount: PROMOTION_PENCE,
           },
           quantity: 1,
@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
       cancel_url: `${SITE_URL}/dashboard`,
     });
 
-    // Record the pending promotion. Best-effort — a failure here must not block
+    // Record the pending promotion. Best-effort - a failure here must not block
     // the checkout the seller is about to be redirected to; the webhook re-resolves
     // everything from the Stripe session on payment.
     await fetch(`${SUPABASE_URL}/rest/v1/promotions`, {

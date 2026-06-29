@@ -17,14 +17,14 @@ export const CSS=`
   /* Order / row cards lift gently on hover. */
   .order-card{transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .18s ease;}
   .order-card:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,0.08);}
-  /* Zoned image overlays — status chips stack vertically so they never collide. */
+  /* Zoned image overlays - status chips stack vertically so they never collide. */
   .card-ov{position:absolute;display:flex;flex-direction:column;align-items:flex-start;gap:5px;z-index:5;pointer-events:none;}
   .card-ov-tl{top:10px;left:10px;}
   .card-ov-bl{bottom:10px;left:10px;}
-  /* Wishlist heart — sharp, frosted, on-theme (square to match the design). */
+  /* Wishlist heart - sharp, frosted, on-theme (square to match the design). */
   .card-heart{position:absolute;top:10px;right:10px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.8);backdrop-filter:saturate(160%) blur(6px);-webkit-backdrop-filter:saturate(160%) blur(6px);border:2px solid #111;border-radius:0;cursor:pointer;z-index:6;transition:transform .15s ease,background .15s ease;}
   .card-heart:hover{transform:scale(1.1);}
-  /* Frosted hover price — a glass bar that slides up over the image on hover. */
+  /* Frosted hover price - a glass bar that slides up over the image on hover. */
   .card-hover-price{position:absolute;left:0;right:0;bottom:0;z-index:7;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 13px;background:rgba(255,255,255,0.7);backdrop-filter:saturate(180%) blur(10px);-webkit-backdrop-filter:saturate(180%) blur(10px);border-top:2px solid #111;transform:translateY(102%);transition:transform .3s cubic-bezier(.22,1,.36,1);pointer-events:none;}
   .scard:hover .card-hover-price{transform:translateY(0);}
   .card-hover-price .chp-price{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;letter-spacing:-0.5px;color:#111;line-height:1;}
@@ -57,7 +57,7 @@ export const CSS=`
   .hbtn:hover .btn-arrow{transform:translateX(5px);}
   /* Conversation rows in Messages: gentle tint + pink edge on hover. */
   .conv-item:hover{background:#fff7fc !important;border-left-color:#FF149355 !important;}
-  /* SHOP BY CATEGORY — sleek rounded pill chips; horizontal swipe-scroll. */
+  /* SHOP BY CATEGORY - sleek rounded pill chips; horizontal swipe-scroll. */
   .cat-rail{display:flex;flex-wrap:wrap;gap:10px;}
   .cat-chip{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;letter-spacing:1px;
     padding:11px 22px;border-radius:24px;cursor:pointer;white-space:nowrap;flex-shrink:0;
@@ -68,16 +68,16 @@ export const CSS=`
     .cat-rail{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px;-webkit-overflow-scrolling:touch;}
     .cat-rail > *{scroll-snap-align:start;}
   }
-  /* MOBILE BOTTOM NAV — app-style tab bar, phones only. Desktop/iPad keep the
+  /* MOBILE BOTTOM NAV - app-style tab bar, phones only. Desktop/iPad keep the
      header nav, so it's hidden by default and only shown ≤768px. The app root
      gets bottom padding on mobile so the footer clears the fixed bar. */
   .bottom-nav{display:none;}
   .bottom-nav-item:active{opacity:.55;}
-  /* Phones only (≤640px). iPad/desktop keep the header nav — no bottom bar there. */
+  /* Phones only (≤640px). iPad/desktop keep the header nav - no bottom bar there. */
   @media(max-width:640px){
     .bottom-nav{display:flex !important;}
     /* Reserve space for the fixed bar ONLY when it's actually shown (logged in,
-       not detail/auth) — plus the phone's home-indicator safe area — so the last
+       not detail/auth) - plus the phone's home-indicator safe area - so the last
        button/footer never hides behind it. */
     .app-root.has-bottom-nav{padding-bottom:calc(76px + env(safe-area-inset-bottom));}
   }
@@ -104,7 +104,7 @@ export const CSS=`
   /* Scroll-reveal: sections fade + lift into view the first time they appear. */
   .reveal{opacity:0;transform:translateY(20px);transition:opacity .55s ease,transform .55s cubic-bezier(.22,1,.36,1);will-change:opacity,transform;}
   .reveal.in{opacity:1;transform:none;}
-  /* Hero value-prop "trust bar" — 3 equal cells in a sharp bordered row with
+  /* Hero value-prop "trust bar" - 3 equal cells in a sharp bordered row with
      vertical dividers; stacks with horizontal dividers on mobile. */
   .hero-props{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:34px;max-width:780px;width:100%;}
   .hero-prop{display:flex;align-items:center;justify-content:center;gap:9px;padding:8px 24px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:2px;color:#111;text-transform:uppercase;white-space:nowrap;}
@@ -119,7 +119,7 @@ export const CSS=`
   button:focus-visible,a:focus-visible,[role="button"]:focus-visible,.cat-tile:focus-visible,.bottom-nav-item:focus-visible{outline:3px solid rgba(255,20,147,0.55);outline-offset:2px;}
   ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#eee;border-radius:2px}
   ::selection{background:#FF149333}
-  /* SHOP THE LOOK — desktop is a 3-up grid; the homepage rail turns into a
+  /* SHOP THE LOOK - desktop is a 3-up grid; the homepage rail turns into a
      horizontal swipe-scroll on phones (cards ~78% wide so the next one peeks). */
   .looks-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
   .looks-page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
@@ -128,14 +128,14 @@ export const CSS=`
     .looks-rail > *{flex:0 0 78% !important;scroll-snap-align:start;}
     .looks-page-grid{grid-template-columns:1fr 1fr !important;gap:10px !important;}
   }
-  /* STYLE FEED — two-column post grid on desktop, single column on mobile. The
+  /* STYLE FEED - two-column post grid on desktop, single column on mobile. The
      CREATE POST button sits in the header on desktop and becomes a fixed bottom-
      right FAB on mobile. The homepage STYLE INSPIRATION rail is a 2x2 grid on
      desktop and a horizontal swipe-scroll on phones (like the looks rail). */
   .style-feed-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
   .style-create-fab{display:none;}
   .style-home-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-  /* AVAILABILITY CALENDAR (Phase 15) — current + next month side by side on
+  /* AVAILABILITY CALENDAR (Phase 15) - current + next month side by side on
      desktop, a single month on mobile (the second month is hidden; PREV/NEXT
      still navigates one month at a time). */
   .avail-months{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
@@ -151,22 +151,22 @@ export const CSS=`
     .style-home-rail > *{flex:0 0 70% !important;scroll-snap-align:start;}
   }
   @media(max-width:600px){
-    /* PROBLEM 1 — keep the hero SIDE-BY-SIDE on mobile (like desktop): the writing
+    /* PROBLEM 1 - keep the hero SIDE-BY-SIDE on mobile (like desktop): the writing
        takes the LEFT and the bubbles sit to the RIGHT, but instead of a neat wrapping
-       grid the bubbles now form a SLIGHTLY-OVERLAPPING, STAGGERED FLOATING cluster —
+       grid the bubbles now form a SLIGHTLY-OVERLAPPING, STAGGERED FLOATING cluster -
        the same playful arrangement as the desktop hero (keeps the divider border). */
-    /* Type-led hero (no imagery) — just tighten the spacing on small screens. */
+    /* Type-led hero (no imagery) - just tighten the spacing on small screens. */
     .hero-section{min-height:0 !important;padding:36px 18px !important;}
     .hero-left{padding:0 !important;}
-    /* PROBLEM 2 — search field full-width on its own line, FILTERS/FIT/TAILORS
+    /* PROBLEM 2 - search field full-width on its own line, FILTERS/FIT/TAILORS
        sharing the second line equally and compactly. */
     .search-box{flex:1 1 100% !important;}
     .search-action-btn{flex:1 1 0 !important;min-width:0 !important;}
-    /* BROWSE tabs — full width on mobile so ALL LISTINGS / FOLLOWING split the
+    /* BROWSE tabs - full width on mobile so ALL LISTINGS / FOLLOWING split the
        row evenly; auto width on desktop (default). */
     .shop-tabs{width:100% !important;}
     .shop-tab{flex:1 1 0 !important;text-align:center !important;padding-left:0 !important;padding-right:0 !important;}
-    /* PROBLEM 3 — two-column listing grid with proportionally scaled cards. */
+    /* PROBLEM 3 - two-column listing grid with proportionally scaled cards. */
     .shop-grid{grid-template-columns:1fr 1fr !important;gap:12px !important;}
     .card-top{height:150px !important;}
     .card-body{padding:11px !important;}
@@ -189,7 +189,7 @@ export const CSS=`
     .auth-brand{padding:24px !important;gap:18px !important;flex-direction:row !important;flex-wrap:wrap !important;align-items:center !important;justify-content:space-between !important;}
     .auth-brand-props{display:none !important;}
   }
-  /* MOBILE — hide the scrolling category ticker strip in the navbar (SAREES ✦
+  /* MOBILE - hide the scrolling category ticker strip in the navbar (SAREES ✦
      LEHENGAS ✦ …). The pink marquee banner (S.ticker) below the header and the
      navbar's logo / heart / LOG IN / SIGN UP buttons are intentionally untouched.
      Desktop and iPad (≥769px) keep showing the strip. */
@@ -199,13 +199,13 @@ export const CSS=`
        right-side nav buttons (3 LIVE, WISHLIST, LOG IN, SIGN UP) over, so they
        collapse next to the logo. margin-left:auto sends them back to the
        right edge. Logo stays on the left; marquee/hero/strip untouched.
-       LEFTOVER DIVIDER LINES — with the category strip gone, the two vertical
+       LEFTOVER DIVIDER LINES - with the category strip gone, the two vertical
        borders that used to FRAME it sit right next to each other and read as
        stray black divider lines: the logo's right border (S.logoWrap
        borderRight) and the nav buttons' left border (S.hRight borderLeft).
        Hide just those two borders on mobile. Desktop/iPad (≥769px) keep them
        since the strip is still visible there. Borders are only hidden, not
-       removed — the inline styles are untouched. */
+       removed - the inline styles are untouched. */
     .nav-logo{border-right:none !important;}
     .nav-right{margin-left:auto !important;border-left:none !important;}
     /* Restore horizontal scroll on mobile only. The dropdown isn't used here (the
@@ -241,7 +241,7 @@ export const S={
   hBtn:{background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"5px 8px",fontSize:9,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,whiteSpace:"nowrap"},
   // Square profile/hamburger icon button: white bg, #111 2px border, no radius.
   navIconBtn:{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"4px 7px",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},
-  // Wrapper for the desktop hover dropdown — relative anchor so the panel hangs
+  // Wrapper for the desktop hover dropdown - relative anchor so the panel hangs
   // directly below the icon with no gap (keeps hover continuous on mouse move).
   navDropWrap:{position:"relative",display:"flex",alignItems:"center"},
   // Desktop account dropdown. Capped to the viewport height with its own scroll
@@ -261,26 +261,26 @@ export const S={
   mobileNavTitle:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2,textTransform:"uppercase"},
   mobileNavClose:{background:"none",border:"none",cursor:"pointer",color:"#111",display:"flex",alignItems:"center",padding:4},
   mobileNavItem:{background:"#fff",border:"none",textAlign:"left",minHeight:52,padding:"0 20px",fontSize:18,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,color:"#111",textTransform:"uppercase",display:"flex",alignItems:"center"},
-  // Mobile equivalents — larger labels for readability and the same subtle 1px
+  // Mobile equivalents - larger labels for readability and the same subtle 1px
   // #eee divider between groups.
   mobileNavSectionLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:2,color:"#6b6b6b",textTransform:"uppercase",padding:"16px 20px 6px",userSelect:"none"},
   mobileNavDivider:{height:1,background:"#eee",border:"none",margin:0},
-  // Refined brand ticker — a slimmer, calmer strip: shorter, lighter weight,
+  // Refined brand ticker - a slimmer, calmer strip: shorter, lighter weight,
   // wider tracking, slightly translucent type and a slower scroll so it reads as
   // a tasteful detail rather than a loud banner.
   ticker:{background:"#FF1493",overflow:"hidden",borderBottom:"2px solid #111",height:28,display:"flex",alignItems:"center"},
   tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:3.5,color:"rgba(255,255,255,0.92)",animation:"ticker 36s linear infinite",paddingLeft:"100%"},
   toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"13px 22px",borderLeft:"4px solid #FF1493",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.2,zIndex:999,borderRadius:0,display:"inline-flex",alignItems:"center",gap:11,maxWidth:"min(92vw,560px)",lineHeight:1.35,textAlign:"left",boxShadow:"0 10px 34px rgba(0,0,0,0.28)"},
-  // MOBILE BOTTOM NAV — fixed app-style tab bar (shown ≤768px via .bottom-nav).
+  // MOBILE BOTTOM NAV - fixed app-style tab bar (shown ≤768px via .bottom-nav).
   // Solid white (not frosted) so scrolling content never bleeds through and the
   // icons stay crisp; a soft upward shadow lifts it off the page.
   // content-box so the fixed 52px icon row is the *content* and the padding (incl.
-  // the home-indicator safe area, min 10px) is added below it — guarantees the
+  // the home-indicator safe area, min 10px) is added below it - guarantees the
   // labels always have breathing room and never sit on the screen edge.
   bottomNav:{position:"fixed",left:0,right:0,bottom:0,height:58,boxSizing:"content-box",background:"#fff",borderTop:"2px solid #111",boxShadow:"0 -6px 20px rgba(0,0,0,0.07)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"space-around",paddingTop:6,paddingBottom:"max(10px, env(safe-area-inset-bottom))"},
   bottomNavItem:{flex:1,background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:0,fontFamily:"'Barlow Condensed',sans-serif"},
   bottomNavLabel:{fontSize:9.5,fontWeight:800,letterSpacing:1,textTransform:"uppercase",lineHeight:1},
-  // Sell sits INSIDE the bar (no negative-margin poke) — a modest pink circle
+  // Sell sits INSIDE the bar (no negative-margin poke) - a modest pink circle
   // aligned with the other tabs, not crossing the top border.
   bottomNavSell:{width:40,height:40,marginTop:0,borderRadius:"50%",background:"#FF1493",color:"#fff",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 3px 10px rgba(255,20,147,0.4)"},
   bottomNavBadge:{position:"absolute",top:-5,right:-9,minWidth:16,height:16,padding:"0 4px",borderRadius:8,background:"#FF1493",color:"#fff",border:"2px solid #fff",fontSize:9,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Barlow Condensed',sans-serif"},
@@ -303,7 +303,7 @@ export const S={
   heroBtnSecondary:{background:"#fff",color:"#111",border:"2px solid #111",padding:"14px 32px",fontSize:14,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,borderRadius:0},
   heroRight:{flex:1,position:"relative",background:"#fafafa",minHeight:300,overflow:"hidden"},
   // Rendered position:relative in Shop.js so the suggestions dropdown anchors to it
-  // and the row sits in normal document flow above the grid. No top offset here — a
+  // and the row sits in normal document flow above the grid. No top offset here - a
   // leftover `top:52` would shift a relative element 52px down and overlap the grid.
   searchBar:{background:"#fff",position:"relative",zIndex:100},
   // FULL-WIDTH control row: the search field grows to fill the LEFT
@@ -343,7 +343,7 @@ export const S={
   retryBtn:{background:"#FF1493",color:"#fff",border:"none",padding:"6px 16px",fontSize:12,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2},
   grid:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:16},
   // Uniform card: flex column at full row height so every card in a row ends flush.
-  // Border is a fixed 2px solid #111 for ALL cards (no per-category coloured border) —
+  // Border is a fixed 2px solid #111 for ALL cards (no per-category coloured border) -
   // the category accent now lives only on the label, price and bottom accentBar.
   card:{background:"#fff",border:"2px solid #111",overflow:"hidden",cursor:"pointer",borderRadius:0,position:"relative",display:"flex",flexDirection:"column",height:"100%"},
   // Fixed image zone height across every card so the picture areas line up; flexShrink:0
@@ -354,7 +354,7 @@ export const S={
   soldVeil:{position:"absolute",inset:0,background:"rgba(255,255,255,0.75)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(2px)",zIndex:4},
   soldStamp:{fontSize:22,fontWeight:900,letterSpacing:2.5,color:"#111",border:"3px solid #111",padding:"6px 18px",fontFamily:"'Barlow Condensed',sans-serif"},
   reservedBadge:{position:"absolute",top:12,right:12,background:"#FF9500",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3},
-  // PRICE DROP badge — teal fill, dark ink + 2px dark border, square corners. Sits in the
+  // PRICE DROP badge - teal fill, dark ink + 2px dark border, square corners. Sits in the
   // top-right of the card image, offset left of the 32px heart button so the two never overlap.
   priceDropBadge:{position:"absolute",top:12,right:52,background:"#00E5CC",color:"#111",border:"2px solid #111",borderRadius:0,padding:"3px 8px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:4},
   // Original (pre-drop) price shown struck through in grey beside the live price on cards.
@@ -473,7 +473,7 @@ export const S={
   fastBadge:{position:"absolute",bottom:12,left:12,background:"#00E5CC",color:"#111",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3,border:"1.5px solid #111"},
   reviewCard:{background:"#fafafa",border:"1.5px solid #f0f0f0",padding:"14px 16px"},
   // Floating white card on a pale-pink ground (set on the page wrapper). No hard
-  // black frame — a soft pink-tinted shadow gives it lift.
+  // black frame - a soft pink-tinted shadow gives it lift.
   msgLayout:{display:"flex",border:"none",height:"70vh",overflow:"hidden",background:"#fff",boxShadow:"0 16px 46px rgba(122,18,71,0.13)"},
   msgSidebar:{width:320,flexShrink:0,borderRight:"1px solid #f3e6ee",display:"flex",flexDirection:"column",overflow:"hidden",background:"#fff"},
   msgSidebarHead:{padding:"18px 22px",borderBottom:"1px solid #f6eef3",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fff"},
@@ -491,17 +491,17 @@ export const S={
   offerBar:{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",borderTop:"1px solid #f5f5f5",flexWrap:"wrap",background:"#fafafa"},
   offerCard:{background:"#fff",padding:"14px 16px",borderRadius:0,boxShadow:"0 3px 12px rgba(17,17,17,0.08)"},
   offerStatusBadge:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:9,fontWeight:800,letterSpacing:1.5,color:"#fff",padding:"2px 8px",borderRadius:0},
-  // SHOPPING BAG — small count badge on the navbar bag icon. Pink circle, white
+  // SHOPPING BAG - small count badge on the navbar bag icon. Pink circle, white
   // number, 2px #111 border so it reads clearly against the white icon button.
   bagBadge:{position:"absolute",top:-6,right:-6,background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:"50%",minWidth:20,height:20,padding:"0 4px",fontSize:11,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1},
   // ADD TO BAG button on the Detail page. Full width, pink, white uppercase
   // Barlow Condensed, 2px #111 border, no radius. Background/colour are overridden
   // inline for the ADDED (black) and SOLD (grey) states.
   bagAddBtn:{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:17,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16},
-  // BUYER GUARANTEE BANNER (Detail page) — trust signal below ADD TO BAG.
+  // BUYER GUARANTEE BANNER (Detail page) - trust signal below ADD TO BAG.
   // Square 2px #111 frame, white fill, Barlow Condensed throughout.
   guaranteeBanner:{border:"2px solid #111",borderRadius:0,background:"#fff",padding:"16px 18px",marginBottom:16},
-  // Sticky buy bar — slides up from the bottom once the inline ADD TO BAG button
+  // Sticky buy bar - slides up from the bottom once the inline ADD TO BAG button
   // scrolls out of view (see .detail-buybar CSS + the IntersectionObserver in Detail).
   buyBar:{position:"fixed",left:0,right:0,bottom:0,zIndex:300,background:"rgba(255,255,255,0.9)",backdropFilter:"saturate(180%) blur(12px)",WebkitBackdropFilter:"saturate(180%) blur(12px)",borderTop:"3px solid #111",padding:"10px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,boxShadow:"0 -8px 30px rgba(0,0,0,0.10)"},
   buyBarInfo:{display:"flex",alignItems:"center",gap:12,minWidth:0},
@@ -514,7 +514,7 @@ export const S={
   guaranteePoint:{display:"flex",alignItems:"center",gap:10,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,letterSpacing:0.5,color:"#111",lineHeight:1.2},
   // Compact guarantee line below PROCEED TO CHECKOUT in the bag panel.
   bagGuarantee:{display:"flex",alignItems:"center",justifyContent:"center",gap:7,marginTop:14,fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,color:"#111"},
-  // Slide-in bag panel — dim backdrop pinned to the right edge of the screen.
+  // Slide-in bag panel - dim backdrop pinned to the right edge of the screen.
   bagOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:600,display:"flex",justifyContent:"flex-end"},
   bagPanel:{width:"min(420px,100%)",height:"100%",background:"#fff",borderLeft:"2px solid #111",display:"flex",flexDirection:"column",overflowY:"auto"},
   bagHead:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:"2px solid #111",position:"sticky",top:0,background:"#fff",zIndex:2},

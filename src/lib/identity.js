@@ -1,5 +1,5 @@
 // Kicks off Stripe Identity verification for the signed-in seller. We never
-// touch Stripe with a secret key from the browser — this posts the seller's
+// touch Stripe with a secret key from the browser - this posts the seller's
 // user_id to the `create-verification-session` Supabase Edge Function, which
 // creates the VerificationSession server-side, marks the profile 'pending', and
 // returns the URL of the Stripe-hosted flow to redirect to. The pass/fail result

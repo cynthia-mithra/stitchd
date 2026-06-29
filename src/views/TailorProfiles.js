@@ -13,7 +13,7 @@ const TEAL = "#00E5CC";
 const PINK = "#FF1493";
 const poundsFromPence = (p) => (p==null||p==="") ? "" : (p/100).toString();
 
-// Specialism pills — same multi-select style as the occasion filter.
+// Specialism pills - same multi-select style as the occasion filter.
 function SpecialismPicker({ selected = [], onToggle }) {
   return (
     <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
@@ -58,7 +58,7 @@ function UploadTile({ preview, onPick, onClear, label="ADD PHOTO", height="100%"
 export default function TailorProfiles({
   view, setView, user, flash,
   myTailor,
-  // directory (Phase 15 — browse approved tailors)
+  // directory (Phase 15 - browse approved tailors)
   directoryTailors = [], directoryLoading = false, onBecomeTailor = () => {},
   // apply
   applyForm, setApplyForm, applyBusy, submitApplication,
@@ -67,9 +67,9 @@ export default function TailorProfiles({
   tailorEdit, setTailorEdit, saveTailorProfile, tailorEditBusy,
   tailorPortfolio, addPortfolioImages, deletePortfolioImage, movePortfolioImage, portfolioBusy,
   openTailorPublic,
-  // Stripe Connect — PAYMENTS section (Phase 15)
+  // Stripe Connect - PAYMENTS section (Phase 15)
   onSetupPayments = () => {}, onManagePayments = () => {}, paymentsBusy = false,
-  // availability (Phase 15 — Tailor availability calendar)
+  // availability (Phase 15 - Tailor availability calendar)
   availabilityRows = [], availabilityLoading = false, availabilityBusy = false,
   onToggleAvailabilityEnabled = () => {}, onSaveAvailabilitySettings = () => {},
   onSetDayAvailability = () => {}, onSetDaySlots = () => {},
@@ -200,7 +200,7 @@ export default function TailorProfiles({
             ))}
           </div>
 
-          {/* STEP 1 — BASIC INFO */}
+          {/* STEP 1 - BASIC INFO */}
           {applyForm.step===1&&(
             <div style={{display:"flex",flexDirection:"column",gap:18}}>
               <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>1. BASIC INFO</h2>
@@ -224,7 +224,7 @@ export default function TailorProfiles({
             </div>
           )}
 
-          {/* STEP 2 — SPECIALISMS */}
+          {/* STEP 2 - SPECIALISMS */}
           {applyForm.step===2&&(
             <div style={{display:"flex",flexDirection:"column",gap:18}}>
               <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>2. SPECIALISMS</h2>
@@ -237,7 +237,7 @@ export default function TailorProfiles({
             </div>
           )}
 
-          {/* STEP 3 — PRICING + TURNAROUND */}
+          {/* STEP 3 - PRICING + TURNAROUND */}
           {applyForm.step===3&&(
             <div style={{display:"flex",flexDirection:"column",gap:18}}>
               <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>3. PRICING & TURNAROUND</h2>
@@ -263,11 +263,11 @@ export default function TailorProfiles({
             </div>
           )}
 
-          {/* STEP 4 — PORTFOLIO */}
+          {/* STEP 4 - PORTFOLIO */}
           {applyForm.step===4&&(
             <div style={{display:"flex",flexDirection:"column",gap:18}}>
               <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>4. PORTFOLIO</h2>
-              <p style={{fontSize:14,color:"#888"}}>Show buyers your best work. Optional but recommended — you can add more later from your dashboard. (Up to 8.)</p>
+              <p style={{fontSize:14,color:"#888"}}>Show buyers your best work. Optional but recommended - you can add more later from your dashboard. (Up to 8.)</p>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                 {(applyForm.portfolio||[]).map((item,idx)=>(
                   <div key={idx} style={{border:"2px solid #111",padding:10,display:"flex",flexDirection:"column",gap:8}}>
@@ -297,7 +297,7 @@ export default function TailorProfiles({
             </div>
           )}
 
-          {/* STEP 5 — REVIEW + SUBMIT */}
+          {/* STEP 5 - REVIEW + SUBMIT */}
           {applyForm.step===5&&(
             <div style={{display:"flex",flexDirection:"column",gap:18}}>
               <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>5. REVIEW & SUBMIT</h2>
@@ -305,13 +305,13 @@ export default function TailorProfiles({
                 <div style={{display:"flex",gap:16,alignItems:"center"}}>
                   {applyForm.profilePreview&&<img src={applyForm.profilePreview} alt="" style={{width:72,height:72,borderRadius:"50%",border:"2px solid #111",objectFit:"cover"}}/>}
                   <div>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900}}>{applyForm.display_name||"—"}</p>
-                    <p style={{fontSize:13,color:"#888",display:"flex",alignItems:"center",gap:5}}><MapPin width={13} height={13}/> {applyForm.location||"—"}</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900}}>{applyForm.display_name||"-"}</p>
+                    <p style={{fontSize:13,color:"#888",display:"flex",alignItems:"center",gap:5}}><MapPin width={13} height={13}/> {applyForm.location||"-"}</p>
                   </div>
                 </div>
                 <ReviewRow label="BIO" value={applyForm.bio}/>
                 <ReviewRow label="SPECIALISMS" value={(applyForm.specialisms||[]).join(", ")||"None selected"}/>
-                <ReviewRow label="PRICE RANGE" value={applyForm.price_from||applyForm.price_to?`£${applyForm.price_from||"?"} – £${applyForm.price_to||"?"}`:"Not set"}/>
+                <ReviewRow label="PRICE RANGE" value={applyForm.price_from||applyForm.price_to?`£${applyForm.price_from||"?"} - £${applyForm.price_to||"?"}`:"Not set"}/>
                 <ReviewRow label="TURNAROUND" value={applyForm.turnaround_days?turnaroundLabel(applyForm.turnaround_days):"Not set"}/>
                 {applyForm.instagram_handle&&<ReviewRow label="INSTAGRAM" value={applyForm.instagram_handle}/>}
                 {applyForm.website_url&&<ReviewRow label="WEBSITE" value={applyForm.website_url}/>}
@@ -357,7 +357,7 @@ export default function TailorProfiles({
           {/* PROFILE TAB */}
           {tailorDashTab==="profile"&&(
             <div style={{display:"flex",flexDirection:"column",gap:18,maxWidth:680}}>
-              {/* PAYMENTS — Stripe Connect onboarding (Phase 15) */}
+              {/* PAYMENTS - Stripe Connect onboarding (Phase 15) */}
               <PaymentsSection tailor={myTailor} busy={paymentsBusy} onSetup={onSetupPayments} onManage={onManagePayments}/>
               <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
                 <F l="PROFILE IMAGE">
@@ -425,7 +425,7 @@ export default function TailorProfiles({
                         </div>
                       </div>
                       <div style={{padding:10}}>
-                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800}}>{img.caption||"—"}</p>
+                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800}}>{img.caption||"-"}</p>
                         {img.garment_type&&<p style={{fontSize:12,color:"#888",marginTop:2}}>{img.garment_type}</p>}
                       </div>
                     </div>
@@ -435,7 +435,7 @@ export default function TailorProfiles({
             </div>
           )}
 
-          {/* AVAILABILITY TAB — publish the dates the tailor can take work (Phase 15). */}
+          {/* AVAILABILITY TAB - publish the dates the tailor can take work (Phase 15). */}
           {tailorDashTab==="availability"&&(
             <AvailabilityTab
               tailor={myTailor} rows={availabilityRows} loading={availabilityLoading} busy={availabilityBusy}
@@ -445,7 +445,7 @@ export default function TailorProfiles({
             />
           )}
 
-          {/* BOOKINGS TAB — incoming alteration requests (Phase 15). */}
+          {/* BOOKINGS TAB - incoming alteration requests (Phase 15). */}
           {tailorDashTab==="bookings"&&(
             <TailorBookings
               requests={alterationRequests} buyers={alterationBuyers} loading={bookingsLoading}
@@ -454,12 +454,12 @@ export default function TailorProfiles({
             />
           )}
 
-          {/* EARNINGS TAB — payout totals + paid bookings (Phase 15). */}
+          {/* EARNINGS TAB - payout totals + paid bookings (Phase 15). */}
           {tailorDashTab==="earnings"&&(
             <TailorEarnings payouts={payouts}/>
           )}
 
-          {/* REVIEWS TAB — overall stats + every review, newest first (Part 5). */}
+          {/* REVIEWS TAB - overall stats + every review, newest first (Part 5). */}
           {tailorDashTab==="reviews"&&(
             (tailorReviews||[]).length===0?(
               <Placeholder title="NO REVIEWS YET" text="Reviews from buyers will appear here once you've completed bookings."/>
@@ -509,7 +509,7 @@ function ReviewRow({ label, value }) {
   return (
     <div>
       <p style={{fontSize:10,fontWeight:800,color:"#6b6b6b",letterSpacing:1.5,textTransform:"uppercase",marginBottom:3}}>{label}</p>
-      <p style={{fontSize:14,color:"#111",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{value||"—"}</p>
+      <p style={{fontSize:14,color:"#111",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{value||"-"}</p>
     </div>
   );
 }
@@ -523,7 +523,7 @@ function Placeholder({ title, text }) {
   );
 }
 
-// ── AVAILABILITY tab — set the dates the tailor can take work (Phase 15) ──────
+// ── AVAILABILITY tab - set the dates the tailor can take work (Phase 15) ──────
 function AvailabilityTab({ tailor, rows = [], loading = false, busy = false, onToggleEnabled, onSaveSettings, onSetDay, onSetSlots, onMarkRangeUnavailable, onMarkAllAvailable }) {
   const enabled=!!(tailor&&tailor.availability_enabled);
   const onVacation=!!(tailor&&tailor.vacation_mode);
@@ -551,7 +551,7 @@ function AvailabilityTab({ tailor, rows = [], loading = false, busy = false, onT
       <div style={{border:"2px solid #111",padding:18,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
         <div>
           <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,display:"flex",alignItems:"center",gap:8}}><Calendar width={20} height={20}/> SHOW MY AVAILABILITY TO BUYERS</p>
-          <p style={{fontSize:13,color:"#888",marginTop:4}}>{enabled?"Your calendar is visible on your public profile.":"Off — your calendar is hidden from buyers."}</p>
+          <p style={{fontSize:13,color:"#888",marginTop:4}}>{enabled?"Your calendar is visible on your public profile.":"Off - your calendar is hidden from buyers."}</p>
         </div>
         <Toggle on={enabled} disabled={busy} onClick={()=>onToggleEnabled(!enabled)}/>
       </div>
@@ -559,7 +559,7 @@ function AvailabilityTab({ tailor, rows = [], loading = false, busy = false, onT
       {onVacation&&(
         <div style={{border:`2px solid ${PINK}`,background:"#fff0f7",padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
           <Plane width={18} height={18} color={PINK}/>
-          <p style={{fontSize:14,color:"#111",fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5}}>VACATION MODE IS ON — buyers see every date as unavailable. Your saved availability is restored when you turn vacation off.</p>
+          <p style={{fontSize:14,color:"#111",fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5}}>VACATION MODE IS ON - buyers see every date as unavailable. Your saved availability is restored when you turn vacation off.</p>
         </div>
       )}
 
@@ -769,7 +769,7 @@ function SlotEditor({ iso, defaultSlots, map, busy, onSave, onClose }) {
   );
 }
 
-// ── BOOKINGS tab — incoming alteration requests (Phase 15) ────────────────────
+// ── BOOKINGS tab - incoming alteration requests (Phase 15) ────────────────────
 const bkListingThumb = (l) => {
   if(!l) return "";
   if(l.image_url) return l.image_url;
@@ -797,7 +797,7 @@ function bookingFinancials(req){
   return { total, commission, payout };
 }
 
-// The commission breakdown shown on a booking card (Part 5) — booking value,
+// The commission breakdown shown on a booking card (Part 5) - booking value,
 // the 15% Stitch'd fee, and the tailor's earnings in pink bold.
 function FinancialBreakdown({ fin }) {
   if(!fin) return null;
@@ -909,7 +909,7 @@ function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuo
                   <p style={{fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:"#111"}}>Your quote: <span style={{fontWeight:900,color:PINK}}>{gbp(req.quote_pence)}</span></p>
                 )}
 
-                {/* Commission breakdown — paid (accepted) + completed bookings (Part 5). */}
+                {/* Commission breakdown - paid (accepted) + completed bookings (Part 5). */}
                 {(req.status==="accepted"||req.status==="completed")&&(
                   <FinancialBreakdown fin={bookingFinancials(req)}/>
                 )}
@@ -982,7 +982,7 @@ function TailorBookings({ requests = [], buyers = {}, loading = false, onSendQuo
   );
 }
 
-// ── PAYMENTS — Stripe Connect onboarding (Phase 15) ───────────────────────────
+// ── PAYMENTS - Stripe Connect onboarding (Phase 15) ───────────────────────────
 // Shown at the top of the PROFILE tab. Before onboarding: SET UP PAYMENTS + a
 // warning that bookings can't be accepted until setup is done. After onboarding:
 // a PAYMENTS CONNECTED confirmation + a MANAGE PAYMENTS link to the Stripe Express
@@ -1025,10 +1025,10 @@ function PaymentsSection({ tailor, busy = false, onSetup, onManage }) {
   );
 }
 
-// ── EARNINGS tab — payout totals + per-booking breakdown (Phase 15) ───────────
+// ── EARNINGS tab - payout totals + per-booking breakdown (Phase 15) ───────────
 function TailorEarnings({ payouts = [] }) {
   // Tailor's earnings = booking value − 15% commission. Totals split transferred
-  // (status 'paid' — a real Stripe transfer went out) vs pending (awaiting the
+  // (status 'paid' - a real Stripe transfer went out) vs pending (awaiting the
   // buyer's completion confirmation or the tailor finishing payment setup).
   let totalEarned=0, totalCommission=0, pendingPayout=0, transferred=0;
   const rows=[];
@@ -1158,9 +1158,9 @@ function PublicAvailability({ tailor, rows = [], selected, onSelect = () => {} }
 // The public /tailors/<id> profile.
 function PublicProfile({ tailor, setView, onOpenImage, user, onGateAuth = () => {}, reviews = [], reviewBuyers = {}, availability = [], onSendAlterationRequest = () => {} }) {
   // Logged-out buyers can browse the whole profile, but booking a tailor is
-  // gated — tapping BOOK opens the shared sign-up prompt (context: book).
+  // gated - tapping BOOK opens the shared sign-up prompt (context: book).
   const [gateOpen,setGateOpen]=React.useState(false);
-  // Availability section (Part 3) — only when the tailor has switched it on.
+  // Availability section (Part 3) - only when the tailor has switched it on.
   const showAvailability=!!tailor.availability_enabled;
   const [selectedDate,setSelectedDate]=React.useState(null);
   const sendRequest=()=>{ if(!user){ setGateOpen(true); return; } onSendAlterationRequest(tailor,selectedDate); };
@@ -1191,7 +1191,7 @@ function PublicProfile({ tailor, setView, onOpenImage, user, onGateAuth = () => 
       <div style={{padding:"0 24px"}}>
         <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(36px,6vw,56px)",fontWeight:900,letterSpacing:-1,lineHeight:1,marginBottom:8}}>{tailor.display_name}</h1>
         <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:700,color:"#666",display:"flex",alignItems:"center",gap:6,marginBottom:12}}><MapPin width={16} height={16}/> {tailor.location}</p>
-        {/* Overall rating (Part 3) — stars + average + count, or a no-reviews note. */}
+        {/* Overall rating (Part 3) - stars + average + count, or a no-reviews note. */}
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18}}>
           {reviewCount>0?(
             <>
@@ -1207,7 +1207,7 @@ function PublicProfile({ tailor, setView, onOpenImage, user, onGateAuth = () => 
           )}
         </div>
 
-        {/* INFO TILES — quick at-a-glance pricing/turnaround */}
+        {/* INFO TILES - quick at-a-glance pricing/turnaround */}
         <div style={{display:"flex",flexWrap:"wrap",gap:10,marginBottom:20}}>
           {tailor.price_from_pence!=null&&<InfoTile label="STARTING FROM" value={`£${poundsFromPence(tailor.price_from_pence)}`} accent={PINK}/>}
           {tailor.turnaround_days&&<InfoTile label="TURNAROUND" value={turnaroundLabel(tailor.turnaround_days)}/>}
@@ -1222,7 +1222,7 @@ function PublicProfile({ tailor, setView, onOpenImage, user, onGateAuth = () => 
           </div>
         )}
 
-        {/* AVAILABILITY (Part 3) — read-only next-4-weeks calendar, shown only when
+        {/* AVAILABILITY (Part 3) - read-only next-4-weeks calendar, shown only when
             the tailor has enabled it. Otherwise just the SEND ALTERATION REQUEST CTA. */}
         {showAvailability?(
           <Section heading="AVAILABILITY">
@@ -1286,7 +1286,7 @@ function PublicProfile({ tailor, setView, onOpenImage, user, onGateAuth = () => 
           </Section>
         )}
 
-        {/* REVIEWS (Part 3) — overall rating + breakdown + individual reviews, or
+        {/* REVIEWS (Part 3) - overall rating + breakdown + individual reviews, or
             a no-reviews state inviting the first booking. */}
         <Section heading="REVIEWS">
           {reviews.length>0?(
@@ -1306,7 +1306,7 @@ function PublicProfile({ tailor, setView, onOpenImage, user, onGateAuth = () => 
         </Section>
       </div>
 
-      {/* SIGN-UP GATE — shown when a logged-out buyer taps BOOK THIS TAILOR */}
+      {/* SIGN-UP GATE - shown when a logged-out buyer taps BOOK THIS TAILOR */}
       <LoginPromptModal open={gateOpen} context="book" onClose={()=>setGateOpen(false)} onAuth={m=>{ setGateOpen(false); onGateAuth(m); }}/>
     </>
   );

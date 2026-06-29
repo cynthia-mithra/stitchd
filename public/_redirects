@@ -1,5 +1,5 @@
 # SPA fallback: serve index.html for client-side routes such as
 # /order-success (Stripe success_url) and /bag (Stripe cancel_url) so a
 # hard load / Stripe redirect doesn't 404. (Netlify-style; Vercel/other hosts
-# need an equivalent rewrite — see the PR description.)
+# need an equivalent rewrite - see the PR description.)
 /*    /index.html   200

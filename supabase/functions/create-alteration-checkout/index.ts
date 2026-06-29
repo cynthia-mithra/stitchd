@@ -1,11 +1,11 @@
 // Supabase Edge Function: create-alteration-checkout
 // ---------------------------------------------------
-// Phase 15 — when a tailor has QUOTED on an alteration request, the buyer pays
+// Phase 15 - when a tailor has QUOTED on an alteration request, the buyer pays
 // the full quote here. Mirrors create-offer-checkout (the accepted-offer flow):
 // it re-verifies the request server-side so a buyer can't pay an arbitrary
 // amount or pay for a request that isn't theirs / isn't quoted.
 //
-// The browser NEVER talks to Stripe with the secret key — it posts
+// The browser NEVER talks to Stripe with the secret key - it posts
 // { alteration_request_id, buyer_id } here (in production via the same-origin
 // Vercel proxy /api/create-alteration-checkout); this function:
 //   1. loads the request with the service-role key and verifies it:
@@ -25,7 +25,7 @@
 // existing type='sale' / 'offer' / 'promotion' paths are untouched.
 //
 // Required environment variables (Supabase → Project Settings → Edge Functions):
-//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE — do NOT use a live key)
+//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE - do NOT use a live key)
 //   SUPABASE_URL                 auto-injected by Supabase
 //   SUPABASE_SERVICE_ROLE_KEY    used to read the authoritative request + tailor
 //   SITE_URL                     e.g. https://stitchd.fit  (success/cancel base)
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     }
     if (!reqRow) return json({ error: "Alteration request not found." }, 404);
 
-    // Verify ownership — a buyer can only pay their own request.
+    // Verify ownership - a buyer can only pay their own request.
     if (reqRow.buyer_id !== buyer_id) {
       return json({ error: "This request doesn't belong to you." }, 403);
     }
@@ -115,12 +115,12 @@ Deno.serve(async (req) => {
       return json({ error: "This request doesn't have a valid quote amount." }, 400);
     }
 
-    // Commission split — 15% to Stitch'd, the remainder owed to the tailor.
+    // Commission split - 15% to Stitch'd, the remainder owed to the tailor.
     const commissionPence = Math.round(quotePence * COMMISSION_RATE);
     const tailorPayoutPence = quotePence - commissionPence;
 
     const garment = (reqRow.garment_type || "").trim() || "garment";
-    const productName = `Alteration — ${garment}`;
+    const productName = `Alteration - ${garment}`;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
         delete patch[col];
         continue;
       }
-      break; // non-recoverable — proceed, the webhook is authoritative anyway
+      break; // non-recoverable - proceed, the webhook is authoritative anyway
     }
 
     return json({ url: session.url, id: session.id });

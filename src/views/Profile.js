@@ -11,18 +11,18 @@ export default function Profile({
   profForm, setProfForm, saveProfile, profSaving,
   twoFAStep, setTwoFAStep, twoFAData, setTwoFAData, twoFACode, setTwoFACode,
   twoFAFactors, twoFALoading, confirm2FA, disable2FA, load2FAFactors, setup2FA,
-  // tailoring — single entry point into the Phase 15 application/dashboard flow
+  // tailoring - single entry point into the Phase 15 application/dashboard flow
   onBecomeTailor = () => {}, tailorCtaLabel = "BECOME A TAILOR",
   // profile / storefront
   viewedProfile, profileListings, reviews, isFollowing, toggleFollow, openDetail,
   followerCount = 0,
 }) {
-  // Phase 13 — storefront listings filter (ALL / WOMEN / MEN). Local to the view;
+  // Phase 13 - storefront listings filter (ALL / WOMEN / MEN). Local to the view;
   // resets whenever a different seller's storefront is opened.
   const [storeFilter,setStoreFilter]=React.useState("ALL");
   const [storeSort,setStoreSort]=React.useState("newest");
   React.useEffect(()=>{ setStoreFilter("ALL"); },[viewedProfile?.id]);
-  // Login gate — following a seller needs an account; logged-out visitors get
+  // Login gate - following a seller needs an account; logged-out visitors get
   // the shared sign-up prompt (context: follow) rather than a bounce to /auth.
   const [gate,setGate]=React.useState(null);
   const requireAuth=(context,action)=>{ if(user) action(); else setGate(context); };
@@ -44,7 +44,7 @@ export default function Profile({
         <main style={{...S.main,maxWidth:600}}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
           <div style={{...S.formCard,padding:0,overflow:"hidden"}} className="form-card">
-            {/* Pink hero — avatar + identity + change photo */}
+            {/* Pink hero - avatar + identity + change photo */}
             <div style={{background:"#FF1493",padding:"28px clamp(20px,5vw,40px)",display:"flex",alignItems:"center",gap:20,flexWrap:"wrap"}}>
               <div style={{width:92,height:92,borderRadius:"50%",border:"4px solid #fff",overflow:"hidden",cursor:"pointer",position:"relative",flexShrink:0,background:"#ffd6ec",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>document.getElementById("avatar-input").click()}>
                 {profForm.avatarPreview?<img src={profForm.avatarPreview} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:40,fontWeight:900,color:"#FF1493"}}>{(profForm.full_name||profForm.username||user.email||"?")[0].toUpperCase()}</span>}
@@ -103,7 +103,7 @@ export default function Profile({
               {/* RETURN ADDRESS */}
               <div style={cardBox}>
                 {secHead("#111",Plane,"RETURN ADDRESS")}
-                <p style={{fontSize:13,color:"#666",lineHeight:1.5,marginBottom:14}}>Where you post your sold items from. Used for postage labels and returns — only shared with couriers, never shown publicly.</p>
+                <p style={{fontSize:13,color:"#666",lineHeight:1.5,marginBottom:14}}>Where you post your sold items from. Used for postage labels and returns - only shared with couriers, never shown publicly.</p>
                 <div style={{display:"flex",flexDirection:"column",gap:14}}>
                   <F l="FULL NAME"><input style={inp} placeholder="e.g. Nasreen Ahmed" value={profForm.ship_from_name} onChange={e=>setProfForm(f=>({...f,ship_from_name:e.target.value}))}/></F>
                   <F l="ADDRESS LINE 1"><input style={inp} placeholder="123 Main Street" value={profForm.ship_from_line1} onChange={e=>setProfForm(f=>({...f,ship_from_line1:e.target.value}))}/></F>
@@ -135,7 +135,7 @@ export default function Profile({
                 </F>
               </div>
 
-              {/* SAVE — now directly under measurements */}
+              {/* SAVE - now directly under measurements */}
               <button className="hbtn" style={{...S.hBtn,width:"100%",background:"#FF1493",color:"#fff",border:"none",padding:"16px",fontSize:16,letterSpacing:2,opacity:profSaving?0.5:1}} onClick={saveProfile}>{profSaving?"SAVING...":"SAVE PROFILE →"}</button>
 
               {/* OFFER ALTERATIONS */}
@@ -207,7 +207,7 @@ export default function Profile({
             return new Date(b.created_at||0)-new Date(a.created_at||0); // newest first
           });
         const ig=(sf.storefront_instagram||"").replace(/^@/,"").trim();
-        // Stat tile — small box with a 2px #111 border (design system).
+        // Stat tile - small box with a 2px #111 border (design system).
         const StatTile=({icon,value,label})=>(
           <div style={{flex:"1 1 120px",minWidth:110,border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",borderRadius:0,padding:"16px 12px",textAlign:"center"}}>
             <div style={{display:"flex",justifyContent:"center",marginBottom:6,color:"#FF1493"}}>{icon}</div>
@@ -219,7 +219,7 @@ export default function Profile({
         <main style={{...S.main,padding:"0 0 40px"}}>
           <div style={{padding:"20px 12px 0"}}><button style={S.back} onClick={()=>setView(prevView||"shop")}>← BACK</button></div>
 
-          {/* BANNER — full width, responsive height, seller-uploaded image or solid
+          {/* BANNER - full width, responsive height, seller-uploaded image or solid
               #FF1493 fallback. Avatar overlaps the bottom-left. */}
           <div style={{position:"relative",margin:"0 12px"}}>
             <div style={{width:"100%",height:"clamp(140px,28vw,200px)",background:sf.storefront_banner_url?`#FF1493 url(${sf.storefront_banner_url}) center/cover no-repeat`:"#FF1493",border:"2px solid #111"}}/>
@@ -273,7 +273,7 @@ export default function Profile({
               </div>
             )}
 
-            {/* BUNDLE & SAVE banner (Phase 14) — shown prominently below the seller
+            {/* BUNDLE & SAVE banner (Phase 14) - shown prominently below the seller
                 info when this seller has bundle discounts enabled. Teal #00E5CC,
                 2px #111 border, no radius, Tag icon to the left. */}
             {sf.bundle_discount_enabled&&(

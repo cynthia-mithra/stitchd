@@ -2,12 +2,12 @@
 // ----------------------------------------
 // Creates a Stripe Checkout Session for the items in a buyer's bag and returns
 // the hosted-checkout URL. The frontend NEVER talks to Stripe with the secret
-// key — it posts the listing ids here, this function looks the listings up in
+// key - it posts the listing ids here, this function looks the listings up in
 // Supabase (so the buyer can't tamper with prices), builds one line item per
 // listing in GBP, and hands back the session URL to redirect to.
 //
 // Required environment variables (Supabase → Project Settings → Edge Functions):
-//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE — do NOT use a live key)
+//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE - do NOT use a live key)
 //   SUPABASE_URL                 auto-injected by Supabase
 //   SUPABASE_SERVICE_ROLE_KEY    used to read authoritative listing prices
 //   SITE_URL                     e.g. https://stitchd.fit  (success/cancel base)
@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       }, 409);
     }
 
-    // One line item per listing — currency hardcoded to GBP, quantity 1.
+    // One line item per listing - currency hardcoded to GBP, quantity 1.
     const line_items = listings.map((l) => {
       const pence = Math.round(parseFloat(String(l.price)) * 100);
       if (!Number.isFinite(pence) || pence <= 0) {

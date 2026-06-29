@@ -4,14 +4,14 @@
 // offers-response migration (and safe to POST manually for a test). It runs TWO
 // sweeps each hour:
 //
-//   A. RESPONSE EXPIRY (phase14 offers-response) — a PENDING offer expires 48
+//   A. RESPONSE EXPIRY (phase14 offers-response) - a PENDING offer expires 48
 //      hours after it's made if the seller hasn't responded (offers.expires_at
 //      defaults to now() + 48h). For every pending offer past its deadline it:
 //        1. marks the offer 'expired'
 //        2. notifies the BUYER  ("Your offer on … has expired.")
 //        3. notifies the SELLER ("An offer on … has expired without a response.")
 //
-//   B. PAYMENT EXPIRY (phase14 offer-checkout, issue PART 4) — an ACCEPTED offer
+//   B. PAYMENT EXPIRY (phase14 offer-checkout, issue PART 4) - an ACCEPTED offer
 //      gives the buyer 24 hours to pay (timed from offers.accepted_at, falling
 //      back to created_at on older rows). For every accepted offer past that
 //      window it:
@@ -23,10 +23,10 @@
 //                                 …. The listing is now available again.")
 //      It also sends a one-time REMINDER email ~12 hours in (≤12h left, not yet
 //      paid, payment_reminder_sent flag makes the hourly cron idempotent):
-//        "Don't miss out — your offer expires soon."
+//        "Don't miss out - your offer expires soon."
 //
 // Doing this in an Edge Function rather than pure SQL is what lets the cron send
-// the notifications + reminder email a plain UPDATE can't — mirroring
+// the notifications + reminder email a plain UPDATE can't - mirroring
 // expire-promotions and the regular sale emails in stripe-webhook.
 //
 // Required environment variables (auto-injected by Supabase):
@@ -60,7 +60,7 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
 // PostgREST rejects the whole insert if a column doesn't exist (PGRST204). Drop
-// any missing column and retry — same approach as expire-promotions.
+// any missing column and retry - same approach as expire-promotions.
 const missingColumn = (msg: string) => {
   const m = /Could not find the '([^']+)' column/.exec(msg || "");
   return m ? m[1] : null;
@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
   let remindersSent = 0;
 
   try {
-    // ── Sweep A — pending offers whose 48h response deadline has passed. ───────
+    // ── Sweep A - pending offers whose 48h response deadline has passed. ───────
     const duePending = await sbGet(
       `offers?status=eq.pending&expires_at=lt.${nowIso}&select=id,listing_id,buyer_id,seller_id,listings(name)`,
       `offers?status=eq.pending&expires_at=lt.${nowIso}&select=id,listing_id,buyer_id,seller_id`,
@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Sweep B — accepted offers: payment expiry + 12h reminder. ──────────────
+    // ── Sweep B - accepted offers: payment expiry + 12h reminder. ──────────────
     // Pull every accepted offer with the timing fields + listing embed, then do
     // the 24h / 12h arithmetic here (the cutoff depends on accepted_at OR
     // created_at, so it's clearer in code than in two PostgREST filters).
@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
       if (!startIso) continue;
       const elapsed = now - new Date(startIso).getTime();
 
-      // B1 — payment window elapsed → expire + reopen the listing + notify both.
+      // B1 - payment window elapsed → expire + reopen the listing + notify both.
       if (elapsed > PAYMENT_WINDOW_MS) {
         const patch = await fetch(`${SUPABASE_URL}/rest/v1/offers?id=eq.${offer.id}`, {
           method: "PATCH",
@@ -211,7 +211,7 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // B2 — past the halfway mark, still unpaid, not yet reminded → email once.
+      // B2 - past the halfway mark, still unpaid, not yet reminded → email once.
       if (elapsed >= REMINDER_AFTER_MS && offer.payment_reminder_sent !== true && offer.buyer_id) {
         // Flag first (idempotent even if the email send is slow / retried). If the
         // column doesn't exist yet we skip the reminder rather than re-spamming.

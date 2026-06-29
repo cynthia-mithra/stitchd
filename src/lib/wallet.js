@@ -1,6 +1,6 @@
-// Wallet — Stripe Connect onboarding + withdrawals for sellers (frontend callers).
+// Wallet - Stripe Connect onboarding + withdrawals for sellers (frontend callers).
 // Thin wrappers around the seller-connect / wallet-withdraw Edge Functions. As
-// with lib/connect.js the browser never touches Stripe with a secret key — it
+// with lib/connect.js the browser never touches Stripe with a secret key - it
 // posts ids/amounts to a Supabase Edge Function which does the Stripe work.
 import { SUPABASE_URL, SUPABASE_KEY } from "./constants";
 
@@ -69,7 +69,7 @@ export async function refundOrder(orderId, adminId) {
 }
 
 // Seller (or admin): buy a prepaid shipping label for an order. Returns
-// { configured, tracking_number, label_url } — when the courier API isn't set up
+// { configured, tracking_number, label_url } - when the courier API isn't set up
 // yet it resolves with { configured:false } rather than throwing.
 export async function buyShippingLabel(orderId, userId) {
   if (!orderId) throw new Error("Missing order.");

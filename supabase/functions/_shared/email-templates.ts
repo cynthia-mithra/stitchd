@@ -1,4 +1,4 @@
-// Shared Stitch'd email templates — used by both the send-email Edge Function
+// Shared Stitch'd email templates - used by both the send-email Edge Function
 // (frontend/data-layer triggers) and the stripe-webhook (order + sale emails).
 //
 // Brand (issue PART 2):
@@ -7,7 +7,7 @@
 //   • #FF1493 pink accent for headings and CTA buttons
 //   • footer: 2026 Stitch'd · stitchd.fit · Unsubscribe
 //
-// Every builder returns { subject, html }. Templates are inline-styled tables —
+// Every builder returns { subject, html }. Templates are inline-styled tables -
 // the only layout email clients render reliably (no external CSS, no flexbox).
 
 // Escape user-supplied strings before they go into HTML (listing names, sender
@@ -26,13 +26,13 @@ const INK = "#111111";
 // Two-font system matching the website. HEAD = Barlow Condensed (the wordmark,
 // headings, labels, CTAs, prices); BODY = Barlow (running copy). Both fall back
 // to web-safe stacks so the email still reads well where the real fonts can't
-// load — Arial Narrow / Helvetica Neue Condensed keep the tall condensed feel
+// load - Arial Narrow / Helvetica Neue Condensed keep the tall condensed feel
 // for HEAD, Helvetica/Arial for BODY. A Google Fonts @import in the head lets
 // supporting clients (Apple Mail, iOS Mail) pull the real Barlow fonts.
 const HEAD = "'Barlow Condensed', 'Arial Narrow', 'Helvetica Neue Condensed', Arial, sans-serif";
 const BODY = "'Barlow', 'Helvetica Neue', Helvetica, Arial, sans-serif";
 // Kept for backward-compatibility with builders that reference FONT (e.g. the
-// big offer/quote amount numbers) — those want the condensed look, so FONT = HEAD.
+// big offer/quote amount numbers) - those want the condensed look, so FONT = HEAD.
 const FONT = HEAD;
 
 // Split a heading so its last word is emphasised in pink (the "It's yours."
@@ -46,7 +46,7 @@ function headingHtml(heading: string): string {
   return `${esc(words.join(" "))} <span style="color:${PINK};">${esc(tail)}</span>`;
 }
 
-// A pink CTA button — sharp corners, 2px border, condensed uppercase label.
+// A pink CTA button - sharp corners, 2px border, condensed uppercase label.
 // `kind:"secondary"` renders an outlined/muted variant for the "REPORT A
 // PROBLEM" style secondary actions.
 function button(label: string, href: string, kind: "primary" | "secondary" = "primary"): string {
@@ -63,9 +63,9 @@ function button(label: string, href: string, kind: "primary" | "secondary" = "pr
     </td></tr></table>`;
 }
 
-// Optional listing card — pink left-accent bar, thumbnail, title (+ price).
+// Optional listing card - pink left-accent bar, thumbnail, title (+ price).
 // Thumb falls back to a neutral block if the listing has no image. Sharp
-// corners, hairline border — matches the website's product cards.
+// corners, hairline border - matches the website's product cards.
 function listingCard(opts: { image?: string; title?: string; price?: string }): string {
   if (!opts.title && !opts.image) return "";
   const img = opts.image
@@ -162,18 +162,18 @@ export interface BuildCtx {
 
 const p = (text: string) => `<p style="margin:0 0 14px 0;">${text}</p>`;
 
-// A pink highlighted note line — used for the offer-purchase "You saved £X"
+// A pink highlighted note line - used for the offer-purchase "You saved £X"
 // / "Sold via accepted offer" extras layered onto the standard order/sale emails.
 const noteLine = (text: string) =>
   `<p style="margin:0 0 16px 0;padding:10px 14px;background:#fff0f7;border-left:3px solid ${PINK};font-weight:700;color:${INK};">${esc(text)}</p>`;
 
 export const templates = {
-  // 1 — Order confirmation (buyer). Phase 14: optional `note` renders a pink
-  // highlight line (e.g. "You saved £15 with your offer") for offer purchases —
+  // 1 - Order confirmation (buyer). Phase 14: optional `note` renders a pink
+  // highlight line (e.g. "You saved £15 with your offer") for offer purchases -
   // the regular sale path leaves it unset, so the email is unchanged for sales.
   order_confirmation(d: { title?: string; image?: string; price?: string; orderRef?: string; note?: string }, ctx: BuildCtx) {
     return {
-      subject: "Your order is confirmed — Stitch'd",
+      subject: "Your order is confirmed - Stitch'd",
       html: baseTemplate({
         heading: "It's yours.",
         unsubscribeUrl: ctx.unsub,
@@ -188,11 +188,11 @@ export const templates = {
     };
   },
 
-  // 2 — Sale notification (seller). Phase 14: optional `note` (e.g. "Sold via
+  // 2 - Sale notification (seller). Phase 14: optional `note` (e.g. "Sold via
   // accepted offer.") is appended for offer sales; unset for regular sales.
   sale(d: { title?: string; image?: string; price?: string; buyerFirstName?: string; note?: string }, ctx: BuildCtx) {
     return {
-      subject: "You've made a sale! — Stitch'd",
+      subject: "You've made a sale! - Stitch'd",
       html: baseTemplate({
         heading: "You made a sale!",
         unsubscribeUrl: ctx.unsub,
@@ -206,10 +206,10 @@ export const templates = {
     };
   },
 
-  // 3 — Order dispatched (buyer)
+  // 3 - Order dispatched (buyer)
   order_dispatched(d: { title?: string; image?: string }, ctx: BuildCtx) {
     return {
-      subject: "Your order has been dispatched — Stitch'd",
+      subject: "Your order has been dispatched - Stitch'd",
       html: baseTemplate({
         heading: "It's on its way.",
         unsubscribeUrl: ctx.unsub,
@@ -221,11 +221,11 @@ export const templates = {
     };
   },
 
-  // 4 — Order delivered (buyer)
+  // 4 - Order delivered (buyer)
   order_delivered(d: { title?: string; image?: string; listingId?: string }, ctx: BuildCtx) {
     const listingLink = d.listingId ? `${ctx.site}/listing/${d.listingId}` : `${ctx.site}/orders`;
     return {
-      subject: "Your order has been delivered — Stitch'd",
+      subject: "Your order has been delivered - Stitch'd",
       html: baseTemplate({
         heading: "Enjoy your new piece.",
         unsubscribeUrl: ctx.unsub,
@@ -238,11 +238,11 @@ export const templates = {
     };
   },
 
-  // 5 — New message (recipient)
+  // 5 - New message (recipient)
   new_message(d: { senderName?: string; preview?: string }, ctx: BuildCtx) {
     const sender = d.senderName || "Someone";
     return {
-      subject: `${sender} sent you a message — Stitch'd`,
+      subject: `${sender} sent you a message - Stitch'd`,
       html: baseTemplate({
         heading: "You have a new message.",
         unsubscribeUrl: ctx.unsub,
@@ -256,7 +256,7 @@ export const templates = {
     };
   },
 
-  // 6 — Verification approved (seller)
+  // 6 - Verification approved (seller)
   verification_approved(d: { username?: string }, ctx: BuildCtx) {
     const profileLink = d.username ? `${ctx.site}/seller/${d.username}` : `${ctx.site}/dashboard`;
     return {
@@ -271,7 +271,7 @@ export const templates = {
     };
   },
 
-  // 8 — Saved-search alert (buyer). New listings matched a saved search.
+  // 8 - Saved-search alert (buyer). New listings matched a saved search.
   // `summary` is the human filter chip (e.g. "Lehenga · Pink · Under £200");
   // `matchUrl` deep-links the shop with the saved filters pre-applied; `listings`
   // are up to 4 matching cards.
@@ -283,7 +283,7 @@ export const templates = {
     const label = d.name || d.summary || "your saved search";
     const more = d.total && d.total > 4 ? p(`<span style="color:#888;">…and ${d.total - 4} more.</span>`) : "";
     return {
-      subject: "New listings match your saved search — Stitch'd",
+      subject: "New listings match your saved search - Stitch'd",
       html: baseTemplate({
         heading: "New matches for you.",
         unsubscribeUrl: ctx.unsub,
@@ -297,7 +297,7 @@ export const templates = {
     };
   },
 
-  // 9 — Promotion active (seller). Sent by the stripe-webhook once a £2.99
+  // 9 - Promotion active (seller). Sent by the stripe-webhook once a £2.99
   // promotion payment completes. `listingId` deep-links the public listing.
   promotion_active(
     d: { title?: string; image?: string; promotedUntil?: string; listingId?: string },
@@ -305,12 +305,12 @@ export const templates = {
   ) {
     const listingLink = d.listingId ? `${ctx.site}/?listing=${d.listingId}` : `${ctx.site}/dashboard`;
     return {
-      subject: "Your listing is now promoted — Stitch'd",
+      subject: "Your listing is now promoted - Stitch'd",
       html: baseTemplate({
         heading: "You're boosted.",
         unsubscribeUrl: ctx.unsub,
         bodyHtml:
-          p("Your payment went through — your listing is now promoted to the top of search results for 7 days.") +
+          p("Your payment went through - your listing is now promoted to the top of search results for 7 days.") +
           listingCard({ image: d.image, title: d.title }) +
           (d.promotedUntil ? p(`<strong>Promoted until:</strong> ${esc(d.promotedUntil)}`) : "") +
           p("Sit back and watch the views roll in.") +
@@ -319,11 +319,11 @@ export const templates = {
     };
   },
 
-  // 10 — Promotion expired (seller). Sent by the expire-promotions cron function
+  // 10 - Promotion expired (seller). Sent by the expire-promotions cron function
   // when the 7 days are up, with a PROMOTE AGAIN CTA back to the dashboard.
   promotion_expired(d: { title?: string; image?: string }, ctx: BuildCtx) {
     return {
-      subject: "Your promotion has ended — Stitch'd",
+      subject: "Your promotion has ended - Stitch'd",
       html: baseTemplate({
         heading: "Your boost has ended.",
         unsubscribeUrl: ctx.unsub,
@@ -335,7 +335,7 @@ export const templates = {
     };
   },
 
-  // 11 — New offer (seller). Phase 14 — a buyer made an offer on the seller's
+  // 11 - New offer (seller). Phase 14 - a buyer made an offer on the seller's
   // listing. `amount` is the formatted offer (e.g. "£45"); `message` is the
   // buyer's optional note. CTA deep-links the dashboard where offers are managed.
   new_offer(
@@ -344,7 +344,7 @@ export const templates = {
   ) {
     const who = d.buyerName || "A buyer";
     return {
-      subject: "You have a new offer — Stitch'd",
+      subject: "You have a new offer - Stitch'd",
       html: baseTemplate({
         heading: "You have a new offer.",
         unsubscribeUrl: ctx.unsub,
@@ -361,7 +361,7 @@ export const templates = {
     };
   },
 
-  // 12 — Offer accepted (buyer). Phase 14 — the seller accepted the buyer's
+  // 12 - Offer accepted (buyer). Phase 14 - the seller accepted the buyer's
   // offer. `amount` is the accepted price (formatted, e.g. "£45"); the CTA links
   // to /offers for now (it'll be wired to checkout in the next issue). The buyer
   // has 24 hours to complete payment before the offer expires.
@@ -370,12 +370,12 @@ export const templates = {
     ctx: BuildCtx,
   ) {
     return {
-      subject: "Your offer was accepted — Stitch'd",
+      subject: "Your offer was accepted - Stitch'd",
       html: baseTemplate({
         heading: "Your offer was accepted!",
         unsubscribeUrl: ctx.unsub,
         bodyHtml:
-          p("Great news — the seller accepted your offer:") +
+          p("Great news - the seller accepted your offer:") +
           listingCard({ image: d.image, title: d.title }) +
           `<div style="font-family:${FONT};font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount || "")}</div>` +
           p("<strong>Complete your purchase within 24 hours</strong> or the offer will expire.") +
@@ -384,7 +384,7 @@ export const templates = {
     };
   },
 
-  // 13 — Offer declined (buyer). Phase 14 — the seller declined the offer. If
+  // 13 - Offer declined (buyer). Phase 14 - the seller declined the offer. If
   // they suggested a different price, `counter` holds the formatted amount and
   // the CTA invites a new offer on the listing; otherwise it's a plain decline
   // with a BROWSE SIMILAR LISTINGS CTA. `listingId` deep-links the listing.
@@ -394,7 +394,7 @@ export const templates = {
   ) {
     const listingLink = d.listingId ? `${ctx.site}/?listing=${d.listingId}` : `${ctx.site}/shop`;
     return {
-      subject: "Update on your offer — Stitch'd",
+      subject: "Update on your offer - Stitch'd",
       html: baseTemplate({
         heading: "Update on your offer.",
         unsubscribeUrl: ctx.unsub,
@@ -412,7 +412,7 @@ export const templates = {
     };
   },
 
-  // 14 — Offer payment reminder (buyer). Phase 14 — sent by the expire-offers
+  // 14 - Offer payment reminder (buyer). Phase 14 - sent by the expire-offers
   // sweep ~12 hours into the 24h payment window if the buyer hasn't paid yet.
   // `amount` is the accepted price (formatted); `hoursLeft` is the whole hours
   // remaining. CTA links to /offers where the COMPLETE PURCHASE button lives.
@@ -422,12 +422,12 @@ export const templates = {
   ) {
     const hrs = typeof d.hoursLeft === "number" && d.hoursLeft > 0 ? d.hoursLeft : 0;
     return {
-      subject: "Don't miss out — your offer expires soon",
+      subject: "Don't miss out - your offer expires soon",
       html: baseTemplate({
         heading: "Your offer expires soon.",
         unsubscribeUrl: ctx.unsub,
         bodyHtml:
-          p("The seller accepted your offer — but you haven't completed your purchase yet:") +
+          p("The seller accepted your offer - but you haven't completed your purchase yet:") +
           listingCard({ image: d.image, title: d.title }) +
           (d.amount
             ? `<div style="font-family:${FONT};font-size:40px;font-weight:800;color:${PINK};letter-spacing:1px;margin:6px 0 14px 0;">${esc(d.amount)}</div>`
@@ -438,7 +438,7 @@ export const templates = {
     };
   },
 
-  // 15 — Tailor application approved (Phase 15). The applicant's tailor profile
+  // 15 - Tailor application approved (Phase 15). The applicant's tailor profile
   // is now live; `tailorId` deep-links their public profile at /tailors/<id>.
   tailor_approved(d: { displayName?: string; tailorId?: string }, ctx: BuildCtx) {
     const profileLink = d.tailorId ? `${ctx.site}/tailors/${d.tailorId}` : `${ctx.site}/`;
@@ -448,14 +448,14 @@ export const templates = {
         heading: "You're a Stitch'd tailor.",
         unsubscribeUrl: ctx.unsub,
         bodyHtml:
-          p(`Congratulations${d.displayName ? `, ${esc(d.displayName)}` : ""} — your tailor application has been approved and your public profile is now live on Stitch'd.`) +
+          p(`Congratulations${d.displayName ? `, ${esc(d.displayName)}` : ""} - your tailor application has been approved and your public profile is now live on Stitch'd.`) +
           p("Buyers can now find you, browse your specialisms and portfolio, and (soon) book alterations with you.") +
           button("View your profile", profileLink),
       }),
     };
   },
 
-  // 16 — New alteration request (tailor). Phase 15 — a buyer asked this tailor to
+  // 16 - New alteration request (tailor). Phase 15 - a buyer asked this tailor to
   // quote on alterations. `alterations` is the list of selected types; `notes` is
   // the buyer's description; `budget` is the formatted optional budget. CTA opens
   // the tailor's dashboard where they can quote or decline.
@@ -468,7 +468,7 @@ export const templates = {
       ? `<ul style="margin:0 0 16px 0;padding-left:20px;color:${INK};">${(d.alterations || []).map((a) => `<li style="margin:0 0 4px 0;">${esc(a)}</li>`).join("")}</ul>`
       : "";
     return {
-      subject: "New alteration request — Stitch'd",
+      subject: "New alteration request - Stitch'd",
       html: baseTemplate({
         heading: "New alteration request.",
         unsubscribeUrl: ctx.unsub,
@@ -486,7 +486,7 @@ export const templates = {
     };
   },
 
-  // 17 — Alteration quote (buyer). Phase 15 — a tailor quoted on the buyer's
+  // 17 - Alteration quote (buyer). Phase 15 - a tailor quoted on the buyer's
   // request. `amount` is the formatted quote; `tailorName` is who sent it.
   alteration_quote(
     d: { title?: string; image?: string; amount?: string; tailorName?: string; message?: string },
@@ -494,7 +494,7 @@ export const templates = {
   ) {
     const who = d.tailorName || "Your tailor";
     return {
-      subject: `You have a quote from ${who} — Stitch'd`,
+      subject: `You have a quote from ${who} - Stitch'd`,
       html: baseTemplate({
         heading: "You have a quote.",
         unsubscribeUrl: ctx.unsub,
@@ -510,7 +510,7 @@ export const templates = {
     };
   },
 
-  // 18 — Alteration declined (buyer). Phase 15 — a tailor couldn't take on the
+  // 18 - Alteration declined (buyer). Phase 15 - a tailor couldn't take on the
   // request. CTA points back to the tailor directory to find another.
   alteration_declined(
     d: { title?: string; image?: string; tailorName?: string },
@@ -518,20 +518,20 @@ export const templates = {
   ) {
     const who = d.tailorName || "The tailor";
     return {
-      subject: "Update on your alteration request — Stitch'd",
+      subject: "Update on your alteration request - Stitch'd",
       html: baseTemplate({
         heading: "Update on your request.",
         unsubscribeUrl: ctx.unsub,
         bodyHtml:
           p(`<strong>${esc(who)}</strong> is unable to take on your alteration request at this time.`) +
           listingCard({ image: d.image, title: d.title }) +
-          p("Plenty more vetted tailors on Stitch'd — find another to help.") +
+          p("Plenty more vetted tailors on Stitch'd - find another to help.") +
           button("Find another tailor", `${ctx.site}/tailors`),
       }),
     };
   },
 
-  // 19 — Booking confirmed (tailor). Phase 15 — a buyer paid the tailor's quote.
+  // 19 - Booking confirmed (tailor). Phase 15 - a buyer paid the tailor's quote.
   // `earnings` is the formatted payout AFTER the 15% Stitch'd commission;
   // `buyerName` and the alteration list/notes give the tailor the job detail.
   // CTA opens the tailor dashboard where the booking now lives under ACCEPTED.
@@ -544,7 +544,7 @@ export const templates = {
       ? `<ul style="margin:0 0 16px 0;padding-left:20px;color:${INK};">${(d.alterations || []).map((a) => `<li style="margin:0 0 4px 0;">${esc(a)}</li>`).join("")}</ul>`
       : "";
     return {
-      subject: "Booking confirmed — Stitch'd",
+      subject: "Booking confirmed - Stitch'd",
       html: baseTemplate({
         heading: "Booking confirmed.",
         unsubscribeUrl: ctx.unsub,
@@ -561,7 +561,7 @@ export const templates = {
     };
   },
 
-  // 20 — Booking confirmed (buyer). Phase 15 — the buyer paid for their
+  // 20 - Booking confirmed (buyer). Phase 15 - the buyer paid for their
   // alteration. `amount` is the formatted total paid; `tailorName` is who'll do
   // the work. CTA opens the buyer's /alterations page.
   alteration_booking_buyer(
@@ -570,12 +570,12 @@ export const templates = {
   ) {
     const who = d.tailorName || "Your tailor";
     return {
-      subject: "Alteration booking confirmed — Stitch'd",
+      subject: "Alteration booking confirmed - Stitch'd",
       html: baseTemplate({
         heading: "Your booking is confirmed!",
         unsubscribeUrl: ctx.unsub,
         bodyHtml:
-          p(`Your payment went through — your alteration booking with <strong>${esc(who)}</strong> is confirmed.`) +
+          p(`Your payment went through - your alteration booking with <strong>${esc(who)}</strong> is confirmed.`) +
           listingCard({ image: d.image, title: d.title, price: d.amount }) +
           (d.amount ? p(`<strong>Amount paid:</strong> ${esc(d.amount)}`) : "") +
           p(`${esc(who)} will be in touch to arrange your fitting.`) +
@@ -584,7 +584,7 @@ export const templates = {
     };
   },
 
-  // 21 — Alteration marked complete (buyer). Phase 15 — the tailor marked the
+  // 21 - Alteration marked complete (buyer). Phase 15 - the tailor marked the
   // job done; the buyer confirms receipt to release the payout. CTA opens
   // /alterations where the CONFIRM COMPLETION button lives.
   alteration_completed_buyer(
@@ -593,21 +593,21 @@ export const templates = {
   ) {
     const who = d.tailorName || "Your tailor";
     return {
-      subject: "Your alteration is ready — please confirm — Stitch'd",
+      subject: "Your alteration is ready - please confirm - Stitch'd",
       html: baseTemplate({
         heading: "Your alteration is ready.",
         unsubscribeUrl: ctx.unsub,
         bodyHtml:
           p(`<strong>${esc(who)}</strong> has marked your alteration as complete.`) +
           listingCard({ image: d.image, title: d.title }) +
-          p("Please confirm once you've received your item — this releases the tailor's payout.") +
+          p("Please confirm once you've received your item - this releases the tailor's payout.") +
           button("Confirm completion", `${ctx.site}/alterations`),
       }),
     };
   },
 
-  // 22 — New tailor review (tailor). Phase 15 — a buyer reviewed the tailor after
-  // a completed booking. `rating` is 1–5 (shown as filled/empty stars), `comment`
+  // 22 - New tailor review (tailor). Phase 15 - a buyer reviewed the tailor after
+  // a completed booking. `rating` is 1-5 (shown as filled/empty stars), `comment`
   // is the buyer's optional note, `buyerName` is who left it. CTA deep-links the
   // tailor's public profile where the review now appears.
   tailor_review(
@@ -616,7 +616,7 @@ export const templates = {
   ) {
     const who = d.buyerName || "A buyer";
     const n = Math.max(0, Math.min(5, Math.round(Number(d.rating) || 0)));
-    // Visual star row — filled pink stars + grey remainder (★/☆ unicode renders
+    // Visual star row - filled pink stars + grey remainder (★/☆ unicode renders
     // reliably across email clients where icon fonts / SVGs don't).
     const stars =
       `<div style="font-size:30px;line-height:1;letter-spacing:4px;margin:6px 0 16px 0;">` +
@@ -625,7 +625,7 @@ export const templates = {
       `</div>`;
     const profileLink = d.tailorId ? `${ctx.site}/tailors/${d.tailorId}` : `${ctx.site}/`;
     return {
-      subject: "You have a new review — Stitch'd",
+      subject: "You have a new review - Stitch'd",
       html: baseTemplate({
         heading: "You have a new review.",
         unsubscribeUrl: ctx.unsub,
@@ -641,7 +641,7 @@ export const templates = {
     };
   },
 
-  // 23 — Payout sent (tailor). Phase 15 — Stripe Connect transferred the tailor's
+  // 23 - Payout sent (tailor). Phase 15 - Stripe Connect transferred the tailor's
   // cut to their connected bank account after the buyer confirmed completion.
   // `amount` is the formatted payout (after the 15% commission); `title` is the
   // job. CTA opens the dashboard EARNINGS section.
@@ -651,7 +651,7 @@ export const templates = {
   ) {
     const job = d.title || "your alteration job";
     return {
-      subject: "Payment sent — Stitch'd",
+      subject: "Payment sent - Stitch'd",
       html: baseTemplate({
         heading: "Your payment is on its way.",
         unsubscribeUrl: ctx.unsub,
@@ -661,31 +661,31 @@ export const templates = {
             : p("Your payout has been transferred to your connected bank account.")) +
           listingCard({ image: d.image, title: job, price: d.amount }) +
           p(`<strong>Job:</strong> ${esc(job)}`) +
-          noteLine("Funds typically arrive within 2–7 business days.") +
+          noteLine("Funds typically arrive within 2-7 business days.") +
           button("View earnings", `${ctx.site}/tailor-dashboard`),
       }),
     };
   },
 
-  // 24 — Tailor application received (applicant). Confirms we got the application.
+  // 24 - Tailor application received (applicant). Confirms we got the application.
   tailor_application_received(d: { displayName?: string }, ctx: BuildCtx) {
     return {
-      subject: "We've received your tailor application — Stitch'd",
+      subject: "We've received your tailor application - Stitch'd",
       html: baseTemplate({
         heading: "Application received.",
         unsubscribeUrl: ctx.unsub,
         bodyHtml:
-          p(`Thanks${d.displayName ? `, ${esc(d.displayName)}` : ""} — we've received your application to become a Stitch'd tailor.`) +
+          p(`Thanks${d.displayName ? `, ${esc(d.displayName)}` : ""} - we've received your application to become a Stitch'd tailor.`) +
           p("Our team will review it and get back to you within 3 working days. We'll email you as soon as there's an update.") +
           button("Browse Stitch'd", `${ctx.site}/`),
       }),
     };
   },
 
-  // 25 — New tailor application (admin). Operational alert prompting a review.
+  // 25 - New tailor application (admin). Operational alert prompting a review.
   tailor_application_admin(d: { displayName?: string; location?: string; tailorId?: string }, ctx: BuildCtx) {
     return {
-      subject: "New tailor application to review — Stitch'd",
+      subject: "New tailor application to review - Stitch'd",
       html: baseTemplate({
         heading: "New tailor application.",
         unsubscribeUrl: ctx.unsub,
@@ -697,25 +697,25 @@ export const templates = {
     };
   },
 
-  // 26 — Password reset. Sent by the send-reset Edge Function (branded, via
+  // 26 - Password reset. Sent by the send-reset Edge Function (branded, via
   // Resend) in place of Supabase's plain default recovery email. `resetUrl` is
   // the GoTrue recovery action link, which lands the user on the in-app New
   // Password screen.
   password_reset(d: { resetUrl?: string }, ctx: BuildCtx) {
     return {
-      subject: "Reset your password — Stitch'd",
+      subject: "Reset your password - Stitch'd",
       html: baseTemplate({
         heading: "Reset your password.",
         unsubscribeUrl: ctx.unsub,
         bodyHtml:
           p("We received a request to reset the password on your Stitch'd account. Tap the button below to choose a new one.") +
           button("Reset password", d.resetUrl || ctx.site) +
-          p("This link expires in 1 hour. If you didn't request this, you can safely ignore this email — your password won't change."),
+          p("This link expires in 1 hour. If you didn't request this, you can safely ignore this email - your password won't change."),
       }),
     };
   },
 
-  // 7 — Welcome (new user)
+  // 7 - Welcome (new user)
   welcome(_d: Record<string, unknown>, ctx: BuildCtx) {
     return {
       subject: "Welcome to Stitch'd",

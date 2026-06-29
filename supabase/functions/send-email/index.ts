@@ -2,21 +2,21 @@
 // -----------------------------------
 // The single delivery path for every Stitch'd transactional email (issue PART 4).
 //
-// POST — send an email. Two shapes:
+// POST - send an email. Two shapes:
 //   { type, to?, userId?, data?, …ids }   templated: renders a brand template,
 //                                          resolving the recipient + content
 //                                          server-side, honouring unsubscribe and
 //                                          the new-message "active user" guard.
-//   { type:"raw", to, subject, html }      raw passthrough — SERVICE-ROLE ONLY
+//   { type:"raw", to, subject, html }      raw passthrough - SERVICE-ROLE ONLY
 //                                          (used internally by stripe-webhook).
 //
-// GET ?unsubscribe=1&u=<userId>&sig=<hmac> — the footer link. Verifies the
+// GET ?unsubscribe=1&u=<userId>&sig=<hmac> - the footer link. Verifies the
 //   signature, flips profiles.email_notifications to false, returns a small page.
 //
-// Required secrets (set via `supabase secrets set` — see DEPLOY.md):
+// Required secrets (set via `supabase secrets set` - see DEPLOY.md):
 //   RESEND_API_KEY              re_…  (Resend API key, sender = hello@stitchd.fit)
 //   SITE_URL                    https://stitchd.fit  (link targets; already set)
-//   EMAIL_UNSUB_SECRET          optional — signs unsubscribe links (defaults to
+//   EMAIL_UNSUB_SECRET          optional - signs unsubscribe links (defaults to
 //                               the service-role key if unset)
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY   auto-injected by Supabase.
 //
@@ -142,7 +142,7 @@ async function resolveTemplated(
     }
 
     case "new_offer": {
-      // Phase 14 — a buyer made an offer. Resolve the seller (recipient), the
+      // Phase 14 - a buyer made an offer. Resolve the seller (recipient), the
       // listing (thumbnail/title), the buyer's name and the formatted amount
       // from the offer id. The seller-response flow lands in a later issue.
       const offer = await sbGetOne<{
@@ -175,7 +175,7 @@ async function resolveTemplated(
 
     case "offer_accepted":
     case "offer_declined": {
-      // Phase 14 — the seller responded to an offer. Resolve the buyer
+      // Phase 14 - the seller responded to an offer. Resolve the buyer
       // (recipient), the listing (thumbnail/title) and the formatted amount from
       // the offer id. For a decline, the seller's optional counter price comes
       // either from the persisted offer column or the request body.
@@ -204,7 +204,7 @@ async function resolveTemplated(
           data: { title: listing?.name, image: thumb(listing), amount: fmt(offer.amount_pence) },
         };
       }
-      // offer_declined — counter from the column, else the request body.
+      // offer_declined - counter from the column, else the request body.
       const counterPence = offer.counter_offer_pence ?? (typeof body.counterPence === "number" ? body.counterPence : null);
       return {
         to,
@@ -219,7 +219,7 @@ async function resolveTemplated(
     }
 
     case "tailor_approved": {
-      // Phase 15 — a tailor application was approved. Resolve the applicant
+      // Phase 15 - a tailor application was approved. Resolve the applicant
       // (recipient) and their display name from the tailor id.
       let userId: string | null = body.userId ?? null;
       let displayName: string | undefined;
@@ -239,7 +239,7 @@ async function resolveTemplated(
     }
 
     case "tailor_review": {
-      // Phase 15 — a buyer reviewed a tailor. Recipient is the tailor's user;
+      // Phase 15 - a buyer reviewed a tailor. Recipient is the tailor's user;
       // resolve the rating + comment from the review id, the tailor (for the
       // profile deep link) and the buyer's name.
       const review = await sbGetOne<{
@@ -274,7 +274,7 @@ async function resolveTemplated(
     }
 
     case "alteration_request": {
-      // Phase 15 — a buyer sent an alteration request. Recipient is the tailor's
+      // Phase 15 - a buyer sent an alteration request. Recipient is the tailor's
       // user; resolve the listing, the buyer's name and the formatted budget.
       const reqRow = await sbGetOne<{
         buyer_id: string;
@@ -320,7 +320,7 @@ async function resolveTemplated(
 
     case "alteration_quote":
     case "alteration_declined": {
-      // Phase 15 — the tailor responded to a request. Recipient is the buyer;
+      // Phase 15 - the tailor responded to a request. Recipient is the buyer;
       // resolve the listing, the tailor's display name and (for a quote) the
       // formatted amount + optional message.
       const reqRow = await sbGetOne<{
@@ -358,7 +358,7 @@ async function resolveTemplated(
     }
 
     case "alteration_completed_buyer": {
-      // Phase 15 — the tailor marked the alteration complete; ask the buyer to
+      // Phase 15 - the tailor marked the alteration complete; ask the buyer to
       // confirm receipt (which releases the payout). Recipient is the buyer;
       // resolve the listing + the tailor's display name from the request id.
       const reqRow = await sbGetOne<{
@@ -387,7 +387,7 @@ async function resolveTemplated(
     }
 
     case "tailor_application_received": {
-      // Phase 15 — confirm to the applicant that their tailor application landed.
+      // Phase 15 - confirm to the applicant that their tailor application landed.
       // Resolve the applicant (recipient) + display name from the tailor id.
       let userId: string | null = body.userId ?? null;
       let displayName: string | undefined;
@@ -407,7 +407,7 @@ async function resolveTemplated(
     }
 
     case "tailor_application_admin": {
-      // Phase 15 — alert an admin that a new tailor application needs review. This
+      // Phase 15 - alert an admin that a new tailor application needs review. This
       // is an operational alert, so it deliberately does NOT honour the
       // email_notifications unsubscribe flag. `userId` is the admin recipient;
       // the applicant's name/location come from the tailor id.
@@ -489,7 +489,7 @@ Deno.serve(async (req) => {
   const type = body.type as EmailType | "raw" | undefined;
   if (!type) return json({ error: "Missing 'type'" }, 400);
 
-  // ── Raw passthrough — service role only ─────────────────────────────────────
+  // ── Raw passthrough - service role only ─────────────────────────────────────
   if (type === "raw") {
     const auth = req.headers.get("authorization") || "";
     if (!SERVICE_KEY || auth !== `Bearer ${SERVICE_KEY}`) {

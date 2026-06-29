@@ -2,7 +2,7 @@ import React from "react";
 import { Instagram } from "lucide-react";
 
 /* ------------------------------------------------------------------ *
- * Global site footer — appears at the bottom of every page (rendered
+ * Global site footer - appears at the bottom of every page (rendered
  * once in App.js, below the page content).
  *
  * Editorial layout: oversized wordmark + tagline + socials on the left,
@@ -55,7 +55,7 @@ export default function Footer({ onNav = () => {} }) {
     <footer style={S.footer}>
       <div style={S.inner}>
         <div style={S.top}>
-          {/* LEFT — brand */}
+          {/* LEFT - brand */}
           <div style={S.brand}>
             <span style={S.wordmark}>STITCH'D</span>
             <p style={S.tagline}>The UK marketplace for pre-loved South Asian fashion. Real measurements, measured fits only.</p>
@@ -65,7 +65,7 @@ export default function Footer({ onNav = () => {} }) {
             </div>
           </div>
 
-          {/* RIGHT — link columns */}
+          {/* RIGHT - link columns */}
           <div style={S.cols}>
             {COLUMNS.map((c) => (
               <div key={c.title} style={S.col}>

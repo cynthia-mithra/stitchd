@@ -1,12 +1,12 @@
 // Supabase Edge Function: create-offer-checkout
 // ----------------------------------------------
-// Phase 14 — when a seller has ACCEPTED a buyer's offer, the buyer completes the
+// Phase 14 - when a seller has ACCEPTED a buyer's offer, the buyer completes the
 // purchase at the offer price here. This mirrors stripe-checkout (the bag sale
 // flow) but charges the single accepted offer amount instead of the bag's list
 // prices, and re-verifies the offer server-side so a buyer can't pay an arbitrary
 // amount or buy a piece that's no longer available.
 //
-// The browser NEVER talks to Stripe with the secret key — it posts
+// The browser NEVER talks to Stripe with the secret key - it posts
 // { offer_id, buyer_id } here; this function:
 //   1. loads the offer with the service-role key and verifies it:
 //        • the offer exists AND belongs to this buyer
@@ -24,7 +24,7 @@
 // both parties. The existing type='sale' / type='promotion' paths are untouched.
 //
 // Required environment variables (Supabase → Project Settings → Edge Functions):
-//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE — do NOT use a live key)
+//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE - do NOT use a live key)
 //   SUPABASE_URL                 auto-injected by Supabase
 //   SUPABASE_SERVICE_ROLE_KEY    used to read the authoritative offer + listing
 //   SITE_URL                     e.g. https://stitchd.fit  (success/cancel base)
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     }
     if (!offer) return json({ error: "Offer not found." }, 404);
 
-    // Verify ownership — a buyer can only pay their own accepted offer.
+    // Verify ownership - a buyer can only pay their own accepted offer.
     if (offer.buyer_id !== buyer_id) {
       return json({ error: "This offer doesn't belong to you." }, 403);
     }

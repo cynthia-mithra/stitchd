@@ -1,5 +1,5 @@
 // Kicks off Stripe checkout for the current bag. We never touch Stripe with a
-// secret key from the browser — this posts the bagged listing ids to our own
+// secret key from the browser - this posts the bagged listing ids to our own
 // `/api/stripe-checkout` Vercel function (same origin as the app, so there's no
 // CORS preflight to fail), which builds the GBP Checkout Session server-side and
 // returns the hosted-checkout URL to redirect to.
@@ -20,7 +20,7 @@ export async function startCheckout(bag, { buyerId, buyerEmail, shipping } = {})
       signal: controller.signal,
     });
   } catch (e) {
-    // A rejected fetch never reached the function — offline, or the deploy is
+    // A rejected fetch never reached the function - offline, or the deploy is
     // mid-rollout. Browsers surface this as the unhelpful "Load failed" /
     // "Failed to fetch"; translate it into something a buyer can act on.
     if (e.name === "AbortError") {
@@ -51,7 +51,7 @@ export async function startCheckout(bag, { buyerId, buyerEmail, shipping } = {})
   window.location.href = data.url;
 }
 
-// Phase 14 — completes the purchase of an ACCEPTED offer at the offer price.
+// Phase 14 - completes the purchase of an ACCEPTED offer at the offer price.
 // Mirrors startCheckout but posts a single offer id to our own
 // `/api/create-offer-checkout` Vercel function (same origin → no CORS preflight),
 // which re-verifies the offer server-side, builds the GBP Checkout Session for
@@ -97,7 +97,7 @@ export async function startOfferCheckout({ offerId, buyerId } = {}) {
   window.location.href = data.url;
 }
 
-// Phase 15 — pays a tailor's alteration QUOTE at the full quote amount. Mirrors
+// Phase 15 - pays a tailor's alteration QUOTE at the full quote amount. Mirrors
 // startOfferCheckout but posts the alteration request id to our own
 // `/api/create-alteration-checkout` Vercel function (same origin → no CORS
 // preflight), which re-verifies the quoted request server-side, builds the GBP

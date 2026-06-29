@@ -16,7 +16,7 @@ export default function Auth({
     <main style={S.authMain}>
       <button style={S.back} onClick={()=>{ setView("shop"); setOtpStep("form"); setOtpCode(""); setAError(""); }}>← BACK</button>
       <div style={S.authSplit} className="auth-split">
-        {/* LEFT — brand panel */}
+        {/* LEFT - brand panel */}
         <div style={S.authBrand} className="auth-brand">
           <div>
             <div style={S.authBrandWord}>STITCH'D</div>
@@ -28,7 +28,7 @@ export default function Auth({
             ))}
           </div>
         </div>
-        {/* RIGHT — form */}
+        {/* RIGHT - form */}
         <div style={S.authFormCol}>
         {otpStep==="forgot"?(
           <>

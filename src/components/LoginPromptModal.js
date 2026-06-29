@@ -3,7 +3,7 @@ import { S } from "../styles";
 
 const PINK = "#FF1493";
 
-// Body copy swaps per context — the action the logged-out buyer just tried.
+// Body copy swaps per context - the action the logged-out buyer just tried.
 // Anything unmapped falls back to the friendly default.
 const BODY = {
   message: "Create a free account to message sellers and tailors on Stitch'd.",
@@ -27,7 +27,7 @@ const HEADING = {
 
 // One reusable sign-up gate, used everywhere a logged-out buyer taps an action
 // that needs an account (message, offer, wishlist, follow, book, comment, like,
-// save search…). It's never an error — always this friendly prompt. SIGN UP and
+// save search…). It's never an error - always this friendly prompt. SIGN UP and
 // LOG IN both call onAuth(mode), which routes to /auth and (via App) returns the
 // user to the same page once they're in. CANCEL just closes.
 // Design system: Barlow Condensed, #FF1493 pink, #111 2px borders, no radius.

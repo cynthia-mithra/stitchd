@@ -60,8 +60,8 @@ const fmtDate = (d) => { try{ return new Date(d).toLocaleDateString("en-GB",{day
 
 // ════════════════════════════ REQUEST MODAL ════════════════════════════
 // The multi-step "request alterations" flow launched from the listing detail
-// page (FIND A TAILOR). Step 1 — what you need; Step 2 — choose a tailor;
-// Step 3 — review & send.
+// page (FIND A TAILOR). Step 1 - what you need; Step 2 - choose a tailor;
+// Step 3 - review & send.
 export function RequestAlterationModal({
   open, onClose, listing, tailors = [], busy = false,
   onSend = () => {}, openTailorProfile = () => {}, browseAllTailors = () => {},
@@ -104,7 +104,7 @@ export function RequestAlterationModal({
           {[1,2,3].map(n=>(<div key={n} style={{flex:1,height:6,background:step>=n?PINK:"#eee"}}/>))}
         </div>
 
-        {/* ── STEP 1 — WHAT DO YOU NEED? ── */}
+        {/* ── STEP 1 - WHAT DO YOU NEED? ── */}
         {step===1&&(
           <div style={{display:"flex",flexDirection:"column",gap:18}}>
             <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,display:"flex",alignItems:"center",gap:10}}><Scissors width={26} height={26}/> WHAT DO YOU NEED?</h2>
@@ -142,7 +142,7 @@ export function RequestAlterationModal({
           </div>
         )}
 
-        {/* ── STEP 2 — CHOOSE A TAILOR ── */}
+        {/* ── STEP 2 - CHOOSE A TAILOR ── */}
         {step===2&&(
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
             <div>
@@ -187,7 +187,7 @@ export function RequestAlterationModal({
           </div>
         )}
 
-        {/* ── STEP 3 — REVIEW & SEND ── */}
+        {/* ── STEP 3 - REVIEW & SEND ── */}
         {step===3&&tailor&&(
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
             <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900}}>REVIEW & SEND</h2>
@@ -211,7 +211,7 @@ export function RequestAlterationModal({
               {preferredDate&&<Summary label="PREFERRED START DATE"><p style={{fontSize:15,fontWeight:800,color:PINK}}>{(parseISODate(preferredDate)||new Date()).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}</p></Summary>}
             </div>
 
-            {/* Availability-aware date picker — only when this tailor publishes a
+            {/* Availability-aware date picker - only when this tailor publishes a
                 calendar. Tapping an available day sets the preferred start date. */}
             {tailor.availability_enabled&&(
               <div>
@@ -285,7 +285,7 @@ function MiniAvailabilityPicker({ tailor, rows = [], selected, onSelect = () => 
   );
 }
 
-// ════════════════════════ BUYER — MY ALTERATION REQUESTS ════════════════════════
+// ════════════════════════ BUYER - MY ALTERATION REQUESTS ════════════════════════
 // The /alterations page: every request the buyer has sent, newest first.
 export default function Alterations({
   view, setView, loading = false, requests = [], reviews = [],
@@ -361,7 +361,7 @@ export default function Alterations({
 
                 <AlterationPills items={req.alterations_needed}/>
 
-                {/* ── QUOTED — QUOTE RECEIVED + ACCEPT AND PAY / DECLINE ── */}
+                {/* ── QUOTED - QUOTE RECEIVED + ACCEPT AND PAY / DECLINE ── */}
                 {st==="quoted"&&req.quote_pence!=null&&(
                   <div style={{border:"2px solid #00E5CC",background:"#effdfa",padding:18,display:"flex",flexDirection:"column",gap:12}}>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:900,letterSpacing:2.5,color:"#111"}}>QUOTE RECEIVED</p>
@@ -372,7 +372,7 @@ export default function Alterations({
                       </div>
                       <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900}}>{tailorName}</span>
                     </div>
-                    {/* Amount — large + bold + pink */}
+                    {/* Amount - large + bold + pink */}
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:46,fontWeight:900,color:PINK,lineHeight:1,letterSpacing:-1}}>{gbp(req.quote_pence)}</p>
                     {/* Tailor message in a light grey box */}
                     {req.quote_message&&(
@@ -382,18 +382,18 @@ export default function Alterations({
                     )}
                     {/* Commission note */}
                     <p style={{fontSize:11,color:"#6b6b6b"}}>Includes Stitch'd booking fee</p>
-                    {/* ACCEPT AND PAY — black, full width */}
+                    {/* ACCEPT AND PAY - black, full width */}
                     <button className="hbtn" disabled={checkingOut} onClick={()=>onAcceptQuote(req)}
                       style={{width:"100%",background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"16px",fontSize:15,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2.5,cursor:checkingOut?"wait":"pointer",opacity:checkingOut?0.6:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:10}}>
                       <CreditCard width={18} height={18}/> {checkingOut?"STARTING CHECKOUT…":"ACCEPT AND PAY"}
                     </button>
-                    {/* DECLINE QUOTE — outlined, smaller */}
+                    {/* DECLINE QUOTE - outlined, smaller */}
                     <button className="hbtn" disabled={checkingOut} onClick={()=>setDeclineReq(req)}
                       style={{alignSelf:"center",background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"9px 18px",fontSize:12,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:"pointer"}}>DECLINE QUOTE</button>
                   </div>
                 )}
 
-                {/* ── ACCEPTED — paid, awaiting the work ── */}
+                {/* ── ACCEPTED - paid, awaiting the work ── */}
                 {st==="accepted"&&(
                   <div style={{border:`2px solid ${PINK}`,background:"#fff0f7",padding:14}}>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#111"}}>BOOKING CONFIRMED</p>
@@ -401,7 +401,7 @@ export default function Alterations({
                   </div>
                 )}
 
-                {/* ── COMPLETED — confirm receipt to release payout, then review ── */}
+                {/* ── COMPLETED - confirm receipt to release payout, then review ── */}
                 {st==="completed"&&(
                   payoutPaid?(
                     reviewByReq[req.id]?(
@@ -425,7 +425,7 @@ export default function Alterations({
                   )
                 )}
 
-                {/* ── DISPUTED — buyer reported a problem; Stitch'd reviewing ── */}
+                {/* ── DISPUTED - buyer reported a problem; Stitch'd reviewing ── */}
                 {st==="disputed"&&(
                   <div style={{border:"2px solid #FF9500",background:"#fff7ec",padding:14,display:"flex",flexDirection:"column",gap:6}}>
                     <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,color:"#111",display:"inline-flex",alignItems:"center",gap:8}}><AlertCircle width={16} height={16} color="#FF9500"/> PROBLEM REPORTED</p>
@@ -437,7 +437,7 @@ export default function Alterations({
                 <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                   <button className="hbtn" onClick={()=>onMessageTailor(req)}
                     style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"11px 20px",fontSize:13,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}><Mail width={15} height={15}/> MESSAGE TAILOR</button>
-                  {/* Report a problem — available once paid (accepted/completed) and the
+                  {/* Report a problem - available once paid (accepted/completed) and the
                       payout hasn't been released, so it can still be held for review. */}
                   {(st==="accepted"||st==="completed")&&!payoutPaid&&(
                     <button className="hbtn" onClick={()=>onReportProblem(req)}

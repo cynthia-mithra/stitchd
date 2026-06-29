@@ -1,7 +1,7 @@
 import React from "react";
 
 /* ------------------------------------------------------------------ *
- * Legal pages — Terms & Conditions (/terms), Privacy Policy (/privacy)
+ * Legal pages - Terms & Conditions (/terms), Privacy Policy (/privacy)
  * and Returns Policy (/returns). Content is hardcoded (no CMS / DB) as
  * these are static legal documents required by UK law and by Stripe
  * before live payments can be accepted.

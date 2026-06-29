@@ -1,6 +1,6 @@
 // Supabase Edge Function: create-connect-account
 // -----------------------------------------------
-// Phase 15 — Stripe Connect onboarding for tailors. A tailor taps CONNECT BANK
+// Phase 15 - Stripe Connect onboarding for tailors. A tailor taps CONNECT BANK
 // ACCOUNT in their dashboard PROFILE → PAYMENTS section; the browser posts
 // { tailor_id, user_id } here and this function:
 //   1. loads the authoritative tailor row (service-role) and verifies it belongs
@@ -21,7 +21,7 @@
 // browser for anything but the ids.
 //
 // Required environment variables (Supabase → Project Settings → Edge Functions):
-//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE — Stripe Connect must be
+//   STRIPE_SECRET_KEY            sk_test_…  (TEST MODE - Stripe Connect must be
 //                                enabled on the account; see PR description)
 //   SUPABASE_URL                 auto-injected by Supabase
 //   SUPABASE_SERVICE_ROLE_KEY    used to read + write the tailor row
@@ -56,7 +56,7 @@ const sbHeaders = {
   "Content-Type": "application/json",
 };
 
-// Best-effort PATCH that drops any column the schema is missing and retries — so a
+// Best-effort PATCH that drops any column the schema is missing and retries - so a
 // deployment whose migration hasn't run yet still records what it can (same
 // self-healing approach used across the project).
 async function patchTailor(id: string, patch: Record<string, unknown>) {
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
       return json({ error: "Missing tailor_id or user_id." }, 400);
     }
 
-    // Authoritative tailor row — never trust the browser for ownership or the
+    // Authoritative tailor row - never trust the browser for ownership or the
     // existing account id.
     const tr = await fetch(
       `${SUPABASE_URL}/rest/v1/tailors?id=eq.${tailor_id}&select=id,user_id,display_name,stripe_account_id&limit=1`,
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
       return json({ error: "This tailor profile doesn't belong to you." }, 403);
     }
 
-    // The tailor's email (for prefilling the Express onboarding) comes from auth —
+    // The tailor's email (for prefilling the Express onboarding) comes from auth -
     // best-effort; Stripe is fine without it.
     let email: string | undefined;
     const ur = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${user_id}`, {
@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
     }
 
     // Hosted onboarding link. refresh_url is hit if the link expires before the
-    // tailor finishes; return_url when they complete — the dashboard reads
+    // tailor finishes; return_url when they complete - the dashboard reads
     // ?connect=success there and calls verify-connect-account.
     const link = await stripe.accountLinks.create({
       account: accountId,

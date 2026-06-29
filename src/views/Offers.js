@@ -2,7 +2,7 @@ import React from "react";
 import { Tag, Clock, ShoppingBag, X, RefreshCw } from "lucide-react";
 import { S } from "../styles";
 
-// Phase 14 — My Offers (issue PART 1).
+// Phase 14 - My Offers (issue PART 1).
 //
 // Reached from the logged-in nav dropdown ("MY OFFERS") and the /offers path.
 // Lists every offer THIS buyer has made, grouped by status with ACCEPTED shown
@@ -104,7 +104,7 @@ export default function Offers({
         </div>
       ) : (
         <>
-          {/* ── ACCEPTED — shown first and most prominently ─────────────────── */}
+          {/* ── ACCEPTED - shown first and most prominently ─────────────────── */}
           {groups.accepted.length > 0 && (
             <>
               <Heading label="ACCEPTED" count={groups.accepted.length} color={PINK} />
@@ -213,7 +213,7 @@ export default function Offers({
             </>
           )}
 
-          {/* ── EXPIRED — greyed out, no actions ──────────────────────────────── */}
+          {/* ── EXPIRED - greyed out, no actions ──────────────────────────────── */}
           {groups.expired.length > 0 && (
             <>
               <Heading label="EXPIRED" count={groups.expired.length} color="#6b6b6b" />

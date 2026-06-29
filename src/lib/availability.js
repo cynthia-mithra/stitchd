@@ -1,4 +1,4 @@
-// Phase 15 — Tailor availability calendar helpers.
+// Phase 15 - Tailor availability calendar helpers.
 //
 // Small, dependency-free date utilities shared by the tailor dashboard
 // AVAILABILITY tab, the public /tailors/<id> calendar and the alteration-request
@@ -60,12 +60,12 @@ export function rowsByDate(rows) {
 
 // Resolve a single day's state from the rows map + the tailor's settings.
 // Returns { state, slots, note } where state is one of:
-//   "past"        — before today (not actionable)
-//   "unavailable" — explicitly off, or fully booked (0 slots)
-//   "partial"     — available but fewer than the default slots remain
-//   "available"   — available with full default slots (the default for any
+//   "past"        - before today (not actionable)
+//   "unavailable" - explicitly off, or fully booked (0 slots)
+//   "partial"     - available but fewer than the default slots remain
+//   "available"   - available with full default slots (the default for any
 //                   untouched day inside the booking window)
-//   "outside"     — beyond the tailor's advance-booking window
+//   "outside"     - beyond the tailor's advance-booking window
 export function dayState(date, map, tailor, opts = {}) {
   const today = opts.today || todayStart();
   const day = startOfDay(date);

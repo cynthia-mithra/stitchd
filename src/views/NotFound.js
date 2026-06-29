@@ -1,7 +1,7 @@
 import React from "react";
 
 /* ------------------------------------------------------------------ *
- * Custom 404 — shown when a cold load / shared link hits a path the
+ * Custom 404 - shown when a cold load / shared link hits a path the
  * app doesn't recognise (App.js sets view="notfound" via isKnownPath).
  * On-brand: oversized 404 in the brand palette, a bit of attitude, and
  * two clear ways back into the shop.
@@ -18,7 +18,7 @@ export default function NotFound({ view, onHome = () => {}, onBrowse = () => {} 
         <span style={S.d3}>4</span>
       </h1>
       <p style={S.head}>THIS PAGE WENT OUT OF STYLE.</p>
-      <p style={S.sub}>The link's broken or the piece has moved on — let's get you back to the good stuff.</p>
+      <p style={S.sub}>The link's broken or the piece has moved on - let's get you back to the good stuff.</p>
       <div style={S.ctas}>
         <button className="hbtn" style={S.primary} onClick={onHome}>BACK TO SHOP <span className="btn-arrow">→</span></button>
         <button className="hbtn" style={S.secondary} onClick={onBrowse}>NEW ARRIVALS ↓</button>

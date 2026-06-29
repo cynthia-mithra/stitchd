@@ -5,7 +5,7 @@ import { Stars } from "./Shared";
 const PINK = "#FF1493";
 const INK  = "#111";
 
-// "3 days ago" / "just now" — relative time for review timestamps. Falls back to
+// "3 days ago" / "just now" - relative time for review timestamps. Falls back to
 // an empty string on an unparseable date.
 export function timeAgo(d) {
   try {
@@ -73,7 +73,7 @@ export function ReviewModal({ open, onClose, tailor, busy = false, onSubmit = ()
           <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 19, fontWeight: 900 }}>{tailor && tailor.display_name}</span>
         </div>
 
-        {/* Star selector — 5 large tap-to-select stars */}
+        {/* Star selector - 5 large tap-to-select stars */}
         <div style={{ display: "flex", gap: 10, marginBottom: 22, justifyContent: "center" }} onMouseLeave={() => setHover(0)}>
           {[1, 2, 3, 4, 5].map(n => {
             const on = n <= shown;
@@ -98,7 +98,7 @@ export function ReviewModal({ open, onClose, tailor, busy = false, onSubmit = ()
             value={comment} onChange={e => setComment(e.target.value.slice(0, 500))} />
         </div>
 
-        {/* SUBMIT — disabled until a rating is chosen */}
+        {/* SUBMIT - disabled until a rating is chosen */}
         <button className="hbtn" disabled={busy || rating === 0}
           style={{ width: "100%", background: PINK, color: "#fff", border: "2px solid #111", borderRadius: 0, padding: "16px", fontSize: 16, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, letterSpacing: 2, cursor: (busy || rating === 0) ? "not-allowed" : "pointer", opacity: (busy || rating === 0) ? 0.4 : 1 }}
           onClick={() => onSubmit({ rating, comment: comment.trim() })}>
@@ -216,7 +216,7 @@ export function RatingChip({ average = 0, count = 0, size = 12 }) {
   );
 }
 
-// Modal chrome — mirrors S.modalOverlay / S.modalBox so this component is
+// Modal chrome - mirrors S.modalOverlay / S.modalBox so this component is
 // self-contained (no styles import needed).
 const modalOverlay = { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 };
 const modalBox = { background: "#fff", border: "3px solid #111", borderRadius: 0, padding: 28, width: "100%", maxWidth: 460, maxHeight: "90vh", overflowY: "auto" };

@@ -4,9 +4,9 @@ import { S } from "../styles";
 import { Thumb } from "../components/Shared";
 import { CARD_COLORS, catEmoji, currencySymbol } from "../lib/constants";
 
-// Phase 14 — Public shared wishlist page (/wishlist/<slug>).
+// Phase 14 - Public shared wishlist page (/wishlist/<slug>).
 //
-// Visible to anyone with the link — no login required (PostgREST's anon key
+// Visible to anyone with the link - no login required (PostgREST's anon key
 // reads the list; see the phase14 migration's "no RLS" note). The owner, when
 // signed in and viewing their own list, additionally gets COPY LINK / EDIT LIST
 // / DELETE LIST controls. A missing, deleted or private (non-owner) list shows
@@ -91,7 +91,7 @@ export default function PublicWishlist({
             </p>
           </div>
 
-          {/* OWNER CONTROLS — only when the signed-in viewer owns this list. */}
+          {/* OWNER CONTROLS - only when the signed-in viewer owns this list. */}
           {isOwner && (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", flexShrink: 0 }}>
               <button

@@ -92,7 +92,7 @@ export default function Orders({
         <div style={S.empty}>
           <div style={S.emptyIcon}><Package width={40} height={40} /></div>
           <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 30, fontWeight: 900, margin: "20px 0 6px", letterSpacing: -0.5 }}>NO ORDERS YET.</p>
-          <p style={S.emptySub}>{ordersTab === "selling" ? "Your sales will show up here once someone buys a piece." : "Pieces you buy will appear here — go find something you love."}</p>
+          <p style={S.emptySub}>{ordersTab === "selling" ? "Your sales will show up here once someone buys a piece." : "Pieces you buy will appear here - go find something you love."}</p>
           <button className="hbtn" style={S.hBtn} onClick={() => setView("shop")}>BROWSE LISTINGS →</button>
         </div>
       ) : (
@@ -121,12 +121,12 @@ export default function Orders({
                   <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 900, marginBottom: 4 }}>{listing?.name || "Item"}</p>
                   <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, color: "#888", letterSpacing: 0.5, marginBottom: 2, display: "inline-flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     {isBuyer ? `from ${sellerName(order.seller_id, listing)}` : `to ${firstName(order.buyer_id)}`}
-                    {/* Phase 11 — verified badge beside the seller name in buyer order history. */}
+                    {/* Phase 11 - verified badge beside the seller name in buyer order history. */}
                     {isBuyer && orderProfiles[order.seller_id]?.verified && <VerifiedBadge size="sm" />}
                   </p>
                   <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18, fontWeight: 900, color: "#FF1493", marginBottom: 10 }}>£{amount.toFixed(2)}</p>
 
-                  {/* SHIP TO — seller only, so they can post the item / buy a label. */}
+                  {/* SHIP TO - seller only, so they can post the item / buy a label. */}
                   {!isBuyer && order.delivery_address && (order.delivery_address.line1 || order.delivery_address.postcode) && (
                     <div style={{ border: "1px solid #e0e0e0", background: "#fafafa", padding: "10px 12px", marginBottom: 12, fontFamily: "'Barlow Condensed',sans-serif" }}>
                       <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: "#888", marginBottom: 4 }}>SHIP TO</p>
@@ -154,7 +154,7 @@ export default function Orders({
                       </button>
                     )}
                     {/* BUYER → report a problem (dispute). Only once the item has been
-                        dispatched/delivered — i.e. status is not PENDING (issue PART 2). */}
+                        dispatched/delivered - i.e. status is not PENDING (issue PART 2). */}
                     {isBuyer && status !== "pending" && status !== "completed" && (
                       <button className="hbtn" style={{ ...S.hBtn, background: "#fff", color: "#111", border: "2px solid #111", borderRadius: 0, fontSize: 11, padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => openDispute(order)}>
                         <AlertCircle width={14} height={14} /> REPORT A PROBLEM
@@ -165,7 +165,7 @@ export default function Orders({
                         <CheckCircle width={14} height={14} /> RECEIVED · PAYMENT RELEASED
                       </span>
                     )}
-                    {/* Post-delivery review prompt — once the item's arrived, invite the
+                    {/* Post-delivery review prompt - once the item's arrived, invite the
                         buyer to rate the seller (or show a Reviewed state if done). */}
                     {isBuyer && (status === "delivered" || status === "completed") && (
                       reviewedListings.has(order.listing_id) ? (
@@ -207,7 +207,7 @@ export default function Orders({
                       </>
                     )}
                   </div>
-                  {/* TRACKING — seller adds a number once dispatched; both parties get
+                  {/* TRACKING - seller adds a number once dispatched; both parties get
                       a "Track parcel" link to the carrier's tracking page. */}
                   {(status === "dispatched" || status === "delivered") && (() => {
                     const hasT = !!order.tracking_number;
@@ -221,7 +221,7 @@ export default function Orders({
                           <span style={{ ...lblFont, fontSize: 12, fontWeight: 800, letterSpacing: 0.5, color: "#111", display: "inline-flex", alignItems: "center", gap: 6 }}><Truck width={15} height={15} /> {order.tracking_carrier ? `${String(order.tracking_carrier).split("·")[0].trim()} · ` : ""}{order.tracking_number}</span>
                           {url && <a href={url} target="_blank" rel="noreferrer" style={{ ...lblFont, fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: "#FF1493", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}>TRACK PARCEL <ExternalLink width={12} height={12} /></a>}
                           {!isBuyer && order.label_url && <a href={order.label_url} target="_blank" rel="noreferrer" style={{ ...lblFont, fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: "#111", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5, border: "2px solid #111", padding: "5px 10px" }}><Package width={12} height={12} /> VIEW LABEL</a>}
-                          {/* No stored PDF yet — Parcel2Go generates labels a little after
+                          {/* No stored PDF yet - Parcel2Go generates labels a little after
                               payment. GET LABEL re-fetches it on demand (no new charge); for
                               labels bought before this feature it opens the Parcel2Go account. */}
                           {!isBuyer && !order.label_url && order.tracking_number && SHIPPING_LABELS_ENABLED && <button onClick={() => onBuyLabel(order)} style={{ ...lblFont, fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: "#111", background: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, border: "2px solid #111", borderRadius: 0, padding: "5px 10px" }}><Package width={12} height={12} /> GET LABEL</button>}
