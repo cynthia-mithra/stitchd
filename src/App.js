@@ -1484,7 +1484,7 @@ export default function App() {
         await db.insertDispute({order_id:o.id,buyer_id:user.id,seller_id:o.seller_id||null,problem_type:disputeForm.problem_type,details:disputeForm.details.trim(),photo_url,status:"open"},token);
         // Dispute hold - keep the seller's earnings held (won't auto-release) until
         // an admin resolves it.
-        if(o.listing_id) await db.holdDisputedEarnings(o.listing_id,token);
+        await db.holdDisputedEarnings(o.id,token);
         // Notify the Stitch'd admin(s) - type='dispute', routed to each is_admin user.
         const title=items.find(i=>i.id===o.listing_id)?.name||"an order";
         await Promise.all((admins||[]).map(a=>notify(a.id,"dispute","New dispute raised",`A buyer reported a problem with "${title}": ${disputeForm.problem_type}`,o.listing_id)));
@@ -1783,11 +1783,10 @@ export default function App() {
   async function confirmOrderReceived(order){
     if(!order||order.buyer_id!==user?.id) return;
     try{
-      await db.updateOrder(order.id,{status:"completed"},token);
+      // Server verifies we're the buyer, marks the order completed, releases the
+      // seller's held earnings and notifies them - all in one authorised call.
+      await db.confirmReceipt(order.id,token);
       setMyOrders(p=>p.map(o=>o.id===order.id?{...o,status:"completed"}:o));
-      if(order.listing_id) await db.releaseSaleEarnings(order.listing_id,token);
-      const title=items.find(i=>i.id===order.listing_id)?.name||"your order";
-      if(order.seller_id) await notify(order.seller_id,"sale","Payment released",`The buyer confirmed receipt of "${title}" - your earnings are now available to withdraw.`,order.listing_id);
       flash("Thanks for confirming! The seller's payment has been released.",6000);
     }catch(e){ flash("Couldn't confirm receipt. Please try again."); }
   }
@@ -2095,17 +2094,14 @@ export default function App() {
   }
 
   // ── Wallet ────────────────────────────────────────────────────────────────
-  // Auto-release safety net: held earnings the buyer never confirmed are released
-  // 14 days after the sale (disputed credits are left held for the admin).
-  const AUTO_RELEASE_MS = 14*24*60*60*1000;
   async function loadWallet(){
     if(!user||!token) return;
     setWalletLoading(true);
     try{
-      let txns=await db.getWalletTransactions(user.id,token);
-      const cutoff=Date.now()-AUTO_RELEASE_MS;
-      const due=txns.filter(t=>t.type==="sale"&&t.status==="pending"&&t.created_at&&new Date(t.created_at).getTime()<cutoff).map(t=>t.id);
-      if(due.length){ try{ await db.releaseWalletCreditsByIds(due,token); txns=txns.map(t=>due.includes(t.id)?{...t,status:"available"}:t); }catch(e){} }
+      // Server-side safety net: release any of this seller's held earnings older
+      // than 14 days (the cutoff is enforced server-side), then load the ledger.
+      try{ await db.autoReleaseDueEarnings(token); }catch(e){}
+      const txns=await db.getWalletTransactions(user.id,token);
       setWalletTxns(txns);
     }
     catch(e){ setWalletTxns([]); }

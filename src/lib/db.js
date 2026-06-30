@@ -552,18 +552,21 @@ export const db = {
   // Newest first. Balance is derived client-side as the sum of every non-'failed'
   // row's amount_pence (credits positive, withdrawals negative).
   async getWalletTransactions(uid,t){ if(!uid)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
-  // Release a held sale credit to the seller's withdrawable balance once the buyer
-  // confirms receipt (Vinted-style escrow). Keyed on the listing (sells once), so
-  // it flips that listing's pending 'sale' credit → 'available'.
-  async releaseSaleEarnings(listingId,t){ if(!listingId)return; await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?listing_id=eq.${listingId}&type=eq.sale&status=eq.pending`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({status:"available"})}); },
-  // Dispute hold: a buyer reported a problem → keep the credit held (pending →
-  // disputed) so it can't auto-release until an admin resolves it.
-  async holdDisputedEarnings(listingId,t){ if(!listingId)return; await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?listing_id=eq.${listingId}&type=eq.sale&status=eq.pending`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({status:"disputed"})}); },
-  // Dispute resolution: release to the seller (resolved) or reverse so they're not
-  // paid (refunded). Acts on whichever held state the credit is in.
-  async settleDisputedEarnings(listingId,release,t){ if(!listingId)return; await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?listing_id=eq.${listingId}&type=eq.sale&status=in.(pending,disputed)`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({status:release?"available":"failed"})}); },
-  // Bulk-release held credits by id (used by the auto-release safety net).
-  async releaseWalletCreditsByIds(ids,t){ if(!ids||!ids.length)return; await fetch(`${SUPABASE_URL}/rest/v1/wallet_transactions?id=in.(${ids.join(",")})`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({status:"available"})}); },
+  // Wallet escrow moves are no longer done by direct client PATCH (wallet_transactions
+  // is RLS-locked - read-own, no client writes). They all go through the wallet-release
+  // edge function, which authenticates the caller from their JWT and authorises each
+  // action server-side before the service role makes the change.
+  async _walletRelease(body,t){ const r=await fetch(`${SUPABASE_URL}/functions/v1/wallet-release`,{method:"POST",headers:hdrs(t),body:JSON.stringify(body)}); const d=await r.json().catch(()=>({})); if(!r.ok)throw new Error(d.error||"Wallet update failed."); return d; },
+  // Buyer confirms receipt: marks the order completed and releases that listing's
+  // held sale credit → available. The function verifies the caller IS the buyer.
+  async confirmReceipt(orderId,t){ if(!orderId)return; return this._walletRelease({action:"confirm_receipt",order_id:orderId},t); },
+  // Dispute hold: buyer reported a problem → hold the credit (pending → disputed).
+  async holdDisputedEarnings(orderId,t){ if(!orderId)return; return this._walletRelease({action:"dispute_hold",order_id:orderId},t); },
+  // Dispute resolution (admin only): release to the seller or refund the buyer.
+  async settleDisputedEarnings(listingId,release,t){ if(!listingId)return; return this._walletRelease({action:"dispute_settle",listing_id:listingId,release:!!release},t); },
+  // Auto-release safety net: release the caller's OWN sale credits older than 14
+  // days. The cutoff is enforced server-side so nothing releases early.
+  async autoReleaseDueEarnings(t){ return this._walletRelease({action:"auto_release"},t); },
 
   // Fire the tailor-approved email (resolved server-side from the tailor id).
   fireTailorApprovedEmail(tailorId){ if(tailorId) fireEmail({type:"tailor_approved",tailorId}); },

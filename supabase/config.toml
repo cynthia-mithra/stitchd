@@ -101,6 +101,9 @@ verify_jwt = false
 [functions.wallet-withdraw]
 verify_jwt = false
 
+[functions.wallet-release]
+verify_jwt = false
+
 [functions.refund-order]
 verify_jwt = false
 
