@@ -34,24 +34,34 @@ export async function enablePush(userId, token) {
   if (!pushSupported()) throw new Error("unsupported");
   const perm = await Notification.requestPermission();
   if (perm !== "granted") throw new Error("denied");
+  if (!navigator.serviceWorker || !navigator.serviceWorker.ready) throw new Error("no service worker");
   const reg = await navigator.serviceWorker.ready;
-  let sub = await reg.pushManager.getSubscription();
-  if (!sub) {
-    sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY),
-    });
+  let sub;
+  try {
+    sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+  } catch (e) {
+    throw new Error(`subscribe failed: ${e.message || e.name}`);
   }
   const j = sub.toJSON();
-  await db.savePushSubscription(
-    {
-      user_id: userId,
-      endpoint: j.endpoint,
-      p256dh: j.keys.p256dh,
-      auth: j.keys.auth,
-      user_agent: (navigator.userAgent || "").slice(0, 200),
-    },
-    token,
-  );
+  try {
+    await db.savePushSubscription(
+      {
+        user_id: userId,
+        endpoint: j.endpoint,
+        p256dh: j.keys && j.keys.p256dh,
+        auth: j.keys && j.keys.auth,
+        user_agent: (navigator.userAgent || "").slice(0, 200),
+      },
+      token,
+    );
+  } catch (e) {
+    throw new Error(`save failed: ${e.message}`);
+  }
   return true;
 }
