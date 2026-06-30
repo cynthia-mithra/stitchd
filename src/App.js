@@ -2165,9 +2165,10 @@ export default function App() {
       setPushPerm("granted");
       flash("Notifications on - we'll ping you about messages, offers and sales.",6000);
     }catch(e){
+      logError("enablePush failed:",e);
       if(e.message==="denied") flash("Notifications are blocked. Turn them on in your browser/phone settings for Stitch'd.",7000);
       else if(e.message==="unsupported") flash("On iPhone, add Stitch'd to your home screen first, then enable notifications from there.",8000);
-      else flash("Couldn't enable notifications. Please try again.");
+      else flash(`Couldn't enable notifications: ${e.message||e.name||"unknown error"}`,8000);
     }
   }
 
