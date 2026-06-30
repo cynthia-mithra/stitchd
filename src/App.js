@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from "react";
 import {
   SUPABASE_URL, SUPABASE_KEY, PLATFORM_FEE, hdrs,
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, SHOE_SIZES, ALL_CATEGORIES,
@@ -22,29 +22,30 @@ import { ConfirmHost, confirmDialog } from "./components/ConfirmModal";
 import { logError, logWarn } from "./lib/log";
 import { ReviewModal } from "./components/Reviews";
 import PricingGuide from "./components/PricingGuide";
-import Tailors from "./views/Tailors";
-import TailorProfiles from "./views/TailorProfiles";
+const Tailors = lazy(() => import("./views/Tailors"));
+const TailorProfiles = lazy(() => import("./views/TailorProfiles"));
 import Alterations, { RequestAlterationModal, gbp } from "./views/Alterations";
-import WalletView from "./views/Wallet";
+const WalletView = lazy(() => import("./views/Wallet"));
 import Detail from "./views/Detail";
 import Shop from "./views/Shop";
-import Auth from "./views/Auth";
-import Profile from "./views/Profile";
-import Dashboard from "./views/Dashboard";
-import Feed from "./views/Feed";
-import Following from "./views/Following";
-import Orders from "./views/Orders";
-import Offers from "./views/Offers";
-import Looks from "./views/Looks";
-import CreateLook from "./views/CreateLook";
-import StyleFeed from "./views/StyleFeed";
-import SavedSearches from "./views/SavedSearches";
-import PublicWishlist from "./views/PublicWishlist";
+const Auth = lazy(() => import("./views/Auth"));
+const Profile = lazy(() => import("./views/Profile"));
+const Dashboard = lazy(() => import("./views/Dashboard"));
+const Feed = lazy(() => import("./views/Feed"));
+const Following = lazy(() => import("./views/Following"));
+const Orders = lazy(() => import("./views/Orders"));
+const Offers = lazy(() => import("./views/Offers"));
+const Looks = lazy(() => import("./views/Looks"));
+const CreateLook = lazy(() => import("./views/CreateLook"));
+const StyleFeed = lazy(() => import("./views/StyleFeed"));
+const SavedSearches = lazy(() => import("./views/SavedSearches"));
+const PublicWishlist = lazy(() => import("./views/PublicWishlist"));
 import ShareWishlistModal from "./components/ShareWishlistModal";
 import Legal, { LEGAL_VIEWS } from "./views/Legal";
 import InfoPage, { INFO_VIEWS } from "./views/Info";
 import Footer from "./components/Footer";
-import NotFound from "./views/NotFound";
+import PageLoader from "./components/PageLoader";
+const NotFound = lazy(() => import("./views/NotFound"));
 import Onboarding from "./components/Onboarding";
 
 // URL path → view for the static legal pages, derived from the views Legal.js
@@ -4677,8 +4678,9 @@ export default function App() {
         </main>
       )}
 
+      <Suspense fallback={<PageLoader/>}>
       {/* AUTH */}
-      <Auth
+      {view==="auth" && <Auth
         view={view} setView={setView}
         authMode={authMode} setAuthMode={setAuthMode}
         aForm={aForm} setAForm={setAForm} aError={aError} setAError={setAError} aLoading={aLoading}
@@ -4686,10 +4688,10 @@ export default function App() {
         handleForgot={handleForgot} handleResetPassword={handleResetPassword}
         otpStep={otpStep} setOtpStep={setOtpStep} otpCode={otpCode} setOtpCode={setOtpCode} otpEmail={otpEmail}
         flash={flash}
-      />
+      />}
 
       {/* PROFILE (edit + seller) */}
-      <Profile
+      {(view==="editprofile"||view==="profile") && <Profile
         view={view} setView={setView} prevView={prevView} user={user} profile={profile}
         profForm={profForm} setProfForm={setProfForm} saveProfile={saveProfile} profSaving={profSaving}
         twoFAStep={twoFAStep} setTwoFAStep={setTwoFAStep} twoFAData={twoFAData} setTwoFAData={setTwoFAData}
@@ -4699,17 +4701,17 @@ export default function App() {
         isFollowing={isFollowing} toggleFollow={toggleFollow} openDetail={openDetail}
         followerCount={followerCount} onGateAuth={gateAuth}
         onBecomeTailor={tailorNavItems[0].run} tailorCtaLabel={tailorNavItems[0].label}
-      />
+      />}
 
       {/* MY FOLLOWING (Phase 13) */}
-      <Following
+      {view==="following-list" && <Following
         view={view} setView={setView} user={user}
         followingProfiles={followingProfiles} followingLoading={followingLoading}
         toggleFollow={toggleFollow} openProfile={openProfile}
-      />
+      />}
 
       {/* DASHBOARD + CREATE BUNDLE */}
-      <Dashboard
+      {(view==="dashboard"||view==="createbundle") && <Dashboard
         view={view} setView={setView} user={user} myItems={myItems}
         sellerRatings={sellerRatings}
         myOrders={myOrders} wishlistCounts={wishlistCounts} openDetail={openDetail} startOrderConversation={startOrderConversation}
@@ -4734,16 +4736,16 @@ export default function App() {
         requestTab={dashTabRequest} clearRequestTab={()=>setDashTabRequest(null)}
         storeForm={storeForm} setStoreForm={setStoreForm} saveStorefront={saveStorefront} storeSaving={storeSaving}
         sellerOffers={sellerOffers} offerBuyers={offerBuyers} acceptOffer={acceptOffer} declineOffer={declineOffer}
-      />
+      />}
 
       {/* FEED */}
-      <Feed
+      {view==="feed" && <Feed
         view={view} setView={setView} user={user}
         feedLoading={feedLoading} following={following} feedItems={feedItems} openDetail={openDetail}
-      />
+      />}
 
       {/* STYLE FEED - Phase 14 */}
-      <StyleFeed
+      {view==="stylefeed" && <StyleFeed
         view={view} setView={setView} user={user} profile={profile}
         tab={styleFeedTab} setTab={switchStyleTab}
         posts={styleFeedTab==="following"?followingPosts:forYouPosts}
@@ -4759,13 +4761,13 @@ export default function App() {
         onCreate={createStylePost} creating={styleCreating}
         searchActiveListings={searchActiveListings}
         flash={flash}
-      />
+      />}
 
       {/* HOW TO MEASURE guide */}
-      <Tailors view={view} setView={setView} user={user} prevView={prevView}/>
+      {view==="measuring" && <Tailors view={view} setView={setView} user={user} prevView={prevView}/>}
 
       {/* TAILOR PROFILES - Phase 15 (apply / dashboard / public profile) */}
-      <TailorProfiles
+      {(view==="tailor-directory"||view==="tailor-apply"||view==="tailor-dashboard"||view==="tailor-public") && <TailorProfiles
         view={view} setView={setView} user={user} flash={flash}
         myTailor={myTailor}
         applyForm={applyForm} setApplyForm={setApplyForm} applyBusy={applyBusy} submitApplication={submitTailorApplication}
@@ -4787,7 +4789,7 @@ export default function App() {
         publicAvailability={publicAvailability} onSendAlterationRequest={sendAlterationRequestFromProfile}
         tailorReviews={tailorReviews} tailorReviewBuyers={tailorReviewBuyers}
         setAuthMode={setAuthMode} onGateAuth={gateAuth}
-      />
+      />}
 
       {/* ALTERATIONS - Phase 15 buyer page (/alterations) */}
       <Alterations
@@ -4818,16 +4820,16 @@ export default function App() {
       />
 
       {/* WALLET - seller earnings balance, withdrawals (Stripe Connect) */}
-      <WalletView
+      {view==="wallet" && <WalletView
         view={view} setView={setView} user={user}
         transactions={walletTxns} loading={walletLoading}
         onboarded={!!(profile&&profile.stripe_onboarding_complete&&profile.stripe_account_id)}
         onSetupPayouts={setupWalletPayouts} payoutBusy={payoutBusy}
         onWithdraw={withdrawWallet} withdrawBusy={withdrawBusy}
-      />
+      />}
 
       {/* ORDERS */}
-      <Orders
+      {view==="orders" && <Orders
         view={view} setView={setView} user={user} items={items}
         ordersTab={ordersTab} setOrdersTab={setOrdersTab} ordersLoading={ordersLoading} myOrders={myOrders}
         orderProfiles={orderProfiles}
@@ -4837,10 +4839,10 @@ export default function App() {
         openDispute={openDispute}
         onReviewOrder={openOrderReview} reviewedListings={myReviewedListings}
         saveOrderTracking={saveOrderTracking} onBuyLabel={buyOrderLabel}
-      />
+      />}
 
       {/* MY OFFERS (buyer) - Phase 14 offer checkout */}
-      <Offers
+      {view==="offers" && <Offers
         view={view} setView={setView} user={user}
         buyerOffers={buyerOffers} offersLoading={offersLoading}
         completeOfferPurchase={completeOfferPurchase}
@@ -4848,7 +4850,7 @@ export default function App() {
         makeNewOffer={makeNewOffer}
         checkoutOfferId={checkoutOfferId}
         setAuthMode={setAuthMode}
-      />
+      />}
 
       {/* SHOP VIEW */}
       <Shop
@@ -4882,16 +4884,16 @@ export default function App() {
       />
 
       {/* MY SAVED SEARCHES */}
-      <SavedSearches
+      {view==="saved-searches" && <SavedSearches
         view={view} setView={setView} user={user} setAuthMode={setAuthMode}
         savedSearches={savedSearches}
         applySavedSearch={applySavedSearch}
         toggleSavedSearchAlerts={toggleSavedSearchAlerts}
         deleteSavedSearch={deleteSavedSearch}
-      />
+      />}
 
       {/* PUBLIC SHARED WISHLIST - /wishlist/<slug>, no login required */}
-      <PublicWishlist
+      {view==="public-wishlist" && <PublicWishlist
         view={view}
         list={publicList}
         loading={publicLoading}
@@ -4903,7 +4905,7 @@ export default function App() {
         onCopyLink={()=>publicList&&copyShareLink(publicList.slug,setPublicCopied)}
         onEdit={()=>publicList&&openEditSharedList(publicList)}
         onDelete={()=>publicList&&deleteSharedList(publicList)}
-      />
+      />}
 
       {/* CREATE / EDIT SHAREABLE WISHLIST MODAL */}
       <ShareWishlistModal
@@ -4927,16 +4929,16 @@ export default function App() {
       />
 
       {/* SHOP THE LOOK - /looks page + look detail */}
-      <Looks
+      {(view==="looks"||view==="lookdetail") && <Looks
         view={view} setView={setView}
         looks={looks} lookFilter={lookFilter} setLookFilter={setLookFilter}
         openLook={openLook}
         selLook={selLook} selLookCreator={selLookCreator}
         openDetail={openDetail} addLookToBag={addLookToBag}
-      />
+      />}
 
       {/* CREATE / EDIT A LOOK */}
-      <CreateLook
+      {view==="createlook" && <CreateLook
         view={view} setView={setView} user={user} isAdmin={isAdmin}
         lookForm={lookForm} setLookForm={setLookForm}
         lookStep={lookStep} setLookStep={setLookStep}
@@ -4945,7 +4947,7 @@ export default function App() {
         addListingToLook={addListingToLook} removeListingFromLook={removeListingFromLook}
         publishLook={publishLook} lookSaving={lookSaving}
         editingLook={editingLook} flash={flash}
-      />
+      />}
 
       {/* LEGAL PAGES - Terms / Privacy / Returns (hardcoded static content) */}
       <Legal view={view} setView={setView} onBack={exitLegal} />
@@ -5161,11 +5163,12 @@ export default function App() {
       )}
 
       {/* CUSTOM 404 - unknown URL on a cold load (see isKnownPath + routing effect). */}
-      <NotFound
+      {view==="notfound" && <NotFound
         view={view}
         onHome={()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("shop"); window.scrollTo(0,0); }}
         onBrowse={()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("newarrivals"); window.scrollTo(0,0); }}
-      />
+      />}
+      </Suspense>
       </div>{/* /#page-view */}
 
       {/* GLOBAL FOOTER - appears on every page (modals/overlays render on top and
