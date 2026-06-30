@@ -312,6 +312,12 @@ export default function App() {
   const [msgSending,     setMsgSending]     = useState(false);
   const [unreadCount,    setUnreadCount]    = useState(0);
   const [convProfiles,   setConvProfiles]   = useState({});
+  // Live values for the realtime message handler (set up once, must read the
+  // latest open thread / inbox / auth without re-subscribing on every change).
+  const activeConvRef = useRef(null);
+  const convosRef     = useRef([]);
+  const userRef       = useRef(null);
+  const tokenRef      = useRef(null);
   const [showCounterOffer,setShowCounterOffer]=useState(null);
   const [counterInput,   setCounterInput]  = useState("");
   const [bundles,        setBundles]        = useState([]);
@@ -3080,6 +3086,60 @@ export default function App() {
     setActiveConv(null); setMessages([]);
     setView("messages");
   }
+
+  // Keep refs in sync so the realtime handler (subscribed once) always reads the
+  // current open thread, inbox and auth.
+  useEffect(()=>{ activeConvRef.current=activeConv; },[activeConv]);
+  useEffect(()=>{ convosRef.current=conversations; },[conversations]);
+  useEffect(()=>{ userRef.current=user; },[user]);
+  useEffect(()=>{ tokenRef.current=token; },[token]);
+
+  // A new message arrived over the websocket. Update the open thread (if it's the
+  // one showing), the inbox row (latest message + ordering + unread), and the
+  // total unread badge - all live, no refresh.
+  function handleRealtimeMessage(row){
+    if(!row||!row.conversation_id) return;
+    const me=userRef.current&&userRef.current.id;
+    if(!me) return;
+    const isMine=row.sender_id===me;
+    const isOpen=activeConvRef.current&&activeConvRef.current.id===row.conversation_id;
+
+    if(isOpen){
+      setMessages(prev=>prev.some(m=>m.id===row.id)?prev:[...prev,row]);
+      if(!isMine) db.markMessagesRead(row.conversation_id,me,tokenRef.current).catch(()=>{});
+    }
+
+    const known=(convosRef.current||[]).some(c=>c.id===row.conversation_id);
+    if(!known){ if(!isMine) loadConversations(); return; }
+
+    setConversations(prev=>{
+      const idx=prev.findIndex(c=>c.id===row.conversation_id);
+      if(idx===-1) return prev;
+      const c=prev[idx];
+      const bump=!isMine&&!isOpen;
+      const updated={...c,
+        last_message:row.content||c.last_message,
+        last_message_at:row.created_at||new Date().toISOString(),
+        unread_count:isOpen?0:((c.unread_count||0)+(bump?1:0)),
+      };
+      return [updated,...prev.filter((_,i)=>i!==idx)];
+    });
+    if(!isMine&&!isOpen) setUnreadCount(u=>u+1);
+  }
+
+  // Open one realtime subscription while signed in; re-subscribe if the token
+  // refreshes. The module (and supabase-js) is lazy-loaded so it never weighs
+  // down the initial bundle.
+  useEffect(()=>{
+    if(!user||!token) return;
+    let cleanup=null, cancelled=false;
+    import("./lib/realtime").then(({subscribeMessages})=>{
+      if(cancelled) return;
+      cleanup=subscribeMessages(token,handleRealtimeMessage);
+    }).catch(()=>{});
+    return ()=>{ cancelled=true; if(cleanup) cleanup(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[user&&user.id, token]);
 
   async function openConversation(conv){
     setActiveConv(conv);
