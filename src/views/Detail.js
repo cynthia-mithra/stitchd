@@ -25,7 +25,6 @@ export default function Detail({
   inBag = () => false, toggleBag = () => {},
   isOwner, startConversation,
   user, onGateAuth = () => {}, buyNow = () => {},
-  setShowPayment, setPaymentListing, setPaymentStep, setSelectedPostage,
   setShowReview, setShowReport,
   reviews,
   comments = [], commentText = "", setCommentText = () => {},
