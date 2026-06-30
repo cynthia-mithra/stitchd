@@ -376,6 +376,12 @@ export const db = {
   async getFeedListings(followingIds,t){ if(!followingIds.length)return []; const ids=followingIds.map(id=>`user_id.eq.${id}`).join(","); const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?or=(${ids})&order=created_at.desc&limit=40`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async getNotifications(uid,t){ touchActive(uid,t); const r=await fetch(`${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${uid}&order=created_at.desc&limit=30`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   async insertNotification(n,t){ await fetch(`${SUPABASE_URL}/rest/v1/notifications`,{method:"POST",headers:hdrs(t),body:JSON.stringify(n)}); },
+  // Store this device's web-push subscription (upsert on endpoint so re-enabling
+  // doesn't duplicate). RLS limits rows to the owner.
+  async savePushSubscription(row,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?on_conflict=endpoint`,{method:"POST",headers:{...hdrs(t),Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(row)}); if(!r.ok)throw new Error(await r.text()); },
+  // Fire a web push to a recipient (best-effort; the send-push function resolves
+  // their devices server-side). Never throws into the calling flow.
+  async sendPush(payload,t){ try{ await fetch(`${SUPABASE_URL}/functions/v1/send-push`,{method:"POST",headers:hdrs(t),body:JSON.stringify(payload)}); }catch(e){} },
   async markNotifRead(id,t){ await fetch(`${SUPABASE_URL}/rest/v1/notifications?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({read:true})}); },
   async markAllNotifsRead(uid,t){ await fetch(`${SUPABASE_URL}/rest/v1/notifications?user_id=eq.${uid}&read=eq.false`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({read:true})}); },
   async updateConversation(id,patch,t){ await fetch(`${SUPABASE_URL}/rest/v1/conversations?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify(patch)}); },

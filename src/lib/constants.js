@@ -1,6 +1,9 @@
 import { Package, Mailbox, Box, Truck } from "lucide-react";
 
 export const SUPABASE_URL = "https://zhstooqgkyuzxseylsbk.supabase.co";
+// Web Push VAPID public key (safe to expose). The matching private key lives
+// only in the send-push edge function's secrets (VAPID_PRIVATE_KEY).
+export const VAPID_PUBLIC_KEY = "BG-u3ThrIEspJZOWHbAIOitk9tPLF0gtxvifYNdQ8G3bZZjFjKO4Tb2T3BaRTQBQbzV0EQjJxA0OvD4zFJZIgLY";
 export const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoc3Rvb3Fna3l1enhzZXlsc2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NzM3MzQsImV4cCI6MjA5NjE0OTczNH0.mW5GB1VzSfRBMWZRlU7OfQ0RqoT1wEBVBoai6dJ6eQs";
 // Vinted-style fees: sellers sell FREE (no commission), and the BUYER pays a
 // Buyer Protection fee at checkout (this is the platform's revenue). Fee is a
