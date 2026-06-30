@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
-  SUPABASE_URL, SUPABASE_KEY, STRIPE_PK, PLATFORM_FEE, hdrs,
+  SUPABASE_URL, SUPABASE_KEY, PLATFORM_FEE, hdrs,
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, SHOE_SIZES, ALL_CATEGORIES,
   LISTING_TYPES, JEWELLERY_MATERIALS, ORIGINS, FABRICS, CONDITIONS, SA_BRANDS,
   OCCASIONS, SIZES, OCC_COLOR, CARD_COLORS, EMPTY_FORM, POSTAGE_OPTIONS,
-  catEmoji, currencySymbol, buildPaymentSummary, buyerProtectionFee,
+  catEmoji, currencySymbol, buyerProtectionFee,
   garmentTypesFor, garmentFieldsFor, defaultGarmentFor, parseMeasurements, buildMeasPayload,
   ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary,
 } from "./lib/constants";
@@ -124,33 +124,6 @@ function errMsg(e){
 function isExpiredTokenErr(e){
   const m=(errMsg(e)||"").toLowerCase();
   return m.includes("jwt expired")||m.includes("exp claim")||m.includes("token is expired")||m.includes("invalid jwt")||(m.includes("jwt")&&m.includes("expir"));
-}
-
-async function createStripeCheckout(listing, buyerEmail) {
-  if (!window.Stripe) {
-    await new Promise((res, rej) => {
-      const s = document.createElement("script");
-      s.src = "https://js.stripe.com/v3/";
-      s.onload = res; s.onerror = rej;
-      document.head.appendChild(s);
-    });
-  }
-  const stripe = window.Stripe(STRIPE_PK);
-  const amount = parseFloat(listing.price);
-  const fee    = parseFloat((amount * PLATFORM_FEE).toFixed(2));
-  const sellerAmount = parseFloat((amount - fee).toFixed(2));
-  const params = new URLSearchParams({
-    "line_items[0][price_data][currency]": (listing.currency||"USD").toLowerCase(),
-    "line_items[0][price_data][product_data][name]": listing.name,
-    "line_items[0][price_data][product_data][description]": `${listing.category} · ${listing.condition} · Sold by Stitch'd seller`,
-    "line_items[0][price_data][unit_amount]": Math.round(amount * 100),
-    "line_items[0][quantity]": 1,
-    "mode": "payment",
-    "success_url": `${window.location.href}?payment=success&listing=${listing.id}`,
-    "cancel_url": `${window.location.href}?payment=cancelled`,
-    "customer_email": buyerEmail||"",
-  });
-  return { stripe, amount, fee, sellerAmount };
 }
 
 export default function App() {
@@ -482,10 +455,6 @@ export default function App() {
   const [showOnboard,    setShowOnboard]    = useState(false);
   useEffect(()=>{ try{ if(!localStorage.getItem("stitchd_onboarded_v1")) setShowOnboard(true); }catch(e){} },[]);
   const dismissOnboard=()=>{ try{ localStorage.setItem("stitchd_onboarded_v1","1"); }catch(e){} setShowOnboard(false); };
-  const [showPayment,    setShowPayment]    = useState(false);
-  const [paymentListing, setPaymentListing] = useState(null);
-  const [paymentStep,    setPaymentStep]    = useState("summary");
-  const [selectedPostage,setSelectedPostage]= useState(null);
   // Phase 10e - Shop the Look. `looks` are active, published looks (homepage rail
   // + /looks page); `myLooks` are the signed-in seller/admin's own looks (drafts
   // included) for the TOOLS tab. `selLook`/`selLookCreator` back the detail view.
@@ -532,14 +501,6 @@ export default function App() {
       } else {
         flash("Signed in!"); setView("shop");
       }
-    }
-    const urlParams=new URLSearchParams(window.location.search);
-    if(urlParams.get("payment")==="success"){
-      const listingId=urlParams.get("listing");
-      flash("Payment successful! The seller has been notified.");
-      if(listingId) db.update(listingId,{payment_status:"paid",sold:true},null).catch(()=>{});
-      window.history.replaceState({},document.title,window.location.pathname);
-      setPaymentStep("success");
     }
   },[]);
 
@@ -4147,170 +4108,6 @@ export default function App() {
         </div>
       )}
 
-      {/* PAYMENT MODAL */}
-      {showPayment&&paymentListing&&(()=>{
-        const {amount,fee,sellerGets}=buildPaymentSummary(paymentListing);
-        const sym=currencySymbol(paymentListing.currency);
-        const postageAmount=selectedPostage?selectedPostage.selectedPrice?.price||0:0;
-        const totalAmount=parseFloat((amount+postageAmount).toFixed(2));
-        return(
-          <div style={S.modalOverlay} onClick={()=>setShowPayment(false)}>
-            <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,paddingBottom:16,borderBottom:"3px solid #111"}}>
-                <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:900,letterSpacing:-0.5,display:"inline-flex",alignItems:"center",gap:10}}>
-                  {paymentStep==="success"?<><PartyPopper width={24} height={24}/> PAYMENT DONE!</>:<><CreditCard width={24} height={24}/> BUY THIS PIECE</>}
-                </h3>
-                <button style={{background:"none",border:"none",fontSize:20,cursor:"pointer",fontWeight:900}} onClick={()=>setShowPayment(false)}>✕</button>
-              </div>
-              {paymentStep==="success"?(
-                <div style={{textAlign:"center",padding:"32px 0"}}>
-                  <p style={{display:"flex",justifyContent:"center",marginBottom:16}}><PartyPopper width={60} height={60} color="#FF1493"/></p>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,marginBottom:8}}>PAYMENT SUCCESSFUL!</p>
-                  <p style={{fontSize:14,color:"#888",marginBottom:24}}>The seller has been notified and will be in touch about shipping.</p>
-                  <button className="hbtn" style={{...S.hBtn,padding:"12px 28px",fontSize:14}} onClick={()=>{setShowPayment(false);setPaymentStep("summary");}}>DONE →</button>
-                </div>
-              ):(
-                <>
-                  <div style={{display:"flex",gap:16,marginBottom:24,padding:"16px",background:"#fafafa",border:"2px solid #f0f0f0"}}>
-                    {paymentListing.image_url&&<img src={paymentListing.image_url} alt="" style={{width:80,height:80,objectFit:"cover",border:"2px solid #111",flexShrink:0}}/>}
-                    <div>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,marginBottom:4}}>{paymentListing.name}</p>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,color:"#888",letterSpacing:1,marginBottom:4}}>{paymentListing.category?.toUpperCase()} · {paymentListing.condition?.toUpperCase()}</p>
-                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,color:"#FF1493"}}>{sym}{amount}</p>
-                    </div>
-                  </div>
-                  <div style={{marginBottom:24}}>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:12,display:"inline-flex",alignItems:"center",gap:6}}><Mail width={16} height={16}/> DELIVERY ADDRESS</p>
-                    {!showAddressForm&&deliveryAddress.line1?(
-                      <div style={{border:"2px solid #34C759",padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <div>
-                          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800}}>{deliveryAddress.name}</p>
-                          <p style={{fontSize:12,color:"#666"}}>{deliveryAddress.line1}{deliveryAddress.line2?`, ${deliveryAddress.line2}`:""}, {deliveryAddress.city}, {deliveryAddress.postcode}</p>
-                        </div>
-                        <button style={{background:"none",border:"none",color:"#FF1493",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,cursor:"pointer"}} onClick={()=>setShowAddressForm(true)}>CHANGE</button>
-                      </div>
-                    ):(
-                      <div style={{border:"2px solid #e0e0e0",padding:"16px",display:"flex",flexDirection:"column",gap:10}}>
-                        <F l="FULL NAME"><input style={S.inp} placeholder="Aisha Khan" value={deliveryAddress.name} onChange={e=>setDeliveryAddress(a=>({...a,name:e.target.value}))}/></F>
-                        <F l="ADDRESS LINE 1"><input style={S.inp} placeholder="123 Main Street" value={deliveryAddress.line1} onChange={e=>setDeliveryAddress(a=>({...a,line1:e.target.value}))}/></F>
-                        <F l="ADDRESS LINE 2 (OPTIONAL)"><input style={S.inp} placeholder="Flat 2" value={deliveryAddress.line2} onChange={e=>setDeliveryAddress(a=>({...a,line2:e.target.value}))}/></F>
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                          <F l="CITY"><input style={S.inp} placeholder="London" value={deliveryAddress.city} onChange={e=>setDeliveryAddress(a=>({...a,city:e.target.value}))}/></F>
-                          <F l="POSTCODE"><input style={S.inp} placeholder="E1 6RF" value={deliveryAddress.postcode} onChange={e=>setDeliveryAddress(a=>({...a,postcode:e.target.value}))}/></F>
-                        </div>
-                        {deliveryAddress.line1&&<button className="hbtn" style={{...S.hBtn,background:"#34C759",border:"none",fontSize:11,padding:"10px",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6}} onClick={()=>setShowAddressForm(false)}><Check width={16} height={16}/> SAVE ADDRESS</button>}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{marginBottom:24}}>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:12,display:"inline-flex",alignItems:"center",gap:6}}><Package width={16} height={16}/> CHOOSE YOUR DELIVERY</p>
-                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                      {POSTAGE_OPTIONS.map(carrier=>(
-                        <div key={carrier.id}>
-                          {carrier.prices.map(price=>{
-                            const optId=`${carrier.id}_${price.label}`;
-                            const isSelected=selectedPostage?.optId===optId;
-                            return(
-                              <div key={optId} style={{border:`2px solid ${isSelected?"#FF1493":"#e0e0e0"}`,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:4,background:isSelected?"#fff8fc":"#fff"}} onClick={()=>setSelectedPostage({...carrier,selectedPrice:price,optId})}>
-                                <span style={{display:"inline-flex",alignItems:"center"}}><carrier.Icon width={20} height={20}/></span>
-                                <div style={{flex:1}}>
-                                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#111"}}>{carrier.name}</p>
-                                  <p style={{fontSize:12,color:"#888"}}>{price.label}</p>
-                                </div>
-                                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#FF1493"}}>+£{price.price}</span>
-                                <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${isSelected?"#FF1493":"#ccc"}`,background:isSelected?"#FF1493":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                                  {isSelected&&<Check width={12} height={12} color="#fff"/>}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ))}
-                      {paymentListing.accepts_collection&&(
-                        <div style={{border:`2px solid ${selectedPostage?.id==="collection"?"#34C759":"#e0e0e0"}`,padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,background:selectedPostage?.id==="collection"?"#f0fff4":"#fff"}} onClick={()=>setSelectedPostage({id:"collection",name:"Collection in Person",Icon:Handshake,selectedPrice:{price:0,label:"Arrange with seller"},optId:"collection"})}>
-                          <span style={{display:"inline-flex",alignItems:"center"}}><Handshake width={20} height={20}/></span>
-                          <div style={{flex:1}}>
-                            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800}}>Collection in Person</p>
-                            <p style={{fontSize:12,color:"#888"}}>Arrange with seller directly</p>
-                          </div>
-                          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#34C759"}}>FREE</span>
-                          <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${selectedPostage?.id==="collection"?"#34C759":"#ccc"}`,background:selectedPostage?.id==="collection"?"#34C759":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            {selectedPostage?.id==="collection"&&<Check width={12} height={12} color="#fff"/>}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{marginBottom:24,padding:"14px 16px",background:"#fff8f0",border:"1.5px solid #FF950055"}}>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#FF9500",marginBottom:10}}>PRICE BREAKDOWN</p>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                      <span style={{fontSize:13,color:"#555"}}>Item price</span>
-                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700}}>{sym}{amount}</span>
-                    </div>
-                    {selectedPostage&&postageAmount>0&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                      <span style={{fontSize:13,color:"#555",display:"inline-flex",alignItems:"center",gap:6}}>{selectedPostage.Icon&&<selectedPostage.Icon width={14} height={14}/>} {selectedPostage.name}</span>
-                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700}}>{sym}{postageAmount}</span>
-                    </div>}
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                      <span style={{fontSize:13,color:"#555"}}>Stitch'd fee (8%)</span>
-                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#FF9500"}}>{sym}{fee}</span>
-                    </div>
-                    <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid #f0d0b0",marginBottom:6}}>
-                      <span style={{fontSize:13,color:"#555"}}>Seller receives</span>
-                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:"#34C759"}}>{sym}{sellerGets}</span>
-                    </div>
-                    <div style={{display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"2px solid #111"}}>
-                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:900,color:"#111"}}>TOTAL</span>
-                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:900,color:"#111"}}>{sym}{totalAmount}</span>
-                    </div>
-                  </div>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:12}}>PAY WITH</p>
-                  <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
-                    <button className="hbtn" style={{...S.hBtn,background:"#111",border:"none",width:"100%",padding:"14px",fontSize:14,letterSpacing:1,display:"flex",alignItems:"center",justifyContent:"center",gap:10}} onClick={()=>setPaymentStep("card")}>
-                      <Wallet width={18} height={18}/> APPLE PAY / GOOGLE PAY
-                    </button>
-                    <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",width:"100%",padding:"14px",fontSize:14,letterSpacing:1,display:"flex",alignItems:"center",justifyContent:"center",gap:10}} onClick={()=>setPaymentStep("card")}>
-                      <CreditCard width={18} height={18}/> PAY BY CARD
-                    </button>
-                  </div>
-                  <p style={{fontSize:11,color:"#6f6f6f",textAlign:"center",lineHeight:1.6}}><Lock width={12} height={12} style={{verticalAlign:"middle"}}/> Payments are processed securely via Stripe.<br/>Seller will be notified immediately after payment.</p>
-                </>
-              )}
-              {paymentStep==="card"&&(
-                <div style={{marginTop:16}}>
-                  <button style={{...S.back,marginBottom:16}} onClick={()=>setPaymentStep("summary")}>← back</button>
-                  <div style={{padding:24,border:"2px solid #f0f0f0",marginBottom:16}}>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",marginBottom:16}}>CARD DETAILS</p>
-                    <div id="stripe-card-element" style={{padding:"14px",border:"2px solid #e0e0e0",marginBottom:16,minHeight:44}}/>
-                    <p style={{fontSize:12,color:"#6f6f6f",marginBottom:16}}><Lightbulb width={14} height={14} style={{verticalAlign:"middle"}}/> In test mode, use card number <strong>4242 4242 4242 4242</strong>, any future date, any CVC.</p>
-                    <button className="hbtn" style={{...S.hBtn,background:"#FF1493",border:"none",width:"100%",padding:"14px",fontSize:14,letterSpacing:2}}
-                      onClick={async()=>{
-                        if(!window.Stripe){ const s=document.createElement("script"); s.src="https://js.stripe.com/v3/"; await new Promise(r=>{s.onload=r;document.head.appendChild(s);}); }
-                        flash("Setting up payment...");
-                        try{
-                          const res=await fetch(`${SUPABASE_URL}/functions/v1/clever-action`,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({amount:paymentListing.price,currency:paymentListing.currency||"USD",listing_id:paymentListing.id,buyer_email:user?.email||""})});
-                          const {client_secret,error}=await res.json();
-                          if(error) throw new Error(error);
-                          const stripe=window.Stripe(STRIPE_PK);
-                          const {error:stripeErr}=await stripe.confirmCardPayment(client_secret,{payment_method:{card:{token:"tok_visa"}}});
-                          if(stripeErr) throw new Error(stripeErr.message);
-                          flash("Payment successful!");
-                          setPaymentStep("success");
-                          setItems(p=>p.map(i=>i.id===paymentListing.id?{...i,payment_status:"paid",sold:true}:i));
-                          db.update(paymentListing.id,{payment_status:"paid",sold:true},token).catch(()=>{});
-                          try{ await db.createOrder({listing_id:paymentListing.id,buyer_id:user.id,seller_id:paymentListing.user_id,amount:paymentListing.price,postage_amount:selectedPostage?.selectedPrice?.price||0,postage_carrier:selectedPostage?.name||null,status:"paid",delivery_address:deliveryAddress.line1?deliveryAddress:null},token); }catch(e){}
-                          await notify(paymentListing.user_id,"sale","You made a sale!",`${profile?.username||"Someone"} bought "${paymentListing.name}" for ${currencySymbol(paymentListing.currency)}${paymentListing.price}`,paymentListing.id);
-                        }catch(e){ flash(`Payment failed: ${e.message}`); }
-                      }}>
-                      PAY {currencySymbol(paymentListing.currency)}{paymentListing.price} →
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })()}
 
       {/* REVIEW MODAL */}
       {showReview&&(
@@ -5162,7 +4959,6 @@ export default function App() {
         inBag={inBag} toggleBag={toggleBag}
         isOwner={isOwner} startConversation={startConversation}
         user={user} setAuthMode={setAuthMode} onGateAuth={gateAuth} buyNow={buyNow}
-        setShowPayment={setShowPayment} setPaymentListing={setPaymentListing} setPaymentStep={setPaymentStep} setSelectedPostage={setSelectedPostage}
         setShowReview={setShowReview} setShowReport={setShowReport}
         reviews={reviews}
         comments={comments} commentText={commentText} setCommentText={setCommentText}

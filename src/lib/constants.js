@@ -2,7 +2,6 @@ import { Package, Mailbox, Box, Truck } from "lucide-react";
 
 export const SUPABASE_URL = "https://zhstooqgkyuzxseylsbk.supabase.co";
 export const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoc3Rvb3Fna3l1enhzZXlsc2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NzM3MzQsImV4cCI6MjA5NjE0OTczNH0.mW5GB1VzSfRBMWZRlU7OfQ0RqoT1wEBVBoai6dJ6eQs";
-export const STRIPE_PK   = "pk_test_51TelKZPVRS43N0XeftXWJNSr9wLp2Q5REYAkq1ABO0ztePMTP4zw6QHR4gN0o6nqWkZH66zYKRicGrgJvuQLywwo00oKnn5ydj";
 // Vinted-style fees: sellers sell FREE (no commission), and the BUYER pays a
 // Buyer Protection fee at checkout (this is the platform's revenue). Fee is a
 // fixed part + a % of the item subtotal.
@@ -16,13 +15,6 @@ export function buyerProtectionFee(subtotal) {
   return parseFloat((BUYER_PROTECTION_FIXED + s * BUYER_PROTECTION_PCT).toFixed(2));
 }
 export const hdrs = (t) => ({ apikey: SUPABASE_KEY, Authorization: `Bearer ${t||SUPABASE_KEY}`, "Content-Type": "application/json" });
-
-export function buildPaymentSummary(listing) {
-  const amount = parseFloat(listing.price);
-  const fee    = parseFloat((amount * PLATFORM_FEE).toFixed(2)); // 0 - sellers sell free
-  const sellerGets = parseFloat((amount - fee).toFixed(2));
-  return { amount, fee, sellerGets };
-}
 
 export const CATEGORIES   = ["Saree","Salwar Kameez","Lehenga","Sherwani","Kurta","Co-ord Set","Dupatta","Accessories","Other"];
 export const JEWELLERY_CATS=["Necklace","Earrings","Maang Tikka","Jhumka","Bangles","Bracelet","Ring","Nose Ring","Anklet","Haar","Choker","Full Set","Other Jewellery"];
