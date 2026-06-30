@@ -3192,7 +3192,9 @@ export default function App() {
       setMsgInput("");
       const otherId=activeConv.buyer_id===user.id?activeConv.seller_id:activeConv.buyer_id;
       const listing=items.find(i=>i.id===activeConv.listing_id);
-      await notify(otherId,"message","New message",`${profile?.username||user.email?.split("@")[0]||"Someone"} sent you a message${listing?` about "${listing.name}"`:""}`,activeConv.id);
+      const who=profile?.username||user.email?.split("@")[0]||"Someone";
+      const preview=(msg?.content||"").slice(0,140);
+      await notify(otherId,"message",who,listing?`${preview} · ${listing.name}`:preview,activeConv.id);
     }catch(e){ flash("Failed to send."); }
     finally{ setMsgSending(false); }
   }
