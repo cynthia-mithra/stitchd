@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Stitch'd">
-  <rect x="1.5" y="1.5" width="61" height="61" fill="#FF1493" stroke="#111111" stroke-width="3"/>
-  <text x="32" y="34" text-anchor="middle" dominant-baseline="central"
-        font-family="'Arial Narrow', Arial, sans-serif" font-weight="900" font-size="44" fill="#ffffff">S</text>
+  <rect width="64" height="64" fill="#FF1493"/>
+  <path transform="translate(17.65,53.51) scale(0.06145,-0.06145)"
+        d="M22 180V211Q22 218 26.0 222.0Q30 226 37 226H193Q200 226 204.0 222.0Q208 218 208 211V189Q208 173 216.0 163.0Q224 153 236 153Q248 153 256.0 162.0Q264 171 264 185Q264 202 248.0 218.5Q232 235 181 271Q131 306 98.5 335.0Q66 364 42.0 408.0Q18 452 18 509Q18 568 44.5 613.0Q71 658 119.5 683.0Q168 708 231 708Q295 708 343.5 683.0Q392 658 418.5 613.0Q445 568 445 509V487Q445 480 441.0 476.0Q437 472 430 472H275Q268 472 264.0 476.0Q260 480 260 487V513Q260 528 252.0 537.5Q244 547 231 547Q218 547 210.5 537.0Q203 527 203 510Q203 490 219.0 471.5Q235 453 283 418Q347 371 379.5 342.0Q412 313 430.5 276.5Q449 240 449 191Q449 100 390.0 46.0Q331 -8 235 -8Q171 -8 123.0 16.0Q75 40 48.5 82.5Q22 125 22 180Z" fill="none" stroke="#ffffff" stroke-width="74.85"
+        stroke-linejoin="round" stroke-linecap="round"/>
 </svg>
