@@ -9,6 +9,7 @@ import {
   ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary,
 } from "./lib/constants";
 import { db } from "./lib/db";
+import { enablePush, pushSupported, pushPermission } from "./lib/push";
 import { startCheckout, startOfferCheckout, startAlterationCheckout, verifySession } from "./lib/checkout";
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
@@ -455,6 +456,7 @@ export default function App() {
   const [offersLoading,  setOffersLoading]  = useState(false);
   const [checkoutOfferId,setCheckoutOfferId]= useState(null);
   const [showNotifs,     setShowNotifs]     = useState(false);
+  const [pushPerm,       setPushPerm]       = useState(typeof window!=="undefined"?pushPermission():"unsupported");
   const [navMenuOpen,    setNavMenuOpen]    = useState(false);
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
   // First-run welcome - shown once per browser (localStorage), only on the home
@@ -2152,6 +2154,21 @@ export default function App() {
     if(!userId||userId===user?.id) return;
     try{ await db.insertNotification({user_id:userId,type,title,body,link_id:linkId,read:false},token); }
     catch(e){}
+    // Also push to their devices (best-effort; no-op if they haven't enabled it).
+    db.sendPush({user_id:userId,title,body,url:"/",tag:type},token);
+  }
+
+  async function handleEnablePush(){
+    if(!user||!token){ gateAuth("login"); return; }
+    try{
+      await enablePush(user.id,token);
+      setPushPerm("granted");
+      flash("Notifications on - we'll ping you about messages, offers and sales.",6000);
+    }catch(e){
+      if(e.message==="denied") flash("Notifications are blocked. Turn them on in your browser/phone settings for Stitch'd.",7000);
+      else if(e.message==="unsupported") flash("On iPhone, add Stitch'd to your home screen first, then enable notifications from there.",8000);
+      else flash("Couldn't enable notifications. Please try again.");
+    }
   }
 
   // ── Phase 15 - Tailor profiles ──────────────────────────────────────────────
@@ -3974,6 +3991,12 @@ export default function App() {
               <button style={{background:"none",border:"none",fontSize:16,cursor:"pointer",fontWeight:900,color:"#6b6b6b"}} onClick={()=>setShowNotifs(false)}>✕</button>
             </div>
           </div>
+          {pushSupported()&&pushPerm!=="granted"&&pushPerm!=="denied"&&(
+            <button onClick={handleEnablePush} style={{width:"100%",display:"flex",alignItems:"center",gap:10,textAlign:"left",background:"#fff0f8",border:"none",borderBottom:"2px solid #111",padding:"12px 16px",cursor:"pointer"}}>
+              <Bell width={18} height={18} color="#FF1493"/>
+              <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:0.5,color:"#111",lineHeight:1.25}}>TURN ON NOTIFICATIONS<br/><span style={{fontWeight:600,fontSize:11,color:"#6f6f6f",letterSpacing:0}}>Get pinged about messages, offers &amp; sales</span></span>
+            </button>
+          )}
           {notifications.length===0?(
             <div style={{padding:"32px",textAlign:"center"}}>
               <p style={{display:"flex",justifyContent:"center",marginBottom:8}}><Bell width={28} height={28} color="#808080"/></p>
