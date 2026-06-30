@@ -82,7 +82,10 @@ export const db = {
   // A single listing by id (used by /offers "make new offer" when the listing
   // isn't in the cached shop items). Returns the row or null.
   async getListing(id,t){ if(!id)return null; const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}&limit=1`,{headers:hdrs(t)}); if(!r.ok)return null; const d=await r.json(); return d[0]||null; },
-  async incrementViews(id,views,t){ await fetch(`${SUPABASE_URL}/rest/v1/listings?id=eq.${id}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({views:(views||0)+1})}); },
+  // Listings are RLS-locked to owner-writes, so a viewer can't PATCH the row.
+  // Bump the counter through a SECURITY DEFINER function instead (callable by
+  // anyone, including logged-out viewers via the anon key).
+  async incrementViews(id,views,t){ if(!id)return; await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_listing_views`,{method:"POST",headers:hdrs(t),body:JSON.stringify({p_id:id})}).catch(()=>{}); },
   async getReviews(sellerId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/reviews?seller_id=eq.${sellerId}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   // The listing ids a buyer has already reviewed - drives the "Leave a review" vs
   // "Reviewed" state on their orders so the same purchase isn't reviewed twice.

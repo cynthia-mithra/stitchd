@@ -655,6 +655,15 @@ Deno.serve(async (req) => {
 
   const session = event.data.object as Stripe.Checkout.Session;
 
+  // Only act on actually-paid sessions. A checkout.session.completed can still be
+  // unpaid for delayed/async payment methods; card checkout is always 'paid'.
+  // Marking listings sold / crediting wallets on an unpaid session would give the
+  // item away, so skip anything not paid.
+  if (session.payment_status && session.payment_status !== "paid") {
+    console.log("[webhook] session not paid, skipping:", session.id, session.payment_status);
+    return new Response(JSON.stringify({ received: true, unpaid: true }), { status: 200 });
+  }
+
   // Diagnostics - surface the data the email branches depend on so a missing
   // metadata field or unset secret is obvious in the Edge Function logs rather
   // than silently skipping the send.
