@@ -794,7 +794,116 @@ Deno.serve(async (req) => {
       return { name: d?.name || buyerName || "", line1: a.line1 || "", line2: a.line2 || "", city: a.city || "", postcode: a.postal_code || "", country: a.country || "GB" };
     })();
 
+    // ── Oversell guard ───────────────────────────────────────────────────────
+    // A listing's availability is checked when the buyer OPENS Stripe, not when
+    // they pay, so two buyers can both pay for the same item in the brief window
+    // they're on the hosted page. If any item here already has an order from a
+    // DIFFERENT checkout session, this buyer lost that race: don't re-sell the
+    // item or pay the seller twice - refund this buyer automatically instead.
+    // Only a RECENT prior order from another session counts as a race. A listing
+    // that was sold, relisted, and legitimately sold again would also have a
+    // prior order from a different session - but an old one - so the 1-hour
+    // window keeps us from refunding a genuine re-sale of a relisted item.
+    const RACE_WINDOW_MS = 60 * 60 * 1000;
+    const oversoldIds = new Set<string>();
+    try {
+      const idList = listings.map((l) => encodeURIComponent(l.id)).join(",");
+      if (idList) {
+        const r = await fetch(
+          `${SUPABASE_URL}/rest/v1/orders?listing_id=in.(${idList})&select=listing_id,stripe_session_id,created_at`,
+          { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
+        ).catch(() => null);
+        const rows: Array<{ listing_id: string; stripe_session_id?: string; created_at?: string }> =
+          r && r.ok ? await r.json().catch(() => []) : [];
+        const cutoff = Date.now() - RACE_WINDOW_MS;
+        for (const row of rows) {
+          const recent = row.created_at ? new Date(row.created_at).getTime() > cutoff : false;
+          if (row.stripe_session_id && row.stripe_session_id !== stripeSessionId && recent) {
+            oversoldIds.add(row.listing_id);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[webhook] oversell check failed:", (e as Error).message);
+    }
+
+    if (oversoldIds.size) {
+      const gbpFmt = (p: number) => `£${(p / 100).toFixed(2)}`;
+      // How much to refund: every item oversold → the whole session (all fees +
+      // postage included). Otherwise the oversold items' prices + their share of
+      // the Buyer Protection fee + postage for any seller whose whole order is
+      // oversold (matches the api/stripe-checkout fee maths).
+      const allOversold = oversoldIds.size === listings.length;
+      let refundPence = 0;
+      if (allOversold) {
+        refundPence = Number(session.amount_total) || 0;
+      } else {
+        const subtotal = listings.reduce((s, l) => s + Math.round(parseFloat(String(l.price)) * 100), 0);
+        const protection = subtotal > 0 ? 80 + Math.round(subtotal * 0.06) : 0;
+        for (const l of listings) {
+          if (!oversoldIds.has(l.id)) continue;
+          const itemPence = Math.round(parseFloat(String(l.price)) * 100);
+          refundPence += itemPence + (subtotal > 0 ? Math.round((protection * itemPence) / subtotal) : 0);
+        }
+        const sellerCounts: Record<string, { total: number; oversold: number }> = {};
+        for (const l of listings) {
+          const k = String(l.user_id);
+          sellerCounts[k] = sellerCounts[k] || { total: 0, oversold: 0 };
+          sellerCounts[k].total++;
+          if (oversoldIds.has(l.id)) sellerCounts[k].oversold++;
+        }
+        for (const [sid, c] of Object.entries(sellerCounts)) {
+          if (c.oversold === c.total && postageBySeller[sid]) refundPence += postageBySeller[sid].pence;
+        }
+      }
+
+      const paymentIntentId = typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : (session.payment_intent as { id?: string } | null)?.id ?? null;
+
+      let refunded = false;
+      if (refundPence > 0 && paymentIntentId) {
+        try {
+          // Idempotency key on the session so a webhook retry can't refund twice.
+          await stripe.refunds.create(
+            { payment_intent: paymentIntentId, amount: refundPence, reason: "requested_by_customer", metadata: { oversell: "true", session: stripeSessionId } },
+            { idempotencyKey: `oversell-refund-${stripeSessionId}` },
+          );
+          refunded = true;
+        } catch (e) {
+          console.error("[webhook] oversell refund failed:", (e as Error).message);
+        }
+      }
+
+      const names = listings.filter((l) => oversoldIds.has(l.id)).map((l) => l.name).join(", ");
+      const refundLine = refunded
+        ? `we've refunded ${gbpFmt(refundPence)} to your original payment method (5-10 working days)`
+        : `our team will refund you ${gbpFmt(refundPence)} shortly`;
+      if (buyerId) {
+        await insertHealing("notifications", {
+          user_id: buyerId,
+          type: "refund",
+          title: "Sorry - item no longer available",
+          body: `Someone bought "${names}" just before your payment went through, so ${refundLine}.`,
+          read: false,
+        });
+      }
+      try {
+        if (buyerEmail) {
+          const html =
+            `<p>Hi${buyerName ? " " + buyerName : ""},</p>` +
+            `<p>Unfortunately <strong>${names}</strong> sold to another buyer in the moments before your payment completed, so your purchase couldn't be fulfilled.</p>` +
+            `<p>${refunded ? `We've automatically refunded <strong>${gbpFmt(refundPence)}</strong> to your original payment method - it usually lands in 5-10 working days.` : `Our team will refund you <strong>${gbpFmt(refundPence)}</strong> shortly.`}</p>` +
+            `<p>Sorry for the disappointment - there's plenty more on Stitch'd.</p><p>- The Stitch'd team</p>`;
+          await sendViaResend(buyerEmail, "Your Stitch'd order was refunded", html);
+        }
+      } catch (e) {
+        console.error("[webhook] oversell email failed:", (e as Error).message);
+      }
+    }
+
     for (const l of listings) {
+      if (oversoldIds.has(l.id)) continue; // refunded above — don't re-sell or credit
       const pence = Math.round(parseFloat(String(l.price)) * 100);
       const ship = postageBySeller[String(l.user_id)] || null;
 
