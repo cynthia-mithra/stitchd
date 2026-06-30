@@ -11,7 +11,7 @@
      • Everything else cross-origin (Supabase REST, Stripe, auth): passthrough —
        never cached, so private/authenticated data is always fresh.
    Bump VERSION to retire old caches. */
-const VERSION = "stitchd-v2";
+const VERSION = "stitchd-v3";
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 const IMAGES = `${VERSION}-images`;
