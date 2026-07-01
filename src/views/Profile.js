@@ -15,6 +15,7 @@ export default function Profile({
   onBecomeTailor = () => {}, tailorCtaLabel = "BECOME A TAILOR",
   // profile / storefront
   viewedProfile, profileListings, reviews, isFollowing, toggleFollow, openDetail,
+  isBlocked = false, onBlockUser = () => {}, onUnblockUser = () => {},
   followerCount = 0,
 }) {
   // Phase 13 - storefront listings filter (ALL / WOMEN / MEN). Local to the view;
@@ -257,6 +258,13 @@ export default function Profile({
                   ?<span style={{display:"inline-flex",alignItems:"center",gap:7}}><UserCheck width={16} height={16}/> FOLLOWING</span>
                   :<span style={{display:"inline-flex",alignItems:"center",gap:7}}><UserPlus width={16} height={16}/> FOLLOW</span>}
               </button>
+            )}
+            {!own&&user&&(
+              <div style={{marginTop:12}}>
+                {isBlocked
+                  ?<button onClick={()=>onUnblockUser(sf.id)} style={{background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1.5,color:"#888",textTransform:"uppercase",textDecoration:"underline"}}>Unblock this user</button>
+                  :<button onClick={()=>onBlockUser(sf.id)} style={{background:"none",border:"none",padding:0,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:1.5,color:"#c0392b",textTransform:"uppercase",textDecoration:"underline"}}>Block this user</button>}
+              </div>
             )}
 
             {/* STATS ROW */}
