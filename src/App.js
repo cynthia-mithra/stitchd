@@ -151,6 +151,7 @@ export default function App() {
   const [sellerActiveAt, setSellerActiveAt] = useState(null); // viewed listing's seller last_active_at
   const [toast,     setToast]     = useState("");
   const [form,      setForm]      = useState(EMPTY_FORM);
+  const [draftPrompt, setDraftPrompt] = useState(null); // saved Sell-form draft offered for resume
   const [brandOther,setBrandOther]= useState(false); // listing "Brand" field: true when "Other" is picked
   const [aForm,     setAForm]     = useState({email:"",password:""});
   const [otpStep,   setOtpStep]   = useState("form");
@@ -3276,6 +3277,26 @@ export default function App() {
     }catch(e){ flash("Failed to respond to offer."); }
   }
 
+  // ── Listing drafts ──────────────────────────────────────────────────────
+  // Auto-save the create form to this device so a half-finished listing survives
+  // leaving the page. Photos/video are File objects that can't be serialised, so
+  // a draft keeps the text/measurements/selections; the seller re-adds photos on
+  // resume. Only on the CREATE form (view "add"), never when editing.
+  const draftHasContent = (f)=>!!((f.name&&f.name.trim())||f.price||(f.description&&f.description.trim())||f.brand||(f.imagePreviews&&f.imagePreviews.length));
+  useEffect(()=>{
+    if(view!=="add"||!draftHasContent(form)) return;
+    try{ const {imageFiles,imagePreviews,videoFile,videoPreview,video_url,...rest}=form; localStorage.setItem("stitchd_draft",JSON.stringify(rest)); }catch(e){}
+  },[form,view]);
+  // Offer a saved draft once, when arriving at an empty create form.
+  useEffect(()=>{
+    if(view!=="add"){ setDraftPrompt(null); return; }
+    if(draftHasContent(form)){ setDraftPrompt(null); return; }
+    try{ const raw=localStorage.getItem("stitchd_draft"); if(raw){ const d=JSON.parse(raw); if(d&&draftHasContent(d)) setDraftPrompt(d); } }catch(e){}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[view]);
+  function resumeDraft(){ if(!draftPrompt) return; setForm({...EMPTY_FORM,...draftPrompt,imageFiles:[],imagePreviews:[],videoFile:null,videoPreview:"",video_url:""}); setDraftPrompt(null); flash("Draft restored - add your photos and finish up.",6000); }
+  function discardDraft(){ try{localStorage.removeItem("stitchd_draft");}catch(e){} setDraftPrompt(null); }
+
   function addImageFiles(files){
     const remaining=MAX_LISTING_IMAGES-form.imagePreviews.length;
     const incoming=Array.from(files);
@@ -3475,6 +3496,7 @@ export default function App() {
       const payload={name:form.name,price:parseFloat(form.price),brand:(form.brand||"").trim()||null,video_url:video_url||null,condition:form.condition,listing_type:form.listing_type,category:cat,origin:form.origin,fabric:form.listing_type==="Clothing"?form.fabric:"",material:form.listing_type==="Jewellery"?form.material:"",size:form.listing_type==="Clothing"?form.size:"",occasions:form.occasions,colours:form.colours||[],...meas,can_take_in:form.listing_type==="Clothing"?form.can_take_in:false,spare_fabric:form.listing_type==="Clothing"?form.spare_fabric:false,description:form.description,emoji:catEmoji(cat),sold:false,reserved:false,views:0,image_url,images:urls,user_id:user.id,currency:profile?.currency||"USD",postage_options:form.postage_options||[],accepts_collection:form.accepts_collection||false,offers_enabled:form.offers_enabled!==false,minimum_offer_pence:offerFloorPence(form)};
       const [created]=await withFreshToken(tok=>db.insert(payload,tok));
       setItems(p=>[created,...p]); setForm(EMPTY_FORM); setBrandOther(false);
+      try{localStorage.removeItem("stitchd_draft");}catch(e){} setDraftPrompt(null); // published - clear the draft
       // The photo uploaded fine but didn't come back on the saved row - the
       // self-healing insert (see lib/db.js) silently drops columns the table is
       // missing, so an absent image_url column means the photo is lost. Surface
@@ -5192,6 +5214,18 @@ export default function App() {
           <button style={S.back} onClick={()=>setView(view==="edit"?"detail":"shop")}>← BACK</button>
           <div style={S.formCard} className="form-card">
             <div style={S.formHero}><h2 style={S.formTitle}>{view==="edit"?"EDIT YOUR\nPIECE.":"LIST YOUR\nPIECE."}</h2><p style={S.formSub}>Real measurements. Real fit info. Real buyers.</p></div>
+            {view==="add"&&draftPrompt&&!draftHasContent(form)&&(
+              <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",background:"#fff0f8",border:"2px solid #111",borderLeft:"6px solid #FF1493",padding:"14px 16px",marginBottom:20}}>
+                <div style={{flex:"1 1 200px",minWidth:0}}>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:900,letterSpacing:0.5,color:"#111"}}>YOU HAVE AN UNFINISHED DRAFT</p>
+                  <p style={{fontSize:12.5,color:"#6b6b6b",marginTop:2}}>Pick up where you left off{draftPrompt.name?` - "${draftPrompt.name}"`:""}. You'll just need to re-add photos.</p>
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  <button type="button" onClick={resumeDraft} style={{background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"9px 16px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,fontSize:13,cursor:"pointer"}}>RESUME</button>
+                  <button type="button" onClick={discardDraft} style={{background:"#fff",color:"#111",border:"2px solid #111",borderRadius:0,padding:"9px 16px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,fontSize:13,cursor:"pointer"}}>DISCARD</button>
+                </div>
+              </div>
+            )}
             <Sec icon={Camera} label={`PHOTOS (UP TO ${MAX_LISTING_IMAGES})`}>
               <div style={S.multiUploadGrid}>
                 {form.imagePreviews.map((src,i)=>(
