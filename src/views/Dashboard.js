@@ -525,17 +525,18 @@ export default function Dashboard({
                   <button className="hbtn" style={{...S.hBtn,background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,fontSize:13,padding:"12px 22px",marginTop:20,opacity:bundleSaving?0.5:1}} disabled={bundleSaving} onClick={doSaveBundleDiscount}>{bundleSaving?"SAVING…":"SAVE"}</button>
                 </div>
 
-                {/* Tool 5 - Promote (coming soon) */}
+                {/* Tool 5 - Promote */}
                 <div style={{border:"none",boxShadow:"0 6px 22px rgba(17,17,17,0.09)",padding:"24px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                     <Rocket width={20} height={20} color="#00E5CC"/>
                     <h3 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:0.5}}>PROMOTE YOUR LISTINGS</h3>
-                    <span style={{background:"#00E5CC",color:"#111",fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:900,letterSpacing:1,padding:"3px 8px"}}>COMING SOON</span>
                   </div>
-                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:18,lineHeight:1.4}}>Boost your listings to the top of search results and get more eyes on your pieces. Coming soon.</p>
-                  <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                    <button disabled style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,fontSize:13,padding:"12px 22px",background:"#e8e8e8",color:"#6e6e6e",border:"2px solid #ddd",borderRadius:0,cursor:"not-allowed"}}>PROMOTE</button>
-                    <button className="hbtn" disabled={promoteNotified} style={{...S.hBtn,background:promoteNotified?"#fff":"#111",color:promoteNotified?"#34C759":"#fff",border:`2px solid ${promoteNotified?"#34C759":"#111"}`,fontSize:13,padding:"12px 22px",display:"inline-flex",alignItems:"center",gap:7,opacity:promoteNotified?1:1}} onClick={notifyPromote}>{promoteNotified?<><Check width={15} height={15}/> WE'LL NOTIFY YOU</>:<><Bell width={15} height={15}/> NOTIFY ME</>}</button>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,color:"#666",marginBottom:14,lineHeight:1.4}}>Boost a listing to the top of search and the homepage for 7 days - £2.99, or free with a bump.</p>
+                  {freeBumps>0&&(
+                    <p style={{display:"inline-flex",alignItems:"center",gap:7,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,color:"#FF1493",marginBottom:14}}><Zap width={15} height={15} fill="#FF1493"/> You have {freeBumps} free bump{freeBumps===1?"":"s"} to use!</p>
+                  )}
+                  <div>
+                    <button className="hbtn" style={{...S.hBtn,background:"#111",color:"#fff",border:"2px solid #111",fontSize:13,padding:"12px 22px",display:"inline-flex",alignItems:"center",gap:7}} onClick={()=>{ setDashTab("active"); try{window.scrollTo({top:0,behavior:"smooth"});}catch(e){} }}><Zap width={15} height={15}/> PROMOTE A LISTING</button>
                   </div>
                 </div>
               </div>
