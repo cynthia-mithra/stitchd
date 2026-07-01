@@ -52,6 +52,7 @@ export default function Shop({
   newArrivals = false, homeArrivals = [], goNewArrivals = () => {},
   openDetail, fitsMe,
   priceDrops, trendingItems,
+  recentlyViewedItems = [], recommendedItems = [],
   sellerRatings = {},
   fastSellers = new Set(),
   verifiedSellers = new Set(),
@@ -500,6 +501,59 @@ export default function Shop({
                 <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
                   <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <div style={{position:"absolute",top:12,left:12,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
+                    <FastBadge sellerId={item.user_id}/>
+                    {!item.sold&&<div className="card-hover-price"><span className="chp-price">{currencySymbol(item.currency)}{item.price}</span><span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span></div>}
+                  </Thumb>
+                  <div style={S.cardBody} className="card-body">
+                    <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
+                    <p style={S.cardName} className="card-name">{item.name}</p>
+                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span><span style={{display:"flex",alignItems:"center",gap:8}}><WishCount item={item}/><SellerRating sellerId={item.user_id}/></span></div>
+                  </div>
+                  <div style={{...S.accentBar,background:accent}}/>
+                </article>
+              );
+            })}
+          </div>
+        </Reveal>
+      )}
+
+      {/* RECENTLY VIEWED - the buyer's own recently-opened pieces (still live). */}
+      {!newArrivals&&!hasFilters&&!followingActive&&recentlyViewedItems.length>0&&(
+        <Reveal style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
+          <RailHeader icon={<Eye width={26} height={26}/>} title="RECENTLY VIEWED" subtitle="Pick up where you left off" accent="#00E5CC"/>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:16}} className="shop-grid">
+            {recentlyViewedItems.map((item,idx)=>{
+              const accent=CARD_COLORS[idx%CARD_COLORS.length];
+              return(
+                <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
+                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
+                    <FastBadge sellerId={item.user_id}/>
+                    {!item.sold&&<div className="card-hover-price"><span className="chp-price">{currencySymbol(item.currency)}{item.price}</span><span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span></div>}
+                  </Thumb>
+                  <div style={S.cardBody} className="card-body">
+                    <p style={{...S.cardCatLabel,color:accent}} className="card-cat">{item.category?.toUpperCase()}</p>
+                    <p style={S.cardName} className="card-name">{item.name}</p>
+                    <div style={S.cardFoot}><span style={{...S.cardPrice,color:accent}} className="card-price">{currencySymbol(item.currency)}{item.price}</span><span style={{display:"flex",alignItems:"center",gap:8}}><WishCount item={item}/><SellerRating sellerId={item.user_id}/></span></div>
+                  </div>
+                  <div style={{...S.accentBar,background:accent}}/>
+                </article>
+              );
+            })}
+          </div>
+        </Reveal>
+      )}
+
+      {/* RECOMMENDED FOR YOU - other live pieces in the categories/brands the
+          buyer has been viewing. */}
+      {!newArrivals&&!hasFilters&&!followingActive&&recommendedItems.length>0&&(
+        <Reveal style={{maxWidth:1300,margin:"48px auto 0",borderTop:"3px solid #111",padding:"32px 10px 0"}}>
+          <RailHeader icon={<Sparkles width={26} height={26}/>} title="RECOMMENDED FOR YOU" subtitle="Based on what you've been viewing" accent="#FF9500"/>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",gap:16}} className="shop-grid">
+            {recommendedItems.map((item,idx)=>{
+              const accent=CARD_COLORS[idx%CARD_COLORS.length];
+              return(
+                <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
+                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <FastBadge sellerId={item.user_id}/>
                     {!item.sold&&<div className="card-hover-price"><span className="chp-price">{currencySymbol(item.currency)}{item.price}</span><span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span></div>}
                   </Thumb>

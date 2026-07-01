@@ -3828,7 +3828,27 @@ export default function App() {
   // Other live pieces from the same seller (shown first on Detail), and similar
   // pieces from OTHER sellers (so the two rails don't duplicate each other).
   const sellerItems  = sel ? items.filter(i=>i.id!==sel.id&&i.user_id===sel.user_id&&!i.sold&&i.status!=="sold"&&i.status!=="inactive").slice(0,4) : [];
-  const similarItems = sel ? items.filter(i=>i.id!==sel.id&&i.user_id!==sel.user_id&&!i.sold&&i.status!=="sold"&&i.status!=="inactive"&&(i.category===sel.category||i.fabric===sel.fabric||i.origin===sel.origin)).slice(0,4) : [];
+  // Ranked "you might also like": score each candidate on how much it overlaps
+  // the viewed piece (category, brand, type, occasion, colour, fabric/origin,
+  // similar price) and take the best four - far better than a flat filter.
+  const similarItems = useMemo(()=>{
+    if(!sel) return [];
+    const pool=items.filter(i=>i.id!==sel.id&&i.user_id!==sel.user_id&&!i.sold&&i.status!=="sold"&&i.status!=="inactive");
+    const selOcc=Array.isArray(sel.occasions)?sel.occasions:[];
+    const selCol=Array.isArray(sel.colours)?sel.colours:[];
+    const price=parseFloat(sel.price)||0;
+    const score=(i)=>{ let s=0;
+      if(i.category===sel.category) s+=5;
+      if(sel.brand&&i.brand===sel.brand) s+=4;
+      if(sel.type&&i.type===sel.type) s+=2;
+      if(sel.fabric&&i.fabric===sel.fabric) s+=1;
+      if(sel.origin&&i.origin===sel.origin) s+=1;
+      const occ=Array.isArray(i.occasions)?i.occasions:[]; if(occ.some(o=>selOcc.includes(o))) s+=2;
+      const col=Array.isArray(i.colours)?i.colours:[]; if(col.some(c=>selCol.includes(c))) s+=1;
+      const p=parseFloat(i.price)||0; if(price>0&&Math.abs(p-price)/price<=0.35) s+=1;
+      return s; };
+    return pool.map(i=>[i,score(i)]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).map(x=>x[0]).slice(0,4);
+  },[sel,items]);
   // Phase 12 - recently viewed, in view order (newest first), excluding the
   // current listing, capped at 6 for the Detail "RECENTLY VIEWED" rail.
   const recentItems  = recentlyViewed
@@ -3836,6 +3856,22 @@ export default function App() {
     .map(id=>items.find(i=>i.id===id))
     .filter(Boolean)
     .slice(0,6);
+  // Home "Recently viewed" rail: the buyer's recently-opened pieces that are
+  // still available.
+  const recentlyViewedItems = useMemo(()=>recentlyViewed
+    .map(id=>items.find(i=>i.id===id))
+    .filter(i=>i&&!i.sold&&i.status!=="sold"&&i.status!=="inactive")
+    .slice(0,8),[recentlyViewed,items]);
+  // Home "Recommended for you" rail: other available pieces in the categories /
+  // brands the buyer has been viewing (excluding ones they've already seen and
+  // their own listings).
+  const recommendedItems = useMemo(()=>{
+    if(!recentlyViewedItems.length) return [];
+    const cats=new Set(recentlyViewedItems.map(i=>i.category).filter(Boolean));
+    const brands=new Set(recentlyViewedItems.map(i=>i.brand).filter(Boolean));
+    const viewed=new Set(recentlyViewed);
+    return items.filter(i=>!viewed.has(i.id)&&!i.sold&&i.status!=="sold"&&i.status!=="inactive"&&i.user_id!==user?.id&&(cats.has(i.category)||(i.brand&&brands.has(i.brand)))).slice(0,8);
+  },[recentlyViewedItems,items,recentlyViewed,user]);
   // Phase 12 - listings created in the last 14 days (newest first), for the
   // /new-arrivals page and the homepage NEW ARRIVALS rail. `visible` already
   // applies every active shop filter and is ordered created_at.desc, so the
@@ -5024,6 +5060,7 @@ export default function App() {
         newArrivals={isNewArrivals} homeArrivals={homeArrivals} goNewArrivals={()=>{clearFilters();setView("newarrivals");}}
         openDetail={openDetail} fitsMe={fitsMe}
         priceDrops={priceDrops} trendingItems={trendingItems}
+        recentlyViewedItems={recentlyViewedItems} recommendedItems={recommendedItems}
         sellerRatings={sellerRatings} fastSellers={fastSellers} verifiedSellers={verifiedSellers}
         bundleCardSellers={bundleCardSellers}
         wishlistCounts={wishlistCounts} myWishlist={myWishlist} toggleFavourite={toggleFavourite}
