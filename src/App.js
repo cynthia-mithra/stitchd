@@ -148,6 +148,7 @@ export default function App() {
   const [pendingDetail, setPendingDetail] = useState(null);
   const [sel,       setSel]       = useState(null);
   const [selImgIdx, setSelImgIdx] = useState(0);
+  const [sellerActiveAt, setSellerActiveAt] = useState(null); // viewed listing's seller last_active_at
   const [toast,     setToast]     = useState("");
   const [form,      setForm]      = useState(EMPTY_FORM);
   const [brandOther,setBrandOther]= useState(false); // listing "Brand" field: true when "Other" is picked
@@ -3802,6 +3803,8 @@ export default function App() {
       return next;
     });
     if(item.user_id) loadReviews(item.user_id).then(setReviews);
+    setSellerActiveAt(null);
+    if(item.user_id&&item.user_id!==user?.id) db.getProfile(item.user_id,token).then(p=>setSellerActiveAt(p?.last_active_at||null)).catch(()=>{});
     setComments([]); setCommentText("");
     loadComments(item.id).then(setComments);
     // Phase 14 - does the buyer already have a pending offer on this listing? If
@@ -5157,6 +5160,7 @@ export default function App() {
         sellerItems={sellerItems} similarItems={similarItems} recentItems={recentItems} openDetail={openDetail}
         fastSellers={fastSellers} verifiedSellers={verifiedSellers}
         identityVerifiedSellers={identityVerifiedSellers}
+        sellerLastActive={sellerActiveAt}
         onFindTailor={openAlterationModal}
       />
 

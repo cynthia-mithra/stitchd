@@ -19,6 +19,22 @@ export function buyerProtectionFee(subtotal) {
 }
 export const hdrs = (t) => ({ apikey: SUPABASE_KEY, Authorization: `Bearer ${t||SUPABASE_KEY}`, "Content-Type": "application/json" });
 
+// Human "last active" trust signal from a profiles.last_active_at timestamp.
+// Returns null when there's no data or it's too stale to be worth showing.
+export function activityLabel(ts) {
+  if (!ts) return null;
+  const t = new Date(ts).getTime();
+  if (isNaN(t)) return null;
+  const mins = Math.floor((Date.now() - t) / 60000);
+  if (mins < 15) return "Active now";
+  if (mins < 24 * 60) return "Active today";
+  const days = Math.floor(mins / (24 * 60));
+  if (days === 1) return "Active yesterday";
+  if (days < 7) return `Active ${days} days ago`;
+  if (days < 30) return "Active recently";
+  return null;
+}
+
 export const CATEGORIES   = ["Saree","Salwar Kameez","Lehenga","Sherwani","Kurta","Co-ord Set","Dupatta","Accessories","Other"];
 export const JEWELLERY_CATS=["Necklace","Earrings","Maang Tikka","Jhumka","Bangles","Bracelet","Ring","Nose Ring","Anklet","Haar","Choker","Full Set","Other Jewellery"];
 export const SHOE_CATS = ["Heels","Flats","Sandals","Juttis","Khussa","Boots","Trainers","Wedges","Platforms","Other Shoes"];
