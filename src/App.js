@@ -249,6 +249,7 @@ export default function App() {
   // from the shop/search grid. `vacationSaving` guards the dashboard toggle and
   // `promoteNotified` flips once the seller has registered Promote interest.
   const [vacationSellers,setVacationSellers]=useState(()=>new Set());
+  const [blockedIds,setBlockedIds]=useState(()=>new Set()); // users this member has blocked
   const [vacationSaving,setVacationSaving]=useState(false);
   const [promoteNotified,setPromoteNotified]=useState(false);
   // Phase 14 - bundle discounts. `bundleSellers` maps seller id → discount % for
@@ -960,7 +961,8 @@ export default function App() {
     const matchOcc=occFilter.length===0||occ.length===0||occFilter.some(o=>occ.includes(o));
     const col=i.colours||[];
     const matchColour=colourFilter.length===0||col.length===0||colourFilter.some(c=>col.includes(c));
-    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchBrand&&matchVacation&&matchActive&&matchNotSold&&matchVerified&&matchOcc&&matchColour;
+    const matchBlocked=!blockedIds.has(i.user_id); // hide listings from blocked users
+    return matchCat&&matchSize&&matchMin&&matchMax&&matchSearch&&matchType&&matchFit&&matchCond&&matchBrand&&matchVacation&&matchActive&&matchNotSold&&matchVerified&&matchOcc&&matchColour&&matchBlocked;
    })
    // Sort: price sorts apply across the whole result; "newest" (default) floats
    // promoted (in-window) listings to the top, then keeps the source's
@@ -970,7 +972,7 @@ export default function App() {
      if(shopSort==="price_high") return (parseFloat(b.price)||0)-(parseFloat(a.price)||0);
      return (_live(a)?0:1)-(_live(b)?0:1);
    });
-  },[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,brandFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers,occFilter,colourFilter,shopSort]);
+  },[items,catFilter,sizeFilter,minPrice,maxPrice,search,typeFilter,condFilter,brandFilter,showSizeMatch,vacationSellers,showVerifiedOnly,verifiedSellers,occFilter,colourFilter,shopSort,blockedIds]);
 
   // Brands actually present across live listings (for the shop's brand filter) -
   // unique, non-empty, alphabetical. Includes custom brands sellers typed.
@@ -3126,6 +3128,25 @@ export default function App() {
     }catch(e){}
   },[user&&user.id, profile&&profile.referred_by, token]);
 
+  // Load the members this user has blocked (their listings are hidden and they
+  // can't be messaged).
+  useEffect(()=>{
+    if(!user||!token){ setBlockedIds(new Set()); return; }
+    db.getBlocks(user.id,token).then(rows=>setBlockedIds(new Set(rows.map(r=>r.blocked_id)))).catch(()=>{});
+  },[user&&user.id, token]);
+
+  async function blockUserAction(userId){
+    if(!user||!token||!userId||userId===user.id) return;
+    if(!(await confirmDialog({title:"Block this user?",message:"They won't be able to message you, and their listings won't show in your shop.",confirmLabel:"BLOCK",danger:true}))) return;
+    try{ await db.blockUser(user.id,userId,token); setBlockedIds(p=>new Set([...p,userId])); flash("User blocked."); }
+    catch(e){ flash("Couldn't block. Please try again."); }
+  }
+  async function unblockUserAction(userId){
+    if(!user||!token||!userId) return;
+    try{ await db.unblockUser(user.id,userId,token); setBlockedIds(p=>{const n=new Set(p);n.delete(userId);return n;}); flash("User unblocked."); }
+    catch(e){ flash("Couldn't unblock. Please try again."); }
+  }
+
   // Keep refs in sync so the realtime handler (subscribed once) always reads the
   // current open thread, inbox and auth.
   useEffect(()=>{ activeConvRef.current=activeConv; },[activeConv]);
@@ -4886,6 +4907,7 @@ export default function App() {
         twoFACode={twoFACode} setTwoFACode={setTwoFACode} twoFAFactors={twoFAFactors} twoFALoading={twoFALoading}
         confirm2FA={confirm2FA} disable2FA={disable2FA} load2FAFactors={load2FAFactors} setup2FA={setup2FA}
         viewedProfile={viewedProfile} profileListings={profileListings} reviews={reviews}
+        isBlocked={viewedProfile?blockedIds.has(viewedProfile.id):false} onBlockUser={blockUserAction} onUnblockUser={unblockUserAction}
         isFollowing={isFollowing} toggleFollow={toggleFollow} openDetail={openDetail}
         followerCount={followerCount} onGateAuth={gateAuth}
         onBecomeTailor={tailorNavItems[0].run} tailorCtaLabel={tailorNavItems[0].label}

@@ -84,6 +84,10 @@ export const db = {
   // Spend a free bump to promote a listing for 7 days (server validates balance +
   // ownership and does the decrement).
   async redeemBump(listingId,t){ const r=await fetch(`${SUPABASE_URL}/functions/v1/redeem-bump`,{method:"POST",headers:hdrs(t),body:JSON.stringify({listing_id:listingId})}); const d=await r.json().catch(()=>({})); if(!r.ok)throw new Error(d.error||"Couldn't use your free bump."); return d; },
+  // ── Blocking ──────────────────────────────────────────────────────────────
+  async getBlocks(uid,t){ if(!uid)return []; const r=await fetch(`${SUPABASE_URL}/rest/v1/blocks?blocker_id=eq.${uid}&select=blocked_id`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
+  async blockUser(blockerId,blockedId,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/blocks?on_conflict=blocker_id,blocked_id`,{method:"POST",headers:{...hdrs(t),Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({blocker_id:blockerId,blocked_id:blockedId})}); if(!r.ok)throw new Error(await r.text()); },
+  async unblockUser(blockerId,blockedId,t){ await fetch(`${SUPABASE_URL}/rest/v1/blocks?blocker_id=eq.${blockerId}&blocked_id=eq.${blockedId}`,{method:"DELETE",headers:hdrs(t)}); },
   async getListingsByUser(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   // A single listing by id (used by /offers "make new offer" when the listing
   // isn't in the cached shop items). Returns the row or null.
