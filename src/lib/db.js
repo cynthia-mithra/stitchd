@@ -78,6 +78,9 @@ export const db = {
     // welcome_email_sent flag so a returning user is only ever welcomed once.
     if(profile&&profile.id) fireEmail({type:"welcome",userId:profile.id});
     return d; },
+  // Record who referred this member (set once - the trigger locks it after). Best
+  // effort: never throws into the caller.
+  async setReferrer(uid,referrerId,t){ if(!uid||!referrerId||uid===referrerId)return; try{ await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({referred_by:referrerId})}); }catch(e){} },
   async getListingsByUser(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   // A single listing by id (used by /offers "make new offer" when the listing
   // isn't in the cached shop items). Returns the row or null.
