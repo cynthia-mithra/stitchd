@@ -3640,6 +3640,21 @@ export default function App() {
     }
   }
 
+  // Spend a free bump (earned via referrals) to promote a listing 7 days - no
+  // payment. The server checks the balance + ownership and decrements.
+  async function redeemBump(listing){
+    if(!listing?.id||!token||promoteBusyId) return;
+    setPromoteBusyId(listing.id);
+    try{
+      const res=await db.redeemBump(listing.id,token);
+      const until=res?.promoted_until||new Date(Date.now()+7*86400000).toISOString();
+      setItems(p=>p.map(i=>i.id===listing.id?{...i,promoted:true,promoted_until:until}:i));
+      setProfile(p=>p?{...p,free_bumps:Math.max(0,(p.free_bumps||0)-1)}:p);
+      flash("Listing boosted for 7 days with your free bump!",6000);
+    }catch(e){ flash(errMsg(e)||"Couldn't use your free bump."); }
+    finally{ setPromoteBusyId(null); }
+  }
+
   // Phase 11 - seller submits a verification application. Inserts the application,
   // flips the profile to 'pending', and mirrors both into local state so the
   // dashboard GET VERIFIED section switches to APPLICATION UNDER REVIEW. Returns
@@ -4856,6 +4871,7 @@ export default function App() {
         saveBundleDiscount={saveBundleDiscount}
         notifyPromote={notifyPromote} promoteNotified={promoteNotified}
         startPromote={startPromote} promoteBusyId={promoteBusyId} myPromotions={myPromotions}
+        freeBumps={profile?.free_bumps||0} onRedeemBump={redeemBump}
         bundles={bundles} bundleItems={bundleItems} loadBundles={loadBundles} deleteBundle={deleteBundle}
         bundleForm={bundleForm} setBundleForm={setBundleForm} toggleBundleListing={toggleBundleListing} createBundle={createBundle}
         myLooks={myLooks} isAdmin={isAdmin} openCreateLook={openCreateLook} editLook={editLook} deleteLook={deleteLook}

@@ -75,6 +75,7 @@ export default function Dashboard({
   saveBundleDiscount = () => {},
   // Promoted listings (Phase 13)
   startPromote = () => {}, promoteBusyId = null, myPromotions = [],
+  freeBumps = 0, onRedeemBump = () => {},
   bundles, bundleItems, loadBundles, deleteBundle,
   // createbundle
   bundleForm, setBundleForm, toggleBundleListing, createBundle,
@@ -1075,10 +1076,14 @@ export default function Dashboard({
                     <span key={text} style={{display:"flex",alignItems:"center",gap:10,fontSize:15,fontWeight:700,letterSpacing:0.3,color:"#111",lineHeight:1.2}}><Icon width={18} height={18} color="#FF1493" style={{flexShrink:0}}/> {text}</span>
                   ))}
                 </div>
+                {/* Free bump (from referrals) - offered first when available */}
+                {freeBumps>0&&(
+                  <button type="button" disabled={busy} onClick={()=>{ onRedeemBump(promoteItem); setPromoteItem(null); }} style={{width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"15px",fontSize:15,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase",cursor:busy?"wait":"pointer",opacity:busy?0.6:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:12}}><Zap width={17} height={17} fill="currentColor"/> USE FREE BUMP ({freeBumps} LEFT)</button>
+                )}
                 {/* Price */}
                 <p style={{fontSize:34,fontWeight:900,color:"#FF1493",letterSpacing:-0.5,marginBottom:16,lineHeight:1}}>£2.99 <span style={{fontSize:18,fontWeight:800,color:"#111"}}>for 7 days</span></p>
                 {/* CTA */}
-                <button type="button" disabled={busy} onClick={()=>startPromote(promoteItem)} style={{width:"100%",background:"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"15px",fontSize:15,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase",cursor:busy?"wait":"pointer",opacity:busy?0.6:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8}}><Zap width={17} height={17}/> {busy?"REDIRECTING…":"PROMOTE FOR £2.99"}</button>
+                <button type="button" disabled={busy} onClick={()=>startPromote(promoteItem)} style={{width:"100%",background:freeBumps>0?"#fff":"#111",color:freeBumps>0?"#111":"#fff",border:"2px solid #111",borderRadius:0,padding:"15px",fontSize:15,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase",cursor:busy?"wait":"pointer",opacity:busy?0.6:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8}}><Zap width={17} height={17}/> {busy?"REDIRECTING…":freeBumps>0?"OR PAY £2.99":"PROMOTE FOR £2.99"}</button>
                 <button type="button" onClick={()=>!busy&&setPromoteItem(null)} style={{display:"block",margin:"14px auto 0",background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:2,color:"#888",textTransform:"uppercase",textDecoration:"underline"}}>Cancel</button>
               </div>
             </div>

@@ -81,6 +81,9 @@ export const db = {
   // Record who referred this member (set once - the trigger locks it after). Best
   // effort: never throws into the caller.
   async setReferrer(uid,referrerId,t){ if(!uid||!referrerId||uid===referrerId)return; try{ await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}`,{method:"PATCH",headers:hdrs(t),body:JSON.stringify({referred_by:referrerId})}); }catch(e){} },
+  // Spend a free bump to promote a listing for 7 days (server validates balance +
+  // ownership and does the decrement).
+  async redeemBump(listingId,t){ const r=await fetch(`${SUPABASE_URL}/functions/v1/redeem-bump`,{method:"POST",headers:hdrs(t),body:JSON.stringify({listing_id:listingId})}); const d=await r.json().catch(()=>({})); if(!r.ok)throw new Error(d.error||"Couldn't use your free bump."); return d; },
   async getListingsByUser(uid,t){ const r=await fetch(`${SUPABASE_URL}/rest/v1/listings?user_id=eq.${uid}&order=created_at.desc`,{headers:hdrs(t)}); if(!r.ok)return []; return r.json(); },
   // A single listing by id (used by /offers "make new offer" when the listing
   // isn't in the cached shop items). Returns the row or null.
