@@ -155,6 +155,58 @@ async function insertHealing(table: string, body: Record<string, unknown>) {
   }
 }
 
+// Referral reward: the first time a referred member makes a real purchase, give
+// both them and the friend who invited them a free listing bump. referral_rewarded
+// gates this to once per member. Service role, so it bypasses RLS + the profile
+// guard trigger. Best-effort - never blocks the sale.
+async function maybeRewardReferral(buyerId: string | null | undefined) {
+  if (!buyerId) return;
+  try {
+    const svcGet = { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` };
+    const pr = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${buyerId}&select=id,referred_by,referral_rewarded,free_bumps&limit=1`,
+      { headers: svcGet },
+    ).catch(() => null);
+    const buyer = pr && pr.ok ? (await pr.json().catch(() => []))[0] : null;
+    if (!buyer || !buyer.referred_by || buyer.referral_rewarded) return;
+    const referrerId = buyer.referred_by;
+
+    const rr = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${referrerId}&select=id,free_bumps&limit=1`,
+      { headers: svcGet },
+    ).catch(() => null);
+    const referrer = rr && rr.ok ? (await rr.json().catch(() => []))[0] : null;
+
+    // Buyer: +1 bump and mark rewarded (so it only ever fires once).
+    await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${buyerId}`, {
+      method: "PATCH", headers: sbHeaders,
+      body: JSON.stringify({ free_bumps: (Number(buyer.free_bumps) || 0) + 1, referral_rewarded: true }),
+    }).catch(() => {});
+    // Referrer: +1 bump.
+    if (referrer) {
+      await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${referrerId}`, {
+        method: "PATCH", headers: sbHeaders,
+        body: JSON.stringify({ free_bumps: (Number(referrer.free_bumps) || 0) + 1 }),
+      }).catch(() => {});
+    }
+
+    await insertHealing("notifications", {
+      user_id: buyerId, type: "referral", read: false,
+      title: "🎁 You earned a free bump!",
+      body: "Thanks for your first purchase - you've got a free 7-day listing boost. Use it from your dashboard.",
+    });
+    if (referrer) {
+      await insertHealing("notifications", {
+        user_id: referrerId, type: "referral", read: false,
+        title: "🎁 Your friend joined - free bump!",
+        body: "A friend you invited just made their first purchase. You've earned a free 7-day listing boost!",
+      });
+    }
+  } catch (e) {
+    console.error("referral reward failed:", (e as Error).message);
+  }
+}
+
 // ── Phase 13 - promotion payment ──────────────────────────────────────────────
 // A £2.99 "Promoted Listing" checkout (created by create-promotion-session, tagged
 // metadata.type='promotion') completed. Flip the listing's promoted flag + 7-day
@@ -350,6 +402,9 @@ async function handleOffer(session: Stripe.Checkout.Session) {
     sessionId: session.id,
     description: `Sale: ${title} (offer)`,
   });
+
+  // 3c. Referral reward on the buyer's first purchase (via accepted offer too).
+  await maybeRewardReferral(buyerId);
 
   // 4. In-app notifications - seller + buyer.
   if (sellerId) {
@@ -1014,6 +1069,10 @@ Deno.serve(async (req) => {
         console.error("Phase 12 email send error:", (e as Error).message);
       }
     }
+
+    // Referral reward - only if at least one item was actually purchased (not all
+    // oversold + refunded).
+    if (listings.length > oversoldIds.size) await maybeRewardReferral(buyerId);
 
     return new Response(JSON.stringify({ received: true, processed: listings.length }), {
       status: 200,
