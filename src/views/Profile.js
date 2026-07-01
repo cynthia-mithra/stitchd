@@ -1,6 +1,6 @@
 import React from "react";
 import { Camera, Ruler, Scissors, ShieldCheck, Check, MapPin, BadgeCheck, ShoppingBag, Plane, Instagram, UserPlus, UserCheck, User, Tag, Calendar, Clock, Users, ArrowRight } from "lucide-react";
-import { SIZES, CARD_COLORS, catEmoji, currencySymbol, listingGender } from "../lib/constants";
+import { SIZES, CARD_COLORS, catEmoji, currencySymbol, listingGender, activityLabel } from "../lib/constants";
 import { S } from "../styles";
 import { F, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 import LoginPromptModal from "../components/LoginPromptModal";
@@ -247,6 +247,7 @@ export default function Profile({
               {(sf.storefront_location||sf.location)&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",display:"inline-flex",alignItems:"center",gap:5}}><MapPin width={14} height={14}/> {sf.storefront_location||sf.location}</span>}
               {reviews.length>0&&<span style={{display:"inline-flex",alignItems:"center",gap:6,fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:"#111"}}><Stars value={avgRating} size={14} color="#FF1493"/> <span style={{fontWeight:800}}>{avgRating.toFixed(1)}</span> <span style={{color:"#6b6b6b"}}>({reviews.length} review{reviews.length!==1?"s":""})</span></span>}
               {memberSince&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#888",display:"inline-flex",alignItems:"center",gap:5}}><Calendar width={14} height={14}/> Member since {memberSince}</span>}
+              {activityLabel(sf.last_active_at)&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:1,color:"#111",display:"inline-flex",alignItems:"center",gap:6}}><span style={{width:8,height:8,borderRadius:"50%",background:activityLabel(sf.last_active_at)==="Active now"?"#34C759":"#FF9500",display:"inline-block"}}/> {activityLabel(sf.last_active_at)}</span>}
               {ig&&<a href={`https://instagram.com/${ig}`} target="_blank" rel="noreferrer" style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#FF1493",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:5}}><Instagram width={14} height={14}/> @{ig}</a>}
               <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,letterSpacing:1,color:"#111",display:"inline-flex",alignItems:"center",gap:5}}><Users width={14} height={14}/> {followerCount} follower{followerCount!==1?"s":""}</span>
             </div>

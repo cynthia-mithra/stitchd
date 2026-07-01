@@ -1,6 +1,6 @@
 import React from "react";
 import { Zap, Heart, Share2, Ruler, Eye, Pin, Check, X, Mail, CreditCard, Star, Flag, ShoppingBag, Shield, MessageCircle, Clock, Trash2, CornerDownRight, Tag, Scissors, Video } from "lucide-react";
-import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure, colourSwatchBg } from "../lib/constants";
+import { catEmoji, currencySymbol, OCC_COLOR, CARD_COLORS, parseMeasurements, convertMeasure, colourSwatchBg, activityLabel } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 import LoginPromptModal from "../components/LoginPromptModal";
@@ -35,6 +35,7 @@ export default function Detail({
   fastSellers = new Set(),
   verifiedSellers = new Set(),
   identityVerifiedSellers = new Set(),
+  sellerLastActive = null,
   onFindTailor = () => {},
 }) {
   // Login gate - logged-out buyers can browse everything, but actions that need
@@ -270,7 +271,15 @@ export default function Detail({
                   {fastSellers.has(sel.user_id)&&<div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#00E5CC",color:"#111",border:"1.5px solid #111",padding:"4px 12px",fontSize:11,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif"}}><Zap width={14} height={14} fill="currentColor"/> FAST SELLER</div>}
                 </div>
               )}
-              {sel.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#6f6f6f",letterSpacing:1,display:"flex",alignItems:"center",gap:5,marginTop:12}}><Eye width={13} height={13}/> {sel.views} VIEWS</span>}
+              <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",marginTop:12}}>
+                {activityLabel(sellerLastActive)&&(
+                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:1,color:"#111",display:"flex",alignItems:"center",gap:6}}>
+                    <span style={{width:8,height:8,borderRadius:"50%",background:activityLabel(sellerLastActive)==="Active now"?"#34C759":"#FF9500",display:"inline-block"}}/>
+                    {activityLabel(sellerLastActive).toUpperCase()}
+                  </span>
+                )}
+                {sel.views>0&&<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,color:"#6f6f6f",letterSpacing:1,display:"flex",alignItems:"center",gap:5}}><Eye width={13} height={13}/> {sel.views} VIEWS</span>}
+              </div>
 
               {/* BUY BOX (Option B) - the purchase actions + trust, framed together. */}
               {!isOwner(sel)&&(()=>{
