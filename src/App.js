@@ -17,7 +17,7 @@ import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } fro
 import { startSellerConnect, verifySellerConnect, withdrawFromWallet, refundOrder, refundAlteration, buyShippingLabel } from "./lib/wallet";
 import { auth, uploadImage, uploadLookImage, uploadDisputeImage, uploadStorefrontBanner, uploadStylePostImage, uploadTailorProfileImage, uploadTailorPortfolioImage, isTokenExpired, decodeJWT } from "./lib/auth";
 import { S, CSS } from "./styles";
-import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CheckCircle, Info, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock, Home, Plus, User, Palette, Video, Compass, Search, Store, Users, LogOut } from "lucide-react";
+import { Heart, Bell, MessageCircle, Camera, Shirt, Gem, Footprints, Ruler, Package, Menu, X, ShoppingBag, Lock, CreditCard, PartyPopper, Mail, Handshake, Wallet, Lightbulb, Flag, Star, Tag, Check, CheckCircle, Info, CornerUpLeft, AlertCircle, ShieldCheck, Bookmark, Share2, Copy, Pencil, Trash2, Sparkles, Scissors, Clock, Home, Plus, User, Palette, Video, Compass, Search, Store, Users, LogOut, Gift, Zap } from "lucide-react";
 import { Sec, F, Tog, Thumb, ColourSwatches } from "./components/Shared";
 import { ConfirmHost, confirmDialog } from "./components/ConfirmModal";
 import { logError, logWarn } from "./lib/log";
@@ -457,6 +457,8 @@ export default function App() {
   const [checkoutOfferId,setCheckoutOfferId]= useState(null);
   const [showNotifs,     setShowNotifs]     = useState(false);
   const [pushPerm,       setPushPerm]       = useState(typeof window!=="undefined"?pushPermission():"unsupported");
+  const [showInvite,     setShowInvite]     = useState(false);
+  const [inviteCopied,   setInviteCopied]   = useState(false);
   const [navMenuOpen,    setNavMenuOpen]    = useState(false);
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
   // First-run welcome - shown once per browser (localStorage), only on the home
@@ -3105,6 +3107,24 @@ export default function App() {
     setView("messages");
   }
 
+  // Referral capture: stash an ?ref=<userId> from the invite link so we can
+  // attribute the referral once this visitor signs up.
+  useEffect(()=>{
+    try{ const ref=new URLSearchParams(window.location.search).get("ref"); if(ref) localStorage.setItem("stitchd_ref",ref); }catch(e){}
+  },[]);
+  // Once signed in with a profile, record who referred us (the trigger locks it
+  // after the first set), then clear the stash.
+  useEffect(()=>{
+    if(!user||!token||!profile) return;
+    try{
+      const ref=localStorage.getItem("stitchd_ref");
+      if(!ref) return;
+      if(ref!==user.id && !profile.referred_by){
+        db.setReferrer(user.id,ref,token).finally(()=>{ try{localStorage.removeItem("stitchd_ref");}catch(e){} });
+      } else { try{localStorage.removeItem("stitchd_ref");}catch(e){} }
+    }catch(e){}
+  },[user&&user.id, profile&&profile.referred_by, token]);
+
   // Keep refs in sync so the realtime handler (subscribed once) always reads the
   // current open thread, inbox and auth.
   useEffect(()=>{ activeConvRef.current=activeConv; },[activeConv]);
@@ -3891,6 +3911,7 @@ export default function App() {
     {label:"ACCOUNT", items:[
       {label:"MY PROFILE",     icon:mIcon(User),          run:()=>{load2FAFactors();setView("editprofile");}},
       {label:"MY FOLLOWING",   icon:mIcon(Users),         run:()=>{loadFollowingList();setView("following-list");}},
+      {label:"INVITE FRIENDS",  icon:mIcon(Gift),          run:()=>setShowInvite(true)},
       {label:"STYLE FEED",     icon:mIcon(Camera),        run:openStyleFeed},
       {label:"MESSAGES",       icon:mIcon(MessageCircle), run:openMessages},
       {label:"HOW TO MEASURE", icon:mIcon(Ruler),         run:()=>{setPrevView(view);setView("measuring");}},
@@ -3905,6 +3926,37 @@ export default function App() {
     <div className={"app-root"+(user&&view!=="detail"&&view!=="auth"?" has-bottom-nav":"")} style={S.root}>
       <style>{CSS}</style>
       <ConfirmHost/>
+
+      {/* INVITE FRIENDS - referral link + free-bump reward */}
+      {showInvite&&user&&(()=>{
+        const link=`${window.location.origin}/?ref=${user.id}`;
+        const shareText=`Join me on Stitch'd - the UK marketplace for pre-loved South Asian fashion. Sign up with my link: ${link}`;
+        const doCopy=()=>{ try{ navigator.clipboard.writeText(link).then(()=>{ setInviteCopied(true); setTimeout(()=>setInviteCopied(false),2000); }).catch(()=>{}); }catch(e){} };
+        const bumps=profile?.free_bumps||0;
+        return (
+          <div style={S.modalOverlay} onClick={()=>setShowInvite(false)}>
+            <div onClick={e=>e.stopPropagation()} style={{background:"#fff",border:"3px solid #111",borderTop:"6px solid #FF1493",borderRadius:0,maxWidth:440,width:"100%",padding:30}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,letterSpacing:-0.5,lineHeight:1.05,textTransform:"uppercase"}}>Invite friends,<br/>get a free <span style={{color:"#FF1493"}}>bump</span></h2>
+                <button onClick={()=>setShowInvite(false)} style={{background:"none",border:"none",fontSize:18,cursor:"pointer",fontWeight:900,color:"#6b6b6b"}}>✕</button>
+              </div>
+              <p style={{fontSize:14.5,color:"#444",lineHeight:1.6,margin:"6px 0 20px"}}>Share your link. When a friend joins and makes their <strong>first purchase</strong>, you <strong>both</strong> get a free 7-day listing boost.</p>
+              <div style={{display:"flex",gap:8,marginBottom:12}}>
+                <input readOnly value={link} onFocus={e=>e.target.select()} style={{flex:1,border:"2px solid #111",borderRadius:0,padding:"12px 12px",fontSize:13,fontFamily:"'Barlow',sans-serif",color:"#111",background:"#fafafa",minWidth:0}}/>
+                <button onClick={doCopy} className="hbtn" style={{background:inviteCopied?"#34C759":"#111",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"0 16px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1,fontSize:13,cursor:"pointer",whiteSpace:"nowrap"}}>{inviteCopied?"COPIED":"COPY"}</button>
+              </div>
+              <a href={`https://wa.me/?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer" className="hbtn" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",background:"#FF1493",color:"#fff",border:"2px solid #111",borderRadius:0,padding:"13px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,fontSize:15,textDecoration:"none"}}><Share2 width={16} height={16}/> SHARE ON WHATSAPP</a>
+              <div style={{marginTop:18,paddingTop:16,borderTop:"2px solid #f0f0f0",display:"flex",alignItems:"center",gap:10}}>
+                <span style={{width:40,height:40,background:"#fff0f8",border:"2px solid #FF1493",borderRadius:0,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Zap width={18} height={18} color="#FF1493" fill="#FF1493"/></span>
+                <div>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:900,color:"#111",lineHeight:1}}>{bumps} FREE BUMP{bumps===1?"":"S"}</p>
+                  <p style={{fontSize:12,color:"#888",marginTop:2}}>{bumps>0?"Use one to promote a listing free from your dashboard.":"Earn one when a friend makes their first purchase."}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* HEADER */}
       <header className={"nav-header"+(scrolled?" scrolled":"")} style={S.header}>
