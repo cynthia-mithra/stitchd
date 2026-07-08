@@ -16,6 +16,7 @@
 //   Vercel → Project → Settings → Environment Variables  (the sale flow uses it too).
 
 const Stripe = require("stripe");
+const { applyCors } = require("./_cors");
 
 // Same Supabase project the app already reads from. The anon key is already
 // public (it ships in the browser bundle); we re-read the request here so the
@@ -30,6 +31,7 @@ const COMMISSION_RATE = 0.15;
 const sbHeaders = { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` };
 
 module.exports = async (req, res) => {
+  if (applyCors(req, res)) return;
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const secret = process.env.STRIPE_SECRET_KEY;

@@ -14,6 +14,7 @@
 // then redeploy. No CLI needed — Vercel auto-deploys this file on push.
 
 const Stripe = require("stripe");
+const { applyCors } = require("./_cors");
 
 // Same Supabase project the app already reads from. The anon key is already
 // public (it ships in the browser bundle) and can only read publicly-readable
@@ -23,6 +24,7 @@ const SUPABASE_ANON =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoc3Rvb3Fna3l1enhzZXlsc2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NzM3MzQsImV4cCI6MjA5NjE0OTczNH0.mW5GB1VzSfRBMWZRlU7OfQ0RqoT1wEBVBoai6dJ6eQs";
 
 module.exports = async (req, res) => {
+  if (applyCors(req, res)) return;
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const secret = process.env.STRIPE_SECRET_KEY;

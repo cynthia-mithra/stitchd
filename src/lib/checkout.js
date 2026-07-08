@@ -4,6 +4,7 @@
 // CORS preflight to fail), which builds the GBP Checkout Session server-side and
 // returns the hosted-checkout URL to redirect to.
 import { logError } from "./log";
+import { API_BASE } from "./constants";
 
 export async function startCheckout(bag, { buyerId, buyerEmail, shipping } = {}) {
   const listing_ids = (bag || []).map((b) => b.id).filter(Boolean);
@@ -15,7 +16,7 @@ export async function startCheckout(bag, { buyerId, buyerEmail, shipping } = {})
 
   let res;
   try {
-    res = await fetch(`/api/stripe-checkout`, {
+    res = await fetch(`${API_BASE}/api/stripe-checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ listing_ids, buyer_id: buyerId || null, buyer_email: buyerEmail || "", shipping: shipping || null }),
@@ -68,7 +69,7 @@ export async function startOfferCheckout({ offerId, buyerId } = {}) {
 
   let res;
   try {
-    res = await fetch(`/api/create-offer-checkout`, {
+    res = await fetch(`${API_BASE}/api/create-offer-checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ offer_id: offerId, buyer_id: buyerId }),
@@ -114,7 +115,7 @@ export async function startAlterationCheckout({ alterationRequestId, buyerId } =
 
   let res;
   try {
-    res = await fetch(`/api/create-alteration-checkout`, {
+    res = await fetch(`${API_BASE}/api/create-alteration-checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ alteration_request_id: alterationRequestId, buyer_id: buyerId }),
@@ -148,7 +149,7 @@ export async function startAlterationCheckout({ alterationRequestId, buyerId } =
 // Server-side verification of a completed Checkout Session, used by the
 // /order-success page. Returns { paid, currency, amount_total, items, ... }.
 export async function verifySession(sessionId) {
-  const res = await fetch(`/api/verify-session`, {
+  const res = await fetch(`${API_BASE}/api/verify-session`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId }),

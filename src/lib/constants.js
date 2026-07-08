@@ -1,6 +1,17 @@
 import { Package, Mailbox, Box, Truck } from "lucide-react";
 
 export const SUPABASE_URL = "https://zhstooqgkyuzxseylsbk.supabase.co";
+// The app's own live origin, used for its Vercel API routes (/api/*). On the web
+// these are same-origin (empty prefix); inside the native app (Capacitor) there
+// is no local server, so calls must reach the deployed site instead.
+export const SITE_ORIGIN = "https://stitchd.fit";
+// True when running inside the native shell (Capacitor injects window.Capacitor).
+export const IS_NATIVE =
+  typeof window !== "undefined" &&
+  !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === "function" && window.Capacitor.isNativePlatform());
+// Prefix for our own API routes: same-origin on web, absolute to the live site
+// in the native app.
+export const API_BASE = IS_NATIVE ? SITE_ORIGIN : "";
 // Web Push VAPID public key (safe to expose). The matching private key lives
 // only in the send-push edge function's secrets (VAPID_PRIVATE_KEY).
 export const VAPID_PUBLIC_KEY = "BG-u3ThrIEspJZOWHbAIOitk9tPLF0gtxvifYNdQ8G3bZZjFjKO4Tb2T3BaRTQBQbzV0EQjJxA0OvD4zFJZIgLY";
