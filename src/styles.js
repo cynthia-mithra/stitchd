@@ -223,7 +223,7 @@ export const S={
   // Frosted-glass sticky header: a near-opaque white with a backdrop blur so
   // content scrolls subtly beneath it. The hairline lift-off shadow is added
   // only once scrolled (see .nav-header.scrolled in CSS).
-  header:{background:"rgba(255,255,255,0.82)",backdropFilter:"saturate(180%) blur(12px)",WebkitBackdropFilter:"saturate(180%) blur(12px)",borderBottom:"3px solid #111",position:"sticky",top:0,zIndex:200},
+  header:{background:"rgba(255,255,255,0.82)",backdropFilter:"saturate(180%) blur(12px)",WebkitBackdropFilter:"saturate(180%) blur(12px)",borderBottom:"3px solid #111",position:"sticky",top:0,zIndex:200,paddingTop:"env(safe-area-inset-top)"},
   // overflow is left VISIBLE here so the desktop/iPad profile-icon dropdown (which
   // hangs below this 52px bar via position:absolute) isn't clipped. `overflow-x:auto`
   // would force `overflow-y` to auto too and crop the dropdown to nothing. Horizontal
@@ -256,7 +256,7 @@ export const S={
   navDropSectionLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#6b6b6b",textTransform:"uppercase",padding:"7px 16px 2px",userSelect:"none"},
   navDropDivider:{height:1,background:"#eee",border:"none",margin:0},
   // Mobile full-width menu overlay.
-  mobileNav:{position:"fixed",top:0,left:0,right:0,bottom:0,width:"100%",background:"#fff",zIndex:600,display:"flex",flexDirection:"column",overflowY:"auto"},
+  mobileNav:{position:"fixed",top:0,left:0,right:0,bottom:0,width:"100%",background:"#fff",zIndex:600,display:"flex",flexDirection:"column",overflowY:"auto",paddingTop:"env(safe-area-inset-top)"},
   mobileNavHead:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",borderBottom:"2px solid #111"},
   mobileNavTitle:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2,textTransform:"uppercase"},
   mobileNavClose:{background:"none",border:"none",cursor:"pointer",color:"#111",display:"flex",alignItems:"center",padding:4},
@@ -503,7 +503,7 @@ export const S={
   guaranteeBanner:{border:"2px solid #111",borderRadius:0,background:"#fff",padding:"16px 18px",marginBottom:16},
   // Sticky buy bar - slides up from the bottom once the inline ADD TO BAG button
   // scrolls out of view (see .detail-buybar CSS + the IntersectionObserver in Detail).
-  buyBar:{position:"fixed",left:0,right:0,bottom:0,zIndex:300,background:"rgba(255,255,255,0.9)",backdropFilter:"saturate(180%) blur(12px)",WebkitBackdropFilter:"saturate(180%) blur(12px)",borderTop:"3px solid #111",padding:"10px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,boxShadow:"0 -8px 30px rgba(0,0,0,0.10)"},
+  buyBar:{position:"fixed",left:0,right:0,bottom:0,zIndex:300,background:"rgba(255,255,255,0.9)",backdropFilter:"saturate(180%) blur(12px)",WebkitBackdropFilter:"saturate(180%) blur(12px)",borderTop:"3px solid #111",padding:"10px 18px",paddingBottom:"max(10px, env(safe-area-inset-bottom))",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,boxShadow:"0 -8px 30px rgba(0,0,0,0.10)"},
   buyBarInfo:{display:"flex",alignItems:"center",gap:12,minWidth:0},
   buyBarThumb:{width:46,height:54,border:"2px solid #111",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,background:"#fafafa"},
   buyBarName:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"42vw",margin:0,lineHeight:1.15},
