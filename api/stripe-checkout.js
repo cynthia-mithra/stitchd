@@ -199,6 +199,16 @@ module.exports = async (req, res) => {
     const origin =
       req.headers.origin || (req.headers.host ? `https://${req.headers.host}` : "https://stitchd.fit");
 
+    // Native app: Stripe requires https return URLs (not capacitor://), so route
+    // through the native-return.html bridge on the live site, which hands back to
+    // the app via the stitchd:// deep link. Web keeps its normal same-origin paths.
+    const isNative = body.platform === "native";
+    const NATIVE_SITE = "https://stitchd.fit";
+    const success_url = isNative
+      ? `${NATIVE_SITE}/native-return.html?to=order-success&session_id={CHECKOUT_SESSION_ID}`
+      : `${origin}/order-success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancel_url = isNative ? `${NATIVE_SITE}/native-return.html?to=cancel` : `${origin}/bag`;
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items,
@@ -206,8 +216,8 @@ module.exports = async (req, res) => {
       // Collect the buyer's UK delivery address so the seller has somewhere to
       // post to (and can buy a label). Stored on the order by the webhook.
       shipping_address_collection: { allowed_countries: ["GB"] },
-      success_url: `${origin}/order-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/bag`,
+      success_url,
+      cancel_url,
       customer_email: buyer_email || undefined,
       metadata: {
         listing_ids: listings.map((l) => l.id).join(","),

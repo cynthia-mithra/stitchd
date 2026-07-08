@@ -96,6 +96,14 @@ module.exports = async (req, res) => {
     const origin =
       req.headers.origin || (req.headers.host ? `https://${req.headers.host}` : "https://stitchd.fit");
 
+    // Native app: return through the native-return.html deep-link bridge.
+    const isNative = body.platform === "native";
+    const NATIVE_SITE = "https://stitchd.fit";
+    const success_url = isNative
+      ? `${NATIVE_SITE}/native-return.html?to=alterations&session_id={CHECKOUT_SESSION_ID}&paid=true`
+      : `${origin}/alterations?session_id={CHECKOUT_SESSION_ID}&paid=true`;
+    const cancel_url = isNative ? `${NATIVE_SITE}/native-return.html?to=cancel` : `${origin}/alterations`;
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: [
@@ -114,8 +122,8 @@ module.exports = async (req, res) => {
         commission_amount_pence: String(commissionPence),
         tailor_payout_pence: String(tailorPayoutPence),
       },
-      success_url: `${origin}/alterations?session_id={CHECKOUT_SESSION_ID}&paid=true`,
-      cancel_url: `${origin}/alterations`,
+      success_url,
+      cancel_url,
     });
 
     // Stamp the session id + commission split onto the request (best-effort;

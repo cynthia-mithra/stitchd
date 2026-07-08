@@ -4,7 +4,12 @@
 // CORS preflight to fail), which builds the GBP Checkout Session server-side and
 // returns the hosted-checkout URL to redirect to.
 import { logError } from "./log";
-import { API_BASE } from "./constants";
+import { API_BASE, IS_NATIVE } from "./constants";
+import { openExternal } from "./native";
+
+// "web" | "native" — tells the server which return URLs to build (native uses
+// the native-return.html deep-link bridge instead of a normal site path).
+const PLATFORM = IS_NATIVE ? "native" : "web";
 
 export async function startCheckout(bag, { buyerId, buyerEmail, shipping } = {}) {
   const listing_ids = (bag || []).map((b) => b.id).filter(Boolean);
@@ -19,7 +24,7 @@ export async function startCheckout(bag, { buyerId, buyerEmail, shipping } = {})
     res = await fetch(`${API_BASE}/api/stripe-checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listing_ids, buyer_id: buyerId || null, buyer_email: buyerEmail || "", shipping: shipping || null }),
+      body: JSON.stringify({ listing_ids, buyer_id: buyerId || null, buyer_email: buyerEmail || "", shipping: shipping || null, platform: PLATFORM }),
       signal: controller.signal,
     });
   } catch (e) {
@@ -50,8 +55,8 @@ export async function startCheckout(bag, { buyerId, buyerEmail, shipping } = {})
       `Could not start checkout (HTTP ${res.status}).`;
     throw new Error(reason);
   }
-  // Hand the buyer over to Stripe's hosted checkout page.
-  window.location.href = data.url;
+  // Hand the buyer over to Stripe's hosted checkout page (in-app browser on native).
+  await openExternal(data.url);
 }
 
 // Phase 14 - completes the purchase of an ACCEPTED offer at the offer price.
@@ -72,7 +77,7 @@ export async function startOfferCheckout({ offerId, buyerId } = {}) {
     res = await fetch(`${API_BASE}/api/create-offer-checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ offer_id: offerId, buyer_id: buyerId }),
+      body: JSON.stringify({ offer_id: offerId, buyer_id: buyerId, platform: PLATFORM }),
       signal: controller.signal,
     });
   } catch (e) {
@@ -96,8 +101,8 @@ export async function startOfferCheckout({ offerId, buyerId } = {}) {
       `Could not start checkout (HTTP ${res.status}).`;
     throw new Error(reason);
   }
-  // Hand the buyer over to Stripe's hosted checkout page.
-  window.location.href = data.url;
+  // Hand the buyer over to Stripe's hosted checkout page (in-app browser on native).
+  await openExternal(data.url);
 }
 
 // Phase 15 - pays a tailor's alteration QUOTE at the full quote amount. Mirrors
@@ -118,7 +123,7 @@ export async function startAlterationCheckout({ alterationRequestId, buyerId } =
     res = await fetch(`${API_BASE}/api/create-alteration-checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ alteration_request_id: alterationRequestId, buyer_id: buyerId }),
+      body: JSON.stringify({ alteration_request_id: alterationRequestId, buyer_id: buyerId, platform: PLATFORM }),
       signal: controller.signal,
     });
   } catch (e) {
@@ -142,8 +147,8 @@ export async function startAlterationCheckout({ alterationRequestId, buyerId } =
       `Could not start checkout (HTTP ${res.status}).`;
     throw new Error(reason);
   }
-  // Hand the buyer over to Stripe's hosted checkout page.
-  window.location.href = data.url;
+  // Hand the buyer over to Stripe's hosted checkout page (in-app browser on native).
+  await openExternal(data.url);
 }
 
 // Server-side verification of a completed Checkout Session, used by the

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Returning to Stitch'd…</title>
+<style>
+  html,body{height:100%;margin:0}
+  body{background:#FF1493;color:#fff;display:flex;align-items:center;justify-content:center;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;text-align:center;padding:24px}
+  .box{max-width:320px}
+  h1{font-weight:800;font-size:22px;margin:0 0 8px}
+  p{opacity:.9;font-size:15px;line-height:1.4;margin:0 0 20px}
+  a{display:inline-block;background:#fff;color:#FF1493;text-decoration:none;font-weight:800;
+    padding:12px 22px;border-radius:0}
+</style>
+</head>
+<body>
+<!--
+  Native return bridge.
+
+  In the native app, Sign in with Apple/Google (Supabase) and Stripe checkout
+  both redirect here on a real https URL (they can't target a custom scheme
+  directly). This page immediately forwards to the stitchd:// deep link, which
+  re-opens the app; the app parses the same params and closes the in-app browser.
+
+  On the web this page is never used in the normal flow, so it just falls back to
+  the home page.
+-->
+<div class="box">
+  <h1>Returning to Stitch'd…</h1>
+  <p>If the app doesn't reopen automatically, tap below.</p>
+  <a id="link" href="#">Back to Stitch'd</a>
+</div>
+<script>
+  (function () {
+    // Everything Supabase/Stripe appended: query (?session_id=…, ?to=…) and/or
+    // hash (#access_token=…&refresh_token=… from OAuth). Preserve both verbatim.
+    var search = window.location.search || "";
+    var hash = window.location.hash || "";
+    var deepLink = "stitchd://return" + search + hash;
+    var link = document.getElementById("link");
+    link.setAttribute("href", deepLink);
+    // Fire the hand-off. A tiny delay lets the page paint first so the fallback
+    // link is visible if the scheme isn't registered (e.g. opened on the web).
+    setTimeout(function () { window.location.href = deepLink; }, 60);
+    // Safety net: if we're clearly on the web (not the app) and nothing caught
+    // the scheme, send the user home after a moment.
+    setTimeout(function () {
+      if (document.visibilityState === "visible") window.location.replace("/");
+    }, 2500);
+  })();
+</script>
+</body>
+</html>

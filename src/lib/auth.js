@@ -1,4 +1,12 @@
-import { SUPABASE_URL, SUPABASE_KEY } from "./constants";
+import { SUPABASE_URL, SUPABASE_KEY, IS_NATIVE, SITE_ORIGIN } from "./constants";
+
+// Where the OAuth flow should send the user back to. On the web that's the page
+// they started from; in the native app it's the native-return.html bridge on the
+// live site, which hands off to the stitchd:// deep link so the app reopens with
+// the session tokens (see public/native-return.html + App.js appUrlOpen).
+function oauthReturnTarget() {
+  return IS_NATIVE ? `${SITE_ORIGIN}/native-return.html` : `${window.location.origin}${window.location.pathname}`;
+}
 
 export const auth = {
   async signUp(email,pw){ const r=await fetch(`${SUPABASE_URL}/auth/v1/signup`,{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email,password:pw})}); const d=await r.json(); if(d.error)throw new Error(d.error.message||d.msg); return d; },
@@ -19,12 +27,12 @@ export const auth = {
   // (Authentication → URL Configuration: Site URL + allowed Redirect URLs must
   // match the exact domain) and Google Cloud (authorized redirect URI must be
   // <project>.supabase.co/auth/v1/callback), not in this URL.
-  googleUrl(){ const target=`${window.location.origin}${window.location.pathname}`; return `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(target)}`; },
+  googleUrl(){ const target=oauthReturnTarget(); return `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(target)}`; },
   // Sign in with Apple - same GoTrue OAuth flow as Google. Requires the Apple
   // provider to be enabled in the Supabase dashboard (Authentication → Providers
   // → Apple) with a Services ID + key, and stitchd.fit added to Apple's return
   // URLs. The redirect_to handling mirrors googleUrl() (clean origin+path only).
-  appleUrl(){ const target=`${window.location.origin}${window.location.pathname}`; return `${SUPABASE_URL}/auth/v1/authorize?provider=apple&redirect_to=${encodeURIComponent(target)}`; },
+  appleUrl(){ const target=oauthReturnTarget(); return `${SUPABASE_URL}/auth/v1/authorize?provider=apple&redirect_to=${encodeURIComponent(target)}`; },
   // Password reset - step 1: send the recovery email. Routes through our own
   // send-reset Edge Function so the email is a BRANDED Stitch'd email (via
   // Resend) instead of Supabase's plain default. The function generates the

@@ -9,6 +9,34 @@ export function isNative() {
   );
 }
 
+// Open an external flow (Stripe checkout, or a Supabase OAuth authorize URL).
+// On the web this is a normal full-page navigation. In the native app we open it
+// in the in-app browser (SFSafariViewController) so that, when the flow finishes
+// and redirects to our native-return.html bridge, the stitchd:// deep link brings
+// the user back into the app (handled by the appUrlOpen listener in App.js).
+export async function openExternal(url) {
+  if (!isNative()) {
+    window.location.href = url;
+    return;
+  }
+  try {
+    const { Browser } = await import("@capacitor/browser");
+    await Browser.open({ url });
+  } catch (e) {
+    // If the in-app browser plugin is unavailable, fall back to a normal open.
+    window.location.href = url;
+  }
+}
+
+// Dismiss the in-app browser (called once the deep link has brought us back).
+export async function closeExternal() {
+  if (!isNative()) return;
+  try {
+    const { Browser } = await import("@capacitor/browser");
+    await Browser.close();
+  } catch (e) { /* already closed */ }
+}
+
 export async function initNative() {
   if (!isNative()) return;
 

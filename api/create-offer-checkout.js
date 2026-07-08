@@ -105,6 +105,15 @@ module.exports = async (req, res) => {
     const origin =
       req.headers.origin || (req.headers.host ? `https://${req.headers.host}` : "https://stitchd.fit");
 
+    // Native app: return through the native-return.html deep-link bridge (Stripe
+    // needs an https URL, and the app can't be targeted directly).
+    const isNative = body.platform === "native";
+    const NATIVE_SITE = "https://stitchd.fit";
+    const success_url = isNative
+      ? `${NATIVE_SITE}/native-return.html?to=order-success&session_id={CHECKOUT_SESSION_ID}`
+      : `${origin}/order-success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancel_url = isNative ? `${NATIVE_SITE}/native-return.html?to=cancel` : `${origin}/offers`;
+
     // Buyer Protection fee (Vinted-style): fixed + % of the offer amount, charged
     // to the buyer (sellers sell free). Kept in lockstep with api/stripe-checkout.js.
     const protectionPence = pence > 0 ? 80 + Math.round(pence * 0.06) : 0;
@@ -133,8 +142,8 @@ module.exports = async (req, res) => {
         buyer_id: offer.buyer_id,
         seller_id: offer.seller_id,
       },
-      success_url: `${origin}/order-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/offers`,
+      success_url,
+      cancel_url,
     });
 
     return res.status(200).json({ url: session.url, id: session.id });

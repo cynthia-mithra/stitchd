@@ -6,7 +6,7 @@ import {
   OCCASIONS, SIZES, OCC_COLOR, CARD_COLORS, EMPTY_FORM, POSTAGE_OPTIONS,
   catEmoji, currencySymbol, buyerProtectionFee,
   garmentTypesFor, garmentFieldsFor, defaultGarmentFor, parseMeasurements, buildMeasPayload,
-  ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary,
+  ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary, IS_NATIVE,
 } from "./lib/constants";
 import { db } from "./lib/db";
 import { enablePush, pushSupported, pushPermission } from "./lib/push";
@@ -488,34 +488,95 @@ export default function App() {
   const token = session?.access_token;
   const user  = session?.user;
 
+  // Establish a session from an OAuth redirect hash (#access_token=…&refresh_token=…).
+  // Shared by the web redirect handler and the native deep-link handler so they
+  // can never drift. Returns true when a token was found and applied.
+  function applyOAuthHash(hash){
+    const p=new URLSearchParams((hash||"").replace(/^#/,""));
+    const access_token=p.get("access_token");
+    if(!access_token) return false;
+    // The OAuth redirect hash has no user_id param, so read the real user id and
+    // email from the JWT itself. Without this, user.id is null and the
+    // `auth.uid() = user_id` RLS check fails on every insert.
+    const claims=decodeJWT(access_token)||{};
+    const s={
+      access_token,
+      // Persisting refresh_token is what lets the session refresh after the ~1h
+      // access token expires; without it every save fails with "JWT expired".
+      refresh_token:p.get("refresh_token")||null,
+      expires_at:claims.exp||null,
+      user:{email:claims.email||p.get("email")||"user",id:claims.sub||p.get("user_id")||null},
+    };
+    auth.saveSession(s); setSession(s);
+    // Password-recovery links land here too (type=recovery): keep the recovery
+    // session and send them to the set-password screen instead of the shop.
+    if(p.get("type")==="recovery"){
+      setView("auth"); setOtpStep("reset"); flash("Choose a new password.");
+    } else {
+      flash("Signed in!"); setView("shop");
+    }
+    return true;
+  }
+
+  // Show the order-success screen and confirm the paid Stripe session. Shared by
+  // the web /order-success route and the native checkout deep link.
+  function finishOrderSuccess(sid){
+    setView("order-success");
+    setOrderResult({status:"loading"});
+    if(!sid){ setOrderResult({status:"error"}); return; }
+    verifySession(sid).then(r=>{
+      if(r&&r.paid){
+        setOrderResult({status:"ok",items:r.items||[],amount:r.amount_total||0,sessionId:sid,listingIds:r.listing_ids||[]});
+        const purchased=new Set(r.listing_ids||[]);
+        setBag(prev=>{ const next=purchased.size?prev.filter(b=>!purchased.has(b.id)):[]; localStorage.setItem("stitchd_bag",JSON.stringify(next)); return next; });
+      } else {
+        setOrderResult({status:"error"});
+      }
+    }).catch(()=>setOrderResult({status:"error"}));
+  }
+
   useEffect(()=>{
     const hash=window.location.hash;
     if(hash.includes("access_token")){
-      const p=new URLSearchParams(hash.slice(1));
-      const access_token=p.get("access_token");
-      // The OAuth redirect hash has no user_id param, so read the real user id
-      // and email from the JWT itself. Without this, user.id is null and the
-      // `auth.uid() = user_id` RLS check fails on every insert.
-      const claims=decodeJWT(access_token)||{};
-      const s={
-        access_token,
-        // Persisting refresh_token is what lets a Google session refresh after
-        // the ~1h access token expires; without it the token dies and every
-        // save fails with "JWT expired" until a manual re-login.
-        refresh_token:p.get("refresh_token")||null,
-        expires_at:claims.exp||null,
-        user:{email:claims.email||p.get("email")||"user",id:claims.sub||p.get("user_id")||null},
-      };
-      auth.saveSession(s); setSession(s); window.location.hash="";
-      // Password-recovery links land here too (type=recovery). Instead of
-      // dropping the user on the shop, keep the recovery session (so we have a
-      // token to PUT the new password) and send them to the set-password screen.
-      if(p.get("type")==="recovery"){
-        setView("auth"); setOtpStep("reset"); flash("Choose a new password.");
-      } else {
-        flash("Signed in!"); setView("shop");
-      }
+      applyOAuthHash(hash);
+      window.location.hash="";
     }
+  },[]);
+
+  // Native app: Sign in with Apple/Google and Stripe checkout return via the
+  // stitchd:// deep link (see public/native-return.html). Parse it the same way
+  // the web does, then dismiss the in-app browser.
+  useEffect(()=>{
+    if(!IS_NATIVE) return;
+    let cleanup;
+    (async()=>{
+      try{
+        const { App: CapApp } = await import("@capacitor/app");
+        const sub = await CapApp.addListener("appUrlOpen", async ({ url })=>{
+          if(!url) return;
+          let u; try{ u=new URL(url); }catch{ return; }
+          // OAuth tokens arrive in the hash; checkout results in the query (?to=…).
+          const handledAuth = u.hash && u.hash.includes("access_token") && applyOAuthHash(u.hash);
+          if(!handledAuth){
+            const to=u.searchParams.get("to");
+            const sid=u.searchParams.get("session_id");
+            if(to==="order-success"||sid){
+              finishOrderSuccess(sid);
+            } else if(to==="alterations"){
+              setView("alterations");
+              flash("Payment received - your booking is confirmed!",6000);
+            } else if(to==="bag"){
+              setShowBag(true);
+            }
+            // to==="cancel" (or anything else): just close the browser below.
+          }
+          try{ const { closeExternal } = await import("./lib/native"); await closeExternal(); }catch(e){}
+        });
+        cleanup=()=>{ try{ sub.remove(); }catch(e){} };
+      }catch(e){ /* @capacitor/app unavailable */ }
+    })();
+    return ()=>{ if(cleanup) cleanup(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
   useEffect(()=>{ fetchItems(); },[]);
@@ -565,20 +626,7 @@ export default function App() {
       setView("dashboard");
     }
     if(!window.location.pathname.includes("order-success")) return;
-    setView("order-success");
-    setOrderResult({status:"loading"});
-    const sid=new URLSearchParams(window.location.search).get("session_id");
-    if(!sid){ setOrderResult({status:"error"}); return; }
-    verifySession(sid).then(r=>{
-      if(r&&r.paid){
-        setOrderResult({status:"ok",items:r.items||[],amount:r.amount_total||0,sessionId:sid,listingIds:r.listing_ids||[]});
-        // Clear the purchased listings from the (localStorage) bag.
-        const purchased=new Set(r.listing_ids||[]);
-        setBag(prev=>{ const next=purchased.size?prev.filter(b=>!purchased.has(b.id)):[]; localStorage.setItem("stitchd_bag",JSON.stringify(next)); return next; });
-      } else {
-        setOrderResult({status:"error"});
-      }
-    }).catch(()=>setOrderResult({status:"error"}));
+    finishOrderSuccess(new URLSearchParams(window.location.search).get("session_id"));
   },[]);
 
   // URL routing for the deep-linkable pages. Static pages (/terms, /about…) map
