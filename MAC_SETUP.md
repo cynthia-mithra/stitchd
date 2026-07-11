@@ -1,8 +1,14 @@
 # Stitch'd — iOS App Build Checklist
 
-Everything needed to turn the code into an app on the App Store. Work top to
-bottom. Steps marked **[iPad OK]** can be done from any device now; the rest need
-the Mac.
+Everything needed to turn the code into an app on the App Store.
+
+**Two ways to build:**
+- **Option A — Cloud build (no Mac needed).** A cloud Mac builds + uploads for
+  you. Recommended, and everything is done from a browser. See section **C** below.
+- **Option B — Your own Mac.** Sections 1–6. Use this only if you'd rather build
+  locally.
+
+Steps marked **[iPad OK]** can be done from any device now.
 
 ---
 
@@ -20,6 +26,51 @@ the Mac.
 - [ ] Tell Claude your **macOS version** (Apple menu →  About This Mac). This
       decides whether this Mac can do the final App Store upload or whether we
       use a cheap cloud Mac just for that step.
+
+---
+
+## C. Cloud build — no Mac (recommended) — [iPad OK]
+
+A cloud service (**Codemagic**) runs the build on a Mac in the cloud and uploads
+it to Apple. The build recipe is already in the repo (`codemagic.yaml`). You just
+wire up two accounts. All of this is done in a browser — no Mac at any point.
+
+### C1. Make an App Store Connect API key (lets the cloud sign + upload for you)
+1. Go to **appstoreconnect.apple.com** → **Users and Access** → **Integrations**
+   tab → **App Store Connect API** → **Team Keys**.
+2. Click **＋**, name it `Codemagic`, set **Access = App Manager**, **Generate**.
+3. **Download** the key — a **`.p8` file** (you can only download it once — keep it safe).
+4. Note the **Key ID** (next to the key) and the **Issuer ID** (top of the page).
+   → You'll have 3 things: the `.p8`, the **Key ID**, the **Issuer ID**.
+
+### C2. Create the app record
+1. Still in App Store Connect → **My Apps** → **＋** → **New App**.
+2. Platform **iOS**, Name **Stitch'd**, Primary language **English (U.K.)**,
+   Bundle ID **fit.stitchd.app**, SKU `stitchd`. **Create**.
+
+### C3. Set up Codemagic
+1. Go to **codemagic.io** → sign up (free) with your **GitHub**.
+2. Authorise access to the **cynthia-mithra/stitchd** repo. It'll detect
+   `codemagic.yaml`.
+3. In Codemagic → **Teams → (your team) → Integrations → App Store Connect →
+   Connect**. Paste the **Issuer ID** + **Key ID** and upload the **`.p8`**.
+   **Name it EXACTLY:** `Stitchd App Store Key`  ← must match the build recipe.
+
+### C4. Run the build
+1. In Codemagic, open the **stitchd** app → pick the **Stitch'd iOS — App Store**
+   workflow → **Start new build** (branch: `claude/tailor-registration-ux-3d1qw2`).
+2. It builds, signs, and uploads to **TestFlight** (~15–25 min). Tell Claude if a
+   step goes red — the log says exactly what to fix.
+
+### C5. Test on your iPhone, then release
+1. Install **TestFlight** from the App Store on your iPhone.
+2. Once the build lands, open it in TestFlight and test everything (sign-in,
+   checkout, messages).
+3. Happy? In App Store Connect, add the build to your version and **Submit for
+   Review**. (Metadata/screenshots/privacy — Claude can help.)
+
+> Note: the App ID has "Sign in with Apple" enabled. If Codemagic's signing step
+> complains about entitlements, tell Claude — it's a quick fix to the project.
 
 ---
 

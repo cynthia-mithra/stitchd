@@ -1,0 +1,59 @@
+# Codemagic cloud build for the Stitch'd iOS app.
+#
+# This runs the whole iOS build on a Mac in the cloud — no local Mac needed.
+# Codemagic checks out the repo, builds the web app, syncs it into the iOS
+# project, signs it (certificates created automatically from your App Store
+# Connect API key), and uploads it to TestFlight/App Store Connect.
+#
+# One-time setup in the Codemagic web app (see MAC_SETUP.md → "Cloud build"):
+#   1. Connect this GitHub repo.
+#   2. Team settings → Integrations → App Store Connect → add an API key,
+#      and name it EXACTLY:  Stitchd App Store Key
+#   (That name must match `integrations.app_store_connect` below.)
+
+workflows:
+  ios-appstore:
+    name: Stitch'd iOS — App Store
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: Stitchd App Store Key
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: fit.stitchd.app
+      vars:
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+      node: 20
+      xcode: latest
+    scripts:
+      - name: Install npm dependencies
+        script: npm ci
+      - name: Build web assets and sync Capacitor
+        script: |
+          npm run build
+          npx cap sync ios
+      - name: Set up provisioning profiles
+        script: xcode-project use-profiles
+      - name: Set the build number
+        script: |
+          # Codemagic auto-increments $BUILD_NUMBER each build; Apple requires a
+          # unique, increasing build number per upload.
+          cd ios/App
+          agvtool new-version -all "$BUILD_NUMBER"
+      - name: Build the signed .ipa
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      # Uploads the build to TestFlight so you can install it on your iPhone and
+      # test before releasing. Promote to the public App Store from App Store
+      # Connect once you're happy (or flip submit_to_app_store to true later).
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
