@@ -121,9 +121,33 @@ Most of the app is behind sign-in, so the reviewer needs a **demo account**.
 In App Store Connect → your version → **App Review Information**:
 - Provide a **test email + password** for a real account with a listing or two.
 - **Notes:** *"Sign in with the demo account, or use email sign-up. Payments use
-  Stripe (physical goods only — no digital content). Sign in with Apple is
+  Stripe for physical goods only (no digital content), so no in-app purchase is
+  used; you can reach checkout without completing payment. Sign in with Apple is
   supported."*
 - Sign-in required: **Yes** (attach the demo credentials).
+
+### 5a. Demo account setup checklist (do before submitting)
+The goal: when the reviewer signs in, the app looks alive and complete — not an
+empty account. Set this up on the **live** app:
+
+- [ ] **Create a dedicated account** with an email you control (e.g.
+      `review@stitchd.fit` or a spare Gmail) and a simple password. Write both
+      down for the review notes.
+- [ ] **Do NOT turn on 2FA** for this account (the reviewer can't pass it).
+- [ ] **Complete the profile** — username, profile photo, short bio. A finished
+      profile makes the app feel real.
+- [ ] **Post 2–3 active listings** from this account with good photos, real
+      measurements, prices and categories (e.g. a lehenga, a saree, a kurta) so
+      the seller side and dashboard aren't empty.
+- [ ] **Check the wider shop looks populated** — several live listings so
+      browsing feels active (your real listings likely cover this).
+- [ ] *(Nice to have)* add one item to the **wishlist** and **follow** a seller,
+      so those tabs aren't empty when the reviewer looks.
+- [ ] Paste the email + password into **App Review Information** and add the
+      notes above.
+
+> Why a seller account: it lets the one demo login show BOTH sides — browsing/
+> buying AND listing/selling/dashboard — so the reviewer sees the full app.
 
 ---
 
