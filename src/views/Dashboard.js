@@ -1,13 +1,13 @@
 import React from "react";
 import { Shirt, Gift, Eye, Check, Star, Share2, Copy, Download, Plane, Rocket, Bell, X, Twitter, MessageCircle, Instagram, CheckSquare, Square, Plus, Layers, Flag, AlertCircle, ExternalLink, BadgeCheck, Clock, ShieldCheck, Store, Image as ImageIcon, MapPin, Zap, TrendingUp, Tag, MessageSquare, Hourglass, Scissors, Wallet, RefreshCw } from "lucide-react";
-import { CARD_COLORS, catEmoji, currencySymbol, lookListings, lookTotal, turnaroundLabel } from "../lib/constants";
+import { CARD_COLORS, catEmoji, currencySymbol, lookListings, lookTotal, turnaroundLabel, publicOrigin } from "../lib/constants";
 import { S } from "../styles";
 import { Sec, F, Thumb, VerifiedBadge, IDVerifiedBadge } from "../components/Shared";
 import Analytics from "./Analytics";
 
 // Phase 10d - public URL for a listing, used by Share (copy link / socials) and
 // the share-card download. Falls back to the live domain when there's no origin.
-const listingUrl = (id) => `${(typeof window!=="undefined"&&window.location&&window.location.origin)||"https://stitchd.fit"}/?listing=${id}`;
+const listingUrl = (id) => `${publicOrigin()}/?listing=${id}`;
 
 // Render the share card to a PNG and trigger a download. Pure-canvas (no html2canvas
 // dependency) so the build needs nothing extra. The listing photo is drawn with

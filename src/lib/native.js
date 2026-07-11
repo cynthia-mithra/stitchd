@@ -28,6 +28,23 @@ export async function openExternal(url) {
   }
 }
 
+// Open an arbitrary URL the right way for the platform: a new tab on the web,
+// the in-app browser in the native app (a bare window.open often no-ops inside a
+// WKWebView). Use for tracking links, shipping-label PDFs, external pages, etc.
+export async function openUrl(url) {
+  if (!url) return;
+  if (!isNative()) {
+    window.open(url, "_blank", "noopener");
+    return;
+  }
+  try {
+    const { Browser } = await import("@capacitor/browser");
+    await Browser.open({ url });
+  } catch (e) {
+    try { window.open(url, "_blank"); } catch (_) { /* nothing else to try */ }
+  }
+}
+
 // Dismiss the in-app browser (called once the deep link has brought us back).
 export async function closeExternal() {
   if (!isNative()) return;

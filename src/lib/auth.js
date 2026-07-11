@@ -39,7 +39,7 @@ export const auth = {
   // recovery link server-side and always returns ok (no account enumeration);
   // redirectTo brings the user back to the app, where the hash carries
   // type=recovery.
-  async sendReset(email){ const redirectTo=`${window.location.origin}${window.location.pathname}`; const r=await fetch(`${SUPABASE_URL}/functions/v1/send-reset`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({email,redirectTo})}); if(!r.ok)throw new Error("Could not send reset email - please try again."); return r.json().catch(()=>({ok:true})); },
+  async sendReset(email){ const redirectTo=IS_NATIVE?SITE_ORIGIN:`${window.location.origin}${window.location.pathname}`; const r=await fetch(`${SUPABASE_URL}/functions/v1/send-reset`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({email,redirectTo})}); if(!r.ok)throw new Error("Could not send reset email - please try again."); return r.json().catch(()=>({ok:true})); },
   // Password reset - step 2: set the new password using the recovery session's
   // access token (saved when we detect the type=recovery hash on return).
   async updateUser(password,t){ const r=await fetch(`${SUPABASE_URL}/auth/v1/user`,{method:"PUT",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t}`,"Content-Type":"application/json"},body:JSON.stringify({password})}); const d=await r.json().catch(()=>({})); if(!r.ok||d.error||d.code)throw new Error((d.error&&d.error.message)||d.msg||d.error_description||"Could not update password"); return d; },

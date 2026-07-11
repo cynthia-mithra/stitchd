@@ -6,11 +6,12 @@ import {
   OCCASIONS, SIZES, OCC_COLOR, CARD_COLORS, EMPTY_FORM, POSTAGE_OPTIONS,
   catEmoji, currencySymbol, buyerProtectionFee,
   garmentTypesFor, garmentFieldsFor, defaultGarmentFor, parseMeasurements, buildMeasPayload,
-  ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary, IS_NATIVE,
+  ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary, IS_NATIVE, publicOrigin,
 } from "./lib/constants";
 import { db } from "./lib/db";
 import { enablePush, pushSupported, pushPermission } from "./lib/push";
 import { startCheckout, startOfferCheckout, startAlterationCheckout, verifySession } from "./lib/checkout";
+import { openUrl } from "./lib/native";
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
 import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } from "./lib/connect";
@@ -1264,7 +1265,7 @@ export default function App() {
   function shareItem(item){
     // Share the listing's own URL (not the current page) so the link opens the
     // item for whoever receives it.
-    const url=`${window.location.origin}/listing/${item.id}`;
+    const url=`${publicOrigin()}/listing/${item.id}`;
     const text=`Check out "${item.name}" for £${item.price} on Stitch'd`;
     if(navigator.share){ navigator.share({title:item.name,text,url}).catch(()=>{}); }
     else{ navigator.clipboard.writeText(`${text}\n${url}`).then(()=>flash("Link copied!")); }
@@ -2780,7 +2781,7 @@ export default function App() {
     try{
       const res=await verifyConnectAccount(myTailor.id);
       const url=(res&&(res.dashboard_url||res.url))||null;
-      if(url){ try{ window.open(url,"_blank","noopener"); }catch(e){ window.location.href=url; } }
+      if(url){ openUrl(url); }
       else flash("Couldn't open your Stripe dashboard. Please try again.");
     }catch(e){ flash(e.message||"Couldn't open your Stripe dashboard."); }
     finally{ setPaymentsBusy(false); }
@@ -3478,12 +3479,12 @@ export default function App() {
       // PDF is ready (just bought, or re-fetched): store it on the order + open it.
       if(res&&res.label_url){
         setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number||o.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null,label_url:res.label_url}:o));
-        try{ window.open(res.label_url,"_blank"); }catch(e){}
+        openUrl(res.label_url);
         flash("Label ready - opening the PDF. It stays on the order as VIEW LABEL.");
         return;
       }
       // Legacy order (bought before in-app PDFs were stored) → print from Parcel2Go.
-      if(res&&res.legacy){ try{ window.open("https://www.parcel2go.com/myaccount/myorders","_blank"); }catch(e){} flash("This label was bought earlier - opening your Parcel2Go account to print it."); return; }
+      if(res&&res.legacy){ openUrl("https://www.parcel2go.com/myaccount/myorders"); flash("This label was bought earlier - opening your Parcel2Go account to print it."); return; }
       // Bought but Parcel2Go hasn't finished generating the PDF yet.
       if(res&&res.tracking_number){
         setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null}:o));
@@ -4075,7 +4076,7 @@ export default function App() {
 
       {/* INVITE FRIENDS - referral link + free-bump reward */}
       {showInvite&&user&&(()=>{
-        const link=`${window.location.origin}/?ref=${user.id}`;
+        const link=`${publicOrigin()}/?ref=${user.id}`;
         const shareText=`Join me on Stitch'd - the UK marketplace for pre-loved South Asian fashion. Sign up with my link: ${link}`;
         const doCopy=()=>{ try{ navigator.clipboard.writeText(link).then(()=>{ setInviteCopied(true); setTimeout(()=>setInviteCopied(false),2000); }).catch(()=>{}); }catch(e){} };
         const bumps=profile?.free_bumps||0;

@@ -12,6 +12,12 @@ export const IS_NATIVE =
 // Prefix for our own API routes: same-origin on web, absolute to the live site
 // in the native app.
 export const API_BASE = IS_NATIVE ? SITE_ORIGIN : "";
+// The origin to use when BUILDING A SHAREABLE / PUBLIC LINK (a listing URL, a
+// referral invite, a password-reset return). On the web that's the current
+// origin; in the native app window.location.origin is capacitor://localhost,
+// which is a dead link once shared — so always use the live site there.
+export const publicOrigin = () =>
+  IS_NATIVE ? SITE_ORIGIN : (typeof window !== "undefined" && window.location ? window.location.origin : SITE_ORIGIN);
 // Web Push VAPID public key (safe to expose). The matching private key lives
 // only in the send-push edge function's secrets (VAPID_PRIVATE_KEY).
 export const VAPID_PUBLIC_KEY = "BG-u3ThrIEspJZOWHbAIOitk9tPLF0gtxvifYNdQ8G3bZZjFjKO4Tb2T3BaRTQBQbzV0EQjJxA0OvD4zFJZIgLY";
