@@ -561,11 +561,14 @@ export default function App() {
           if(!handledAuth){
             const to=u.searchParams.get("to");
             const sid=u.searchParams.get("session_id");
-            if(to==="order-success"||sid){
-              finishOrderSuccess(sid);
-            } else if(to==="alterations"){
+            // Check `to` before the sid catch-all: an alteration payment carries
+            // a session_id too, but must land on the alterations screen, not the
+            // generic order-success flow.
+            if(to==="alterations"){
               setView("alterations");
               flash("Payment received - your booking is confirmed!",6000);
+            } else if(to==="order-success"||sid){
+              finishOrderSuccess(sid);
             } else if(to==="bag"){
               setShowBag(true);
             }
