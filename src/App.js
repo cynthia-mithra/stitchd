@@ -924,6 +924,7 @@ export default function App() {
       case "terms":       goLegal("terms","/terms"); return;
       case "privacy":     goLegal("privacy","/privacy"); return;
       case "returns":     goLegal("returns","/returns"); return;
+      case "support":     goLegal("support","/support"); return;
       case "selling-tips": goLegal("selling-tips","/selling-tips"); return;
       case "about":       goLegal("about","/about"); return;
       case "tailors":     openTailorDirectory(); return;

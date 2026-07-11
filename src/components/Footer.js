@@ -34,6 +34,7 @@ const COLUMNS = [
   {
     title: "HELP",
     items: [
+      { label: "Help & support", view: "support" },
       { label: "About & sustainability", view: "about" },
       { label: "T&Cs", view: "terms" },
       { label: "Privacy policy", view: "privacy" },

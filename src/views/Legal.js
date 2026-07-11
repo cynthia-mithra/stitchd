@@ -131,6 +131,40 @@ const PAGES = {
       },
     ],
   },
+  support: {
+    title: "HELP & SUPPORT",
+    updated: "July 2026",
+    sections: [
+      {
+        heading: "Contact us",
+        body: "Need a hand? Email our team at hello@stitchd.fit and we'll get back to you within 2 working days. Please include your order reference if your question is about a purchase.",
+      },
+      {
+        heading: "Buying on Stitch'd",
+        body: "Browse or search for a piece, then tap Add to Bag and check out securely. Your payment is protected by Buyer Protection and only released to the seller once you confirm your item has arrived as described.",
+      },
+      {
+        heading: "Selling on Stitch'd",
+        body: "Tap Sell, add clear photos, measurements and a fair price, and post your listing for free. When it sells we'll guide you through postage, and your earnings land in your in-app wallet ready to withdraw.",
+      },
+      {
+        heading: "Buyer Protection",
+        body: "Every purchase is covered. If an item never arrives, or arrives significantly not as described, contact us within 5 days at hello@stitchd.fit with photos and your order reference and we'll help put it right.",
+      },
+      {
+        heading: "Payments & withdrawals",
+        body: "Payments are processed securely by Stripe. Sellers are paid into their Stitch'd wallet once a sale is confirmed, and can withdraw to their bank account at any time.",
+      },
+      {
+        heading: "Managing your account",
+        body: "You can update your profile and notification preferences in Settings. To close your account or request deletion of your data, email hello@stitchd.fit and we'll action it in line with our Privacy Policy.",
+      },
+      {
+        heading: "Report a problem",
+        body: "To report a listing, a user, or a safety concern, use the report option in the app or email hello@stitchd.fit. We review every report.",
+      },
+    ],
+  },
 };
 
 // Which view names this component owns.
