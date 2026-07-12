@@ -75,9 +75,10 @@ workflows:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
     publishing:
-      # Uploads the build to TestFlight so you can install it on your iPhone and
-      # test before releasing. Promote to the public App Store from App Store
-      # Connect once you're happy (or flip submit_to_app_store to true later).
+      # Uploads the build to App Store Connect. Internal TestFlight testers get it
+      # automatically once Apple finishes processing — no submit step needed.
+      # (submit_to_testflight was racing Apple's processing and turning the build
+      # red even though the upload succeeded.) To add EXTERNAL testers or ship to
+      # the public App Store later, we'll add beta_groups / submit_to_app_store.
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
