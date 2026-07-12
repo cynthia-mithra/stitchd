@@ -132,7 +132,11 @@ function isExpiredTokenErr(e){
 export default function App() {
   const [session,   setSession]   = useState(auth.getSession());
   const [items,     setItems]     = useState([]);
-  const [view,      setView]      = useState("shop");
+  // In the native app, open straight to the login / sign-up screen when nobody's
+  // signed in (Vinted/Depop-style first impression). The web keeps opening to the
+  // shop. Logged-in users always land on the shop. The auth screen has a "browse
+  // without an account" escape so it isn't a hard wall.
+  const [view,      setView]      = useState(IS_NATIVE && !auth.getSession()?.user ? "auth" : "shop");
   const [prevView,  setPrevView]  = useState("shop");
   // Drives the sticky header's scroll state - once the page scrolls a little, the
   // header gains a hairline shadow (it's frosted glass at rest). See nav-header CSS.

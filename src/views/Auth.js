@@ -96,6 +96,7 @@ export default function Auth({
               <button type="submit" className="hbtn" style={{...S.hBtn,width:"100%",padding:"16px",fontSize:15,borderRadius:0,letterSpacing:2,opacity:aLoading?0.5:1}}>{aLoading?"...":authMode==="login"?<>SIGN IN <span className="btn-arrow">→</span></>:<>GET VERIFICATION CODE <span className="btn-arrow">→</span></>}</button>
             </form>
             <p style={S.authSwitch}>{authMode==="login"?"No account? ":"Already have one? "}<span style={S.authSwitchLink} onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setAError("");setAForm({email:"",password:""});}}>{authMode==="login"?"Sign up":"Log in"}</span></p>
+            {IS_NATIVE&&<p style={{textAlign:"center",marginTop:6}}><span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,color:"#8a8a8a",cursor:"pointer"}} onClick={()=>setView("shop")}>Browse without an account →</span></p>}
           </>
         )}
         </div>

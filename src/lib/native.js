@@ -68,9 +68,7 @@ export async function initNative() {
     await StatusBar.setStyle({ style: Style.Dark });
   } catch (e) { /* status bar is cosmetic — ignore */ }
 
-  // Hide the launch splash once React has taken over the screen.
-  try {
-    const { SplashScreen } = await import("@capacitor/splash-screen");
-    await SplashScreen.hide();
-  } catch (e) { /* splash auto-hides after launchShowDuration anyway */ }
+  // The splash auto-hides after launchShowDuration (see capacitor.config), so we
+  // deliberately DON'T hide it immediately here — that let the pink "S" flash by
+  // in a blink. It fades out on its own once the app is on screen.
 }
