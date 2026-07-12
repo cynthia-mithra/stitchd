@@ -65,19 +65,19 @@ const PAGES = {
   },
   privacy: {
     title: "PRIVACY POLICY",
-    updated: "June 2026",
+    updated: "July 2026",
     sections: [
       {
         heading: "1. Who We Are",
-        body: "Stitch'd (stitchd.fit) is an online marketplace for pre-loved South Asian fashion, operated in the United Kingdom.",
+        body: "Stitch'd (stitchd.fit) is an online marketplace for pre-loved South Asian fashion, operated in the United Kingdom. This policy applies to both our website and our Stitch'd mobile app.",
       },
       {
         heading: "2. What Data We Collect",
-        body: "We collect: name and email address when you create an account, listing information you provide as a seller, transaction data processed by Stripe, usage data including pages visited and listings viewed.",
+        body: "We collect: name and email address when you create an account, listing information and photos you provide as a seller, messages you send to other members, transaction and purchase history processed by Stripe, your delivery address (collected by Stripe at checkout so sellers can post your order), and usage data including pages visited and listings viewed. If you turn on notifications in the app, we store a device token so we can send you alerts. We do not use any advertising or cross-app tracking.",
       },
       {
         heading: "3. How We Use Your Data",
-        body: "We use your data to: operate your account and the marketplace, process payments via Stripe, send order and account notifications, improve the platform. We do not sell your data to third parties.",
+        body: "We use your data to: operate your account and the marketplace, process payments via Stripe, send order and account notifications (including optional push notifications), and improve the platform. We do not sell your data or track you across other companies' apps or websites.",
       },
       {
         heading: "4. Stripe",

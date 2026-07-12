@@ -131,6 +131,28 @@ via "+ Capability". We can decide this together.)_
 
 Report anything broken to Claude — that's what the simulator is for.
 
+### 5b. Native flows to test carefully (these are the new/native-only bits)
+Most of the app already works on the web; these paths behave differently inside
+the native shell, so give them extra attention (in the Simulator *and* once on
+TestFlight on a real iPhone):
+
+- [ ] **Sign in with Apple / Google** — the button opens an in-app browser; after
+      approving, the app should reopen and you're logged in. (Needs the Supabase
+      redirect URL `https://stitchd.fit/native-return.html` added — §C or §0.)
+- [ ] **Checkout return** — buy an item; after Stripe you should land back inside
+      the app on the order-confirmed screen (not the website).
+- [ ] **Alteration payment** — pay a tailor quote; should return to the
+      *alterations* screen with "booking confirmed" (this was the review bug fix).
+- [ ] **Share a listing** — the shared link should be a `stitchd.fit/listing/...`
+      URL, NOT `capacitor://localhost`.
+- [ ] **Referral invite link** — same: should be `stitchd.fit/?ref=...`.
+- [ ] **Parcel tracking / shipping-label PDF** (seller side) — should open in the
+      in-app browser, not do nothing.
+- [ ] **Notifications** — the "turn on notifications" button should be hidden in
+      the app (lock-screen push is a later update; in-app alerts still work).
+- [ ] **Safe areas** — header clears the notch; bottom nav/buy bar clear the home
+      indicator; nothing hidden behind the status bar.
+
 ---
 
 ## 6. Submit to the App Store
