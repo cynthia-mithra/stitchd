@@ -32,25 +32,25 @@ workflows:
         script: |
           npm run build
           npx cap sync ios
-      - name: Set up code signing
-        script: |
-          # Create the distribution certificate + App Store provisioning profile
-          # for this bundle id if they don't exist yet (this is a first build, so
-          # they don't), then apply them to the Xcode project.
-          keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE \
-            --create
-          keychain add-certificates
-          xcode-project use-profiles
       - name: Set the build number
         script: |
           # Codemagic auto-increments $BUILD_NUMBER each build; Apple requires a
           # unique, increasing build number per upload.
           cd ios/App
           agvtool new-version -all "$BUILD_NUMBER"
-      - name: Build the signed .ipa
+      - name: Sign and build the .ipa
         script: |
+          # Do signing + archive in ONE step: Codemagic runs each step in a fresh
+          # shell, so the keychain/certificate/profile state must live in the same
+          # step as the build or the archive fails with "requires a provisioning
+          # profile". Create the distribution certificate + App Store profile if
+          # they don't exist (first build), apply them, then archive.
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
