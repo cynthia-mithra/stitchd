@@ -19,6 +19,9 @@ workflows:
     integrations:
       app_store_connect: Stitchd App Store Key
     environment:
+      groups:
+        - ios_credentials   # provides CERTIFICATE_PRIVATE_KEY (a persistent key,
+                            # added as a secure env var in the Codemagic UI)
       vars:
         BUNDLE_ID: "fit.stitchd.app"
         XCODE_PROJECT: "ios/App/App.xcodeproj"
@@ -46,8 +49,13 @@ workflows:
           # profile". Create the distribution certificate + App Store profile if
           # they don't exist (first build), apply them, then archive.
           keychain initialize
+          # Use a FIXED private key (CERTIFICATE_PRIVATE_KEY secret) so the same
+          # distribution certificate is reused on every build. Without a
+          # persistent key, each build created a certificate whose private key
+          # died with the machine, so the next build couldn't sign.
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
+            --certificate-key @env:CERTIFICATE_PRIVATE_KEY \
             --create
           keychain add-certificates
           xcode-project use-profiles
