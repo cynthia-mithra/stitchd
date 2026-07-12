@@ -19,10 +19,8 @@ workflows:
     integrations:
       app_store_connect: Stitchd App Store Key
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: fit.stitchd.app
       vars:
+        BUNDLE_ID: "fit.stitchd.app"
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
       node: 20
@@ -34,8 +32,17 @@ workflows:
         script: |
           npm run build
           npx cap sync ios
-      - name: Set up provisioning profiles
-        script: xcode-project use-profiles
+      - name: Set up code signing
+        script: |
+          # Create the distribution certificate + App Store provisioning profile
+          # for this bundle id if they don't exist yet (this is a first build, so
+          # they don't), then apply them to the Xcode project.
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Set the build number
         script: |
           # Codemagic auto-increments $BUILD_NUMBER each build; Apple requires a
