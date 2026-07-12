@@ -17,25 +17,14 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 60
     # Auto-start a build whenever code is pushed to the working branch — so
-    # changes build hands-free without pressing "Start new build". Doc-only
-    # commits (*.md) are skipped to save build minutes. Requires the GitHub
-    # webhook, which Codemagic added when the repo was connected.
+    # changes build hands-free without pressing "Start new build". Requires the
+    # GitHub webhook, which Codemagic added when the repo was connected.
     triggering:
       events:
         - push
       branch_patterns:
         - pattern: 'claude/tailor-registration-ux-3d1qw2'
           include: true
-      when:
-        changeset:
-          includes:
-            - 'src/**'
-            - 'public/**'
-            - 'ios/**'
-            - 'api/**'
-            - 'capacitor.config.json'
-            - 'package.json'
-            - 'codemagic.yaml'
     integrations:
       app_store_connect: Stitchd App Store Key
     environment:
