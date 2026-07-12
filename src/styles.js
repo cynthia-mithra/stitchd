@@ -7,6 +7,14 @@ export const CSS=`
   p{line-height:1.6;}
   h1,h2,h3,h4{line-height:1.04;}
   button,input,select,textarea{font-family:inherit;}
+  /* Native app feel: kill the web-isms that make a Capacitor app read like a
+     website — the grey tap flash, long-press copy/share callouts, and selectable
+     UI text. Re-enable selection only where the user genuinely types or reads
+     copyable content (fields + message bubbles). Scoped to body.native-app so the
+     website is completely unaffected. */
+  body.native-app{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;}
+  body.native-app input,body.native-app textarea,body.native-app [contenteditable],body.native-app .selectable{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;}
+  body.native-app img{-webkit-touch-callout:none;}
   .scard{transition:transform .28s cubic-bezier(.22,1,.36,1),box-shadow .28s ease !important;cursor:pointer;}
   .scard:hover{transform:translateY(-6px) !important;box-shadow:0 22px 50px rgba(0,0,0,0.14) !important;}
   /* Trendy product-card interaction: the cover image gently zooms inside its

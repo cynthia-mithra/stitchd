@@ -57,6 +57,10 @@ export async function closeExternal() {
 export async function initNative() {
   if (!isNative()) return;
 
+  // Mark the body so the native-only CSS (no tap flash / callouts / text
+  // selection) applies, making the app read less like a website.
+  try { document.body.classList.add("native-app"); } catch (e) { /* pre-DOM */ }
+
   // Status bar: dark icons/text, since the app header is light. Wrapped so a
   // missing plugin or an unsupported call never blocks app start.
   try {

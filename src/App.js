@@ -4066,6 +4066,14 @@ export default function App() {
       {label:"MESSAGES",       icon:mIcon(MessageCircle), run:openMessages},
       {label:"HOW TO MEASURE", icon:mIcon(Ruler),         run:()=>{setPrevView(view);setView("measuring");}},
     ]},
+    // In the native app the website footer is hidden, so surface its info/legal
+    // links here instead. (On web the footer already covers these.)
+    ...(IS_NATIVE ? [{label:"MORE", items:[
+      {label:"HELP & SUPPORT", icon:mIcon(Lightbulb),  run:()=>goLegal("support","/support")},
+      {label:"ABOUT",          icon:mIcon(Info),        run:()=>goLegal("about","/about")},
+      {label:"TERMS",          icon:mIcon(Handshake),   run:()=>goLegal("terms","/terms")},
+      {label:"PRIVACY",        icon:mIcon(ShieldCheck), run:()=>goLegal("privacy","/privacy")},
+    ]}] : []),
     {label:null, items:[
       {label:"LOG OUT",        icon:mIcon(LogOut), run:handleSignOut, danger:true},
     ]},
@@ -5472,8 +5480,10 @@ export default function App() {
       </div>{/* /#page-view */}
 
       {/* GLOBAL FOOTER - appears on every page (modals/overlays render on top and
-          are unaffected; the Stripe checkout is an external hosted page). */}
-      <Footer onNav={footerNav} />
+          are unaffected; the Stripe checkout is an external hosted page). Hidden
+          in the native app, where a big website-style footer is the biggest "this
+          is just a website" tell; its links live in the menu instead (below). */}
+      {!IS_NATIVE && <Footer onNav={footerNav} />}
 
       {/* FIRST-RUN WELCOME - once per browser, only over the home view. */}
       <Onboarding
