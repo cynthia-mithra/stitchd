@@ -30,6 +30,7 @@ import Alterations, { RequestAlterationModal, gbp } from "./views/Alterations";
 const WalletView = lazy(() => import("./views/Wallet"));
 import Detail from "./views/Detail";
 import Shop from "./views/Shop";
+import Explore from "./views/Explore";
 const Auth = lazy(() => import("./views/Auth"));
 const Profile = lazy(() => import("./views/Profile"));
 const Dashboard = lazy(() => import("./views/Dashboard"));
@@ -417,6 +418,29 @@ export default function App() {
   const [publicAvailability,setPublicAvailability]= useState([]);
   const [preferredDateHint, setPreferredDateHint] = useState(null);
   const [following,      setFollowing]      = useState([]);
+  const [exploreCat,     setExploreCat]     = useState("all");
+  const [exploreQuery,   setExploreQuery]   = useState("");
+  // Explore feed: ONE blended, ranked stream — a fair share of fresh drops
+  // (recency), trending (views), and pieces from sellers you follow — optionally
+  // narrowed to a category chip. A little randomness keeps it feeling alive.
+  const exploreFollowSet = useMemo(() => new Set((following || []).map((f) => f.following_id)), [following]);
+  const exploreItems = useMemo(() => {
+    const active = items.filter((i) => !i.sold && (i.status === "active" || i.status == null));
+    const pool = exploreCat === "all" ? active : active.filter((i) => (i.category || "") === exploreCat);
+    const now = Date.now();
+    return pool
+      .map((i) => {
+        const created = new Date(i.created_at || 0).getTime() || 0;
+        const ageDays = created ? (now - created) / 86400000 : 999;
+        const freshness = Math.max(0, 45 - ageDays);          // fresh drops
+        const popularity = Math.min(400, i.views || 0);       // trending
+        const follow = exploreFollowSet.has(i.user_id) ? 120 : 0; // sellers you follow
+        return { i, s: freshness * 2 + popularity * 0.35 + follow + Math.random() * 30 };
+      })
+      .sort((a, b) => b.s - a.s)
+      .map((x) => x.i);
+  }, [items, exploreCat, exploreFollowSet]);
+  function openExplore() { setExploreQuery(""); setView("explore"); window.scrollTo(0, 0); }
   const [feedItems,      setFeedItems]      = useState([]);
   const [feedLoading,    setFeedLoading]    = useState(false);
   const [feedProfiles,   setFeedProfiles]   = useState({});
@@ -4045,6 +4069,7 @@ export default function App() {
   const tailorApproved = !!myTailor && (myTailor.status==="approved" || myTailor.status==="suspended");
   const navSections = [
     {label:"DISCOVER", items:[
+      {label:"EXPLORE",        icon:mIcon(Search),   run:openExplore},
       {label:"NEW ARRIVALS",   icon:mIcon(Sparkles), run:()=>{clearFilters();setView("newarrivals");}},
       {label:"FEED",           icon:mIcon(Compass),  run:()=>{loadFeed();setView("feed");}},
       {label:"FIND A TAILOR",  icon:mIcon(Scissors), run:openTailorDirectory},
@@ -5150,6 +5175,18 @@ export default function App() {
         setAuthMode={setAuthMode}
       />}
 
+      {/* EXPLORE VIEW - one blended discovery feed */}
+      {view==="explore" && (
+        <Explore
+          items={exploreItems}
+          exploreCat={exploreCat} setExploreCat={setExploreCat}
+          query={exploreQuery} setQuery={setExploreQuery}
+          myWishlist={myWishlist}
+          onOpen={openDetail}
+          onSave={(item)=>{ if(user) toggleFavourite(item); else gateAuth("login"); }}
+        />
+      )}
+
       {/* SHOP VIEW */}
       <Shop
         view={view}
@@ -5504,7 +5541,7 @@ export default function App() {
         <nav className="bottom-nav" style={S.bottomNav} aria-label="Primary">
           {[
             {key:"home", label:"Home", Icon:Home, on:view==="shop"||view==="newarrivals", run:()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("shop"); window.scrollTo(0,0); }},
-            {key:"saved", label:"Saved", Icon:Heart, fillOn:true, on:view==="wishlist", run:()=>{ if(user) loadMyWishlist(); setView("wishlist"); window.scrollTo(0,0); }},
+            {key:"explore", label:"Explore", Icon:Search, on:view==="explore", run:openExplore},
             {key:"sell", label:"Sell", Icon:Plus, sell:true, on:view==="add", run:()=>{ if(user){ setView("add"); window.scrollTo(0,0); } else gateAuth("signup"); }},
             {key:"inbox", label:"Inbox", Icon:MessageCircle, badge:unreadCount, on:view==="messages", run:()=>{ if(user) openMessages(); else gateAuth("login"); }},
             {key:"account", label:"Account", Icon:User, on:false, run:()=>{ if(user) setMobileNavOpen(true); else gateAuth("login"); }},
