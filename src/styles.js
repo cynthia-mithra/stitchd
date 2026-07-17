@@ -194,7 +194,7 @@ export const CSS=`
     .profile-header{flex-direction:column !important;align-items:center !important;text-align:center;}
     /* Auth split stacks: brand banner on top, form below. */
     .auth-split{flex-direction:column !important;}
-    .auth-brand{padding:24px !important;gap:18px !important;flex-direction:row !important;flex-wrap:wrap !important;align-items:center !important;justify-content:space-between !important;}
+    .auth-brand{padding:34px 26px 30px !important;gap:10px !important;flex-direction:column !important;align-items:flex-start !important;justify-content:flex-start !important;border-right:none !important;border-bottom:3px solid #111 !important;}
     .auth-brand-props{display:none !important;}
   }
   /* MOBILE - hide the scrolling category ticker strip in the navbar (SAREES ✦
@@ -460,11 +460,11 @@ export const S={
   authSwitch:{textAlign:"center",marginTop:20,fontSize:13,color:"#888"},
   authSwitchLink:{color:"#FF1493",fontWeight:800,cursor:"pointer",textDecoration:"underline"},
   // Split-screen auth: a black brand panel beside the form, framed as one block.
-  authMain:{maxWidth:960,margin:"0 auto",padding:"20px 12px"},
-  authSplit:{display:"flex",border:"3px solid #111",background:"#fff",overflow:"hidden"},
-  authBrand:{flex:"1 1 44%",background:"#111",color:"#fff",padding:"clamp(28px,4vw,48px)",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:32,minWidth:0},
-  authBrandWord:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(40px,5vw,62px)",fontWeight:900,letterSpacing:1,lineHeight:.92},
-  authBrandTag:{fontFamily:"'Barlow',sans-serif",fontSize:15,color:"rgba(255,255,255,0.72)",lineHeight:1.65,marginTop:14},
+  authMain:{background:"#FF1493",minHeight:"100vh",padding:"18px 14px 44px"},
+  authSplit:{display:"flex",border:"3px solid #111",background:"#fff",overflow:"hidden",maxWidth:940,width:"100%",margin:"0 auto",boxShadow:"0 20px 55px rgba(0,0,0,0.28)"},
+  authBrand:{flex:"1 1 44%",background:"#FF1493",color:"#fff",padding:"clamp(28px,4vw,48px)",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:32,minWidth:0,borderRight:"3px solid #111"},
+  authBrandWord:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(46px,6vw,66px)",fontWeight:900,letterSpacing:1,lineHeight:.92},
+  authBrandTag:{fontFamily:"'Barlow',sans-serif",fontSize:15,color:"rgba(255,255,255,0.92)",lineHeight:1.6,marginTop:12,fontWeight:500},
   authBrandProps:{display:"flex",flexDirection:"column",gap:14},
   authBrandProp:{display:"flex",alignItems:"center",gap:11,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",color:"#fff"},
   authBrandDot:{width:8,height:8,borderRadius:"50%",flexShrink:0},

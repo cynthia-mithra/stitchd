@@ -26,16 +26,16 @@ export default function Auth({
   if(view!=="auth") return null;
   return (
     <main style={S.authMain}>
-      <button style={S.back} onClick={()=>{ setView("shop"); setOtpStep("form"); setOtpCode(""); setAError(""); }}>← BACK</button>
+      <button style={{...S.back,color:"rgba(255,255,255,0.9)",marginBottom:16}} onClick={()=>{ setView("shop"); setOtpStep("form"); setOtpCode(""); setAError(""); }}>← BACK</button>
       <div style={S.authSplit} className="auth-split">
         {/* LEFT - brand panel */}
         <div style={S.authBrand} className="auth-brand">
           <div>
             <div style={S.authBrandWord}>STITCH'D</div>
-            <p style={S.authBrandTag} className="auth-brand-props">The UK marketplace for pre-loved South Asian fashion. Real measurements, measured fits only.</p>
+            <p style={S.authBrandTag}>The UK marketplace for pre-loved South Asian fashion. Real measurements, measured fits only.</p>
           </div>
           <div style={S.authBrandProps} className="auth-brand-props">
-            {[["REAL MEASUREMENTS","#FF1493"],["SOUTH ASIAN PRE-LOVED","#00E5CC"],["SECURE GBP CHECKOUT","#fff"]].map(([label,dot])=>(
+            {[["REAL MEASUREMENTS","#111"],["SOUTH ASIAN PRE-LOVED","#00E5CC"],["SECURE GBP CHECKOUT","#fff"]].map(([label,dot])=>(
               <span key={label} style={S.authBrandProp}><span style={{...S.authBrandDot,background:dot}}/>{label}</span>
             ))}
           </div>
