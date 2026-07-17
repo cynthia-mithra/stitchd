@@ -15,6 +15,9 @@ export const CSS=`
   body.native-app{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;}
   body.native-app input,body.native-app textarea,body.native-app [contenteditable],body.native-app .selectable{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;}
   body.native-app img{-webkit-touch-callout:none;}
+  /* Full-pink login: the shared field labels are inline-styled grey; turn them
+     white so they read on the pink background. */
+  .auth-pink label{color:rgba(255,255,255,0.92) !important;}
   .scard{transition:transform .28s cubic-bezier(.22,1,.36,1),box-shadow .28s ease !important;cursor:pointer;}
   .scard:hover{transform:translateY(-6px) !important;box-shadow:0 22px 50px rgba(0,0,0,0.14) !important;}
   /* Trendy product-card interaction: the cover image gently zooms inside its
@@ -460,7 +463,7 @@ export const S={
   authSwitch:{textAlign:"center",marginTop:20,fontSize:13,color:"#888"},
   authSwitchLink:{color:"#FF1493",fontWeight:800,cursor:"pointer",textDecoration:"underline"},
   // Split-screen auth: a black brand panel beside the form, framed as one block.
-  authMain:{background:"#FF1493",minHeight:"100vh",padding:"18px 14px 44px"},
+  authMain:{background:"#FF1493",minHeight:"100vh",padding:"calc(22px + env(safe-area-inset-top)) 18px 48px"},
   authSplit:{display:"flex",border:"3px solid #111",background:"#fff",overflow:"hidden",maxWidth:940,width:"100%",margin:"0 auto",boxShadow:"0 20px 55px rgba(0,0,0,0.28)"},
   authBrand:{flex:"1 1 44%",background:"#FF1493",color:"#fff",padding:"clamp(28px,4vw,48px)",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:32,minWidth:0,borderRight:"3px solid #111"},
   authBrandWord:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(46px,6vw,66px)",fontWeight:900,letterSpacing:1,lineHeight:.92},
