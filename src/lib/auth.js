@@ -1,11 +1,16 @@
-import { SUPABASE_URL, SUPABASE_KEY, IS_NATIVE, SITE_ORIGIN } from "./constants";
+import { SUPABASE_URL, SUPABASE_KEY, IS_NATIVE } from "./constants";
 
 // Where the OAuth flow should send the user back to. On the web that's the page
-// they started from; in the native app it's the native-return.html bridge on the
-// live site, which hands off to the stitchd:// deep link so the app reopens with
-// the session tokens (see public/native-return.html + App.js appUrlOpen).
+// they started from; in the native app we redirect STRAIGHT to the stitchd://
+// deep link, which reopens the app with the session tokens in the hash (parsed by
+// the appUrlOpen listener in App.js). Supabase supports custom-scheme redirects,
+// so sign-in no longer depends on the native-return.html bridge being live on the
+// website. This requires `stitchd://return` to be in the Supabase redirect
+// allowlist (Authentication → URL Configuration → Redirect URLs).
+//   NB: Stripe checkout still routes through the https bridge (native-return.html)
+//   because Stripe rejects custom-scheme return URLs - that path is separate.
 function oauthReturnTarget() {
-  return IS_NATIVE ? `${SITE_ORIGIN}/native-return.html` : `${window.location.origin}${window.location.pathname}`;
+  return IS_NATIVE ? "stitchd://return" : `${window.location.origin}${window.location.pathname}`;
 }
 
 export const auth = {
@@ -39,7 +44,7 @@ export const auth = {
   // recovery link server-side and always returns ok (no account enumeration);
   // redirectTo brings the user back to the app, where the hash carries
   // type=recovery.
-  async sendReset(email){ const redirectTo=IS_NATIVE?SITE_ORIGIN:`${window.location.origin}${window.location.pathname}`; const r=await fetch(`${SUPABASE_URL}/functions/v1/send-reset`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({email,redirectTo})}); if(!r.ok)throw new Error("Could not send reset email - please try again."); return r.json().catch(()=>({ok:true})); },
+  async sendReset(email){ const redirectTo=IS_NATIVE?"stitchd://return":`${window.location.origin}${window.location.pathname}`; const r=await fetch(`${SUPABASE_URL}/functions/v1/send-reset`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({email,redirectTo})}); if(!r.ok)throw new Error("Could not send reset email - please try again."); return r.json().catch(()=>({ok:true})); },
   // Password reset - step 2: set the new password using the recovery session's
   // access token (saved when we detect the type=recovery hash on return).
   async updateUser(password,t){ const r=await fetch(`${SUPABASE_URL}/auth/v1/user`,{method:"PUT",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t}`,"Content-Type":"application/json"},body:JSON.stringify({password})}); const d=await r.json().catch(()=>({})); if(!r.ok||d.error||d.code)throw new Error((d.error&&d.error.message)||d.msg||d.error_description||"Could not update password"); return d; },
