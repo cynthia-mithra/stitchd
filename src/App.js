@@ -11,7 +11,7 @@ import {
 import { db } from "./lib/db";
 import { enablePush, pushSupported, pushPermission } from "./lib/push";
 import { startCheckout, startOfferCheckout, startAlterationCheckout, verifySession } from "./lib/checkout";
-import { openUrl } from "./lib/native";
+import { openUrl, haptic } from "./lib/native";
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
 import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } from "./lib/connect";
@@ -1203,6 +1203,7 @@ export default function App() {
   // bag never holds more than one of the same listing - adding an item already in
   // the bag removes it. Stores a small snapshot so the panel needs no extra fetch.
   function toggleBag(item){
+    haptic(bag.some(b=>b.id===item.id)?"light":"medium");   // buzz: firmer when adding
     setBag(prev=>{
       let next;
       if(prev.some(b=>b.id===item.id)){
@@ -2009,6 +2010,7 @@ export default function App() {
   async function toggleFavourite(item){
     if(!user||!token){ flash("Sign in to wishlist this piece!"); setAuthMode("login"); setView("auth"); return; }
     const id=item.id, has=myWishlist.has(id);
+    haptic(has?"light":"medium");                            // buzz: firmer when saving
     setMyWishlist(prev=>{ const n=new Set(prev); has?n.delete(id):n.add(id); return n; });
     setWishlistCounts(prev=>({...prev,[id]:Math.max(0,(prev[id]||0)+(has?-1:1))}));
     setWishlistOrder(prev=> has?prev.filter(x=>x!==id):[id,...prev.filter(x=>x!==id)]);
@@ -5634,12 +5636,12 @@ export default function App() {
             {key:"account", label:"Account", Icon:User, on:false, run:()=>{ if(user) setMobileNavOpen(true); else gateAuth("login"); }},
           ].map(t=>(
             t.sell ? (
-              <button key={t.key} className="bottom-nav-item" style={S.bottomNavItem} onClick={t.run} aria-label="Sell an item">
+              <button key={t.key} className="bottom-nav-item" style={S.bottomNavItem} onClick={()=>{haptic("light");t.run();}} aria-label="Sell an item">
                 <span style={S.bottomNavSell}><t.Icon width={22} height={22}/></span>
                 <span style={{...S.bottomNavLabel,color:t.on?"#FF1493":"#111"}}>{t.label}</span>
               </button>
             ) : (
-              <button key={t.key} className="bottom-nav-item" style={S.bottomNavItem} onClick={t.run} aria-label={t.label}>
+              <button key={t.key} className="bottom-nav-item" style={S.bottomNavItem} onClick={()=>{haptic("light");t.run();}} aria-label={t.label}>
                 <span style={{position:"relative",display:"flex"}}>
                   <t.Icon width={22} height={22} color={t.on?"#FF1493":"#111"} fill={t.on&&t.fillOn?"#FF1493":"none"}/>
                   {t.badge>0&&<span style={S.bottomNavBadge}>{t.badge>9?"9+":t.badge}</span>}

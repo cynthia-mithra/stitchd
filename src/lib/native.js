@@ -45,6 +45,19 @@ export async function openUrl(url) {
   }
 }
 
+// Fire a short haptic tap in the native app (a no-op on the web, where iOS
+// WKWebView has no vibration API anyway). `style` maps to Capacitor's
+// ImpactStyle: "light" | "medium" | "heavy". Fully guarded so a missing plugin
+// or an unsupported device never throws - haptics are a nicety, not a dependency.
+export async function haptic(style = "light") {
+  if (!isNative()) return;
+  try {
+    const { Haptics, ImpactStyle } = await import("@capacitor/haptics");
+    const map = { light: ImpactStyle.Light, medium: ImpactStyle.Medium, heavy: ImpactStyle.Heavy };
+    await Haptics.impact({ style: map[style] || ImpactStyle.Light });
+  } catch (e) { /* no haptics available - ignore */ }
+}
+
 // Dismiss the in-app browser (called once the deep link has brought us back).
 export async function closeExternal() {
   if (!isNative()) return;
