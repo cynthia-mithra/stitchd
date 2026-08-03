@@ -304,6 +304,10 @@ export const S={
   ticker:{background:"#FF1493",overflow:"hidden",borderBottom:"2px solid #111",height:28,display:"flex",alignItems:"center"},
   tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:3.5,color:"rgba(255,255,255,0.92)",animation:"ticker 36s linear infinite",paddingLeft:"100%"},
   toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"13px 22px",borderLeft:"4px solid #FF1493",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.2,zIndex:999,borderRadius:0,display:"inline-flex",alignItems:"center",gap:11,maxWidth:"min(92vw,560px)",lineHeight:1.35,textAlign:"left",boxShadow:"0 10px 34px rgba(0,0,0,0.28)"},
+  // Offline banner: floats above the content near the bottom (clear of the header
+  // and the bottom tab bar via the home-indicator safe area). Amber accent so it
+  // reads as a warning, not an error.
+  offlineBar:{position:"fixed",left:"50%",bottom:"calc(94px + env(safe-area-inset-bottom))",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"11px 20px",borderLeft:"4px solid #FF9500",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.2,fontSize:13,zIndex:800,whiteSpace:"nowrap",maxWidth:"92vw",boxShadow:"0 10px 30px rgba(0,0,0,0.28)"},
   // MOBILE BOTTOM NAV - fixed app-style tab bar (shown ≤768px via .bottom-nav).
   // Solid white (not frosted) so scrolling content never bleeds through and the
   // icons stay crisp; a soft upward shadow lifts it off the page.

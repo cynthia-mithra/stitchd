@@ -1002,9 +1002,52 @@ export default function App() {
   async function fetchItems(){
     setLoading(true); setError("");
     try{ const data = await db.getAll(token); setItems(data); }
-    catch(e){ try{ setItems(await db.getAll(null)); }catch(e2){ setError(`Error: ${e2.message}`); } }
+    catch(e){
+      try{ setItems(await db.getAll(null)); }
+      catch(e2){
+        // Friendly, non-technical copy - and call out no-signal explicitly so the
+        // user knows it's their connection, not a broken app.
+        setError(typeof navigator!=="undefined"&&navigator.onLine===false
+          ? "You're offline. Check your connection and pull down to try again."
+          : "We couldn't load listings just now. Pull down or tap retry to try again.");
+      }
+    }
     finally{ setLoading(false); }
   }
+
+  // ── Phase 3 (native robustness) ───────────────────────────────────────────────
+  // Connectivity: show a calm banner while offline and silently reload the grid
+  // the moment the connection returns, so the user never has to hunt for a retry.
+  const [online,setOnline]=useState(typeof navigator==="undefined"?true:navigator.onLine!==false);
+  useEffect(()=>{
+    const goOnline=()=>{ setOnline(true); fetchItems(); };
+    const goOffline=()=>setOnline(false);
+    window.addEventListener("online",goOnline);
+    window.addEventListener("offline",goOffline);
+    return ()=>{ window.removeEventListener("online",goOnline); window.removeEventListener("offline",goOffline); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  // Pull-to-refresh (native only). We disabled the WKWebView rubber-band
+  // (overscroll-behavior on body.native-app), so a downward drag from the very top
+  // is ours: past a threshold it re-fetches the grid. Listeners are passive, so
+  // normal scrolling is never blocked.
+  const [ptr,setPtr]=useState(0);              // live pull distance (px, capped)
+  const [refreshing,setRefreshing]=useState(false);
+  useEffect(()=>{
+    if(!IS_NATIVE) return;
+    let startY=0, active=false, dist=0;
+    const THRESH=70, MAX=100;
+    const onStart=(e)=>{ if((window.scrollY||0)<=0 && !refreshing){ startY=e.touches[0].clientY; active=true; dist=0; } };
+    const onMove=(e)=>{ if(!active) return; dist=e.touches[0].clientY-startY; setPtr(dist>0?Math.min(dist,MAX):0); };
+    const onEnd=()=>{ if(active && dist>THRESH){ setRefreshing(true); Promise.resolve(fetchItems()).finally(()=>setRefreshing(false)); } active=false; dist=0; setPtr(0); };
+    window.addEventListener("touchstart",onStart,{passive:true});
+    window.addEventListener("touchmove",onMove,{passive:true});
+    window.addEventListener("touchend",onEnd,{passive:true});
+    window.addEventListener("touchcancel",onEnd,{passive:true});
+    return ()=>{ window.removeEventListener("touchstart",onStart); window.removeEventListener("touchmove",onMove); window.removeEventListener("touchend",onEnd); window.removeEventListener("touchcancel",onEnd); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[refreshing]);
 
   // Phase 13 - a listing counts as "promoted" for sorting only while its boost is
   // live (promoted flag set AND promoted_until still in the future), so an expired
@@ -4113,6 +4156,22 @@ export default function App() {
     <div className={"app-root"+(user&&view!=="detail"&&view!=="auth"?" has-bottom-nav":"")} style={S.root}>
       <style>{CSS}</style>
       <ConfirmHost/>
+
+      {/* Pull-to-refresh indicator (native): a small spinner that follows the pull
+          and spins while the grid reloads. */}
+      {IS_NATIVE && (ptr>0||refreshing) && (
+        <div style={{position:"fixed",top:0,left:0,right:0,display:"flex",justifyContent:"center",pointerEvents:"none",zIndex:150,paddingTop:`calc(env(safe-area-inset-top) + ${refreshing?54:Math.max(6,ptr)}px)`}}>
+          <div style={{width:32,height:32,borderRadius:"50%",background:"#fff",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 16px rgba(0,0,0,0.18)"}}>
+            <span style={{width:16,height:16,border:"2px solid #f0d4e6",borderTopColor:"#FF1493",borderRadius:"50%",display:"block",animation:refreshing?"spin .7s linear infinite":"none",transform:refreshing?undefined:`rotate(${Math.round(ptr*3)}deg)`}}/>
+          </div>
+        </div>
+      )}
+
+      {/* Offline banner: a calm toast-style bar (never overlaps the header). It
+          clears itself and reloads the grid automatically when signal returns. */}
+      {!online && (
+        <div style={S.offlineBar}>NO CONNECTION — SOME THINGS MAY NOT LOAD</div>
+      )}
 
       {/* INVITE FRIENDS - referral link + free-bump reward */}
       {showInvite&&user&&(()=>{
