@@ -6,11 +6,12 @@ import {
   OCCASIONS, SIZES, OCC_COLOR, CARD_COLORS, EMPTY_FORM, POSTAGE_OPTIONS,
   catEmoji, currencySymbol, buyerProtectionFee,
   garmentTypesFor, garmentFieldsFor, defaultGarmentFor, parseMeasurements, buildMeasPayload,
-  ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary,
+  ADMIN_EMAIL, lookListings, buildSearchFilters, filterSummary, IS_NATIVE, publicOrigin,
 } from "./lib/constants";
 import { db } from "./lib/db";
 import { enablePush, pushSupported, pushPermission } from "./lib/push";
 import { startCheckout, startOfferCheckout, startAlterationCheckout, verifySession } from "./lib/checkout";
+import { openUrl, haptic } from "./lib/native";
 import { startIdentityVerification } from "./lib/identity";
 import { startPromotion } from "./lib/promotion";
 import { startConnectOnboarding, verifyConnectAccount, processTailorPayout } from "./lib/connect";
@@ -29,6 +30,7 @@ import Alterations, { RequestAlterationModal, gbp } from "./views/Alterations";
 const WalletView = lazy(() => import("./views/Wallet"));
 import Detail from "./views/Detail";
 import Shop from "./views/Shop";
+import Explore from "./views/Explore";
 const Auth = lazy(() => import("./views/Auth"));
 const Profile = lazy(() => import("./views/Profile"));
 const Dashboard = lazy(() => import("./views/Dashboard"));
@@ -131,7 +133,11 @@ function isExpiredTokenErr(e){
 export default function App() {
   const [session,   setSession]   = useState(auth.getSession());
   const [items,     setItems]     = useState([]);
-  const [view,      setView]      = useState("shop");
+  // In the native app, open straight to the login / sign-up screen when nobody's
+  // signed in (Vinted/Depop-style first impression). The web keeps opening to the
+  // shop. Logged-in users always land on the shop. The auth screen has a "browse
+  // without an account" escape so it isn't a hard wall.
+  const [view,      setView]      = useState(IS_NATIVE && !auth.getSession()?.user ? "auth" : "shop");
   const [prevView,  setPrevView]  = useState("shop");
   // Drives the sticky header's scroll state - once the page scrolls a little, the
   // header gains a hairline shadow (it's frosted glass at rest). See nav-header CSS.
@@ -412,6 +418,29 @@ export default function App() {
   const [publicAvailability,setPublicAvailability]= useState([]);
   const [preferredDateHint, setPreferredDateHint] = useState(null);
   const [following,      setFollowing]      = useState([]);
+  const [exploreCat,     setExploreCat]     = useState("all");
+  const [exploreQuery,   setExploreQuery]   = useState("");
+  // Explore feed: ONE blended, ranked stream — a fair share of fresh drops
+  // (recency), trending (views), and pieces from sellers you follow — optionally
+  // narrowed to a category chip. A little randomness keeps it feeling alive.
+  const exploreFollowSet = useMemo(() => new Set((following || []).map((f) => f.following_id)), [following]);
+  const exploreItems = useMemo(() => {
+    const active = items.filter((i) => !i.sold && (i.status === "active" || i.status == null));
+    const pool = exploreCat === "all" ? active : active.filter((i) => (i.category || "") === exploreCat);
+    const now = Date.now();
+    return pool
+      .map((i) => {
+        const created = new Date(i.created_at || 0).getTime() || 0;
+        const ageDays = created ? (now - created) / 86400000 : 999;
+        const freshness = Math.max(0, 45 - ageDays);          // fresh drops
+        const popularity = Math.min(400, i.views || 0);       // trending
+        const follow = exploreFollowSet.has(i.user_id) ? 120 : 0; // sellers you follow
+        return { i, s: freshness * 2 + popularity * 0.35 + follow + Math.random() * 30 };
+      })
+      .sort((a, b) => b.s - a.s)
+      .map((x) => x.i);
+  }, [items, exploreCat, exploreFollowSet]);
+  function openExplore() { setExploreQuery(""); setView("explore"); window.scrollTo(0, 0); }
   const [feedItems,      setFeedItems]      = useState([]);
   const [feedLoading,    setFeedLoading]    = useState(false);
   const [feedProfiles,   setFeedProfiles]   = useState({});
@@ -488,34 +517,98 @@ export default function App() {
   const token = session?.access_token;
   const user  = session?.user;
 
+  // Establish a session from an OAuth redirect hash (#access_token=…&refresh_token=…).
+  // Shared by the web redirect handler and the native deep-link handler so they
+  // can never drift. Returns true when a token was found and applied.
+  function applyOAuthHash(hash){
+    const p=new URLSearchParams((hash||"").replace(/^#/,""));
+    const access_token=p.get("access_token");
+    if(!access_token) return false;
+    // The OAuth redirect hash has no user_id param, so read the real user id and
+    // email from the JWT itself. Without this, user.id is null and the
+    // `auth.uid() = user_id` RLS check fails on every insert.
+    const claims=decodeJWT(access_token)||{};
+    const s={
+      access_token,
+      // Persisting refresh_token is what lets the session refresh after the ~1h
+      // access token expires; without it every save fails with "JWT expired".
+      refresh_token:p.get("refresh_token")||null,
+      expires_at:claims.exp||null,
+      user:{email:claims.email||p.get("email")||"user",id:claims.sub||p.get("user_id")||null},
+    };
+    auth.saveSession(s); setSession(s);
+    // Password-recovery links land here too (type=recovery): keep the recovery
+    // session and send them to the set-password screen instead of the shop.
+    if(p.get("type")==="recovery"){
+      setView("auth"); setOtpStep("reset"); flash("Choose a new password.");
+    } else {
+      flash("Signed in!"); setView("shop");
+    }
+    return true;
+  }
+
+  // Show the order-success screen and confirm the paid Stripe session. Shared by
+  // the web /order-success route and the native checkout deep link.
+  function finishOrderSuccess(sid){
+    setView("order-success");
+    setOrderResult({status:"loading"});
+    if(!sid){ setOrderResult({status:"error"}); return; }
+    verifySession(sid).then(r=>{
+      if(r&&r.paid){
+        setOrderResult({status:"ok",items:r.items||[],amount:r.amount_total||0,sessionId:sid,listingIds:r.listing_ids||[]});
+        const purchased=new Set(r.listing_ids||[]);
+        setBag(prev=>{ const next=purchased.size?prev.filter(b=>!purchased.has(b.id)):[]; localStorage.setItem("stitchd_bag",JSON.stringify(next)); return next; });
+      } else {
+        setOrderResult({status:"error"});
+      }
+    }).catch(()=>setOrderResult({status:"error"}));
+  }
+
   useEffect(()=>{
     const hash=window.location.hash;
     if(hash.includes("access_token")){
-      const p=new URLSearchParams(hash.slice(1));
-      const access_token=p.get("access_token");
-      // The OAuth redirect hash has no user_id param, so read the real user id
-      // and email from the JWT itself. Without this, user.id is null and the
-      // `auth.uid() = user_id` RLS check fails on every insert.
-      const claims=decodeJWT(access_token)||{};
-      const s={
-        access_token,
-        // Persisting refresh_token is what lets a Google session refresh after
-        // the ~1h access token expires; without it the token dies and every
-        // save fails with "JWT expired" until a manual re-login.
-        refresh_token:p.get("refresh_token")||null,
-        expires_at:claims.exp||null,
-        user:{email:claims.email||p.get("email")||"user",id:claims.sub||p.get("user_id")||null},
-      };
-      auth.saveSession(s); setSession(s); window.location.hash="";
-      // Password-recovery links land here too (type=recovery). Instead of
-      // dropping the user on the shop, keep the recovery session (so we have a
-      // token to PUT the new password) and send them to the set-password screen.
-      if(p.get("type")==="recovery"){
-        setView("auth"); setOtpStep("reset"); flash("Choose a new password.");
-      } else {
-        flash("Signed in!"); setView("shop");
-      }
+      applyOAuthHash(hash);
+      window.location.hash="";
     }
+  },[]);
+
+  // Native app: Sign in with Apple/Google and Stripe checkout return via the
+  // stitchd:// deep link (see public/native-return.html). Parse it the same way
+  // the web does, then dismiss the in-app browser.
+  useEffect(()=>{
+    if(!IS_NATIVE) return;
+    let cleanup;
+    (async()=>{
+      try{
+        const { App: CapApp } = await import("@capacitor/app");
+        const sub = await CapApp.addListener("appUrlOpen", async ({ url })=>{
+          if(!url) return;
+          let u; try{ u=new URL(url); }catch{ return; }
+          // OAuth tokens arrive in the hash; checkout results in the query (?to=…).
+          const handledAuth = u.hash && u.hash.includes("access_token") && applyOAuthHash(u.hash);
+          if(!handledAuth){
+            const to=u.searchParams.get("to");
+            const sid=u.searchParams.get("session_id");
+            // Check `to` before the sid catch-all: an alteration payment carries
+            // a session_id too, but must land on the alterations screen, not the
+            // generic order-success flow.
+            if(to==="alterations"){
+              setView("alterations");
+              flash("Payment received - your booking is confirmed!",6000);
+            } else if(to==="order-success"||sid){
+              finishOrderSuccess(sid);
+            } else if(to==="bag"){
+              setShowBag(true);
+            }
+            // to==="cancel" (or anything else): just close the browser below.
+          }
+          try{ const { closeExternal } = await import("./lib/native"); await closeExternal(); }catch(e){}
+        });
+        cleanup=()=>{ try{ sub.remove(); }catch(e){} };
+      }catch(e){ /* @capacitor/app unavailable */ }
+    })();
+    return ()=>{ if(cleanup) cleanup(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
   useEffect(()=>{ fetchItems(); },[]);
@@ -565,20 +658,7 @@ export default function App() {
       setView("dashboard");
     }
     if(!window.location.pathname.includes("order-success")) return;
-    setView("order-success");
-    setOrderResult({status:"loading"});
-    const sid=new URLSearchParams(window.location.search).get("session_id");
-    if(!sid){ setOrderResult({status:"error"}); return; }
-    verifySession(sid).then(r=>{
-      if(r&&r.paid){
-        setOrderResult({status:"ok",items:r.items||[],amount:r.amount_total||0,sessionId:sid,listingIds:r.listing_ids||[]});
-        // Clear the purchased listings from the (localStorage) bag.
-        const purchased=new Set(r.listing_ids||[]);
-        setBag(prev=>{ const next=purchased.size?prev.filter(b=>!purchased.has(b.id)):[]; localStorage.setItem("stitchd_bag",JSON.stringify(next)); return next; });
-      } else {
-        setOrderResult({status:"error"});
-      }
-    }).catch(()=>setOrderResult({status:"error"}));
+    finishOrderSuccess(new URLSearchParams(window.location.search).get("session_id"));
   },[]);
 
   // URL routing for the deep-linkable pages. Static pages (/terms, /about…) map
@@ -876,6 +956,7 @@ export default function App() {
       case "terms":       goLegal("terms","/terms"); return;
       case "privacy":     goLegal("privacy","/privacy"); return;
       case "returns":     goLegal("returns","/returns"); return;
+      case "support":     goLegal("support","/support"); return;
       case "selling-tips": goLegal("selling-tips","/selling-tips"); return;
       case "about":       goLegal("about","/about"); return;
       case "tailors":     openTailorDirectory(); return;
@@ -921,9 +1002,52 @@ export default function App() {
   async function fetchItems(){
     setLoading(true); setError("");
     try{ const data = await db.getAll(token); setItems(data); }
-    catch(e){ try{ setItems(await db.getAll(null)); }catch(e2){ setError(`Error: ${e2.message}`); } }
+    catch(e){
+      try{ setItems(await db.getAll(null)); }
+      catch(e2){
+        // Friendly, non-technical copy - and call out no-signal explicitly so the
+        // user knows it's their connection, not a broken app.
+        setError(typeof navigator!=="undefined"&&navigator.onLine===false
+          ? "You're offline. Check your connection and pull down to try again."
+          : "We couldn't load listings just now. Pull down or tap retry to try again.");
+      }
+    }
     finally{ setLoading(false); }
   }
+
+  // ── Phase 3 (native robustness) ───────────────────────────────────────────────
+  // Connectivity: show a calm banner while offline and silently reload the grid
+  // the moment the connection returns, so the user never has to hunt for a retry.
+  const [online,setOnline]=useState(typeof navigator==="undefined"?true:navigator.onLine!==false);
+  useEffect(()=>{
+    const goOnline=()=>{ setOnline(true); fetchItems(); };
+    const goOffline=()=>setOnline(false);
+    window.addEventListener("online",goOnline);
+    window.addEventListener("offline",goOffline);
+    return ()=>{ window.removeEventListener("online",goOnline); window.removeEventListener("offline",goOffline); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  // Pull-to-refresh (native only). We disabled the WKWebView rubber-band
+  // (overscroll-behavior on body.native-app), so a downward drag from the very top
+  // is ours: past a threshold it re-fetches the grid. Listeners are passive, so
+  // normal scrolling is never blocked.
+  const [ptr,setPtr]=useState(0);              // live pull distance (px, capped)
+  const [refreshing,setRefreshing]=useState(false);
+  useEffect(()=>{
+    if(!IS_NATIVE) return;
+    let startY=0, active=false, dist=0;
+    const THRESH=70, MAX=100;
+    const onStart=(e)=>{ if((window.scrollY||0)<=0 && !refreshing){ startY=e.touches[0].clientY; active=true; dist=0; } };
+    const onMove=(e)=>{ if(!active) return; dist=e.touches[0].clientY-startY; setPtr(dist>0?Math.min(dist,MAX):0); };
+    const onEnd=()=>{ if(active && dist>THRESH){ setRefreshing(true); Promise.resolve(fetchItems()).finally(()=>setRefreshing(false)); } active=false; dist=0; setPtr(0); };
+    window.addEventListener("touchstart",onStart,{passive:true});
+    window.addEventListener("touchmove",onMove,{passive:true});
+    window.addEventListener("touchend",onEnd,{passive:true});
+    window.addEventListener("touchcancel",onEnd,{passive:true});
+    return ()=>{ window.removeEventListener("touchstart",onStart); window.removeEventListener("touchmove",onMove); window.removeEventListener("touchend",onEnd); window.removeEventListener("touchcancel",onEnd); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[refreshing]);
 
   // Phase 13 - a listing counts as "promoted" for sorting only while its boost is
   // live (promoted flag set AND promoted_until still in the future), so an expired
@@ -1079,6 +1203,7 @@ export default function App() {
   // bag never holds more than one of the same listing - adding an item already in
   // the bag removes it. Stores a small snapshot so the panel needs no extra fetch.
   function toggleBag(item){
+    haptic(bag.some(b=>b.id===item.id)?"light":"medium");   // buzz: firmer when adding
     setBag(prev=>{
       let next;
       if(prev.some(b=>b.id===item.id)){
@@ -1215,7 +1340,7 @@ export default function App() {
   function shareItem(item){
     // Share the listing's own URL (not the current page) so the link opens the
     // item for whoever receives it.
-    const url=`${window.location.origin}/listing/${item.id}`;
+    const url=`${publicOrigin()}/listing/${item.id}`;
     const text=`Check out "${item.name}" for £${item.price} on Stitch'd`;
     if(navigator.share){ navigator.share({title:item.name,text,url}).catch(()=>{}); }
     else{ navigator.clipboard.writeText(`${text}\n${url}`).then(()=>flash("Link copied!")); }
@@ -1885,6 +2010,7 @@ export default function App() {
   async function toggleFavourite(item){
     if(!user||!token){ flash("Sign in to wishlist this piece!"); setAuthMode("login"); setView("auth"); return; }
     const id=item.id, has=myWishlist.has(id);
+    haptic(has?"light":"medium");                            // buzz: firmer when saving
     setMyWishlist(prev=>{ const n=new Set(prev); has?n.delete(id):n.add(id); return n; });
     setWishlistCounts(prev=>({...prev,[id]:Math.max(0,(prev[id]||0)+(has?-1:1))}));
     setWishlistOrder(prev=> has?prev.filter(x=>x!==id):[id,...prev.filter(x=>x!==id)]);
@@ -2731,7 +2857,7 @@ export default function App() {
     try{
       const res=await verifyConnectAccount(myTailor.id);
       const url=(res&&(res.dashboard_url||res.url))||null;
-      if(url){ try{ window.open(url,"_blank","noopener"); }catch(e){ window.location.href=url; } }
+      if(url){ openUrl(url); }
       else flash("Couldn't open your Stripe dashboard. Please try again.");
     }catch(e){ flash(e.message||"Couldn't open your Stripe dashboard."); }
     finally{ setPaymentsBusy(false); }
@@ -3429,12 +3555,12 @@ export default function App() {
       // PDF is ready (just bought, or re-fetched): store it on the order + open it.
       if(res&&res.label_url){
         setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number||o.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null,label_url:res.label_url}:o));
-        try{ window.open(res.label_url,"_blank"); }catch(e){}
+        openUrl(res.label_url);
         flash("Label ready - opening the PDF. It stays on the order as VIEW LABEL.");
         return;
       }
       // Legacy order (bought before in-app PDFs were stored) → print from Parcel2Go.
-      if(res&&res.legacy){ try{ window.open("https://www.parcel2go.com/myaccount/myorders","_blank"); }catch(e){} flash("This label was bought earlier - opening your Parcel2Go account to print it."); return; }
+      if(res&&res.legacy){ openUrl("https://www.parcel2go.com/myaccount/myorders"); flash("This label was bought earlier - opening your Parcel2Go account to print it."); return; }
       // Bought but Parcel2Go hasn't finished generating the PDF yet.
       if(res&&res.tracking_number){
         setMyOrders(p=>p.map(o=>o.id===order.id?{...o,tracking_number:res.tracking_number,tracking_carrier:order.postage_carrier||o.tracking_carrier||null}:o));
@@ -3988,6 +4114,7 @@ export default function App() {
   const tailorApproved = !!myTailor && (myTailor.status==="approved" || myTailor.status==="suspended");
   const navSections = [
     {label:"DISCOVER", items:[
+      {label:"EXPLORE",        icon:mIcon(Search),   run:openExplore},
       {label:"NEW ARRIVALS",   icon:mIcon(Sparkles), run:()=>{clearFilters();setView("newarrivals");}},
       {label:"FEED",           icon:mIcon(Compass),  run:()=>{loadFeed();setView("feed");}},
       {label:"FIND A TAILOR",  icon:mIcon(Scissors), run:openTailorDirectory},
@@ -4013,6 +4140,14 @@ export default function App() {
       {label:"MESSAGES",       icon:mIcon(MessageCircle), run:openMessages},
       {label:"HOW TO MEASURE", icon:mIcon(Ruler),         run:()=>{setPrevView(view);setView("measuring");}},
     ]},
+    // In the native app the website footer is hidden, so surface its info/legal
+    // links here instead. (On web the footer already covers these.)
+    ...(IS_NATIVE ? [{label:"MORE", items:[
+      {label:"HELP & SUPPORT", icon:mIcon(Lightbulb),  run:()=>goLegal("support","/support")},
+      {label:"ABOUT",          icon:mIcon(Info),        run:()=>goLegal("about","/about")},
+      {label:"TERMS",          icon:mIcon(Handshake),   run:()=>goLegal("terms","/terms")},
+      {label:"PRIVACY",        icon:mIcon(ShieldCheck), run:()=>goLegal("privacy","/privacy")},
+    ]}] : []),
     {label:null, items:[
       {label:"LOG OUT",        icon:mIcon(LogOut), run:handleSignOut, danger:true},
     ]},
@@ -4024,9 +4159,25 @@ export default function App() {
       <style>{CSS}</style>
       <ConfirmHost/>
 
+      {/* Pull-to-refresh indicator (native): a small spinner that follows the pull
+          and spins while the grid reloads. */}
+      {IS_NATIVE && (ptr>0||refreshing) && (
+        <div style={{position:"fixed",top:0,left:0,right:0,display:"flex",justifyContent:"center",pointerEvents:"none",zIndex:150,paddingTop:`calc(env(safe-area-inset-top) + ${refreshing?54:Math.max(6,ptr)}px)`}}>
+          <div style={{width:32,height:32,borderRadius:"50%",background:"#fff",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 16px rgba(0,0,0,0.18)"}}>
+            <span style={{width:16,height:16,border:"2px solid #f0d4e6",borderTopColor:"#FF1493",borderRadius:"50%",display:"block",animation:refreshing?"spin .7s linear infinite":"none",transform:refreshing?undefined:`rotate(${Math.round(ptr*3)}deg)`}}/>
+          </div>
+        </div>
+      )}
+
+      {/* Offline banner: a calm toast-style bar (never overlaps the header). It
+          clears itself and reloads the grid automatically when signal returns. */}
+      {!online && (
+        <div style={S.offlineBar}>NO CONNECTION — SOME THINGS MAY NOT LOAD</div>
+      )}
+
       {/* INVITE FRIENDS - referral link + free-bump reward */}
       {showInvite&&user&&(()=>{
-        const link=`${window.location.origin}/?ref=${user.id}`;
+        const link=`${publicOrigin()}/?ref=${user.id}`;
         const shareText=`Join me on Stitch'd - the UK marketplace for pre-loved South Asian fashion. Sign up with my link: ${link}`;
         const doCopy=()=>{ try{ navigator.clipboard.writeText(link).then(()=>{ setInviteCopied(true); setTimeout(()=>setInviteCopied(false),2000); }).catch(()=>{}); }catch(e){} };
         const bumps=profile?.free_bumps||0;
@@ -4056,6 +4207,31 @@ export default function App() {
       })()}
 
       {/* HEADER */}
+      {IS_NATIVE ? (
+        /* Native app bar - clean, solid, Instagram-style: wordmark left, a few
+           essential icon actions right. Sell / Inbox / Account live in the bottom
+           tab bar, so the web navbar's text buttons and tickers are dropped. */
+        <header style={S.appBar}>
+          <div style={S.appBarInner}>
+            <span style={S.appBarLogo} onClick={()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("shop"); window.scrollTo(0,0); }}>STITCH'D</span>
+            <div style={S.appBarActions}>
+              <button style={S.appBarIcon} aria-label="My wishlist" onClick={()=>{ if(user) loadMyWishlist(); setView("wishlist"); }}>
+                <Heart width={22} height={22}/>{myWishlist.size>0&&<span style={S.wishBadge}>{myWishlist.size}</span>}
+              </button>
+              {user&&(
+                <button style={S.appBarIcon} aria-label="Shopping bag" onClick={()=>setShowBag(true)}>
+                  <ShoppingBag width={22} height={22}/>{bag.length>0&&<span style={S.bagBadge}>{bag.length}</span>}
+                </button>
+              )}
+              {user&&(
+                <button style={S.appBarIcon} aria-label="Notifications" onClick={()=>setShowNotifs(p=>!p)}>
+                  <Bell width={22} height={22}/>{unreadNotifs>0&&<span style={S.wishBadge}>{unreadNotifs}</span>}
+                </button>
+              )}
+            </div>
+          </div>
+        </header>
+      ) : (
       <header className={"nav-header"+(scrolled?" scrolled":"")} style={S.header}>
         <div className="nav-hwrap" style={S.hWrap}>
           <div className="nav-logo" style={S.logoWrap} onClick={()=>setView("shop")}><span style={S.logoText}>STITCH'D</span></div>
@@ -4108,6 +4284,7 @@ export default function App() {
           </div>
         </div>
       </header>
+      )}
 
       {/* MOBILE NAV MENU - full-width slide-in, only reachable via the hamburger */}
       {user&&mobileNavOpen&&(
@@ -4128,7 +4305,9 @@ export default function App() {
         </div>
       )}
 
-      <div style={S.ticker}><div style={S.tickerInner}>{Array(4).fill("STITCH'D \u00a0·\u00a0 PRE-LOVED SOUTH ASIAN FASHION \u00a0·\u00a0 BUY. SELL. STYLE. \u00a0·\u00a0 MEASURED FITS ONLY \u00a0·\u00a0 ").join("")}</div></div>
+      {/* The scrolling pink ticker is a website flourish - hidden in the native
+          app where it reads as a web banner rather than app chrome. */}
+      {!IS_NATIVE && <div style={S.ticker}><div style={S.tickerInner}>{Array(4).fill("STITCH'D \u00a0·\u00a0 PRE-LOVED SOUTH ASIAN FASHION \u00a0·\u00a0 BUY. SELL. STYLE. \u00a0·\u00a0 MEASURED FITS ONLY \u00a0·\u00a0 ").join("")}</div></div>}
 
       {/* PAGE CONTENT - wrapped so a gentle fade plays on every view change
           (opacity-only, so fixed overlays/modals keep working). */}
@@ -5085,6 +5264,18 @@ export default function App() {
         setAuthMode={setAuthMode}
       />}
 
+      {/* EXPLORE VIEW - one blended discovery feed */}
+      {view==="explore" && (
+        <Explore
+          items={exploreItems}
+          exploreCat={exploreCat} setExploreCat={setExploreCat}
+          query={exploreQuery} setQuery={setExploreQuery}
+          myWishlist={myWishlist}
+          onOpen={openDetail}
+          onSave={(item)=>{ if(user) toggleFavourite(item); else gateAuth("login"); }}
+        />
+      )}
+
       {/* SHOP VIEW */}
       <Shop
         view={view}
@@ -5419,8 +5610,10 @@ export default function App() {
       </div>{/* /#page-view */}
 
       {/* GLOBAL FOOTER - appears on every page (modals/overlays render on top and
-          are unaffected; the Stripe checkout is an external hosted page). */}
-      <Footer onNav={footerNav} />
+          are unaffected; the Stripe checkout is an external hosted page). Hidden
+          in the native app, where a big website-style footer is the biggest "this
+          is just a website" tell; its links live in the menu instead (below). */}
+      {!IS_NATIVE && <Footer onNav={footerNav} />}
 
       {/* FIRST-RUN WELCOME - once per browser, only over the home view. */}
       <Onboarding
@@ -5437,18 +5630,18 @@ export default function App() {
         <nav className="bottom-nav" style={S.bottomNav} aria-label="Primary">
           {[
             {key:"home", label:"Home", Icon:Home, on:view==="shop"||view==="newarrivals", run:()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("shop"); window.scrollTo(0,0); }},
-            {key:"saved", label:"Saved", Icon:Heart, fillOn:true, on:view==="wishlist", run:()=>{ if(user) loadMyWishlist(); setView("wishlist"); window.scrollTo(0,0); }},
+            {key:"explore", label:"Explore", Icon:Search, on:view==="explore", run:openExplore},
             {key:"sell", label:"Sell", Icon:Plus, sell:true, on:view==="add", run:()=>{ if(user){ setView("add"); window.scrollTo(0,0); } else gateAuth("signup"); }},
             {key:"inbox", label:"Inbox", Icon:MessageCircle, badge:unreadCount, on:view==="messages", run:()=>{ if(user) openMessages(); else gateAuth("login"); }},
             {key:"account", label:"Account", Icon:User, on:false, run:()=>{ if(user) setMobileNavOpen(true); else gateAuth("login"); }},
           ].map(t=>(
             t.sell ? (
-              <button key={t.key} className="bottom-nav-item" style={S.bottomNavItem} onClick={t.run} aria-label="Sell an item">
+              <button key={t.key} className="bottom-nav-item" style={S.bottomNavItem} onClick={()=>{haptic("light");t.run();}} aria-label="Sell an item">
                 <span style={S.bottomNavSell}><t.Icon width={22} height={22}/></span>
                 <span style={{...S.bottomNavLabel,color:t.on?"#FF1493":"#111"}}>{t.label}</span>
               </button>
             ) : (
-              <button key={t.key} className="bottom-nav-item" style={S.bottomNavItem} onClick={t.run} aria-label={t.label}>
+              <button key={t.key} className="bottom-nav-item" style={S.bottomNavItem} onClick={()=>{haptic("light");t.run();}} aria-label={t.label}>
                 <span style={{position:"relative",display:"flex"}}>
                   <t.Icon width={22} height={22} color={t.on?"#FF1493":"#111"} fill={t.on&&t.fillOn?"#FF1493":"none"}/>
                   {t.badge>0&&<span style={S.bottomNavBadge}>{t.badge>9?"9+":t.badge}</span>}

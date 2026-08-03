@@ -1,4 +1,17 @@
-import { SUPABASE_URL, SUPABASE_KEY } from "./constants";
+import { SUPABASE_URL, SUPABASE_KEY, IS_NATIVE } from "./constants";
+
+// Where the OAuth flow should send the user back to. On the web that's the page
+// they started from; in the native app we redirect STRAIGHT to the stitchd://
+// deep link, which reopens the app with the session tokens in the hash (parsed by
+// the appUrlOpen listener in App.js). Supabase supports custom-scheme redirects,
+// so sign-in no longer depends on the native-return.html bridge being live on the
+// website. This requires `stitchd://return` to be in the Supabase redirect
+// allowlist (Authentication → URL Configuration → Redirect URLs).
+//   NB: Stripe checkout still routes through the https bridge (native-return.html)
+//   because Stripe rejects custom-scheme return URLs - that path is separate.
+function oauthReturnTarget() {
+  return IS_NATIVE ? "stitchd://return" : `${window.location.origin}${window.location.pathname}`;
+}
 
 export const auth = {
   async signUp(email,pw){ const r=await fetch(`${SUPABASE_URL}/auth/v1/signup`,{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email,password:pw})}); const d=await r.json(); if(d.error)throw new Error(d.error.message||d.msg); return d; },
@@ -19,19 +32,19 @@ export const auth = {
   // (Authentication → URL Configuration: Site URL + allowed Redirect URLs must
   // match the exact domain) and Google Cloud (authorized redirect URI must be
   // <project>.supabase.co/auth/v1/callback), not in this URL.
-  googleUrl(){ const target=`${window.location.origin}${window.location.pathname}`; return `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(target)}`; },
+  googleUrl(){ const target=oauthReturnTarget(); return `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(target)}`; },
   // Sign in with Apple - same GoTrue OAuth flow as Google. Requires the Apple
   // provider to be enabled in the Supabase dashboard (Authentication → Providers
   // → Apple) with a Services ID + key, and stitchd.fit added to Apple's return
   // URLs. The redirect_to handling mirrors googleUrl() (clean origin+path only).
-  appleUrl(){ const target=`${window.location.origin}${window.location.pathname}`; return `${SUPABASE_URL}/auth/v1/authorize?provider=apple&redirect_to=${encodeURIComponent(target)}`; },
+  appleUrl(){ const target=oauthReturnTarget(); return `${SUPABASE_URL}/auth/v1/authorize?provider=apple&redirect_to=${encodeURIComponent(target)}`; },
   // Password reset - step 1: send the recovery email. Routes through our own
   // send-reset Edge Function so the email is a BRANDED Stitch'd email (via
   // Resend) instead of Supabase's plain default. The function generates the
   // recovery link server-side and always returns ok (no account enumeration);
   // redirectTo brings the user back to the app, where the hash carries
   // type=recovery.
-  async sendReset(email){ const redirectTo=`${window.location.origin}${window.location.pathname}`; const r=await fetch(`${SUPABASE_URL}/functions/v1/send-reset`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({email,redirectTo})}); if(!r.ok)throw new Error("Could not send reset email - please try again."); return r.json().catch(()=>({ok:true})); },
+  async sendReset(email){ const redirectTo=IS_NATIVE?"stitchd://return":`${window.location.origin}${window.location.pathname}`; const r=await fetch(`${SUPABASE_URL}/functions/v1/send-reset`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({email,redirectTo})}); if(!r.ok)throw new Error("Could not send reset email - please try again."); return r.json().catch(()=>({ok:true})); },
   // Password reset - step 2: set the new password using the recovery session's
   // access token (saved when we detect the type=recovery hash on return).
   async updateUser(password,t){ const r=await fetch(`${SUPABASE_URL}/auth/v1/user`,{method:"PUT",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t}`,"Content-Type":"application/json"},body:JSON.stringify({password})}); const d=await r.json().catch(()=>({})); if(!r.ok||d.error||d.code)throw new Error((d.error&&d.error.message)||d.msg||d.error_description||"Could not update password"); return d; },

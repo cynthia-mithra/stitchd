@@ -65,19 +65,19 @@ const PAGES = {
   },
   privacy: {
     title: "PRIVACY POLICY",
-    updated: "June 2026",
+    updated: "July 2026",
     sections: [
       {
         heading: "1. Who We Are",
-        body: "Stitch'd (stitchd.fit) is an online marketplace for pre-loved South Asian fashion, operated in the United Kingdom.",
+        body: "Stitch'd (stitchd.fit) is an online marketplace for pre-loved South Asian fashion, operated in the United Kingdom. This policy applies to both our website and our Stitch'd mobile app.",
       },
       {
         heading: "2. What Data We Collect",
-        body: "We collect: name and email address when you create an account, listing information you provide as a seller, transaction data processed by Stripe, usage data including pages visited and listings viewed.",
+        body: "We collect: name and email address when you create an account, listing information and photos you provide as a seller, messages you send to other members, transaction and purchase history processed by Stripe, your delivery address (collected by Stripe at checkout so sellers can post your order), and usage data including pages visited and listings viewed. If you turn on notifications in the app, we store a device token so we can send you alerts. We do not use any advertising or cross-app tracking.",
       },
       {
         heading: "3. How We Use Your Data",
-        body: "We use your data to: operate your account and the marketplace, process payments via Stripe, send order and account notifications, improve the platform. We do not sell your data to third parties.",
+        body: "We use your data to: operate your account and the marketplace, process payments via Stripe, send order and account notifications (including optional push notifications), and improve the platform. We do not sell your data or track you across other companies' apps or websites.",
       },
       {
         heading: "4. Stripe",
@@ -128,6 +128,40 @@ const PAGES = {
       {
         heading: "6. Contact",
         body: "hello@stitchd.fit",
+      },
+    ],
+  },
+  support: {
+    title: "HELP & SUPPORT",
+    updated: "July 2026",
+    sections: [
+      {
+        heading: "Contact us",
+        body: "Need a hand? Email our team at hello@stitchd.fit and we'll get back to you within 2 working days. Please include your order reference if your question is about a purchase.",
+      },
+      {
+        heading: "Buying on Stitch'd",
+        body: "Browse or search for a piece, then tap Add to Bag and check out securely. Your payment is protected by Buyer Protection and only released to the seller once you confirm your item has arrived as described.",
+      },
+      {
+        heading: "Selling on Stitch'd",
+        body: "Tap Sell, add clear photos, measurements and a fair price, and post your listing for free. When it sells we'll guide you through postage, and your earnings land in your in-app wallet ready to withdraw.",
+      },
+      {
+        heading: "Buyer Protection",
+        body: "Every purchase is covered. If an item never arrives, or arrives significantly not as described, contact us within 5 days at hello@stitchd.fit with photos and your order reference and we'll help put it right.",
+      },
+      {
+        heading: "Payments & withdrawals",
+        body: "Payments are processed securely by Stripe. Sellers are paid into their Stitch'd wallet once a sale is confirmed, and can withdraw to their bank account at any time.",
+      },
+      {
+        heading: "Managing your account",
+        body: "You can update your profile and notification preferences in Settings. To close your account or request deletion of your data, email hello@stitchd.fit and we'll action it in line with our Privacy Policy.",
+      },
+      {
+        heading: "Report a problem",
+        body: "To report a listing, a user, or a safety concern, use the report option in the app or email hello@stitchd.fit. We review every report.",
       },
     ],
   },

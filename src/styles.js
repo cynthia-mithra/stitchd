@@ -7,6 +7,17 @@ export const CSS=`
   p{line-height:1.6;}
   h1,h2,h3,h4{line-height:1.04;}
   button,input,select,textarea{font-family:inherit;}
+  /* Native app feel: kill the web-isms that make a Capacitor app read like a
+     website — the grey tap flash, long-press copy/share callouts, and selectable
+     UI text. Re-enable selection only where the user genuinely types or reads
+     copyable content (fields + message bubbles). Scoped to body.native-app so the
+     website is completely unaffected. */
+  body.native-app{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;}
+  body.native-app input,body.native-app textarea,body.native-app [contenteditable],body.native-app .selectable{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;}
+  body.native-app img{-webkit-touch-callout:none;}
+  /* Full-pink login: the shared field labels are inline-styled grey; turn them
+     white so they read on the pink background. */
+  .auth-pink label{color:rgba(255,255,255,0.92) !important;}
   .scard{transition:transform .28s cubic-bezier(.22,1,.36,1),box-shadow .28s ease !important;cursor:pointer;}
   .scard:hover{transform:translateY(-6px) !important;box-shadow:0 22px 50px rgba(0,0,0,0.14) !important;}
   /* Trendy product-card interaction: the cover image gently zooms inside its
@@ -31,6 +42,19 @@ export const CSS=`
   .card-hover-price .chp-view{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:11px;letter-spacing:2px;color:#FF1493;display:inline-flex;align-items:center;gap:5px;}
   /* Touch / no-hover devices never reveal the hover bar. */
   @media(hover:none){.card-hover-price{display:none;}}
+  /* On touch devices, mouse-hover effects either do nothing or get "stuck" after a
+     tap (the element keeps its hover state until you tap elsewhere), which reads as
+     laggy and web-like. Neutralise the hover lift/shadow and give a crisp press-down
+     on tap instead - the single biggest thing that makes taps feel native. */
+  @media(hover:none){
+    .scard:hover{transform:none !important;box-shadow:0 4px 14px rgba(0,0,0,0.06) !important;}
+    .scard:hover .card-top img,.scard:hover .card-top span{transform:none !important;}
+    .scard:active{transform:scale(.985) !important;}
+    .hbtn:hover{transform:none !important;box-shadow:none !important;filter:none !important;}
+    .hbtn:active{transform:scale(.97) !important;box-shadow:0 2px 8px rgba(0,0,0,0.14) !important;}
+    .cat-chip:hover{transform:none;}
+    .cat-chip:active{transform:scale(.96);}
+  }
   @media(max-width:600px){
     .card-ov{gap:4px;}
     .card-ov-tl{top:7px;left:7px;}
@@ -168,7 +192,8 @@ export const CSS=`
     .shop-tab{flex:1 1 0 !important;text-align:center !important;padding-left:0 !important;padding-right:0 !important;}
     /* PROBLEM 3 - two-column listing grid with proportionally scaled cards. */
     .shop-grid{grid-template-columns:1fr 1fr !important;gap:12px !important;}
-    .card-top{height:150px !important;}
+    /* The 3:4 portrait ratio (S.cardTop) governs the image height on phones too -
+       no fixed pixel height, so the two-column grid stays uniform. */
     .card-body{padding:11px !important;}
     .card-cat{font-size:9px !important;}
     .card-name{font-size:16px !important;margin-bottom:6px !important;}
@@ -186,7 +211,7 @@ export const CSS=`
     .profile-header{flex-direction:column !important;align-items:center !important;text-align:center;}
     /* Auth split stacks: brand banner on top, form below. */
     .auth-split{flex-direction:column !important;}
-    .auth-brand{padding:24px !important;gap:18px !important;flex-direction:row !important;flex-wrap:wrap !important;align-items:center !important;justify-content:space-between !important;}
+    .auth-brand{padding:34px 26px 30px !important;gap:10px !important;flex-direction:column !important;align-items:flex-start !important;justify-content:flex-start !important;border-right:none !important;border-bottom:3px solid #111 !important;}
     .auth-brand-props{display:none !important;}
   }
   /* MOBILE - hide the scrolling category ticker strip in the navbar (SAREES ✦
@@ -223,13 +248,21 @@ export const S={
   // Frosted-glass sticky header: a near-opaque white with a backdrop blur so
   // content scrolls subtly beneath it. The hairline lift-off shadow is added
   // only once scrolled (see .nav-header.scrolled in CSS).
-  header:{background:"rgba(255,255,255,0.82)",backdropFilter:"saturate(180%) blur(12px)",WebkitBackdropFilter:"saturate(180%) blur(12px)",borderBottom:"3px solid #111",position:"sticky",top:0,zIndex:200},
+  header:{background:"rgba(255,255,255,0.82)",backdropFilter:"saturate(180%) blur(12px)",WebkitBackdropFilter:"saturate(180%) blur(12px)",borderBottom:"3px solid #111",position:"sticky",top:0,zIndex:200,paddingTop:"env(safe-area-inset-top)"},
   // overflow is left VISIBLE here so the desktop/iPad profile-icon dropdown (which
   // hangs below this 52px bar via position:absolute) isn't clipped. `overflow-x:auto`
   // would force `overflow-y` to auto too and crop the dropdown to nothing. Horizontal
   // scroll is restored ONLY on mobile (≤768px, via .nav-hwrap in CSS) where the menu is
   // the full-screen hamburger overlay, not the clipped dropdown.
   hWrap:{maxWidth:"100%",padding:"0 10px",display:"flex",alignItems:"stretch",height:52,overflowX:"visible",WebkitOverflowScrolling:"touch"},
+  // NATIVE APP BAR - a clean, solid top bar for the iOS/Android app: wordmark on
+  // the left, a few essential icon actions on the right (Instagram-style). No
+  // frosted blur, no marquee, no text buttons - those live in the bottom tab bar.
+  appBar:{background:"#fff",borderBottom:"2px solid #111",position:"sticky",top:0,zIndex:200,paddingTop:"env(safe-area-inset-top)"},
+  appBarInner:{display:"flex",alignItems:"center",justifyContent:"space-between",height:50,padding:"0 16px"},
+  appBarLogo:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:25,fontWeight:900,letterSpacing:2,cursor:"pointer",color:"#111"},
+  appBarActions:{display:"flex",alignItems:"center",gap:4},
+  appBarIcon:{background:"none",border:"none",padding:7,cursor:"pointer",color:"#111",position:"relative",display:"flex",alignItems:"center",justifyContent:"center"},
   logoWrap:{display:"flex",alignItems:"center",gap:2,cursor:"pointer",paddingRight:10,borderRight:"2px solid #111",flexShrink:0},
   logoText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2},
   logoTM:{fontSize:10,color:"#FF1493",alignSelf:"flex-start",marginTop:6},
@@ -256,7 +289,7 @@ export const S={
   navDropSectionLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:10,fontWeight:800,letterSpacing:1.5,color:"#6b6b6b",textTransform:"uppercase",padding:"7px 16px 2px",userSelect:"none"},
   navDropDivider:{height:1,background:"#eee",border:"none",margin:0},
   // Mobile full-width menu overlay.
-  mobileNav:{position:"fixed",top:0,left:0,right:0,bottom:0,width:"100%",background:"#fff",zIndex:600,display:"flex",flexDirection:"column",overflowY:"auto"},
+  mobileNav:{position:"fixed",top:0,left:0,right:0,bottom:0,width:"100%",background:"#fff",zIndex:600,display:"flex",flexDirection:"column",overflowY:"auto",paddingTop:"env(safe-area-inset-top)"},
   mobileNavHead:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",borderBottom:"2px solid #111"},
   mobileNavTitle:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2,textTransform:"uppercase"},
   mobileNavClose:{background:"none",border:"none",cursor:"pointer",color:"#111",display:"flex",alignItems:"center",padding:4},
@@ -271,6 +304,10 @@ export const S={
   ticker:{background:"#FF1493",overflow:"hidden",borderBottom:"2px solid #111",height:28,display:"flex",alignItems:"center"},
   tickerInner:{display:"inline-block",whiteSpace:"nowrap",fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:700,letterSpacing:3.5,color:"rgba(255,255,255,0.92)",animation:"ticker 36s linear infinite",paddingLeft:"100%"},
   toast:{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"13px 22px",borderLeft:"4px solid #FF1493",fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.2,zIndex:999,borderRadius:0,display:"inline-flex",alignItems:"center",gap:11,maxWidth:"min(92vw,560px)",lineHeight:1.35,textAlign:"left",boxShadow:"0 10px 34px rgba(0,0,0,0.28)"},
+  // Offline banner: floats above the content near the bottom (clear of the header
+  // and the bottom tab bar via the home-indicator safe area). Amber accent so it
+  // reads as a warning, not an error.
+  offlineBar:{position:"fixed",left:"50%",bottom:"calc(94px + env(safe-area-inset-bottom))",transform:"translateX(-50%)",background:"#111",color:"#fff",padding:"11px 20px",borderLeft:"4px solid #FF9500",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.2,fontSize:13,zIndex:800,whiteSpace:"nowrap",maxWidth:"92vw",boxShadow:"0 10px 30px rgba(0,0,0,0.28)"},
   // MOBILE BOTTOM NAV - fixed app-style tab bar (shown ≤768px via .bottom-nav).
   // Solid white (not frosted) so scrolling content never bleeds through and the
   // icons stay crisp; a soft upward shadow lifts it off the page.
@@ -348,7 +385,11 @@ export const S={
   card:{background:"#fff",border:"2px solid #111",overflow:"hidden",cursor:"pointer",borderRadius:0,position:"relative",display:"flex",flexDirection:"column",height:"100%"},
   // Fixed image zone height across every card so the picture areas line up; flexShrink:0
   // keeps it from compressing inside the flex column. Image uses objectFit:cover (see Thumb).
-  cardTop:{height:300,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",flexShrink:0},
+  // Portrait 3:4 image zone (a true ratio, not a fixed pixel height) so every
+  // product photo is framed identically and the grid stays uniform at any column
+  // width - phone, tablet or desktop. Small inline thumbnails elsewhere pass their
+  // own explicit height, which overrides the ratio.
+  cardTop:{aspectRatio:"3 / 4",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",flexShrink:0},
   cardEmoji:{fontSize:80,filter:"drop-shadow(0 6px 16px rgba(0,0,0,0.2))",position:"relative",zIndex:2},
   cardOrigin:{position:"absolute",top:12,left:12,background:"rgba(0,0,0,0.5)",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",backdropFilter:"blur(4px)",zIndex:3},
   soldVeil:{position:"absolute",inset:0,background:"rgba(255,255,255,0.75)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(2px)",zIndex:4},
@@ -452,11 +493,11 @@ export const S={
   authSwitch:{textAlign:"center",marginTop:20,fontSize:13,color:"#888"},
   authSwitchLink:{color:"#FF1493",fontWeight:800,cursor:"pointer",textDecoration:"underline"},
   // Split-screen auth: a black brand panel beside the form, framed as one block.
-  authMain:{maxWidth:960,margin:"0 auto",padding:"20px 12px"},
-  authSplit:{display:"flex",border:"3px solid #111",background:"#fff",overflow:"hidden"},
-  authBrand:{flex:"1 1 44%",background:"#111",color:"#fff",padding:"clamp(28px,4vw,48px)",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:32,minWidth:0},
-  authBrandWord:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(40px,5vw,62px)",fontWeight:900,letterSpacing:1,lineHeight:.92},
-  authBrandTag:{fontFamily:"'Barlow',sans-serif",fontSize:15,color:"rgba(255,255,255,0.72)",lineHeight:1.65,marginTop:14},
+  authMain:{background:"#FF1493",minHeight:"100vh",padding:"calc(22px + env(safe-area-inset-top)) 18px 48px"},
+  authSplit:{display:"flex",border:"3px solid #111",background:"#fff",overflow:"hidden",maxWidth:940,width:"100%",margin:"0 auto",boxShadow:"0 20px 55px rgba(0,0,0,0.28)"},
+  authBrand:{flex:"1 1 44%",background:"#FF1493",color:"#fff",padding:"clamp(28px,4vw,48px)",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:32,minWidth:0,borderRight:"3px solid #111"},
+  authBrandWord:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(46px,6vw,66px)",fontWeight:900,letterSpacing:1,lineHeight:.92},
+  authBrandTag:{fontFamily:"'Barlow',sans-serif",fontSize:15,color:"rgba(255,255,255,0.92)",lineHeight:1.6,marginTop:12,fontWeight:500},
   authBrandProps:{display:"flex",flexDirection:"column",gap:14},
   authBrandProp:{display:"flex",alignItems:"center",gap:11,fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:1.5,textTransform:"uppercase",color:"#fff"},
   authBrandDot:{width:8,height:8,borderRadius:"50%",flexShrink:0},
@@ -503,7 +544,7 @@ export const S={
   guaranteeBanner:{border:"2px solid #111",borderRadius:0,background:"#fff",padding:"16px 18px",marginBottom:16},
   // Sticky buy bar - slides up from the bottom once the inline ADD TO BAG button
   // scrolls out of view (see .detail-buybar CSS + the IntersectionObserver in Detail).
-  buyBar:{position:"fixed",left:0,right:0,bottom:0,zIndex:300,background:"rgba(255,255,255,0.9)",backdropFilter:"saturate(180%) blur(12px)",WebkitBackdropFilter:"saturate(180%) blur(12px)",borderTop:"3px solid #111",padding:"10px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,boxShadow:"0 -8px 30px rgba(0,0,0,0.10)"},
+  buyBar:{position:"fixed",left:0,right:0,bottom:0,zIndex:300,background:"rgba(255,255,255,0.9)",backdropFilter:"saturate(180%) blur(12px)",WebkitBackdropFilter:"saturate(180%) blur(12px)",borderTop:"3px solid #111",padding:"10px 18px",paddingBottom:"max(10px, env(safe-area-inset-bottom))",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,boxShadow:"0 -8px 30px rgba(0,0,0,0.10)"},
   buyBarInfo:{display:"flex",alignItems:"center",gap:12,minWidth:0},
   buyBarThumb:{width:46,height:54,border:"2px solid #111",overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,background:"#fafafa"},
   buyBarName:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:"#111",letterSpacing:0.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"42vw",margin:0,lineHeight:1.15},

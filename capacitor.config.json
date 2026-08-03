@@ -1,0 +1,22 @@
+{
+  "appId": "fit.stitchd.app",
+  "appName": "Stitch'd",
+  "webDir": "build",
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#ffffff"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1600,
+      "launchAutoHide": true,
+      "backgroundColor": "#FF1493",
+      "showSpinner": false,
+      "fadeOutDuration": 300
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#ffffff"
+    }
+  }
+}

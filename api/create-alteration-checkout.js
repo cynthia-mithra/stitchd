@@ -16,6 +16,7 @@
 //   Vercel → Project → Settings → Environment Variables  (the sale flow uses it too).
 
 const Stripe = require("stripe");
+const { applyCors } = require("./_cors");
 
 // Same Supabase project the app already reads from. The anon key is already
 // public (it ships in the browser bundle); we re-read the request here so the
@@ -30,6 +31,7 @@ const COMMISSION_RATE = 0.15;
 const sbHeaders = { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` };
 
 module.exports = async (req, res) => {
+  if (applyCors(req, res)) return;
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const secret = process.env.STRIPE_SECRET_KEY;
@@ -94,6 +96,14 @@ module.exports = async (req, res) => {
     const origin =
       req.headers.origin || (req.headers.host ? `https://${req.headers.host}` : "https://stitchd.fit");
 
+    // Native app: return through the native-return.html deep-link bridge.
+    const isNative = body.platform === "native";
+    const NATIVE_SITE = "https://stitchd.fit";
+    const success_url = isNative
+      ? `${NATIVE_SITE}/native-return.html?to=alterations&session_id={CHECKOUT_SESSION_ID}&paid=true`
+      : `${origin}/alterations?session_id={CHECKOUT_SESSION_ID}&paid=true`;
+    const cancel_url = isNative ? `${NATIVE_SITE}/native-return.html?to=cancel` : `${origin}/alterations`;
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: [
@@ -112,8 +122,8 @@ module.exports = async (req, res) => {
         commission_amount_pence: String(commissionPence),
         tailor_payout_pence: String(tailorPayoutPence),
       },
-      success_url: `${origin}/alterations?session_id={CHECKOUT_SESSION_ID}&paid=true`,
-      cancel_url: `${origin}/alterations`,
+      success_url,
+      cancel_url,
     });
 
     // Stamp the session id + commission split onto the request (best-effort;
