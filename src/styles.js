@@ -192,7 +192,8 @@ export const CSS=`
     .shop-tab{flex:1 1 0 !important;text-align:center !important;padding-left:0 !important;padding-right:0 !important;}
     /* PROBLEM 3 - two-column listing grid with proportionally scaled cards. */
     .shop-grid{grid-template-columns:1fr 1fr !important;gap:12px !important;}
-    .card-top{height:150px !important;}
+    /* The 3:4 portrait ratio (S.cardTop) governs the image height on phones too -
+       no fixed pixel height, so the two-column grid stays uniform. */
     .card-body{padding:11px !important;}
     .card-cat{font-size:9px !important;}
     .card-name{font-size:16px !important;margin-bottom:6px !important;}
@@ -380,7 +381,11 @@ export const S={
   card:{background:"#fff",border:"2px solid #111",overflow:"hidden",cursor:"pointer",borderRadius:0,position:"relative",display:"flex",flexDirection:"column",height:"100%"},
   // Fixed image zone height across every card so the picture areas line up; flexShrink:0
   // keeps it from compressing inside the flex column. Image uses objectFit:cover (see Thumb).
-  cardTop:{height:300,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",flexShrink:0},
+  // Portrait 3:4 image zone (a true ratio, not a fixed pixel height) so every
+  // product photo is framed identically and the grid stays uniform at any column
+  // width - phone, tablet or desktop. Small inline thumbnails elsewhere pass their
+  // own explicit height, which overrides the ratio.
+  cardTop:{aspectRatio:"3 / 4",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",flexShrink:0},
   cardEmoji:{fontSize:80,filter:"drop-shadow(0 6px 16px rgba(0,0,0,0.2))",position:"relative",zIndex:2},
   cardOrigin:{position:"absolute",top:12,left:12,background:"rgba(0,0,0,0.5)",color:"#fff",padding:"3px 10px",fontSize:10,fontWeight:800,letterSpacing:2,fontFamily:"'Barlow Condensed',sans-serif",backdropFilter:"blur(4px)",zIndex:3},
   soldVeil:{position:"absolute",inset:0,background:"rgba(255,255,255,0.75)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(2px)",zIndex:4},
