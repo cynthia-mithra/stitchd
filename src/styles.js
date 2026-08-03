@@ -42,6 +42,19 @@ export const CSS=`
   .card-hover-price .chp-view{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:11px;letter-spacing:2px;color:#FF1493;display:inline-flex;align-items:center;gap:5px;}
   /* Touch / no-hover devices never reveal the hover bar. */
   @media(hover:none){.card-hover-price{display:none;}}
+  /* On touch devices, mouse-hover effects either do nothing or get "stuck" after a
+     tap (the element keeps its hover state until you tap elsewhere), which reads as
+     laggy and web-like. Neutralise the hover lift/shadow and give a crisp press-down
+     on tap instead - the single biggest thing that makes taps feel native. */
+  @media(hover:none){
+    .scard:hover{transform:none !important;box-shadow:0 4px 14px rgba(0,0,0,0.06) !important;}
+    .scard:hover .card-top img,.scard:hover .card-top span{transform:none !important;}
+    .scard:active{transform:scale(.985) !important;}
+    .hbtn:hover{transform:none !important;box-shadow:none !important;filter:none !important;}
+    .hbtn:active{transform:scale(.97) !important;box-shadow:0 2px 8px rgba(0,0,0,0.14) !important;}
+    .cat-chip:hover{transform:none;}
+    .cat-chip:active{transform:scale(.96);}
+  }
   @media(max-width:600px){
     .card-ov{gap:4px;}
     .card-ov-tl{top:7px;left:7px;}
@@ -241,6 +254,14 @@ export const S={
   // scroll is restored ONLY on mobile (≤768px, via .nav-hwrap in CSS) where the menu is
   // the full-screen hamburger overlay, not the clipped dropdown.
   hWrap:{maxWidth:"100%",padding:"0 10px",display:"flex",alignItems:"stretch",height:52,overflowX:"visible",WebkitOverflowScrolling:"touch"},
+  // NATIVE APP BAR - a clean, solid top bar for the iOS/Android app: wordmark on
+  // the left, a few essential icon actions on the right (Instagram-style). No
+  // frosted blur, no marquee, no text buttons - those live in the bottom tab bar.
+  appBar:{background:"#fff",borderBottom:"2px solid #111",position:"sticky",top:0,zIndex:200,paddingTop:"env(safe-area-inset-top)"},
+  appBarInner:{display:"flex",alignItems:"center",justifyContent:"space-between",height:50,padding:"0 16px"},
+  appBarLogo:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:25,fontWeight:900,letterSpacing:2,cursor:"pointer",color:"#111"},
+  appBarActions:{display:"flex",alignItems:"center",gap:4},
+  appBarIcon:{background:"none",border:"none",padding:7,cursor:"pointer",color:"#111",position:"relative",display:"flex",alignItems:"center",justifyContent:"center"},
   logoWrap:{display:"flex",alignItems:"center",gap:2,cursor:"pointer",paddingRight:10,borderRight:"2px solid #111",flexShrink:0},
   logoText:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2},
   logoTM:{fontSize:10,color:"#FF1493",alignSelf:"flex-start",marginTop:6},

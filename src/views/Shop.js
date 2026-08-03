@@ -3,7 +3,7 @@ import { Search, Scissors, Zap, Heart, Ruler, Eye, ArrowDown, ArrowRight, Sparkl
 import {
   CATEGORIES, JEWELLERY_CATS, SHOE_CATS, ALL_CATEGORIES,
   CONDITIONS, SIZES, OCCASIONS, COLOURS, OCC_COLOR, CARD_COLORS,
-  catEmoji, currencySymbol, colourSwatchBg, filterSummary,
+  catEmoji, currencySymbol, colourSwatchBg, filterSummary, IS_NATIVE,
 } from "../lib/constants";
 import { S } from "../styles";
 import { Thumb, Stars, VerifiedBadge, ColourSwatches, Reveal } from "../components/Shared";
@@ -331,7 +331,10 @@ export default function Shop({
           <p style={{fontFamily:"'Barlow',sans-serif",fontSize:16,color:"#888",marginTop:10}}>Fresh drops. Updated daily.</p>
         </section>
       )}
-      {!newArrivals&&(
+      {/* The big editorial hero is a marketing landing-page device. In the native
+          app we skip it so the home tab opens straight onto search + the grid,
+          the way a shopping app should. */}
+      {!newArrivals&&!IS_NATIVE&&(
       <section style={S.hero} className="hero-section">
         {/* Logged-in users get a personalised "welcome back" hero (greeting +
             shopping-first CTAs) so the homepage no longer looks identical to the

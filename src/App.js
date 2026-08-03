@@ -4146,6 +4146,31 @@ export default function App() {
       })()}
 
       {/* HEADER */}
+      {IS_NATIVE ? (
+        /* Native app bar - clean, solid, Instagram-style: wordmark left, a few
+           essential icon actions right. Sell / Inbox / Account live in the bottom
+           tab bar, so the web navbar's text buttons and tickers are dropped. */
+        <header style={S.appBar}>
+          <div style={S.appBarInner}>
+            <span style={S.appBarLogo} onClick={()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("shop"); window.scrollTo(0,0); }}>STITCH'D</span>
+            <div style={S.appBarActions}>
+              <button style={S.appBarIcon} aria-label="My wishlist" onClick={()=>{ if(user) loadMyWishlist(); setView("wishlist"); }}>
+                <Heart width={22} height={22}/>{myWishlist.size>0&&<span style={S.wishBadge}>{myWishlist.size}</span>}
+              </button>
+              {user&&(
+                <button style={S.appBarIcon} aria-label="Shopping bag" onClick={()=>setShowBag(true)}>
+                  <ShoppingBag width={22} height={22}/>{bag.length>0&&<span style={S.bagBadge}>{bag.length}</span>}
+                </button>
+              )}
+              {user&&(
+                <button style={S.appBarIcon} aria-label="Notifications" onClick={()=>setShowNotifs(p=>!p)}>
+                  <Bell width={22} height={22}/>{unreadNotifs>0&&<span style={S.wishBadge}>{unreadNotifs}</span>}
+                </button>
+              )}
+            </div>
+          </div>
+        </header>
+      ) : (
       <header className={"nav-header"+(scrolled?" scrolled":"")} style={S.header}>
         <div className="nav-hwrap" style={S.hWrap}>
           <div className="nav-logo" style={S.logoWrap} onClick={()=>setView("shop")}><span style={S.logoText}>STITCH'D</span></div>
@@ -4198,6 +4223,7 @@ export default function App() {
           </div>
         </div>
       </header>
+      )}
 
       {/* MOBILE NAV MENU - full-width slide-in, only reachable via the hamburger */}
       {user&&mobileNavOpen&&(
@@ -4218,7 +4244,9 @@ export default function App() {
         </div>
       )}
 
-      <div style={S.ticker}><div style={S.tickerInner}>{Array(4).fill("STITCH'D \u00a0·\u00a0 PRE-LOVED SOUTH ASIAN FASHION \u00a0·\u00a0 BUY. SELL. STYLE. \u00a0·\u00a0 MEASURED FITS ONLY \u00a0·\u00a0 ").join("")}</div></div>
+      {/* The scrolling pink ticker is a website flourish - hidden in the native
+          app where it reads as a web banner rather than app chrome. */}
+      {!IS_NATIVE && <div style={S.ticker}><div style={S.tickerInner}>{Array(4).fill("STITCH'D \u00a0·\u00a0 PRE-LOVED SOUTH ASIAN FASHION \u00a0·\u00a0 BUY. SELL. STYLE. \u00a0·\u00a0 MEASURED FITS ONLY \u00a0·\u00a0 ").join("")}</div></div>}
 
       {/* PAGE CONTENT - wrapped so a gentle fade plays on every view change
           (opacity-only, so fixed overlays/modals keep working). */}
