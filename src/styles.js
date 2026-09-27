@@ -198,8 +198,14 @@ export const CSS=`
     .detail-wrap{flex-direction:column !important;gap:16px !important;}
     .detail-img{position:static !important;max-width:none !important;}
     .detail-info{padding:4px 2px 0 !important;}
-    .msg-layout{flex-direction:column !important;height:auto !important;min-height:80vh;}
-    .msg-sidebar{width:100% !important;border-right:none !important;border-bottom:2px solid #f3e6ee !important;max-height:240px;}
+    /* Phones: single-pane messaging - show the conversation LIST or the open CHAT,
+       never both stacked. `.msg-active` is added to the layout when a chat is open. */
+    .msg-layout{flex-direction:column !important;height:auto !important;min-height:75vh;}
+    .msg-sidebar{width:100% !important;border-right:none !important;border-bottom:none !important;max-height:none !important;}
+    .msg-layout:not(.msg-active) .msg-main{display:none !important;}        /* no chat open → list is the whole screen */
+    .msg-layout.msg-active .msg-sidebar{display:none !important;}           /* chat open → hide the list */
+    .msg-layout.msg-active .msg-main{display:flex !important;flex-direction:column;min-height:75vh;}
+    .chat-back{display:inline-block !important;}                            /* show the back arrow only on phones */
     .dash-grid{grid-template-columns:1fr !important;}
     .meas-grid{grid-template-columns:1fr 1fr !important;}
     .form-card{padding:24px 16px !important;}

@@ -4958,7 +4958,7 @@ export default function App() {
         <main style={{...S.main,maxWidth:1040,background:"#FCEEF5"}}>
           <button style={S.back} onClick={()=>setView("shop")}>← BACK</button>
           <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,letterSpacing:3,color:"#cf97b4",margin:"0 0 12px"}}>YOUR CONVERSATIONS</p>
-          <div style={S.msgLayout} className="msg-layout">
+          <div style={S.msgLayout} className={"msg-layout"+(activeConv?" msg-active":"")}>
             <div style={S.msgSidebar} className="msg-sidebar">
               <div style={S.msgSidebarHead}>
                 <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:26,fontWeight:900,letterSpacing:1,color:"#111"}}>MESSAGES</span>
@@ -4998,7 +4998,7 @@ export default function App() {
                 })
               )}
             </div>
-            <div style={S.msgMain}>
+            <div style={S.msgMain} className="msg-main">
               {!activeConv?(
                 <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:14,background:"#fffafd"}}>
                   <span style={{width:72,height:72,borderRadius:"50%",background:"#FBE3EF",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center"}}><Mail width={32} height={32} color="#FF1493"/></span>
@@ -5012,6 +5012,8 @@ export default function App() {
                 return(
                   <>
                     <div style={S.chatHeader}>
+                      {/* Mobile-only: return to the conversation list (single-pane). */}
+                      <button className="chat-back" aria-label="Back to conversations" onClick={()=>{ setActiveConv(null); setMessages([]); }} style={{display:"none",background:"none",border:"none",cursor:"pointer",fontSize:24,fontWeight:900,lineHeight:1,padding:"2px 6px 2px 0",color:"#111",fontFamily:"'Barlow Condensed',sans-serif"}}>←</button>
                       <div style={{...S.convAvatar,flexShrink:0}}>
                         {otherProfile?.avatar_url?<img src={otherProfile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>:<span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:19,fontWeight:900,color:"#FF1493"}}>{(otherProfile?.full_name||otherProfile?.username||"?")[0].toUpperCase()}</span>}
                       </div>
