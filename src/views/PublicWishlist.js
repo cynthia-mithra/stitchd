@@ -142,7 +142,7 @@ export default function PublicWishlist({
                 style={{ ...S.card, borderColor: item.sold ? "#ccc" : accent, opacity: item.sold ? 0.85 : 1 }}
                 onClick={() => openDetail(item)}
               >
-                <Thumb src={item.image_url || (item.images && item.images[0]) || ""} emoji={item.emoji || catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
+                <Thumb src={item.image_url || (item.images && item.images[0]) || ""} alt={item.name} emoji={item.emoji || catEmoji(item.category)} accent={accent} style={S.cardTop} emojiStyle={S.cardEmoji}>
                   {item.sold && <div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
                 </Thumb>
                 <div style={S.cardBody}>

@@ -1,5 +1,6 @@
 export const CSS=`
-  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,800&family=Barlow:wght@400;500;600&display=swap');
+  /* Fonts are loaded via <link> in public/index.html <head> (earlier, non-blocking)
+     rather than an @import here, which loaded them late. */
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   /* Global type rhythm: crisper rendering everywhere + sensible defaults that
      only apply where an element hasn't set its own (inline styles still win). */

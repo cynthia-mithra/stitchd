@@ -110,7 +110,7 @@ export default function CreateLook({
                     return (
                       <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 12, border: "2px solid #f0f0f0", padding: "8px 10px" }}>
                         <div style={{ width: 48, height: 48, flexShrink: 0, border: "2px solid #111", overflow: "hidden" }}>
-                          <Thumb src={item.image_url || (item.images && item.images[0]) || ""} emoji={item.emoji || catEmoji(item.category)} accent="#fafafa" style={{ width: "100%", height: "100%" }} emojiStyle={{ fontSize: 22 }} />
+                          <Thumb src={item.image_url || (item.images && item.images[0]) || ""} alt={item.name} emoji={item.emoji || catEmoji(item.category)} accent="#fafafa" style={{ width: "100%", height: "100%" }} emojiStyle={{ fontSize: 22 }} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15, fontWeight: 800, color: "#111", lineHeight: 1.1 }}>{item.name}</p>
@@ -132,7 +132,7 @@ export default function CreateLook({
                   {items.map(item => (
                     <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 12, border: "2px solid #111", padding: "8px 10px" }}>
                       <div style={{ width: 48, height: 48, flexShrink: 0, border: "2px solid #111", overflow: "hidden" }}>
-                        <Thumb src={item.image_url || (item.images && item.images[0]) || ""} emoji={item.emoji || catEmoji(item.category)} accent="#fafafa" style={{ width: "100%", height: "100%" }} emojiStyle={{ fontSize: 22 }} />
+                        <Thumb src={item.image_url || (item.images && item.images[0]) || ""} alt={item.name} emoji={item.emoji || catEmoji(item.category)} accent="#fafafa" style={{ width: "100%", height: "100%" }} emojiStyle={{ fontSize: 22 }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15, fontWeight: 800, color: "#111", lineHeight: 1.1 }}>{item.name}</p>

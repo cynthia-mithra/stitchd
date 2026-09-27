@@ -340,7 +340,7 @@ export default function Analytics({ user, myItems = [], orders = [], wishlistCou
                     <tr key={item.id} style={{ background: idx % 2 ? "#f9f9f9" : "#fff", borderBottom: "2px solid #111", cursor: openDetail ? "pointer" : "default" }} onClick={() => openDetail && openDetail(item)}>
                       <td style={ST.td}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <Thumb src={item.image_url || (item.images && item.images[0]) || ""} emoji={item.emoji || catEmoji(item.category)} accent={accent} style={{ width: 40, height: 40, flexShrink: 0, border: "2px solid #111" }} emojiStyle={{ fontSize: 18 }} imgStyle={{ opacity: item.sold ? 0.55 : 1 }} />
+                          <Thumb src={item.image_url || (item.images && item.images[0]) || ""} alt={item.name} emoji={item.emoji || catEmoji(item.category)} accent={accent} style={{ width: 40, height: 40, flexShrink: 0, border: "2px solid #111" }} emojiStyle={{ fontSize: 18 }} imgStyle={{ opacity: item.sold ? 0.55 : 1 }} />
                           <span style={{ fontWeight: 800, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</span>
                         </div>
                       </td>
