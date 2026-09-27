@@ -493,6 +493,10 @@ export default function App() {
   const [inviteCopied,   setInviteCopied]   = useState(false);
   const [navMenuOpen,    setNavMenuOpen]    = useState(false);
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
+  // Which slice of the menu the mobile overlay shows: "full" (everything, opened
+  // from the app-bar menu icon) or "account" (my-account sections only, opened from
+  // the Account tab).
+  const [menuScope,      setMenuScope]      = useState("full");
   // First-run welcome - shown once per browser (localStorage), only on the home
   // view so it never pops over checkout/detail/etc.
   const [showOnboard,    setShowOnboard]    = useState(false);
@@ -4232,6 +4236,11 @@ export default function App() {
                   <Bell width={22} height={22}/>{unreadNotifs>0&&<span style={S.wishBadge}>{unreadNotifs}</span>}
                 </button>
               )}
+              {user&&(
+                <button style={S.appBarIcon} aria-label="Menu" onClick={()=>{ setMenuScope("full"); setMobileNavOpen(true); }}>
+                  <Menu width={22} height={22}/>
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -4294,10 +4303,10 @@ export default function App() {
       {user&&mobileNavOpen&&(
         <div style={S.mobileNav}>
           <div style={S.mobileNavHead}>
-            <span style={S.mobileNavTitle}>MENU</span>
+            <span style={S.mobileNavTitle}>{menuScope==="account"?"MY ACCOUNT":"MENU"}</span>
             <button style={S.mobileNavClose} aria-label="Close menu" onClick={()=>setMobileNavOpen(false)}><X width={26} height={26}/></button>
           </div>
-          {navSections.map((sec,si)=>(
+          {(menuScope==="account"?navSections.filter(sec=>sec.label!=="DISCOVER"):navSections).map((sec,si)=>(
             <React.Fragment key={sec.label||`msec-${si}`}>
               {si>0&&<div style={S.mobileNavDivider}/>}
               {sec.label&&<div style={S.mobileNavSectionLabel}>{sec.label}</div>}
@@ -5644,7 +5653,7 @@ export default function App() {
             {key:"explore", label:"Explore", Icon:Search, on:view==="explore", run:openExplore},
             {key:"sell", label:"Sell", Icon:Plus, sell:true, on:view==="add", run:()=>{ if(user){ setView("add"); window.scrollTo(0,0); } else gateAuth("signup"); }},
             {key:"inbox", label:"Inbox", Icon:MessageCircle, badge:unreadCount, on:view==="messages", run:()=>{ if(user) openMessages(); else gateAuth("login"); }},
-            {key:"account", label:"Account", Icon:User, on:false, run:()=>{ if(user) setMobileNavOpen(true); else gateAuth("login"); }},
+            {key:"account", label:"Account", Icon:User, on:false, run:()=>{ if(user){ setMenuScope("account"); setMobileNavOpen(true); } else gateAuth("login"); }},
           ].map(t=>(
             t.sell ? (
               <button key={t.key} className="bottom-nav-item" style={S.bottomNavItem} onClick={()=>{haptic("light");t.run();}} aria-label="Sell an item">

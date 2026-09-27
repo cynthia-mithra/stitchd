@@ -300,10 +300,10 @@ export const S={
   mobileNavHead:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",borderBottom:"2px solid #111"},
   mobileNavTitle:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:2,textTransform:"uppercase"},
   mobileNavClose:{background:"none",border:"none",cursor:"pointer",color:"#111",display:"flex",alignItems:"center",padding:4},
-  mobileNavItem:{background:"#fff",border:"none",textAlign:"left",minHeight:52,padding:"0 20px",fontSize:18,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:2,color:"#111",textTransform:"uppercase",display:"flex",alignItems:"center"},
+  mobileNavItem:{background:"#fff",border:"none",textAlign:"left",minHeight:42,padding:"0 20px",fontSize:16,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,letterSpacing:1.5,color:"#111",textTransform:"uppercase",display:"flex",alignItems:"center"},
   // Mobile equivalents - larger labels for readability and the same subtle 1px
   // #eee divider between groups.
-  mobileNavSectionLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,letterSpacing:2,color:"#6b6b6b",textTransform:"uppercase",padding:"16px 20px 6px",userSelect:"none"},
+  mobileNavSectionLabel:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:2,color:"#6b6b6b",textTransform:"uppercase",padding:"12px 20px 3px",userSelect:"none"},
   mobileNavDivider:{height:1,background:"#eee",border:"none",margin:0},
   // Refined brand ticker - a slimmer, calmer strip: shorter, lighter weight,
   // wider tracking, slightly translucent type and a slower scroll so it reads as
