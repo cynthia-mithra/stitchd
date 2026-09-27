@@ -246,7 +246,7 @@ export default function Shop({
     const ovChip={display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",fontSize:10,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",borderRadius:0,whiteSpace:"nowrap",lineHeight:1.4};
     return(
       <article className="scard" style={{...S.card,opacity:item.sold?0.55:1}} onClick={()=>viewListing(item)}>
-        <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
+        <Thumb src={item.image_url||(item.images&&item.images[0])||""} alt={item.name} emoji={item.emoji||catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
           {item.sold&&<div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
           {/* TOP-LEFT - status chips, stacked so they never collide */}
           <div className="card-ov card-ov-tl">
@@ -512,7 +512,7 @@ export default function Shop({
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
                 <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
-                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
+                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} alt={item.name} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <div style={{position:"absolute",top:12,left:12,background:"#34C759",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1.5,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>NEW</div>
                     <FastBadge sellerId={item.user_id}/>
                     {!item.sold&&<div className="card-hover-price"><span className="chp-price">{currencySymbol(item.currency)}{item.price}</span><span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span></div>}
@@ -539,7 +539,7 @@ export default function Shop({
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
                 <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
-                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
+                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} alt={item.name} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <FastBadge sellerId={item.user_id}/>
                     {!item.sold&&<div className="card-hover-price"><span className="chp-price">{currencySymbol(item.currency)}{item.price}</span><span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span></div>}
                   </Thumb>
@@ -566,7 +566,7 @@ export default function Shop({
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
                 <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
-                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
+                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} alt={item.name} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <FastBadge sellerId={item.user_id}/>
                     {!item.sold&&<div className="card-hover-price"><span className="chp-price">{currencySymbol(item.currency)}{item.price}</span><span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span></div>}
                   </Thumb>
@@ -611,7 +611,7 @@ export default function Shop({
               const drop=item.prev_price?Math.round(((item.prev_price-item.price)/item.prev_price)*100):0;
               return(
                 <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
-                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
+                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} alt={item.name} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     {drop>0&&<div style={{position:"absolute",top:12,left:12,background:"#FF9500",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3}}>-{drop}%</div>}
                     <FastBadge sellerId={item.user_id}/>
                     {!item.sold&&<div className="card-hover-price"><span className="chp-price">{currencySymbol(item.currency)}{item.price}</span><span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span></div>}
@@ -644,7 +644,7 @@ export default function Shop({
               const accent=CARD_COLORS[idx%CARD_COLORS.length];
               return(
                 <article key={item.id} className="scard" style={S.card} onClick={()=>viewListing(item)}>
-                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
+                  <Thumb src={item.image_url||(item.images&&item.images[0])||""} alt={item.name} emoji={item.emoji||catEmoji(item.category)} accent={accent} style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
                     <div style={{position:"absolute",top:12,left:12,background:"#BF5AF2",color:"#fff",padding:"2px 8px",fontSize:9,fontWeight:800,letterSpacing:1,fontFamily:"'Barlow Condensed',sans-serif",zIndex:3,display:"inline-flex",alignItems:"center",gap:4}}><Eye width={11} height={11}/> {item.views}</div>
                     <FastBadge sellerId={item.user_id}/>
                     {!item.sold&&<div className="card-hover-price"><span className="chp-price">{currencySymbol(item.currency)}{item.price}</span><span className="chp-view">VIEW <ArrowRight width={13} height={13}/></span></div>}

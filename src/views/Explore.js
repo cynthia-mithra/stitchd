@@ -26,7 +26,7 @@ function ExploreCard({ item, idx, onOpen, onSave, saved }) {
   const accent = CARD_COLORS[idx % CARD_COLORS.length];
   return (
     <article className="scard" style={{ ...S.card, opacity: item.sold ? 0.55 : 1 }} onClick={() => onOpen(item)}>
-      <Thumb src={item.image_url || (item.images && item.images[0]) || ""} emoji={item.emoji || catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
+      <Thumb src={item.image_url || (item.images && item.images[0]) || ""} alt={item.name} emoji={item.emoji || catEmoji(item.category)} accent={accent} gradient style={S.cardTop} className="card-top" emojiStyle={S.cardEmoji}>
         {item.sold && <div style={S.soldVeil}><span style={S.soldStamp}>SOLD</span></div>}
         <button className="card-heart" aria-label={saved ? "Remove from saved" : "Save"} style={saved ? { background: "#FF1493", borderColor: "#FF1493" } : null} onClick={(e) => { e.stopPropagation(); onSave(item); }}>
           <Heart width={15} height={15} fill={saved ? "#fff" : "none"} color={saved ? "#fff" : "#111"} />
