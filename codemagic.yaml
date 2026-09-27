@@ -16,14 +16,14 @@ workflows:
     name: Stitch'd iOS — App Store
     instance_type: mac_mini_m2
     max_build_duration: 60
-    # Auto-start a build whenever code is pushed to the working branch — so
-    # changes build hands-free without pressing "Start new build". Requires the
+    # Auto-start a build on every push to main — so changes build and ship to
+    # TestFlight hands-free without pressing "Start new build". Requires the
     # GitHub webhook, which Codemagic added when the repo was connected.
     triggering:
       events:
         - push
       branch_patterns:
-        - pattern: 'claude/tailor-registration-ux-3d1qw2'
+        - pattern: 'main'
           include: true
     integrations:
       app_store_connect: Stitchd App Store Key
@@ -46,10 +46,32 @@ workflows:
           npx cap sync ios
       - name: Set the build number
         script: |
-          # Codemagic auto-increments $BUILD_NUMBER each build; Apple requires a
-          # unique, increasing build number per upload.
+          # Give every upload a unique, strictly-increasing build number. Apple
+          # rejects a build whose number isn't higher than one already on
+          # TestFlight, so base it on the latest TestFlight build number and add
+          # 1. If that lookup returns nothing — the first-ever upload, or
+          # APP_STORE_APP_ID not set — fall back to Codemagic's own
+          # auto-incrementing $BUILD_NUMBER, which also increases on every build.
+          # Either way the number keeps moving forward and won't clash with the
+          # previous TestFlight upload.
+          #
+          # APP_STORE_APP_ID is the app's numeric App Store Connect ID. Add it as
+          # an env var in the Codemagic UI (like CERTIFICATE_PRIVATE_KEY) to turn
+          # on TestFlight-based numbering.
+          set -e
+          LATEST_TESTFLIGHT_BUILD_NUMBER=""
+          if [ -n "${APP_STORE_APP_ID:-}" ]; then
+            LATEST_TESTFLIGHT_BUILD_NUMBER=$(
+              app-store-connect get-latest-testflight-build-number "$APP_STORE_APP_ID" 2>/dev/null || true
+            )
+          fi
+          if [ -n "$LATEST_TESTFLIGHT_BUILD_NUMBER" ]; then
+            NEW_BUILD_NUMBER=$((LATEST_TESTFLIGHT_BUILD_NUMBER + 1))
+          else
+            NEW_BUILD_NUMBER="$BUILD_NUMBER"
+          fi
           cd ios/App
-          agvtool new-version -all "$BUILD_NUMBER"
+          agvtool new-version -all "$NEW_BUILD_NUMBER"
       - name: Sign and build the .ipa
         script: |
           # Do signing + archive in ONE step: Codemagic runs each step in a fresh
