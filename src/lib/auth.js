@@ -82,7 +82,52 @@ export function isTokenExpired(token,skewMs=60000){
 // policy) - and a `fallbackBucket` is given, retry once against it so the feature
 // keeps working rather than the whole action failing. The fallback should be a
 // bucket known to accept logged-in uploads (e.g. "listings").
+// Load an image file into something drawable (ImageBitmap where supported, else an
+// <img>), so we can downscale it on a canvas.
+function loadDrawable(file){
+  if (typeof createImageBitmap === "function") return createImageBitmap(file);
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{ resolve(img); };
+    img.onerror=(e)=>{ URL.revokeObjectURL(url); reject(e); };
+    img.src=url;
+  });
+}
+
+// Downscale a large photo before upload. Sellers' phone photos are often 3-5MB and
+// get served full-size into small cards; capping the longest side (~1400px) and
+// re-encoding as JPEG cuts that to a few hundred KB with no visible quality loss,
+// so grids load far faster (especially on mobile). Any failure - unusual format,
+// no canvas support, already small - falls back to uploading the original untouched.
+async function resizeImageForUpload(file, maxDim=1400, quality=0.82){
+  try{
+    if(!file || !file.type || !file.type.startsWith("image/")) return file;
+    if(typeof document==="undefined" || !document.createElement) return file;
+    if(file.size && file.size < 400*1024) return file;            // already small
+    const src=await loadDrawable(file);
+    const width=src.naturalWidth||src.width, height=src.naturalHeight||src.height;
+    if(!width||!height) return file;
+    const scale=Math.min(1, maxDim/Math.max(width,height));
+    if(scale>=1 && file.size < 1.2*1024*1024) return file;        // small enough already
+    const w=Math.round(width*scale), h=Math.round(height*scale);
+    const canvas=document.createElement("canvas");
+    canvas.width=w; canvas.height=h;
+    const ctx=canvas.getContext("2d");
+    if(!ctx) return file;
+    ctx.drawImage(src,0,0,w,h);
+    try{ if(src.close) src.close(); }catch(e){/* ImageBitmap only */}
+    const blob=await new Promise((res)=>canvas.toBlob(res,"image/jpeg",quality));
+    if(!blob || blob.size>=file.size) return file;                // never upload something bigger
+    const name=((file.name||"photo").replace(/\.[^.]+$/,""))+".jpg";
+    return new File([blob], name, {type:"image/jpeg"});
+  }catch(e){
+    return file;                                                  // upload the original on any error
+  }
+}
+
 export async function uploadImage(file,t,bucket="listings",fallbackBucket=null){
+  file=await resizeImageForUpload(file);
   const ext=file.name.split(".").pop();
   const path=`${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   const r=await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${t||SUPABASE_KEY}`,"Content-Type":file.type||"application/octet-stream","x-upsert":"true"},body:file});
