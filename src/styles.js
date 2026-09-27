@@ -175,11 +175,7 @@ export const CSS=`
     .style-home-rail > *{flex:0 0 70% !important;scroll-snap-align:start;}
   }
   @media(max-width:600px){
-    /* PROBLEM 1 - keep the hero SIDE-BY-SIDE on mobile (like desktop): the writing
-       takes the LEFT and the bubbles sit to the RIGHT, but instead of a neat wrapping
-       grid the bubbles now form a SLIGHTLY-OVERLAPPING, STAGGERED FLOATING cluster -
-       the same playful arrangement as the desktop hero (keeps the divider border). */
-    /* Type-led hero (no imagery) - just tighten the spacing on small screens. */
+    /* Type-led hero (no imagery): just tighten the spacing on small screens. */
     .hero-section{min-height:0 !important;padding:36px 18px !important;}
     .hero-left{padding:0 !important;}
     /* PROBLEM 2 - search field full-width on its own line, FILTERS/FIT/TAILORS
