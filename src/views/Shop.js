@@ -81,6 +81,26 @@ export default function Shop({
   // buyer straight to that listing once they've signed up / logged in.
   const [pendingItem, setPendingItem] = React.useState(null);
   const viewListing = (item) => { if (user) openDetail(item); else { setPendingItem(item); setGate("listing"); } };
+  // Grid pagination: render a page of cards at a time and grow as the shopper
+  // scrolls, so a large catalogue never mounts thousands of cards (and their
+  // images) at once. Filtering/search/sort still happen over the full set upstream;
+  // this only limits how many of the results are painted. Resets to the first page
+  // whenever the result set changes.
+  const GRID_PAGE = 24;
+  const [visibleCount, setVisibleCount] = React.useState(GRID_PAGE);
+  React.useEffect(() => { setVisibleCount(GRID_PAGE); }, [visible]);
+  const observerRef = React.useRef(null);
+  // Callback ref so the observer always tracks the current sentinel node, even as
+  // the grid mounts/unmounts (tab switches, loading) - no stale refs.
+  const sentinelRef = React.useCallback((node) => {
+    if (observerRef.current) { observerRef.current.disconnect(); observerRef.current = null; }
+    if (node && typeof IntersectionObserver !== "undefined") {
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries.some((e) => e.isIntersecting)) setVisibleCount((c) => c + GRID_PAGE);
+      }, { rootMargin: "800px 0px" });
+      observerRef.current.observe(node);
+    }
+  }, []);
   // First name for the personalised logged-in hero greeting (falls back through
   // full_name → username → email handle). Logged-out visitors see the generic
   // marketing hero instead.
@@ -486,7 +506,8 @@ export default function Shop({
         {error&&<div style={S.errorBanner}>{error}<button style={S.retryBtn} onClick={fetchItems}>RETRY</button></div>}
         {!loading&&!error&&(
           <div style={S.grid} className="shop-grid">
-            {visible.map((item,idx)=><ListingCard key={item.id} item={item} idx={idx}/>)}
+            {visible.slice(0,visibleCount).map((item,idx)=><ListingCard key={item.id} item={item} idx={idx}/>)}
+            {visibleCount<visible.length&&<div ref={sentinelRef} aria-hidden="true" style={{gridColumn:"1/-1",height:1}}/>}
             {visible.length===0&&(
               <div style={S.empty}>
                 <div style={S.emptyIcon}>{hasFilters?<Search width={40} height={40}/>:<Shirt width={40} height={40}/>}</div>
