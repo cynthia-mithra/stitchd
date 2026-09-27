@@ -23,7 +23,10 @@ export async function startCheckout(bag, { buyerId, buyerEmail, shipping } = {})
   try {
     res = await fetch(`${API_BASE}/api/stripe-checkout`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // text/plain keeps this a CORS "simple request" (no preflight), which the
+      // native app's cross-origin call to our API needs — the OPTIONS preflight was
+      // being blocked at the edge. The server parses the string body either way.
+      headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({ listing_ids, buyer_id: buyerId || null, buyer_email: buyerEmail || "", shipping: shipping || null, platform: PLATFORM }),
       signal: controller.signal,
     });
@@ -76,7 +79,10 @@ export async function startOfferCheckout({ offerId, buyerId } = {}) {
   try {
     res = await fetch(`${API_BASE}/api/create-offer-checkout`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // text/plain keeps this a CORS "simple request" (no preflight), which the
+      // native app's cross-origin call to our API needs — the OPTIONS preflight was
+      // being blocked at the edge. The server parses the string body either way.
+      headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({ offer_id: offerId, buyer_id: buyerId, platform: PLATFORM }),
       signal: controller.signal,
     });
@@ -122,7 +128,10 @@ export async function startAlterationCheckout({ alterationRequestId, buyerId } =
   try {
     res = await fetch(`${API_BASE}/api/create-alteration-checkout`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // text/plain keeps this a CORS "simple request" (no preflight), which the
+      // native app's cross-origin call to our API needs — the OPTIONS preflight was
+      // being blocked at the edge. The server parses the string body either way.
+      headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({ alteration_request_id: alterationRequestId, buyer_id: buyerId, platform: PLATFORM }),
       signal: controller.signal,
     });
@@ -156,7 +165,7 @@ export async function startAlterationCheckout({ alterationRequestId, buyerId } =
 export async function verifySession(sessionId) {
   const res = await fetch(`${API_BASE}/api/verify-session`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "text/plain" },   // simple request, no CORS preflight (see above)
     body: JSON.stringify({ session_id: sessionId }),
   });
   return res.json().catch(() => ({ paid: false }));
