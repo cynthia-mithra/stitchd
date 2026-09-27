@@ -112,8 +112,8 @@ export default function Shop({
   // sit on a full-width divider that separates them from the listings grid. Tabs are
   // full width on mobile (.shop-tab via media query) and auto width on desktop.
   const ShopTabs = () => (!user||newArrivals) ? null : (
-    <div style={{maxWidth:1300,margin:"0 auto",padding:"28px 24px 0"}}>
-      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",textTransform:"uppercase",margin:"0 0 10px"}}>BROWSE</p>
+    <div style={{maxWidth:1300,margin:"0 auto",padding:"14px 24px 0"}}>
+      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#6b6b6b",textTransform:"uppercase",margin:"0 0 8px"}}>BROWSE</p>
       {/* Self-contained segmented toggle - a bordered box split into two segments,
           active one filled pink. No full-width underline (which left a dangling
           line across the page). */}
@@ -148,8 +148,8 @@ export default function Shop({
   // Active chip is solid pink; the rest are pink-tint outline. Horizontal
   // swipe-scroll on phones.
   const CategoryRail = () => (
-    <div style={{maxWidth:1300,margin:"0 auto",padding:"26px 24px 0"}}>
-      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#a98fa0",textTransform:"uppercase",margin:"0 0 12px"}}>SHOP BY CATEGORY</p>
+    <div style={{maxWidth:1300,margin:"0 auto",padding:"14px 24px 0"}}>
+      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:11,fontWeight:800,letterSpacing:2,color:"#a98fa0",textTransform:"uppercase",margin:"0 0 8px"}}>SHOP BY CATEGORY</p>
       <div className="cat-rail">
         {CATEGORY_TILES.map((t)=>(
           <button key={t.label} className="cat-chip" data-on={t.active?"1":"0"}

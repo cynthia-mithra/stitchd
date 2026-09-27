@@ -4169,8 +4169,8 @@ export default function App() {
 
       {/* Pull-to-refresh indicator (native): a small spinner that follows the pull
           and spins while the grid reloads. */}
-      {IS_NATIVE && (ptr>0||refreshing) && (
-        <div style={{position:"fixed",top:0,left:0,right:0,display:"flex",justifyContent:"center",pointerEvents:"none",zIndex:150,paddingTop:`calc(env(safe-area-inset-top) + ${refreshing?54:Math.max(6,ptr)}px)`}}>
+      {IS_NATIVE && (ptr>20||refreshing) && (
+        <div style={{position:"fixed",top:0,left:0,right:0,display:"flex",justifyContent:"center",pointerEvents:"none",zIndex:150,paddingTop:`calc(env(safe-area-inset-top) + ${50 + (refreshing?0:Math.min(Math.max(ptr-20,0),50))}px)`}}>
           <div style={{width:32,height:32,borderRadius:"50%",background:"#fff",border:"2px solid #111",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 16px rgba(0,0,0,0.18)"}}>
             <span style={{width:16,height:16,border:"2px solid #f0d4e6",borderTopColor:"#FF1493",borderRadius:"50%",display:"block",animation:refreshing?"spin .7s linear infinite":"none",transform:refreshing?undefined:`rotate(${Math.round(ptr*3)}deg)`}}/>
           </div>

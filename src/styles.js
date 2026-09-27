@@ -358,10 +358,10 @@ export const S={
   // of overflowing. The buttons are sized snugly to their content (`padding:0 12px`)
   // and share the search field's height (34) so they read as tidy, proportionate
   // buttons rather than oversized boxes, all vertically centred (`alignItems:center`).
-  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",gap:10,width:"100%",padding:"14px 16px"},
+  searchInner:{display:"flex",flexWrap:"wrap",alignItems:"center",gap:10,width:"100%",padding:"10px 16px"},
   // Soft-capsule search: pink-tint rounded bar, magnifier inside left, a circular
   // pink Filters button tucked into the right end (paddingRight leaves room for it).
-  searchBox:{flex:"1 1 280px",minWidth:0,height:48,display:"flex",alignItems:"center",border:"1.5px solid #F6CFE0",borderRadius:24,background:"#FDE9F2",paddingRight:5,position:"relative"},
+  searchBox:{flex:"1 1 280px",minWidth:0,height:44,display:"flex",alignItems:"center",border:"1.5px solid #F6CFE0",borderRadius:24,background:"#FDE9F2",paddingRight:5,position:"relative"},
   searchIcon:{padding:"0 8px 0 16px",color:"#cf97b4",flexShrink:0,display:"flex",alignItems:"center"},
   searchInput:{flex:1,border:"none",outline:"none",fontFamily:"'Barlow',sans-serif",fontSize:14,fontWeight:500,letterSpacing:0.2,color:"#111",padding:"0 6px",background:"transparent",minWidth:0},
   searchClear:{background:"none",border:"none",padding:"0 4px",cursor:"pointer",color:"#bd7fa0",fontWeight:700,flexShrink:0,display:"flex",alignItems:"center"},
@@ -369,7 +369,7 @@ export const S={
   searchFilterCircle:{flexShrink:0,width:38,height:38,borderRadius:"50%",border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative",marginLeft:4},
   searchFilterDot:{position:"absolute",top:6,right:6,width:8,height:8,borderRadius:"50%",background:"#fff",border:"1.5px solid #FF1493"},
   // Rounded pink-outline pill for the secondary controls (FIT / SAVE / TAILORS).
-  pillBtn:{display:"inline-flex",alignItems:"center",gap:6,background:"#FDE9F2",color:"#FF1493",border:"1.5px solid #FF1493",borderRadius:24,padding:"0 18px",height:48,fontSize:12,letterSpacing:1,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",flexShrink:0},
+  pillBtn:{display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,background:"#FDE9F2",color:"#FF1493",border:"1.5px solid #FF1493",borderRadius:24,padding:"0 18px",height:44,fontSize:12,letterSpacing:1,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",flexShrink:0},
   pillBtnOn:{background:"#FF1493",color:"#fff",borderColor:"#FF1493"},
   filterPanel:{padding:"16px 16px",borderTop:"1px solid #f0f0f0",display:"flex",flexDirection:"column",gap:16},
   filterBtn:{background:"#fff",border:"1px solid #111",borderRadius:0,padding:"0 12px",height:30,fontSize:10,flexShrink:0,letterSpacing:1.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,whiteSpace:"nowrap",display:"flex",alignItems:"center",justifyContent:"center"},
