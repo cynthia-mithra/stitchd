@@ -70,11 +70,10 @@ function checkoutError(r, label) {
   );
 }
 
-// Wrap the connection attempt so a thrown network error becomes a clear message
-// (with a [build v4] stamp so we can tell which build a device is running).
+// Wrap the connection attempt so a thrown network error becomes a friendly message.
 function connectError(e) {
   if (e && e.name === "AbortError") return new Error("The checkout service took too long to respond. Please try again.");
-  return new Error(`Checkout couldn't connect [build v4] · target=${API_BASE || "(relative/on-device)"} · ${(e && e.name) || "Error"}: ${(e && e.message) || "unknown"}`);
+  return new Error("Couldn't reach the checkout service. Please check your connection and try again.");
 }
 
 // Bag checkout.
