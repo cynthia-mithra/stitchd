@@ -37,7 +37,7 @@ export async function startCheckout(bag, { buyerId, buyerEmail, shipping } = {})
     if (e.name === "AbortError") {
       throw new Error("The checkout service took too long to respond. Please try again.");
     }
-    throw new Error(`Couldn't reach checkout · target=${API_BASE || "(relative/on-device)"} · ${e.name || "Error"}: ${e.message || "unknown"}`);
+    throw new Error(`Checkout couldn't connect [build v3] · target=${API_BASE || "(relative/on-device)"} · ${e.name || "Error"}: ${e.message || "unknown"}`);
   } finally {
     clearTimeout(timeout);
   }
@@ -90,7 +90,7 @@ export async function startOfferCheckout({ offerId, buyerId } = {}) {
     if (e.name === "AbortError") {
       throw new Error("The checkout service took too long to respond. Please try again.");
     }
-    throw new Error(`Couldn't reach checkout · target=${API_BASE || "(relative/on-device)"} · ${e.name || "Error"}: ${e.message || "unknown"}`);
+    throw new Error(`Checkout couldn't connect [build v3] · target=${API_BASE || "(relative/on-device)"} · ${e.name || "Error"}: ${e.message || "unknown"}`);
   } finally {
     clearTimeout(timeout);
   }
@@ -139,7 +139,7 @@ export async function startAlterationCheckout({ alterationRequestId, buyerId } =
     if (e.name === "AbortError") {
       throw new Error("The checkout service took too long to respond. Please try again.");
     }
-    throw new Error(`Couldn't reach checkout · target=${API_BASE || "(relative/on-device)"} · ${e.name || "Error"}: ${e.message || "unknown"}`);
+    throw new Error(`Checkout couldn't connect [build v3] · target=${API_BASE || "(relative/on-device)"} · ${e.name || "Error"}: ${e.message || "unknown"}`);
   } finally {
     clearTimeout(timeout);
   }
