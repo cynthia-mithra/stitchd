@@ -550,6 +550,10 @@ export default function App() {
   // Show the order-success screen and confirm the paid Stripe session. Shared by
   // the web /order-success route and the native checkout deep link.
   function finishOrderSuccess(sid){
+    // Close any open overlays (the bag modal is open during checkout) so the
+    // confirmation screen is what the buyer actually sees on return - not the
+    // now-empty bag sitting on top of it.
+    setShowBag(false); setShowNotifs(false); setMobileNavOpen(false);
     setView("order-success");
     setOrderResult({status:"loading"});
     if(!sid){ setOrderResult({status:"error"}); return; }
@@ -4737,8 +4741,13 @@ export default function App() {
               : (orderResult.items||[]).map(it=>({name:it.name,image:"",emoji:"",seller:"",userId:null,price:(it.amount||0)/100}));
             return (
             <div style={{background:"#fff",border:"2px solid #111",padding:"40px 32px"}}>
-              <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:64,fontWeight:900,letterSpacing:-1.5,lineHeight:0.95,marginBottom:6,color:"#111"}}>IT'S YOURS.</h1>
-              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,letterSpacing:2,color:"#FF1493",textTransform:"uppercase",marginBottom:28}}>Order confirmed</p>
+              <div style={{textAlign:"center",marginBottom:28}}>
+                <div style={{display:"inline-flex",width:92,height:92,borderRadius:"50%",background:"linear-gradient(135deg,#FDE9F2,#EAFBF7)",border:"2px solid #111",alignItems:"center",justifyContent:"center",marginBottom:16}}>
+                  <CheckCircle width={46} height={46} color="#FF1493" strokeWidth={2.4}/>
+                </div>
+                <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(46px,13vw,64px)",fontWeight:900,letterSpacing:-1.5,lineHeight:0.95,marginBottom:6,color:"#111"}}>IT'S YOURS.</h1>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800,letterSpacing:2,color:"#FF1493",textTransform:"uppercase"}}>Order confirmed</p>
+              </div>
 
               {/* ORDER SUMMARY CARD(S) */}
               <div style={{border:"2px solid #111",marginBottom:20}}>
