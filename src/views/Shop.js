@@ -377,6 +377,16 @@ export default function Shop({
       </section>
       )}
 
+      {/* Native app: the big marketing hero is hidden, so signed-in users get a
+          compact "welcome back" greeting here instead - the same personalised
+          touch the website hero gives, sized for a phone. App-only + logged-in. */}
+      {IS_NATIVE && user && !newArrivals && (
+        <section style={{maxWidth:1300,margin:"0 auto",padding:"16px 16px 2px"}}>
+          <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:2.5,color:"#FF1493",margin:"0 0 3px"}}>WELCOME BACK{firstName?`, ${firstName.toUpperCase()}`:""}</p>
+          <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(26px,7vw,34px)",fontWeight:900,letterSpacing:-0.5,lineHeight:1,color:"#111",margin:0}}>WHAT'S NEW.</h2>
+        </section>
+      )}
+
       {/* SEARCH BAR */}
       <div style={{...S.searchBar,position:"relative"}} id="grid-anchor">
         <div style={S.searchInner}>

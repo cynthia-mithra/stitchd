@@ -254,8 +254,12 @@ export const S={
   // NATIVE APP BAR - a clean, solid top bar for the iOS/Android app: wordmark on
   // the left, a few essential icon actions on the right (Instagram-style). No
   // frosted blur, no marquee, no text buttons - those live in the bottom tab bar.
-  appBar:{background:"#fff",borderBottom:"2px solid #111",position:"sticky",top:0,zIndex:200,paddingTop:"env(safe-area-inset-top)"},
-  appBarInner:{display:"flex",alignItems:"center",justifyContent:"space-between",height:50,padding:"0 16px"},
+  // paddingTop pulls the bar up toward the status bar: the wordmark (left) and icons
+  // (right) sit clear of the centred notch/Dynamic Island, so we can reclaim ~12px of
+  // the safe-area inset, with a 20px floor so it never clashes with the system clock/
+  // battery on non-notch phones.
+  appBar:{background:"#fff",borderBottom:"2px solid #111",position:"sticky",top:0,zIndex:200,paddingTop:"max(calc(env(safe-area-inset-top) - 12px), 20px)"},
+  appBarInner:{display:"flex",alignItems:"center",justifyContent:"space-between",height:44,padding:"0 16px"},
   appBarLogo:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:25,fontWeight:900,letterSpacing:2,cursor:"pointer",color:"#111"},
   appBarActions:{display:"flex",alignItems:"center",gap:4},
   appBarIcon:{background:"none",border:"none",padding:7,cursor:"pointer",color:"#111",position:"relative",display:"flex",alignItems:"center",justifyContent:"center"},
