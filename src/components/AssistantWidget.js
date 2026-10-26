@@ -5,6 +5,9 @@
 // classes) so it matches the rest of the site and can be themed in one place.
 import React, { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send } from "lucide-react";
+// Shared API helper: same-origin fetch on the web, native HTTP (CapacitorHttp)
+// in the app — so the assistant works in both. Routes to the live site in-app.
+import { apiPost } from "../lib/checkout";
 
 const GREETING = {
   role: "assistant",
@@ -45,16 +48,9 @@ export default function AssistantWidget() {
         .filter((m) => m !== GREETING)
         .slice(-6)
         .map((m) => ({ role: m.role, content: m.content }));
-      const res = await fetch("/api/assistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history }),
-      });
       let reply = "Sorry — I'm having trouble right now. Please try again in a moment.";
-      try {
-        const data = await res.json();
-        if (data && data.reply) reply = data.reply;
-      } catch (_) {}
+      const { data } = await apiPost("/api/assistant", { message: text, history });
+      if (data && data.reply) reply = data.reply;
       setMsgs((m) => [...m, { role: "assistant", content: reply }]);
     } catch (_) {
       setMsgs((m) => [

@@ -5675,10 +5675,11 @@ export default function App() {
         </nav>
       )}
 
-      {/* AI shopping assistant — floating chat bubble, WEBSITE ONLY (not the
-          native app). It's fixed-position, so its spot in the tree doesn't
-          matter; all styling lives in styles.js (the .asst-* classes). */}
-      {!IS_NATIVE && <AssistantWidget/>}
+      {/* AI shopping assistant — floating chat bubble on the website AND the
+          native app. It's fixed-position, so its spot in the tree doesn't
+          matter; all styling lives in styles.js (the .asst-* classes). On native
+          it calls the API through CapacitorHttp (see the apiPost helper). */}
+      <AssistantWidget/>
     </div>
   );
 }
