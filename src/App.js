@@ -4164,7 +4164,7 @@ export default function App() {
   const runNavItem = (item)=>{ setNavMenuOpen(false); setMobileNavOpen(false); item.run(); };
 
   return (
-    <div className={"app-root"+(user&&view!=="detail"&&view!=="auth"?" has-bottom-nav":"")} style={S.root}>
+    <div className={"app-root"+(IS_NATIVE&&user&&view!=="detail"&&view!=="auth"?" has-bottom-nav":"")} style={S.root}>
       <style>{CSS}</style>
       <ConfirmHost/>
 
@@ -5644,10 +5644,11 @@ export default function App() {
         onSell={()=>{ dismissOnboard(); if(user){ setView("add"); } else { setAuthMode("signup"); setView("auth"); } window.scrollTo(0,0); }}
       />
 
-      {/* MOBILE BOTTOM NAV - app-style tab bar (phones only; CSS-gated). Signed-in
-          only - logged-out visitors get the header LOG IN / SIGN UP instead. Hidden
-          on the detail page (its own sticky buy bar lives there) and the auth screen. */}
-      {user&&view!=="detail"&&view!=="auth"&&(
+      {/* BOTTOM NAV - app-style tab bar for the NATIVE APP ONLY (IS_NATIVE). The
+          website (desktop, iPad and mobile web) uses the header nav / hamburger
+          instead, so this never shows there. Signed-in only; hidden on the detail
+          page (its own sticky buy bar lives there) and the auth screen. */}
+      {IS_NATIVE&&user&&view!=="detail"&&view!=="auth"&&(
         <nav className="bottom-nav" style={S.bottomNav} aria-label="Primary">
           {[
             {key:"home", label:"Home", Icon:Home, on:view==="shop"||view==="newarrivals", run:()=>{ window.history.replaceState({},"","/"); clearFilters(); setView("shop"); window.scrollTo(0,0); }},
