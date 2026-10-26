@@ -271,10 +271,11 @@ export const CSS=`
   .asst-send:disabled{opacity:.45;cursor:default;}
 
   @media(max-width:600px){
-    /* Smaller launcher + a panel that fills the width, tucked above the phone
-       bottom nav when the signed-in tab bar is present (.has-bottom-nav). */
-    .asst-launcher{right:16px;bottom:18px;width:54px;height:54px;}
-    .asst-panel{right:12px;left:12px;width:auto;max-width:none;top:72px;bottom:18px;height:auto;max-height:none;}
+    /* Smaller launcher + a panel that fills the width. Safe-area insets keep it
+       clear of the notch/home indicator in the native app; tucked above the
+       phone bottom nav when the signed-in tab bar is present (.has-bottom-nav). */
+    .asst-launcher{right:16px;bottom:calc(env(safe-area-inset-bottom) + 18px);width:54px;height:54px;}
+    .asst-panel{right:12px;left:12px;width:auto;max-width:none;top:calc(env(safe-area-inset-top) + 64px);bottom:calc(env(safe-area-inset-bottom) + 18px);height:auto;max-height:none;}
     .app-root.has-bottom-nav .asst-launcher{bottom:calc(76px + env(safe-area-inset-bottom) + 14px);}
     .app-root.has-bottom-nav .asst-panel{bottom:calc(76px + env(safe-area-inset-bottom) + 14px);}
   }

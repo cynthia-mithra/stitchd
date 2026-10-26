@@ -20,7 +20,7 @@ const PLATFORM = IS_NATIVE ? "native" : "web";
 
 // POST a JSON payload to one of our API routes and return a normalised
 // { ok, status, data, raw }. Uses native HTTP in the app, fetch on the web.
-async function apiPost(path, payload) {
+export async function apiPost(path, payload) {
   const url = `${API_BASE}${path}`;
 
   if (IS_NATIVE) {
