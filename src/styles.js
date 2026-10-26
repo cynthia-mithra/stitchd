@@ -244,6 +244,40 @@ export const CSS=`
     .nav-dropdown-wrap{display:none !important;}
     .nav-hamburger{display:flex !important;}
   }
+
+  /* ===== AI shopping assistant (floating chat bubble) =====================
+     Base rules below are the DESKTOP / iPad layout. Mobile-only tweaks live in
+     the @media(max-width:600px) block at the very end — desktop/iPad untouched. */
+  .asst-launcher{position:fixed;right:24px;bottom:24px;z-index:240;width:60px;height:60px;border-radius:50%;background:#FF1493;border:2px solid #111;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 12px 30px rgba(0,0,0,0.24);transition:transform .18s ease,box-shadow .18s ease;}
+  .asst-launcher:hover{transform:translateY(-3px);box-shadow:0 18px 40px rgba(0,0,0,0.28);}
+  .asst-launcher:active{transform:translateY(0) scale(.95);}
+  .asst-panel{position:fixed;right:24px;bottom:98px;z-index:240;width:380px;max-width:calc(100vw - 32px);height:560px;max-height:calc(100vh - 140px);background:#fff;border:2px solid #111;box-shadow:0 26px 64px rgba(0,0,0,0.30);display:flex;flex-direction:column;overflow:hidden;animation:asstIn .22s cubic-bezier(.22,1,.36,1);}
+  @keyframes asstIn{from{opacity:0;transform:translateY(14px) scale(.98);}to{opacity:1;transform:none;}}
+  .asst-head{background:#FF1493;border-bottom:2px solid #111;padding:13px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex:0 0 auto;}
+  .asst-head h3{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:21px;letter-spacing:.5px;text-transform:uppercase;color:#fff;line-height:1;}
+  .asst-head p{font-family:'Barlow',sans-serif;font-size:11px;color:rgba(255,255,255,0.92);margin-top:3px;}
+  .asst-close{background:transparent;border:none;color:#fff;cursor:pointer;display:flex;padding:2px;line-height:0;}
+  .asst-close:hover{opacity:.8;}
+  .asst-body{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;gap:10px;background:#fff;}
+  .asst-msg{max-width:86%;padding:10px 12px;font-family:'Barlow',sans-serif;font-size:14px;line-height:1.45;border:2px solid #111;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .asst-msg.user{align-self:flex-end;background:#111;color:#fff;}
+  .asst-msg.bot{align-self:flex-start;background:#fff7fc;color:#111;}
+  .asst-typing{align-self:flex-start;font-family:'Barlow',sans-serif;font-size:13px;font-style:italic;color:#FF1493;padding:2px 2px;}
+  .asst-foot{flex:0 0 auto;border-top:2px solid #111;padding:10px;display:flex;gap:8px;background:#fff;}
+  .asst-input{flex:1;min-width:0;border:2px solid #111;border-radius:0;padding:10px 12px;font-family:'Barlow',sans-serif;font-size:14px;color:#111;background:#fff;outline:none;}
+  .asst-input:focus{border-color:#FF1493;}
+  .asst-send{flex:0 0 auto;background:#00E5CC;border:2px solid #111;color:#111;padding:0 15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .12s ease;}
+  .asst-send:hover:not(:disabled){transform:translateY(-1px);}
+  .asst-send:disabled{opacity:.45;cursor:default;}
+
+  @media(max-width:600px){
+    /* Smaller launcher + a panel that fills the width, tucked above the phone
+       bottom nav when the signed-in tab bar is present (.has-bottom-nav). */
+    .asst-launcher{right:16px;bottom:18px;width:54px;height:54px;}
+    .asst-panel{right:12px;left:12px;width:auto;max-width:none;top:72px;bottom:18px;height:auto;max-height:none;}
+    .app-root.has-bottom-nav .asst-launcher{bottom:calc(76px + env(safe-area-inset-bottom) + 14px);}
+    .app-root.has-bottom-nav .asst-panel{bottom:calc(76px + env(safe-area-inset-bottom) + 14px);}
+  }
 `;
 
 export const S={
