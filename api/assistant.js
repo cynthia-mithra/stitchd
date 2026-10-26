@@ -252,9 +252,17 @@ module.exports = async (req, res) => {
     if (!r.ok) {
       const t = await r.text().catch(() => "");
       console.error("Anthropic error", r.status, t.slice(0, 500));
+      let detail = "";
+      try {
+        detail = (JSON.parse(t).error || {}).message || "";
+      } catch (_) {}
+      // TEMPORARY setup-diagnostic: surface the real reason in the reply so we
+      // can see why the AI call is failing on the preview. Remove before launch.
       return res.status(502).json({
         reply:
-          "Sorry — I'm having trouble right now. Please try again in a moment, or leave your email and the team will help.",
+          "⚠️ Setup check — the AI service returned an error:\n\n" +
+          `[${r.status}] ${detail || t.slice(0, 180) || "(no detail)"}` +
+          "\n\n(This note is temporary while we get the assistant working.)",
       });
     }
     const data = await r.json();
