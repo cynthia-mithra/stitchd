@@ -26,6 +26,16 @@ SIZING
 - [EDIT] Sizes are as provided by the seller; if a size isn't listed, ask and we'll check with the seller.
 - [EDIT] If you're between sizes, the measurements are the most reliable guide.
 
+SELLING
+- Anyone with a Stitch'd account can sell. Tap "List it" (or "List your piece"), add clear photos, the garment's measurements, the condition and your price.
+- Selling is free — there is no seller commission. Buyers pay a small Buyer Protection fee at checkout.
+- Your payment is held securely and released to you once the buyer confirms the item arrived as described.
+
+BECOMING A TAILOR
+- Stitch'd has approved tailors who offer alterations. To apply, open your account menu and tap "Become a tailor", then complete the short application.
+- The team reviews each application and aims to respond within about 3 working days. If approved, your tailor profile goes live and you can offer alterations and set your availability.
+- If an application isn't approved this time, you can reapply 30 days after applying.
+
 GENERAL
 - Stitch'd is a UK marketplace for pre-loved South Asian fashion (sarees, lehengas, sherwanis, salwar kameez and more).
 - [EDIT] For anything about a specific order, payment, refund or dispute, the team will follow up personally.
