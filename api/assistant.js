@@ -23,9 +23,10 @@ const SUPABASE_URL = "https://zhstooqgkyuzxseylsbk.supabase.co";
 const SUPABASE_ANON =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoc3Rvb3Fna3l1enhzZXlsc2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NzM3MzQsImV4cCI6MjA5NjE0OTczNH0.mW5GB1VzSfRBMWZRlU7OfQ0RqoT1wEBVBoai6dJ6eQs";
 
-// Google Gemini free tier. gemini-3.8-flash is the current free Flash model.
-// Override with the ASSISTANT_MODEL env var if Google changes the name.
-const GEMINI_MODEL = process.env.ASSISTANT_MODEL || "gemini-3.8-flash";
+// Google Gemini free tier. Flash-Lite is fast, cheap and has the best free-tier
+// availability (the newest full Flash model is often overloaded). The "…-latest"
+// alias auto-tracks the current version. Override with the ASSISTANT_MODEL env var.
+const GEMINI_MODEL = process.env.ASSISTANT_MODEL || "gemini-flash-lite-latest";
 const geminiUrl = (model, key) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
     key
@@ -193,20 +194,10 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: "Method not allowed" });
 
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    // TEMPORARY diagnostic: list the NAMES (never values) of env vars this
-    // deployment can see, to spot a naming/scope mismatch. Remove before launch.
-    const names = Object.keys(process.env).filter((k) =>
-      /GEMINI|ANTHROPIC|ASSISTANT|GOOGLE|STRIPE|SUPABASE|KEY|SECRET/i.test(k)
-    );
-    return res.status(500).json({
-      reply:
-        "⚠️ Setup check — GEMINI_API_KEY isn't reaching this deployment.\n\n" +
-        "Relevant env vars I can currently see:\n" +
-        (names.length ? names.join(", ") : "(none)") +
-        "\n\n(Temporary diagnostic.)",
-    });
-  }
+  if (!apiKey)
+    return res
+      .status(500)
+      .json({ reply: "The assistant isn't available right now — please try again later." });
 
   const ip =
     String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
@@ -290,6 +281,7 @@ module.exports = async (req, res) => {
       "gemini-flash-lite-latest",
       "gemini-flash-latest",
       "gemini-2.5-flash-lite",
+      "gemini-3.8-flash",
     ].filter((v, i, a) => v && a.indexOf(v) === i);
     let r = null;
     for (const model of candidates) {
@@ -311,35 +303,9 @@ module.exports = async (req, res) => {
     if (!r.ok) {
       const t = await r.text().catch(() => "");
       console.error("Gemini error", r.status, t.slice(0, 500));
-      let detail = "";
-      try {
-        detail = (JSON.parse(t).error || {}).message || "";
-      } catch (_) {}
-      // TEMPORARY diagnostic: also list the Flash models this key can use, so we
-      // can lock onto one that works. Remove before launch.
-      let avail = "";
-      try {
-        const mr = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(
-            apiKey
-          )}`
-        );
-        if (mr.ok) {
-          const mj = await mr.json();
-          avail = (mj.models || [])
-            .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
-            .map((m) => (m.name || "").replace("models/", ""))
-            .filter((n) => /flash|lite/i.test(n))
-            .slice(0, 25)
-            .join(", ");
-        }
-      } catch (_) {}
       return res.status(502).json({
         reply:
-          "⚠️ Setup check — the AI service returned an error:\n\n" +
-          `[${r.status}] ${detail || t.slice(0, 180) || "(no detail)"}` +
-          (avail ? `\n\nFlash models this key can use:\n${avail}` : "") +
-          "\n\n(This note is temporary while we get the assistant working.)",
+          "Sorry — I'm having trouble right now. Please try again in a moment, or leave your email and the team will help.",
       });
     }
     const data = await r.json();
