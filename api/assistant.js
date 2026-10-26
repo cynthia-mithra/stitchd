@@ -23,9 +23,9 @@ const SUPABASE_URL = "https://zhstooqgkyuzxseylsbk.supabase.co";
 const SUPABASE_ANON =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoc3Rvb3Fna3l1enhzZXlsc2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NzM3MzQsImV4cCI6MjA5NjE0OTczNH0.mW5GB1VzSfRBMWZRlU7OfQ0RqoT1wEBVBoai6dJ6eQs";
 
-// Google Gemini free tier. gemini-2.5-flash is the current free Flash model.
+// Google Gemini free tier. gemini-3.8-flash is the current free Flash model.
 // Override with the ASSISTANT_MODEL env var if Google changes the name.
-const GEMINI_MODEL = process.env.ASSISTANT_MODEL || "gemini-2.5-flash";
+const GEMINI_MODEL = process.env.ASSISTANT_MODEL || "gemini-3.8-flash";
 const geminiUrl = (model, key) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
     key
