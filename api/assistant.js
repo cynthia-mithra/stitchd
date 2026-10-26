@@ -283,7 +283,25 @@ module.exports = async (req, res) => {
       contents,
       generationConfig: { temperature: 0.6, maxOutputTokens: 800 },
     });
-    const r = await callGemini(geminiUrl(GEMINI_MODEL, apiKey), geminiBody);
+    // Try the configured model, then lighter/alias fallbacks — handles both a
+    // retired model (404) and a busy one (503) on the free tier.
+    const candidates = [
+      GEMINI_MODEL,
+      "gemini-flash-lite-latest",
+      "gemini-flash-latest",
+      "gemini-2.5-flash-lite",
+    ].filter((v, i, a) => v && a.indexOf(v) === i);
+    let r = null;
+    for (const model of candidates) {
+      const resp = await callGemini(geminiUrl(model, apiKey), geminiBody);
+      if (resp && resp.ok) {
+        r = resp;
+        break;
+      }
+      r = resp;
+      // Stop early on a definite non-transient, non-model error (e.g. bad key).
+      if (resp && ![404, 429, 500, 502, 503, 504].includes(resp.status)) break;
+    }
     if (!r) {
       return res.status(502).json({
         reply:
@@ -297,12 +315,30 @@ module.exports = async (req, res) => {
       try {
         detail = (JSON.parse(t).error || {}).message || "";
       } catch (_) {}
-      // TEMPORARY setup-diagnostic: surface the real reason in the reply so we
-      // can see why the AI call is failing on the preview. Remove before launch.
+      // TEMPORARY diagnostic: also list the Flash models this key can use, so we
+      // can lock onto one that works. Remove before launch.
+      let avail = "";
+      try {
+        const mr = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(
+            apiKey
+          )}`
+        );
+        if (mr.ok) {
+          const mj = await mr.json();
+          avail = (mj.models || [])
+            .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+            .map((m) => (m.name || "").replace("models/", ""))
+            .filter((n) => /flash|lite/i.test(n))
+            .slice(0, 25)
+            .join(", ");
+        }
+      } catch (_) {}
       return res.status(502).json({
         reply:
           "⚠️ Setup check — the AI service returned an error:\n\n" +
           `[${r.status}] ${detail || t.slice(0, 180) || "(no detail)"}` +
+          (avail ? `\n\nFlash models this key can use:\n${avail}` : "") +
           "\n\n(This note is temporary while we get the assistant working.)",
       });
     }
