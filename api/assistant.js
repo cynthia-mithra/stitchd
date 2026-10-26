@@ -169,10 +169,20 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: "Method not allowed" });
 
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey)
-    return res
-      .status(500)
-      .json({ reply: "The assistant isn't set up yet — please try again later." });
+  if (!apiKey) {
+    // TEMPORARY diagnostic: list the NAMES (never values) of env vars this
+    // deployment can see, to spot a naming/scope mismatch. Remove before launch.
+    const names = Object.keys(process.env).filter((k) =>
+      /GEMINI|ANTHROPIC|ASSISTANT|GOOGLE|STRIPE|SUPABASE|KEY|SECRET/i.test(k)
+    );
+    return res.status(500).json({
+      reply:
+        "⚠️ Setup check — GEMINI_API_KEY isn't reaching this deployment.\n\n" +
+        "Relevant env vars I can currently see:\n" +
+        (names.length ? names.join(", ") : "(none)") +
+        "\n\n(Temporary diagnostic.)",
+    });
+  }
 
   const ip =
     String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
