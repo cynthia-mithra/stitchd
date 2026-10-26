@@ -31,6 +31,30 @@ const geminiUrl = (model, key) =>
     key
   )}`;
 
+// Call Gemini, retrying a few times on transient overload/rate errors (the free
+// tier returns 503 "high demand" and 429 fairly often). Backoff stays well
+// within the serverless timeout.
+async function callGemini(url, bodyStr) {
+  const BACKOFF = [0, 600, 1500]; // ms before each attempt
+  let last = null;
+  for (let i = 0; i < BACKOFF.length; i++) {
+    if (BACKOFF[i]) await new Promise((r) => setTimeout(r, BACKOFF[i]));
+    try {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: bodyStr,
+      });
+      if (r.ok) return r;
+      last = r;
+      if (![429, 500, 502, 503, 504].includes(r.status)) return r; // non-transient
+    } catch (e) {
+      last = null; // network blip — let the loop retry
+    }
+  }
+  return last;
+}
+
 // --- basic in-memory rate limit -------------------------------------------
 // Per-IP, best-effort (serverless instances aren't shared). Enough to stop one
 // visitor or a stuck client from burning through the free quota.
@@ -254,15 +278,18 @@ module.exports = async (req, res) => {
   ];
 
   try {
-    const r = await fetch(geminiUrl(GEMINI_MODEL, apiKey), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt(listingsText) }] },
-        contents,
-        generationConfig: { temperature: 0.6, maxOutputTokens: 800 },
-      }),
+    const geminiBody = JSON.stringify({
+      system_instruction: { parts: [{ text: systemPrompt(listingsText) }] },
+      contents,
+      generationConfig: { temperature: 0.6, maxOutputTokens: 800 },
     });
+    const r = await callGemini(geminiUrl(GEMINI_MODEL, apiKey), geminiBody);
+    if (!r) {
+      return res.status(502).json({
+        reply:
+          "Sorry — I'm having trouble reaching the assistant right now. Please try again in a moment.",
+      });
+    }
     if (!r.ok) {
       const t = await r.text().catch(() => "");
       console.error("Gemini error", r.status, t.slice(0, 500));
