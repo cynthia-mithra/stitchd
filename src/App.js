@@ -50,6 +50,7 @@ import Footer from "./components/Footer";
 import PageLoader from "./components/PageLoader";
 const NotFound = lazy(() => import("./views/NotFound"));
 import Onboarding from "./components/Onboarding";
+import AssistantWidget from "./components/AssistantWidget";
 
 // URL path → view for the static legal pages, derived from the views Legal.js
 // owns so the two never drift (e.g. "/terms" → "terms").
@@ -5672,6 +5673,11 @@ export default function App() {
           ))}
         </nav>
       )}
+
+      {/* AI shopping assistant — floating chat bubble, WEBSITE ONLY (not the
+          native app). It's fixed-position, so its spot in the tree doesn't
+          matter; all styling lives in styles.js (the .asst-* classes). */}
+      {!IS_NATIVE && <AssistantWidget/>}
     </div>
   );
 }
