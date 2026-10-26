@@ -199,7 +199,7 @@ export const CSS=`
     .detail-img{position:static !important;max-width:none !important;}
     .detail-info{padding:4px 2px 0 !important;}
     /* Phones: single-pane messaging - show the conversation LIST or the open CHAT,
-       never both stacked. `.msg-active` is added to the layout when a chat is open. */
+       never both stacked. The .msg-active class is added to the layout when a chat is open. */
     .msg-layout{flex-direction:column !important;height:auto !important;min-height:75vh;}
     .msg-sidebar{width:100% !important;border-right:none !important;border-bottom:none !important;max-height:none !important;}
     .msg-layout:not(.msg-active) .msg-main{display:none !important;}        /* no chat open → list is the whole screen */
