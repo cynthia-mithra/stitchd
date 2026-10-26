@@ -3,19 +3,18 @@
 // The Stitch'd AI shopping assistant. On each message it:
 //   1. takes the shopper's message + a short chat history,
 //   2. finds matching AVAILABLE listings in Supabase (keyword / size / price),
-//   3. asks Claude to reply using ONLY those listings + the store policies,
+//   3. asks Google Gemini (free tier) to reply using ONLY those listings +
+//      the store policies,
 //   4. captures an email for human follow-up when the shopper leaves one.
 //
-// SECRETS: the Anthropic key is read from process.env.ANTHROPIC_API_KEY and
-// NEVER reaches the browser. Add it in Vercel → Settings → Environment
-// Variables as  ANTHROPIC_API_KEY  (see the setup notes). The Supabase anon key
-// is already public (it ships in the browser bundle) and can only read
-// publicly-readable listing rows, so it is safe to reuse here — exactly as the
-// Stripe functions in this folder already do.
+// SECRETS: the Gemini key is read from process.env.GEMINI_API_KEY and NEVER
+// reaches the browser. Add it in Vercel → Settings → Environment Variables as
+//   GEMINI_API_KEY   (get a free key at https://aistudio.google.com/apikey).
+// The Supabase anon key is already public (it ships in the browser bundle) and
+// can only read publicly-readable listing rows, so it is safe to reuse here.
 //
-// NOTE on the Anthropic call: we use a plain server-side `fetch` to the Messages
-// API (rather than the SDK) to stay consistent with how every other function in
-// this folder talks to its backend, and to avoid pinning an SDK version.
+// NOTE: we call the Gemini REST API with a plain server-side `fetch`, matching
+// how every other function in this folder talks to its backend.
 
 const { applyCors } = require("./_cors");
 const { STORE_POLICIES } = require("./_store-policies");
@@ -24,16 +23,17 @@ const SUPABASE_URL = "https://zhstooqgkyuzxseylsbk.supabase.co";
 const SUPABASE_ANON =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoc3Rvb3Fna3l1enhzZXlsc2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NzM3MzQsImV4cCI6MjA5NjE0OTczNH0.mW5GB1VzSfRBMWZRlU7OfQ0RqoT1wEBVBoai6dJ6eQs";
 
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-// Haiku is cheap + fast and ideal for grounded Q&A like this. To make the
-// assistant smarter (at higher cost) set ASSISTANT_MODEL in Vercel to e.g.
-// claude-sonnet-5-5 or claude-opus-5-5.
-const MODEL = process.env.ASSISTANT_MODEL || "claude-haiku-5-5";
+// Google Gemini free tier. gemini-2.5-flash is the current free Flash model.
+// Override with the ASSISTANT_MODEL env var if Google changes the name.
+const GEMINI_MODEL = process.env.ASSISTANT_MODEL || "gemini-2.5-flash";
+const geminiUrl = (model, key) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
+    key
+  )}`;
 
 // --- basic in-memory rate limit -------------------------------------------
-// Per-IP, best-effort. Serverless instances aren't shared, so this caps a
-// single busy instance rather than being a global counter — enough to stop one
-// visitor (or a stuck client) running up the API bill.
+// Per-IP, best-effort (serverless instances aren't shared). Enough to stop one
+// visitor or a stuck client from burning through the free quota.
 const WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_HITS = 20; // messages per window per IP
 const hits = new Map();
@@ -168,7 +168,7 @@ module.exports = async (req, res) => {
   if (req.method !== "POST")
     return res.status(405).json({ error: "Method not allowed" });
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey)
     return res
       .status(500)
@@ -233,25 +233,29 @@ module.exports = async (req, res) => {
     } catch (_) {}
   }
 
-  // 3. Ask Claude, grounded in the listings + policies.
+  // 3. Ask Gemini, grounded in the listings + policies.
+  //    Gemini uses roles "user"/"model" and a separate system_instruction.
+  const contents = [
+    ...history.map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    })),
+    { role: "user", parts: [{ text: message }] },
+  ];
+
   try {
-    const r = await fetch(ANTHROPIC_URL, {
+    const r = await fetch(geminiUrl(GEMINI_MODEL, apiKey), {
       method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 600,
-        system: systemPrompt(listingsText),
-        messages: [...history, { role: "user", content: message }],
+        system_instruction: { parts: [{ text: systemPrompt(listingsText) }] },
+        contents,
+        generationConfig: { temperature: 0.6, maxOutputTokens: 800 },
       }),
     });
     if (!r.ok) {
       const t = await r.text().catch(() => "");
-      console.error("Anthropic error", r.status, t.slice(0, 500));
+      console.error("Gemini error", r.status, t.slice(0, 500));
       let detail = "";
       try {
         detail = (JSON.parse(t).error || {}).message || "";
@@ -266,12 +270,17 @@ module.exports = async (req, res) => {
       });
     }
     const data = await r.json();
-    const reply =
-      (data.content || [])
-        .filter((b) => b.type === "text")
-        .map((b) => b.text)
-        .join("")
-        .trim() || "Sorry, I didn't quite catch that — could you rephrase?";
+    const cand = (data.candidates || [])[0];
+    let reply = "";
+    if (cand && cand.content && Array.isArray(cand.content.parts)) {
+      reply = cand.content.parts.map((p) => p.text || "").join("").trim();
+    }
+    if (!reply) {
+      const block = data.promptFeedback && data.promptFeedback.blockReason;
+      reply = block
+        ? "Sorry, I can't help with that one — try asking about our listings, sizes, or how things work."
+        : "Sorry, I didn't quite catch that — could you rephrase?";
+    }
     return res.status(200).json({ reply });
   } catch (e) {
     console.error("assistant fail", e && e.message);
